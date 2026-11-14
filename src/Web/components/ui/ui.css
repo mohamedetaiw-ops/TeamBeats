@@ -1065,6 +1065,13 @@
   text-decoration: none;
 }
 
+/* The row's next action (DLS-108) sits above the covering title link, so both can be reached. */
+.ui-row > .button {
+  position: relative;
+  z-index: 1;
+  flex: none;
+}
+
 /* Split page: the main column and a side panel at the end, stacked on narrow screens (Detail and List templates). */
 .ui-split {
   display: grid;

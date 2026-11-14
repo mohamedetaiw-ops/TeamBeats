@@ -27,7 +27,20 @@ const tracked = new Set(["submitted", "resubmitted", "cancelled", "approved", "r
  * the form version they were filled with, attachments, and every step in order. The filer may cancel it while it is
  * open, and change and submit it again after a return. An approver who opens it from the inbox decides here.
  */
-export function RequestDetailView({ detail, meId, units, taskId }: { detail: RequestDetail; meId: string; units: OrgUnit[]; taskId: string | null }) {
+export function RequestDetailView({
+  detail,
+  meId,
+  units,
+  taskId,
+  onDecided,
+}: {
+  detail: RequestDetail;
+  meId: string;
+  units: OrgUnit[];
+  taskId: string | null;
+  /** Called after a decision when the view sits in the review panel of the inbox; the page itself goes back to Tasks. */
+  onDecided?: (outcome: string) => void;
+}) {
   const t = useTranslations("services.request");
   const ts = useTranslations("services.status");
   const locale = useLocale();
@@ -76,6 +89,14 @@ export function RequestDetailView({ detail, meId, units, taskId }: { detail: Req
   }
 
   const isFiler = r.requester.id === meId;
+  // On the request's own page the decision sits high; in the review panel it follows the details it decides on.
+  const deciding =
+    taskId && r.status === "in_approval" ? (
+      <>
+        <RequestSummaryPanel requestId={r.id} />
+        <TaskDecisionPanel taskId={taskId} onDone={(outcome) => (onDecided ? onDecided(outcome) : router.push("/tasks"))} />
+      </>
+    ) : null;
   return (
     <div className="services">
       <section className="services-section" aria-labelledby="request-summary">
@@ -146,8 +167,7 @@ export function RequestDetailView({ detail, meId, units, taskId }: { detail: Req
         ) : null}
       </section>
 
-      {taskId && r.status === "in_approval" ? <RequestSummaryPanel requestId={r.id} /> : null}
-      {taskId && r.status === "in_approval" ? <TaskDecisionPanel taskId={taskId} onDone={() => router.push("/tasks")} /> : null}
+      {onDecided ? null : deciding}
 
       <section className="services-section" aria-labelledby="request-values">
         <h2 id="request-values">{t("values")}</h2>
@@ -183,6 +203,8 @@ export function RequestDetailView({ detail, meId, units, taskId }: { detail: Req
           </>
         ) : null}
       </section>
+
+      {onDecided ? deciding : null}
 
       {detail.automation && detail.automation.steps.length > 0 ? <AutomationPanel requestId={r.id} automation={detail.automation} /> : null}
 

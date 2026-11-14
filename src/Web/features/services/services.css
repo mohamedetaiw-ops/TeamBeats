@@ -578,3 +578,13 @@
 .services-template .services-actions {
   grid-column: 2;
 }
+
+/* Delegation (spec 016 FR-021): one compact line above the queue; the change runs in a dialog. */
+.services-delegation {
+  margin-block-end: var(--tb-space-lg);
+}
+
+.services-late {
+  color: var(--tb-color-state-danger);
+  font-weight: var(--tb-font-weight-medium);
+}
