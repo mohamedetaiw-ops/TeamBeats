@@ -8,6 +8,7 @@ import { loaderFor } from "@/lib/experience/registry";
 import { reportPlacementFailure } from "@/lib/experience/telemetry";
 import type { RenderedPlacement } from "@/lib/experience/types";
 import { StateView } from "@/components/ui/StateView";
+import { Widget, WidgetBudget } from "@/components/ui/Widget";
 
 const noSubscription = () => () => undefined;
 
@@ -49,8 +50,11 @@ const stateKinds = { loading: "loading", failed: "error", unavailable: "unsuppor
 
 function PlacementState({ placement, kind }: { placement: RenderedPlacement; kind: "unavailable" | "failed" | "loading" }) {
   const t = useTranslations("experience.placement");
+  // Framed like the content it stands for (spec 032 FR-073), so the placement keeps its place and its size.
   return (
-    <StateView kind={stateKinds[kind]} title={t(kind)} message="" data-placement-state={kind} data-placement-id={placement.id} />
+    <Widget title={t(kind)} head={false} busy={kind === "loading"}>
+      <StateView kind={stateKinds[kind]} title={t(kind)} message="" data-placement-state={kind} data-placement-id={placement.id} />
+    </Widget>
   );
 }
 
@@ -83,15 +87,17 @@ export function Placement({ placement, tools }: { placement: RenderedPlacement; 
     <div className="xp-placement" style={{ "--xp-span": placement.span } as CSSProperties} data-placement-id={placement.id}
       data-component={placement.componentRef} data-personal={placement.personal || undefined}>
       {tools}
-      {Loaded ? (
-        <PlacementErrorBoundary placement={placement} fallback={<PlacementState placement={placement} kind="failed" />}>
-          <Suspense fallback={<PlacementState placement={placement} kind="loading" />}>
-            <Mounted placement={placement} Loaded={Loaded} />
-          </Suspense>
-        </PlacementErrorBoundary>
-      ) : (
-        <PlacementState placement={placement} kind="unavailable" />
-      )}
+      <WidgetBudget span={placement.span}>
+        {Loaded ? (
+          <PlacementErrorBoundary placement={placement} fallback={<PlacementState placement={placement} kind="failed" />}>
+            <Suspense fallback={<PlacementState placement={placement} kind="loading" />}>
+              <Mounted placement={placement} Loaded={Loaded} />
+            </Suspense>
+          </PlacementErrorBoundary>
+        ) : (
+          <PlacementState placement={placement} kind="unavailable" />
+        )}
+      </WidgetBudget>
     </div>
   );
 }

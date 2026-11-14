@@ -1427,6 +1427,9 @@
       "moveTo": "نقل إلى",
       "moved": "نُقلت {title} إلى {column}",
       "empty": "لا توجد بطاقات هنا بعد"
+    },
+    "widget": {
+      "viewAll": "عرض الكل ({count})"
     }
   },
   "gallery": {

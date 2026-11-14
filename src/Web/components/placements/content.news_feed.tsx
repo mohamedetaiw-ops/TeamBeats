@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Icon } from "@/components/ui/Icon";
 import { StateView } from "@/components/ui/StateView";
-import { Widget } from "@/components/ui/Widget";
+import { useWidgetBudget, Widget } from "@/components/ui/Widget";
 import "@/features/content/content.css";
 
 type Answer = "loading" | "failed" | FeedItem[];
@@ -22,7 +22,7 @@ export default function NewsFeed({ props }: PlacementProps) {
   const t = useTranslations("content.component.feed");
   const locale = useLocale();
   const format = useFormatter();
-  const top = typeof props.top === "number" && props.top >= 1 && props.top <= 20 ? Math.floor(props.top) : 5;
+  const top = useWidgetBudget(typeof props.top === "number" && props.top >= 1 && props.top <= 20 ? Math.floor(props.top) : 5);
   const type = typeof props.type === "string" && props.type !== "all" ? props.type : null;
   const site = typeof props.site === "string" && props.site ? props.site : null;
   const title = localized(props.title, locale) || t("title");

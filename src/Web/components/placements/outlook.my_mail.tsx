@@ -7,7 +7,7 @@ import { OutlookStateView, StaleNote, useHydrated, useOutlookData, useReturnPath
 import { StateView } from "@/components/ui/StateView";
 import { Badge } from "@/components/ui/Badge";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
-import { Widget } from "@/components/ui/Widget";
+import { useWidgetBudget, Widget } from "@/components/ui/Widget";
 
 type Message = {
   id: string;
@@ -35,7 +35,7 @@ export default function MyMail({ props }: PlacementProps) {
   const hydrated = useHydrated();
   const group = useId();
   const [view, setView] = useState<"focused" | "all">(props.view === "all" ? "all" : "focused");
-  const top = typeof props.top === "number" && props.top >= 1 && props.top <= 10 ? Math.floor(props.top) : 5;
+  const top = useWidgetBudget(typeof props.top === "number" && props.top >= 1 && props.top <= 10 ? Math.floor(props.top) : 5);
   const { answer, retry } = useOutlookData<Summary>(`/api/v1/me/mail?view=${view}&top=${top}`);
 
   const unread = answer !== "loading" && answer !== "failed" && answer !== "denied" ? answer.unreadCount : null;

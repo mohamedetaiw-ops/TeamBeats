@@ -8,7 +8,7 @@ import { useHomeAnswer } from "@/lib/engagementHome";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { StateView } from "@/components/ui/StateView";
-import { Widget } from "@/components/ui/Widget";
+import { useWidgetBudget, Widget } from "@/components/ui/Widget";
 import "@/features/services/home.css";
 
 /**
@@ -19,7 +19,7 @@ export default function AwardsCard({ props }: PlacementProps) {
   const t = useTranslations("engagement.home");
   const locale = useLocale();
   const format = useFormatter();
-  const top = typeof props.top === "number" && props.top >= 1 && props.top <= 5 ? Math.floor(props.top) : 3;
+  const top = useWidgetBudget(typeof props.top === "number" && props.top >= 1 && props.top <= 5 ? Math.floor(props.top) : 3);
   const title = localized(props.title, locale) || t("awardsTitle");
   const { answer, retry } = useHomeAnswer<AwardList>(`${engagementApi}/awards`);
 

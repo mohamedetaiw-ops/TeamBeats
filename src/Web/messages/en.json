@@ -1427,6 +1427,9 @@
       "moveTo": "Move to",
       "moved": "{title} moved to {column}",
       "empty": "No cards here yet"
+    },
+    "widget": {
+      "viewAll": "View all ({count})"
     }
   },
   "gallery": {
