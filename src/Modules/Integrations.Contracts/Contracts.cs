@@ -18,6 +18,7 @@ public static class Microsoft365Features
     public const string Mail = "mail";
     public const string Calendar = "calendar";
     public const string FreeBusy = "free_busy";
+    public const string OfficeEditing = "office_editing";
 }
 
 /// <summary>Connection status (spec 006 FR-014).</summary>
@@ -299,6 +300,7 @@ public static class M365States
     public const string ConditionalAccess = "conditional_access";
     public const string Degraded = "degraded";
     public const string NotInPlan = "not_in_plan";
+    public const string NoDrive = "no_drive";
 }
 
 // Canonical mail, calendar and free and busy ports (spec 018 FR-024). They act as the session's membership only and take
@@ -387,6 +389,39 @@ public interface IAvailability
 {
     /// <summary>Free and busy of one colleague, read as the signed-in employee, so never more than Outlook shows them.</summary>
     Task<AvailabilityResult> GetAsync(string colleagueAddress, DateTimeOffset from, DateTimeOffset to, CancellationToken ct = default);
+}
+
+// Office editing in the browser (spec 011 FR-010). A canonical port: the document travels to the signed-in employee's
+// own cloud storage for the editor and comes back on check-in. Provider types stay inside the adapter.
+
+/// <summary>A copy placed for editing: the state (M365States values), the provider's item ID and the editor's address.</summary>
+public sealed record OfficeEditCopy(string State, string? ItemId, string? EditUrl);
+
+/// <summary>The edited copy read back: the state (M365States values, or <c>gone</c> when the copy was removed) and its content.</summary>
+public sealed record OfficeEditContent(string State, Stream? Content, long? Length) : IAsyncDisposable
+{
+    public const string Gone = "gone";
+
+    public ValueTask DisposeAsync() => Content?.DisposeAsync() ?? ValueTask.CompletedTask;
+}
+
+public interface IOfficeEditor
+{
+    /// <summary>Whether the signed-in employee can edit in the browser now (M365States values); nothing is sent to the provider.</summary>
+    Task<string> StateAsync(CancellationToken ct = default);
+
+    /// <summary>Places a copy of the file in the employee's own storage and returns where the editor opens it.</summary>
+    Task<OfficeEditCopy> PlaceAsync(string fileName, Stream content, long length, CancellationToken ct = default);
+
+    /// <summary>Reads the edited copy back. The caller disposes the result.</summary>
+    Task<OfficeEditContent> ReadAsync(string itemId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Prepares removing the copy while the employee's access can still be read. The returned call does the removal
+    /// without the database, so it can run after the caller commits; it answers false when the copy could not be
+    /// removed (it then stays in the employee's own storage).
+    /// </summary>
+    Task<Func<CancellationToken, Task<bool>>> RemoverAsync(string itemId, CancellationToken ct = default);
 }
 
 // Weather for the tool box (spec 008 FR-050). A canonical port, so the provider can be swapped by configuration; provider

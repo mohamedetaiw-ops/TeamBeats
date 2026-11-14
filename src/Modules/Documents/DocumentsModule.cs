@@ -27,6 +27,7 @@ public static class DocumentsModule
         services.AddScoped<TeamBeats.Modules.Agents.Contracts.IAgentTool, GetDocumentTool>();
         services.AddScoped<DocumentAccess>();
         services.AddScoped<DocumentVersions>();
+        services.AddScoped<OfficeEditing>();
         services.AddScoped<Records>();
         services.AddScoped<GuestShares>();
         services.AddScoped<Assets>();
@@ -250,6 +251,32 @@ public static class DocumentsModule
         {
             var view = await versions.DiscardAsync(id, ct);
             await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        // Office editing in the browser (FR-010): whether it is offered, start, check in the edited copy, or discard it.
+        root.MapGet("/{id:guid}/office", async (Guid id, OfficeEditing office, CancellationToken ct) => Results.Ok(await office.GetAsync(id, ct)));
+
+        root.MapPost("/{id:guid}/office/start", async (Guid id, OfficeEditing office, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await office.StartAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapPost("/{id:guid}/office/checkin", async (Guid id, OfficeCheckInRequest request, OfficeEditing office, IDbSession session, CancellationToken ct) =>
+        {
+            var (view, removeCopy) = await office.CheckInAsync(id, new CheckInRequest(request.Note, request.Publish, request.SensitiveReason), ct);
+            await session.CommitAsync(ct);
+            await removeCopy(CancellationToken.None);
+            return Results.Ok(view);
+        });
+
+        root.MapPost("/{id:guid}/office/discard", async (Guid id, OfficeEditing office, IDbSession session, CancellationToken ct) =>
+        {
+            var (view, removeCopy) = await office.DiscardAsync(id, ct);
+            await session.CommitAsync(ct);
+            await removeCopy(CancellationToken.None);
             return Results.Ok(view);
         });
 

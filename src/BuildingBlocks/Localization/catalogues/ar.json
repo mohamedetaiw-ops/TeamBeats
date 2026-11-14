@@ -312,6 +312,7 @@
   "integrations.outlook.turned_off": "البريد والتقويم متوقفان في مؤسستك",
   "integrations.permission.administrative_unit_read_all": "قراءة الوحدات الإدارية لربطها بالوحدات التنظيمية لديك",
   "integrations.permission.calendars_read_basic": "قراءة أحداث تقويم الموظف دون المحتوى أو المرفقات",
+  "integrations.permission.files_read_write": "إنشاء ملفات OneDrive الخاصة بالموظف وقراءتها وتغييرها، وتُستخدم فقط للنسخة التي يحررها في المتصفح",
   "integrations.permission.group_read_all": "قراءة المجموعات وأعضائها لمزامنة المجموعات والأدوار",
   "integrations.permission.mail_read": "قراءة بريد الموظف لعرض سطر المعاينة فقط",
   "integrations.permission.mail_read_basic": "قراءة عناوين بريد الموظف دون نص الرسائل",
@@ -2443,5 +2444,13 @@
   "documents.import.quarantined": "اكتشف فحص البرمجيات الضارة مشكلة في هذا الملف. وُضع في العزل ولا يمكن لأحد فتحه.",
   "documents.import.not_found": "لم تعد المكتبة أو المجلد موجودين.",
   "documents.import.denied": "لم يعد بإمكانك إضافة ملفات هنا.",
-  "documents.import.error": "حدث خطأ في هذا الصف. أعد المحاولة في استيراد جديد."
+  "documents.import.error": "حدث خطأ في هذا الصف. أعد المحاولة في استيراد جديد.",
+  "conflict.documents.office_editing": "هذا المستند مفتوح في Office للويب. أعد إيداعه أو تراجع عن التحرير من هناك.",
+  "conflict.documents.office_restricted": "لا يمكن تحرير المستندات المقيدة في المتصفح. نزّلها وحررها ثم أعد إيداعها.",
+  "conflict.documents.office_format": "يمكن تحرير ملفات Word وExcel وPowerPoint فقط (.docx و.xlsx و.pptx) في المتصفح.",
+  "conflict.documents.office_reconnect": "اربط حسابك في Microsoft 365 للتحرير في المتصفح، ثم حاول مرة أخرى.",
+  "conflict.documents.office_unavailable": "خدمة Microsoft 365 غير متاحة الآن. حاول مرة أخرى بعد بضع دقائق.",
+  "conflict.documents.office_copy_gone": "النسخة التي كنت تحررها لم تعد في OneDrive. تراجع عن التحرير لإتاحة المستند للآخرين.",
+  "conflict.documents.office_not_editing": "أنت لا تحرر هذا المستند في المتصفح.",
+  "validation.documents.office_size": "لا يمكن تحرير الملفات الأكبر من 250 ميغابايت في المتصفح."
 }

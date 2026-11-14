@@ -136,6 +136,13 @@ export type DocumentView = {
   downloadable?: boolean;
 };
 
+/** Whether "Edit in browser" is offered (spec 011 FR-010): the API decides; a Microsoft 365 state means the person must connect first. */
+export type OfficeEditView = {
+  state: "unavailable" | "ready" | "editing" | "not_connected" | "reconnect" | "admin_setup" | "degraded" | "no_drive" | "conditional_access";
+  editUrl: string | null;
+  startedAt: string | null;
+};
+
 export type PreviewView = {
   kind: "pdf" | "image" | "video" | "text" | "unavailable";
   url: string | null;
