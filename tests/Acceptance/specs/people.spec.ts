@@ -108,10 +108,11 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.goto(`${hostOrigin(tenant.key)}/people/team`);
       const team = page.getByTestId("team-list");
-      await expect(team.getByRole("link", { name: layla })).toBeVisible();
-      await expect(team.getByRole("link", { name: omar })).toHaveCount(0);
+      // The card also carries quick actions named after the person (DLS-113), so the profile link is matched exactly.
+      await expect(team.getByRole("link", { name: layla, exact: true })).toBeVisible();
+      await expect(team.getByRole("link", { name: omar, exact: true })).toHaveCount(0);
       await page.getByLabel(msg(locale, "people.team.indirect")).check();
-      await expect(team.getByRole("link", { name: omar })).toBeVisible();
+      await expect(team.getByRole("link", { name: omar, exact: true })).toBeVisible();
       await expectAccessible(page, testInfo, `people-team-${locale}`);
     });
 

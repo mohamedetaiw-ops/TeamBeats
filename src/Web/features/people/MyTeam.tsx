@@ -52,7 +52,7 @@ export function MyTeam({ initial }: { initial: TeamPage }) {
       <ul className="people-list people-cards" data-testid="team-list">
         {page.items.map((p) => (
           <li key={p.id}>
-            <PersonItem person={p} locale={locale} extra={indirect && p.level ? t("team.level", { level: p.level }) : undefined} />
+            <PersonItem form="card" person={p} locale={locale} extra={indirect && p.level ? t("team.level", { level: p.level }) : undefined} />
           </li>
         ))}
       </ul>

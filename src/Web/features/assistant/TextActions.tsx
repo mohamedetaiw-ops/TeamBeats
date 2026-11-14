@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { Icon } from "@/components/ui/Icon";
 import { Button } from "@/components/ui/Button";
 import { problemMessages } from "@/lib/notifications/types";
 import { unavailableReasons, type TextAction, type TextActionResult } from "@/lib/assistant/types";
@@ -56,7 +57,8 @@ export function Result({ result }: { result: TextActionResult }) {
 }
 
 /**
- * Summarize, explain or translate the item on this page (spec 014 US3 scenario 1). The API reads the item as the
+ * Summarize, explain or translate the item on this page (spec 014 US3 scenario 1): a quiet row of buttons with the AI
+ * mark in the header area of the item, not a card (spec 036 DLS-112). The API reads the item as the
  * person, so it works only on what they can read and nothing is stored or published.
  */
 export function ItemActions({ source, itemId, itemLocale, uiLocale }: { source: string; itemId: string; itemLocale: string; uiLocale: string }) {
@@ -82,10 +84,13 @@ export function ItemActions({ source, itemId, itemLocale, uiLocale }: { source: 
 
   return (
     <section className="assistant-item-actions" aria-labelledby="assistant-item-actions-title">
-      <h2 id="assistant-item-actions-title">{t("tools.itemTitle")}</h2>
-      <div className="button-row">
+      <h2 id="assistant-item-actions-title" className="visually-hidden">
+        {t("tools.itemTitle")}
+      </h2>
+      <div className="assistant-item-row">
+        <Icon name="spark" size={16} />
         {(["summarize", "explain", "translate"] as const).map((action) => (
-          <Button key={action} busy={run.busy === action} busyLabel={t("thinking")} onClick={() => void go(action)}>
+          <Button key={action} size="sm" variant="quiet" busy={run.busy === action} busyLabel={t("thinking")} onClick={() => void go(action)}>
             {action === "translate" ? t("tools.translateTo", { language: t(`tools.languages.${target}`) }) : t(`tools.actions.${action}`)}
           </Button>
         ))}
