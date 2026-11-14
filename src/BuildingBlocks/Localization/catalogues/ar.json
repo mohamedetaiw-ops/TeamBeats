@@ -2481,5 +2481,20 @@
   "validation.documents.connected_folder": "اختر مجلدًا في مكتبة المستندات هذه.",
   "validation.documents.connected_library": "هذا الإعداد غير متاح لمكتبة متصلة.",
   "notifications.template.documents.connected_degraded.title": "مكتبة SharePoint غير متاحة",
-  "notifications.template.documents.connected_degraded.body": "تعذّرت قراءة مكتبة SharePoint متصلة الآن. يرى الأشخاص آخر نسخة متزامنة. تحقق من اتصال Microsoft 365 في صفحة الاتصالات."
+  "notifications.template.documents.connected_degraded.body": "تعذّرت قراءة مكتبة SharePoint متصلة الآن. يرى الأشخاص آخر نسخة متزامنة. تحقق من اتصال Microsoft 365 في صفحة الاتصالات.",
+  "validation.ai.budget_scope": "اختر لمن الميزانية: المؤسسة كلها أو وحدة أو وكيل أو شخص واحد أو كل شخص.",
+  "validation.ai.budget_scope_id": "اختر الوحدة أو الوكيل أو الشخص الذي تخصه الميزانية.",
+  "validation.ai.budget_period": "اختر ميزانية شهرية أو يومية.",
+  "validation.ai.budget_limit": "حدد إما مبلغًا بالدولار الأمريكي أو عددًا من الطلبات أكبر من صفر.",
+  "validation.ai.budget_action": "اختر ما يحدث عند نفاد الميزانية: المنع أو التحويل إلى نموذج أرخص أو التنبيه فقط.",
+  "validation.ai.budget_downgrade": "اختر نموذجًا أرخص تسمح به سياسة النماذج. إجراء التحويل وحده يأخذ نموذجًا.",
+  "conflict.ai.budget_limit": "لدى هذه المؤسسة الحد الأقصى المسموح من الميزانيات. احذف واحدة قبل إضافة أخرى.",
+  "conflict.ai.budget_exists": "توجد ميزانية من هذا النوع للنطاق والفترة نفسيهما. عدّل تلك الميزانية بدلًا من ذلك.",
+  "conflict.ai.budget_changed": "قام شخص آخر بتغيير هذه الميزانية. أعد تحميلها وحاول مرة أخرى.",
+  "notifications.template.ai.budget_reached_80.title": "استُخدم 80% من ميزانية ذكاء اصطناعي",
+  "notifications.template.ai.budget_reached_80.body": "استخدمت ميزانية ذكاء اصطناعي 80% من حدها لهذه الفترة. افتح الميزانيات للاطلاع عليها.",
+  "notifications.template.ai.budget_reached_100.title": "نفدت ميزانية ذكاء اصطناعي",
+  "notifications.template.ai.budget_reached_100.body": "بلغت ميزانية ذكاء اصطناعي حدها لهذه الفترة، ويُطبق إجراؤها الآن. افتح الميزانيات للاطلاع عليها.",
+  "validation.ai.org_policy_loosens": "سياسة الوحدة تضيّق السياسة الأعلى منها فقط. هذا الإعداد يسمح بأكثر مما تسمح به القاعدة الموروثة.",
+  "conflict.ai.org_policy_changed": "قام شخص آخر بتغيير سياسة هذه الوحدة. أعد تحميلها وحاول مرة أخرى."
 }

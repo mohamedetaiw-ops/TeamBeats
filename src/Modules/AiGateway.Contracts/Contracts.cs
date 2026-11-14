@@ -112,7 +112,8 @@ public sealed record AiRequest(
     string? ModelUnderTest = null,
     Guid? ActingUnitId = null,
     bool PlatformCharged = false,
-    Guid? RouteChangeId = null);
+    Guid? RouteChangeId = null,
+    IReadOnlyList<Guid>? ResourceUnitIds = null);
 
 public sealed record AiUsage(int InputTokens, int OutputTokens)
 {
@@ -131,13 +132,14 @@ public sealed record AiCompletion(
     string FinishReason);
 
 /// <summary>The typed result of a chat call (FR-016): an answer, or a denial reason and nothing sent or nothing usable.</summary>
-public sealed record AiResult(AiCompletion? Completion, string? Denial)
+/// <param name="ResetsAt">For <c>quota_exhausted</c> and <c>budget_exhausted</c> from a budget (spec 013 US5 scenario 3): when the limit resets.</param>
+public sealed record AiResult(AiCompletion? Completion, string? Denial, DateTimeOffset? ResetsAt = null)
 {
     public bool IsOk => Completion is not null;
 
     public static AiResult Ok(AiCompletion completion) => new(completion, null);
 
-    public static AiResult Denied(string reason) => new(null, reason);
+    public static AiResult Denied(string reason, DateTimeOffset? resetsAt = null) => new(null, reason, resetsAt);
 }
 
 /// <summary>A piece of a streamed answer. The last chunk carries the result, which is also how a denial is streamed.</summary>
@@ -146,11 +148,11 @@ public sealed record AiStreamChunk(string? Delta, AiResult? Result);
 /// <summary>An embedding request (use case <c>embed</c>). Classification is required as for chat.</summary>
 public sealed record EmbeddingRequest(IReadOnlyList<string> Inputs, DataClassification? Classification, string? Model = null, Guid? ActingUnitId = null);
 
-public sealed record EmbeddingResult(IReadOnlyList<float[]>? Vectors, AiUsage Usage, string? Model, string? Provider, string? Denial)
+public sealed record EmbeddingResult(IReadOnlyList<float[]>? Vectors, AiUsage Usage, string? Model, string? Provider, string? Denial, DateTimeOffset? ResetsAt = null)
 {
     public bool IsOk => Vectors is not null;
 
-    public static EmbeddingResult Denied(string reason) => new(null, AiUsage.None, null, null, reason);
+    public static EmbeddingResult Denied(string reason, DateTimeOffset? resetsAt = null) => new(null, AiUsage.None, null, null, reason, resetsAt);
 }
 
 /// <summary>
@@ -197,5 +199,11 @@ public sealed record AiPolicyChanged(int Version) : IIntegrationEvent;
 /// which answers with its gate decision for <paramref name="RouteChangeId"/>.
 /// </summary>
 /// <param name="ProposedBy">Who saved the change; the gate runs on their behalf.</param>
+/// <summary>
+/// A budget reached 80% or 100% of its limit in a period (spec 013 US5 scenario 2). Sent once per budget, subject and
+/// threshold in a period. <paramref name="Subject"/> is the person for a per-person budget.
+/// </summary>
+public sealed record AiBudgetThresholdReached(Guid BudgetId, string Scope, Guid? ScopeId, Guid? Subject, int Threshold, string Action, DateTimeOffset PeriodStart) : IIntegrationEvent;
+
 public sealed record AiModelRouteChangeProposed(Guid RouteChangeId, IReadOnlyList<string> UseCases, IReadOnlyDictionary<string, IReadOnlyList<string>> Before,
     IReadOnlyDictionary<string, IReadOnlyList<string>> After, Guid? ProposedBy = null) : IIntegrationEvent;

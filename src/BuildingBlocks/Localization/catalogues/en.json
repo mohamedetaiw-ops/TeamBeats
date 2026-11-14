@@ -2481,5 +2481,20 @@
   "validation.documents.connected_folder": "Choose a folder in that document library.",
   "validation.documents.connected_library": "This setting is not available for a connected library.",
   "notifications.template.documents.connected_degraded.title": "SharePoint library unavailable",
-  "notifications.template.documents.connected_degraded.body": "A connected SharePoint library cannot be read right now. People see the last synced copy. Check the Microsoft 365 connection on the Connections page."
+  "notifications.template.documents.connected_degraded.body": "A connected SharePoint library cannot be read right now. People see the last synced copy. Check the Microsoft 365 connection on the Connections page.",
+  "validation.ai.budget_scope": "Choose who the budget is for: the whole organization, a unit, an agent, one person or each person.",
+  "validation.ai.budget_scope_id": "Choose the unit, agent or person the budget is for.",
+  "validation.ai.budget_period": "Choose a monthly or a daily budget.",
+  "validation.ai.budget_limit": "Set either an amount in USD or a number of requests, greater than zero.",
+  "validation.ai.budget_action": "Choose what happens when the budget is used up: block, switch to a cheaper model, or alert only.",
+  "validation.ai.budget_downgrade": "Choose a cheaper model that the model policy allows. Only the switch action takes a model.",
+  "conflict.ai.budget_limit": "This organization has the most budgets allowed. Remove one before adding another.",
+  "conflict.ai.budget_exists": "A budget of this kind already exists for the same scope and period. Change that one instead.",
+  "conflict.ai.budget_changed": "Someone else changed this budget. Reload it and try again.",
+  "notifications.template.ai.budget_reached_80.title": "An AI budget is 80% used",
+  "notifications.template.ai.budget_reached_80.body": "An AI budget has used 80% of its limit for this period. Open Budgets to see it.",
+  "notifications.template.ai.budget_reached_100.title": "An AI budget is used up",
+  "notifications.template.ai.budget_reached_100.body": "An AI budget has reached its limit for this period, and its action now applies. Open Budgets to see it.",
+  "validation.ai.org_policy_loosens": "A unit policy can only narrow the policy above it. This setting allows more than the rule it inherits.",
+  "conflict.ai.org_policy_changed": "Someone else changed this unit's policy. Reload it and try again."
 }

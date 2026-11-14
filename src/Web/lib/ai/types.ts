@@ -106,3 +106,64 @@ export const DENIALS = [
 export function known<T extends string>(list: readonly T[], value: string): T | null {
   return (list as readonly string[]).includes(value) ? (value as T) : null;
 }
+
+/** Spec 013 US5: an AI budget and what was used in the current period (null for a per person budget). */
+export const BUDGET_SCOPES = ["tenant", "org_unit", "agent", "user", "each_user"] as const;
+export const BUDGET_ACTIONS = ["block", "downgrade", "alert"] as const;
+
+export type Budget = {
+  id: string;
+  scope: (typeof BUDGET_SCOPES)[number];
+  scopeId: string | null;
+  period: "month" | "day";
+  amount: number | null;
+  requests: number | null;
+  action: (typeof BUDGET_ACTIONS)[number];
+  downgradeModel: string | null;
+  ownerId: string | null;
+  version: number;
+  used: number | null;
+  periodStart: string;
+  resetsAt: string;
+  updatedAt: string;
+};
+
+export type BudgetsView = {
+  editable: boolean;
+  scopedAllowed: boolean;
+  readOnlyReason: string | null;
+  budgets: Budget[];
+  labels: Record<string, Record<string, string>>;
+};
+
+/** Spec 013 US7: what an org unit narrows, and what it inherits from the tenant policy and the units above it. */
+export const CLASSIFICATIONS = ["public", "internal", "confidential", "restricted"] as const;
+
+export type OrgPolicyDocument = {
+  allowlist: string[] | null;
+  confidential: string[] | null;
+  maxClassification: string | null;
+  maxOutputTokens: number | null;
+  minTemperature: number | null;
+  maxTemperature: number | null;
+};
+
+export type UnitLimits = {
+  allowlist: string[];
+  confidential: string[];
+  maxClassification: string;
+  maxOutputTokens: number | null;
+  minTemperature: number | null;
+  maxTemperature: number | null;
+};
+
+export type OrgPolicyView = {
+  unitId: string;
+  version: number;
+  policy: OrgPolicyDocument | null;
+  parent: UnitLimits;
+  source: Record<string, string>;
+  editable: boolean;
+};
+
+export type OrgPolicySummary = { unitId: string; version: number; policy: OrgPolicyDocument; updatedAt: string };

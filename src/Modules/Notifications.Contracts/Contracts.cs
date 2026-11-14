@@ -96,6 +96,9 @@ public static class NotificationCategories
     /// <summary>Spec 012: new items that match a search the person saved with alerts on.</summary>
     public const string SearchAlerts = "search_alerts";
 
+    /// <summary>Spec 013: an AI budget reached 80% or 100% of its limit, for the AI Policy Administrators and the budget owner.</summary>
+    public const string AiBudgets = "ai_budgets";
+
     public static readonly IReadOnlyList<NotificationCategory> All =
     [
         new(SecurityNotice, Mandatory: true, EmailByDefault: true),
@@ -115,6 +118,7 @@ public static class NotificationCategories
         new(SpaceActivity, Mandatory: false, EmailByDefault: true),
         new(Bookings, Mandatory: false, EmailByDefault: true),
         new(SearchAlerts, Mandatory: false, EmailByDefault: false),
+        new(AiBudgets, Mandatory: false, EmailByDefault: true),
     ];
 
     public static NotificationCategory? Find(string key) => All.FirstOrDefault(c => c.Key == key);
