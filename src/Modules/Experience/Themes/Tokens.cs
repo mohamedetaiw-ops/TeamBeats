@@ -148,7 +148,7 @@ public static partial class TokenSchema
         new("font.family.heading_arabic", TokenTypes.FontFamily, "Alexandria", Script: "arabic"),
         new("font.family.urdu", TokenTypes.FontFamily, "Noto Nastaliq Urdu", Script: "urdu"),
         new("font.family.devanagari", TokenTypes.FontFamily, "Noto Sans Devanagari", Script: "devanagari"),
-        D("font.size.xs", "12px", "11px"),
+        D("font.size.xs", "12px", "12px"),
         D("font.size.sm", "14px", "13px"),
         D("font.size.md", "16px", "14px"),
         D("font.size.lg", "18px", "16px"),
