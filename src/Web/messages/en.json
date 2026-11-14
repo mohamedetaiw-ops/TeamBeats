@@ -8285,6 +8285,24 @@
       "requestsShort": "Requests",
       "pipelineSummary": "Of 245 requests, 120 are done and 65 in progress."
     },
+    "chartRules": {
+      "title": "Chart rules",
+      "intro": "A chart helps a decision or it is left out. Counts use whole number ticks, and one data point is shown as a number.",
+      "teamIt": "IT",
+      "teamPeople": "People",
+      "teamFinance": "Finance",
+      "team": "Team",
+      "waiting": "Requests waiting",
+      "active": "Active people",
+      "countsTitle": "Requests waiting by team",
+      "countsHint": "4 waiting in total, 1 more than last week",
+      "countsSummary": "Requests waiting by team: IT 1, People 2, Finance 1.",
+      "singleTitle": "Weekly active people",
+      "singleHint": "The first week of data, so there is no trend to draw yet",
+      "singleSummary": "Weekly active people in the first week: 128.",
+      "week": "Week",
+      "weekOne": "Week of 9 November"
+    },
     "calendar": {
       "title": "Calendar",
       "intro": "Calendar parts of DLS-069 to DLS-074: header, layers, week strip, agenda rows, month with ranges and team availability.",

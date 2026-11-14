@@ -85,6 +85,31 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* One data point: the number with its series and category, no axes (DLS-111). */
+.ui-chart-single {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-lg);
+  margin: 0;
+}
+
+.ui-chart-single dt {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs);
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.ui-chart-single-category::before {
+  content: "·";
+  margin-inline-end: var(--tb-space-xs);
+}
+
+.ui-chart-single dd {
+  margin: 0;
+}
+
 .ui-chart {
   min-inline-size: 0;
   overflow: hidden;
