@@ -2962,7 +2962,8 @@
       "myTasksTab": "My tasks",
       "myTasksFailed": "Your tasks could not be loaded.",
       "bookingRequest": "Booking request",
-      "aiAction": "AI app action"
+      "aiAction": "AI app action",
+      "assetAccess": "Brand asset access"
     },
     "delegation": {
       "title": "While you are away",
@@ -4038,7 +4039,8 @@
         "site": "Site",
         "space": "Project space"
       },
-      "recordsLink": "Records management"
+      "recordsLink": "Records management",
+      "assetsLink": "Brand assets"
     },
     "browser": {
       "filters": "Find documents",
@@ -4161,7 +4163,8 @@
       },
       "downloadVersion": "Download {version}",
       "restored": "The version was restored as a new version.",
-      "restore": "Restore {version}"
+      "restore": "Restore {version}",
+      "viewOnlyNotice": "This library is view only. You can preview this file, and the preview carries your name and the time, but it cannot be downloaded."
     },
     "kb": {
       "title": "Knowledge",
@@ -4237,6 +4240,33 @@
       "titleIn": "Title in {language}",
       "busy": "Creating",
       "create": "Create the draft"
+    },
+    "sharing": {
+      "title": "Downloads and guest sharing",
+      "viewOnly": "View only",
+      "viewOnlyHint": "Readers preview files with a watermark of their name, email and the time, and cannot download, print or copy them. Contributors still download.",
+      "guestSharing": "Allow sharing with guest spaces",
+      "guestSharingHint": "Managers can share folders read-only with a space they own, for a set number of days. Turning this off ends every share at once.",
+      "settingsSaved": "Library settings saved.",
+      "shareTitle": "Share a folder with a guest space",
+      "folder": "Folder",
+      "space": "Space",
+      "spaceHint": "Its guests can read the folder until the share ends.",
+      "days": "Days",
+      "share": "Share folder",
+      "shared": "Folder shared.",
+      "noFolders": "Create a folder first. Only folders can be shared.",
+      "noSpaces": "You are not in any active space to share with.",
+      "until": "Shared until {date}",
+      "revokedOn": "Ended on {date}",
+      "expiredOn": "Expired on {date}",
+      "revoke": "End share",
+      "revokeNamed": "End sharing {folder} with {space}",
+      "revoked": "Share ended.",
+      "revokedBadge": "Ended",
+      "expiredBadge": "Expired",
+      "busy": "Saving",
+      "failed": "That did not work. Try again."
     }
   },
   "policies": {
@@ -10849,7 +10879,9 @@
       "none": "You have no spaces right now. Your access may have ended; ask the person who invited you.",
       "failedTitle": "Your spaces could not be loaded",
       "failed": "Try again in a moment."
-    }
+    },
+    "sharedFolders": "Folders shared with this space",
+    "sharedUntil": "Shared until {date}"
   },
   "booking": {
     "pageTitle": "Book a space",
@@ -12358,5 +12390,77 @@
       "saving": "Saving",
       "create": "Place hold"
     }
+  },
+  "assets": {
+    "title": "Brand assets",
+    "intro": "Approved logos, templates and images in the formats you need, with how they may be used.",
+    "unavailable": "The brand asset portal is not part of your organization's plan.",
+    "collections": "Collections",
+    "noCollections": "There are no collections yet.",
+    "restricted": "Restricted",
+    "retired": "Retired",
+    "expired": "Usage rights ended",
+    "requestTitle": "Ask for access",
+    "requestIntro": "This collection is restricted. Say why you need it and a brand manager will decide.",
+    "reason": "Why you need access",
+    "requestAccess": "Send request",
+    "requestPending": "You asked for access. A brand manager will decide.",
+    "noAssets": "This collection has no assets yet.",
+    "rightsUntil": "May be used until {date}",
+    "rightsOpen": "No end date for usage rights",
+    "downloadsFor": "Downloads of {name}",
+    "rendition": {
+      "original": "Original file",
+      "png_256": "PNG, 256 px",
+      "png_512": "PNG, 512 px",
+      "png_1024": "PNG, 1024 px",
+      "svg": "SVG",
+      "pdf": "PDF"
+    },
+    "renderAgain": "Make renditions again",
+    "retire": "Retire",
+    "restore": "Make active",
+    "retireNamed": "Retire {name}",
+    "restoreNamed": "Make {name} active",
+    "newCollection": "New collection",
+    "collectionName": "Name",
+    "description": "Description",
+    "audience": "Who can see it",
+    "everyone": "Everyone in the organization",
+    "onlyUnit": "Only {unit}",
+    "createCollection": "Create collection",
+    "upload": "Add an asset",
+    "file": "File",
+    "fileHint": "An image (PNG, JPEG, GIF, WebP or SVG) or a PDF, Word, PowerPoint or Excel file, up to 50 MB. Images get PNG, SVG and PDF renditions.",
+    "assetTitle": "Title",
+    "usageNotes": "Usage notes",
+    "rightsExpire": "Usage rights end on",
+    "rightsExpireHint": "Leave empty when the rights do not end.",
+    "uploadButton": "Add asset",
+    "requestsLink": "Access requests and downloads",
+    "requestsTitle": "Access requests and downloads",
+    "requestsIntro": "Decide who may see restricted collections, and see which assets are downloaded.",
+    "denied": "Only brand managers can see this page.",
+    "requests": "Access requests",
+    "noRequests": "There are no access requests.",
+    "asksFor": "asks for {collection}",
+    "approve": "Approve",
+    "decline": "Decline",
+    "approveNamed": "Approve the request from {name}",
+    "declineNamed": "Decline the request from {name}",
+    "status": {
+      "pending": "Waiting",
+      "approved": "Approved",
+      "declined": "Declined"
+    },
+    "downloads": "Downloads in the last 90 days",
+    "noDownloads": "Nothing was downloaded in the last 90 days.",
+    "downloadsCaption": "Downloads by asset and rendition",
+    "asset": "Asset",
+    "renditionLabel": "Format",
+    "downloadCount": "Downloads",
+    "people": "People",
+    "busy": "Saving",
+    "failed": "That did not work. Try again."
   }
 }

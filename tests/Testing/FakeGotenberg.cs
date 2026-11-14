@@ -19,6 +19,11 @@ public sealed class FakeGotenberg : HttpMessageHandler
 
     public int Stamps => _stamps;
 
+    private int _screenshots;
+
+    /// <summary>PNG renditions made through the Chromium screenshot route.</summary>
+    public int Screenshots => _screenshots;
+
     /// <summary>Makes the Chromium route fail, as when the conversion service is down.</summary>
     public bool HtmlDown { get; set; }
 
@@ -46,6 +51,18 @@ public sealed class FakeGotenberg : HttpMessageHandler
                 return HtmlDown || name != "index.html" ? new HttpResponseMessage(HttpStatusCode.ServiceUnavailable) : Pdf($"%PDF-1.7 html\n{body}");
             case "/forms/libreoffice/convert":
                 return Pdf($"%PDF-1.7 converted {name}");
+            case "/forms/chromium/screenshot/html":
+                {
+                    // A PNG signature and the size asked for, so tests can see which rendition was made.
+                    string Size(string field) => form.Single(p => p.Headers.ContentDisposition?.Name?.Trim('"') == field).ReadAsStringAsync(cancellationToken).Result;
+                    if (HtmlDown || name != "index.html")
+                    {
+                        return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+                    }
+                    Interlocked.Increment(ref _screenshots);
+                    var bytes = new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }.Concat(Encoding.ASCII.GetBytes($" fake {Size("width")}x{Size("height")}")).ToArray();
+                    return new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(bytes) { Headers = { ContentType = new("image/png") } } };
+                }
             case "/forms/pdfengines/stamp":
                 string Field(string field) => form.Single(p => p.Headers.ContentDisposition?.Name?.Trim('"') == field).ReadAsStringAsync(cancellationToken).Result;
                 if (Field("stampSource") != "text")

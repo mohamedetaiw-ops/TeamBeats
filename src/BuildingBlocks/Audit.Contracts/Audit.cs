@@ -405,6 +405,16 @@ public static class AuditActions
     public const string RecordsHoldApplied = "records.hold_applied";
     public const string RecordsHoldReleased = "records.hold_released";
     public const string RecordsDeletionBlocked = "records.deletion_blocked";
+    public const string DocSharedWithGuest = "doc.shared_with_guest";
+    public const string DocGuestShareRevoked = "doc.guest_share_revoked";
+    public const string DocGuestViewed = "doc.guest_viewed";
+    public const string AssetCollectionCreated = "assets.collection_created";
+    public const string AssetCollectionChanged = "assets.collection_changed";
+    public const string AssetUploaded = "assets.uploaded";
+    public const string AssetChanged = "assets.changed";
+    public const string AssetExpired = "assets.expired";
+    public const string AssetAccessRequested = "assets.access_requested";
+    public const string AssetAccessDecided = "assets.access_decided";
     public const string PolicyCreated = "policy.created";
     public const string PolicyChanged = "policy.changed";
     public const string PolicyDraftSaved = "policy.draft_saved";
@@ -585,7 +595,8 @@ public static class AuditActions
         DocRestoredFromBin, DocPurged, DocReleaseSubmitted, DocReleaseWithdrawn, DocReleaseApproved, DocReleaseReturned, DocVersionEffective, DocReviewed,
         DocReadConfirmed,
         RecordsLabelCreated, RecordsLabelChanged, RecordsLabelApplied, RecordsDispositionApproved, RecordsDispositionKept, RecordsArchived,
-        RecordsHoldApplied, RecordsHoldReleased, RecordsDeletionBlocked,
+        RecordsHoldApplied, RecordsHoldReleased, RecordsDeletionBlocked, DocSharedWithGuest, DocGuestShareRevoked, DocGuestViewed,
+        AssetCollectionCreated, AssetCollectionChanged, AssetUploaded, AssetChanged, AssetExpired, AssetAccessRequested, AssetAccessDecided,
         PolicyCreated, PolicyChanged, PolicyDraftSaved, PolicySubmitted, PolicyWithdrawn, PolicyApproved, PolicyReturned, PolicyPublished, PolicySuperseded,
         PolicyRetired, PolicyCampaignLaunched, PolicyCampaignReminded, PolicyCampaignClosed, PolicyAttested, PolicyTrainingLinked,
         AiPolicyChanged, AiRouteChangeProposed, AiRouteChangeOverridden, AiRouteChangeApplied, AiRouteChangeRejected, AiCatalogueChanged, AiLoggingWindowOpened, AiLoggingWindowClosed,

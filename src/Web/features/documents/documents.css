@@ -300,6 +300,29 @@
   margin: 0;
 }
 
+.documents-preview-frame {
+  position: relative;
+}
+
+/* Spec 011 FR-016: a reader of a view-only library sees their name, email and the time across the preview. */
+.documents-watermarked {
+  user-select: none;
+}
+
+.documents-watermark {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-lg);
+  text-align: center;
+  opacity: 0.35;
+  transform: rotate(-24deg);
+  pointer-events: none;
+}
+
 .documents-preview iframe,
 .documents-preview video,
 .documents-preview img {
@@ -555,4 +578,30 @@
   .kb-article {
     padding: var(--tb-space-lg);
   }
+}
+
+.documents-sharing {
+  display: grid;
+  gap: var(--tb-space-md);
+}
+
+.documents-sharing-form {
+  display: grid;
+  gap: var(--tb-space-md);
+  max-inline-size: 36rem;
+}
+
+.documents-sharing-list {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.documents-sharing-list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm) var(--tb-space-md);
+  align-items: center;
 }

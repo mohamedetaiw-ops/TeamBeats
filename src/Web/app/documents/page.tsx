@@ -12,6 +12,7 @@ import { StateView } from "@/components/ui/StateView";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { TileCard, type TileTone } from "@/components/ui/TileCard";
 import { recordsHref } from "@/lib/records/types";
+import { assetsHref } from "@/lib/assets/types";
 
 const tones: readonly TileTone[] = ["accent", "highlight", "success", "info"];
 
@@ -21,10 +22,12 @@ export default async function LibrariesPage() {
   if (!me.ok) {
     redirect("/signin");
   }
-  const [libraries, records] = await Promise.all([
+  const [libraries, records, assets] = await Promise.all([
     apiGet<LibrarySummary[]>("/api/v1/documents/libraries"),
     // Records managers get a way in; the API decides who that is.
     apiGet<unknown[]>("/api/v1/records/disposition"),
+    // The brand asset portal, where the plan has it (spec 011 US5).
+    apiGet<unknown[]>("/api/v1/assets/collections"),
   ]);
   if (!libraries.ok) {
     notFound();
@@ -39,6 +42,11 @@ export default async function LibrariesPage() {
       />
       <main id="main" className="page">
         <PageHeader title={t("title")} description={t("intro")} icon="files" />
+        {assets.ok ? (
+          <p>
+            <Link href={assetsHref}>{t("assetsLink")}</Link>
+          </p>
+        ) : null}
         {records.ok ? (
           <p>
             <Link href={recordsHref}>{t("recordsLink")}</Link>

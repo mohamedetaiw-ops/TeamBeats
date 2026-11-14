@@ -28,6 +28,10 @@ public static class DocumentsModule
         services.AddScoped<DocumentAccess>();
         services.AddScoped<DocumentVersions>();
         services.AddScoped<Records>();
+        services.AddScoped<GuestShares>();
+        services.AddScoped<Assets>();
+        services.AddScoped<Workflow.Contracts.IPersonalTaskSource, AssetAccessTasks>();
+        services.AddScoped<IResourceDescriptorProvider, AssetCollectionDescriptorProvider>();
         services.AddScoped<DocumentPreviews>();
         services.AddScoped<DocumentReleases>();
         services.AddScoped<DocumentTaskSource>();
@@ -154,7 +158,13 @@ public static class DocumentsModule
             return Results.Ok(view);
         });
 
-        root.MapGet("/{id:guid}", async (Guid id, DocumentFiles files, CancellationToken ct) => Results.Ok(await files.GetAsync(id, ct)));
+        root.MapGet("/{id:guid}", async (Guid id, DocumentFiles files, IDbSession session, CancellationToken ct) =>
+        {
+            // A guest's view is audited (spec 011 US8), so the read commits.
+            var view = await files.GetAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
 
         root.MapPut("/{id:guid}/metadata", async (Guid id, MetadataRequest request, DocumentFiles files, IDbSession session, CancellationToken ct) =>
         {
@@ -335,6 +345,116 @@ public static class DocumentsModule
             response.Headers.CacheControl = "private, no-store";
             return Results.File(content, type, fileName);
         });
+
+        // Folders shared read-only with guest spaces (spec 011 US8, FR-017).
+        libraries.MapGet("/{id:guid}/guest-shares", async (Guid id, GuestShares shares, CancellationToken ct) => Results.Ok(await shares.ListAsync(id, ct)));
+
+        libraries.MapPost("/{id:guid}/guest-shares", async (Guid id, GuestShareRequest request, GuestShares shares, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await shares.CreateAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/documents/guest-shares/{view.Id}", view);
+        });
+
+        root.MapPost("/guest-shares/{id:guid}/revoke", async (Guid id, GuestShares shares, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await shares.RevokeAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapGet("/shared-with-space/{spaceId:guid}", async (Guid spaceId, GuestShares shares, CancellationToken ct) =>
+            Results.Ok(await shares.ForSpaceAsync(spaceId, ct)));
+
+        // The brand asset portal (spec 011 US5, FR-012).
+        var assets = app.MapGroup("/api/v1/assets").RequireTenantUser().WithTags("Assets");
+
+        assets.MapGet("/portal", async (Assets service, CancellationToken ct) => Results.Ok(await service.PortalAsync(ct)));
+        assets.MapGet("/collections", async (Assets service, CancellationToken ct) => Results.Ok(await service.CollectionsAsync(ct)));
+
+        assets.MapPost("/collections", async (AssetCollectionRequest request, Assets service, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await service.CreateCollectionAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/assets/collections/{view.Id}", view);
+        });
+
+        assets.MapPut("/collections/{id:guid}", async (Guid id, AssetCollectionRequest request, Assets service, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await service.UpdateCollectionAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        assets.MapGet("/collections/{id:guid}/assets", async (Guid id, Assets service, CancellationToken ct) => Results.Ok(await service.AssetsAsync(id, ct)));
+
+        assets.MapPost("/collections/{id:guid}/assets", async (Guid id, HttpRequest http, string? name, string? title, string? notes, DateTimeOffset? rightsExpireAt,
+            Assets service, IDbSession session, CancellationToken ct) =>
+        {
+            // The file is the body; its name, title and usage notes (in the caller's language) come in the query.
+            var language = http.Headers.AcceptLanguage.ToString().StartsWith("ar", StringComparison.OrdinalIgnoreCase) ? "ar" : "en";
+            var request = new AssetRequest(string.IsNullOrWhiteSpace(title) ? null : new Dictionary<string, string> { [language] = title },
+                string.IsNullOrWhiteSpace(notes) ? null : new Dictionary<string, string> { [language] = notes }, rightsExpireAt);
+            var view = await service.UploadAsync(id, name, request, http.Body, http.ContentLength, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/assets/{view.Id}", view);
+        });
+
+        assets.MapGet("/{id:guid}", async (Guid id, Assets service, CancellationToken ct) => Results.Ok(await service.GetAsync(id, ct)));
+
+        assets.MapPut("/{id:guid}", async (Guid id, AssetRequest request, Assets service, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await service.UpdateAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        assets.MapPost("/{id:guid}/renditions", async (Guid id, Assets service, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await service.RenderAgainAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        assets.MapGet("/{id:guid}/thumbnail", async (Guid id, Assets service, HttpResponse response, CancellationToken ct) =>
+        {
+            var (content, type) = await service.ThumbnailAsync(id, ct);
+            response.Headers["X-Content-Type-Options"] = "nosniff";
+            response.Headers.ContentSecurityPolicy = "default-src 'none'; sandbox";
+            response.Headers.CacheControl = "private, max-age=300";
+            return Results.File(content, type);
+        });
+
+        assets.MapGet("/{id:guid}/renditions/{key}", async (string key, Guid id, Assets service, IDbSession session, HttpResponse response, CancellationToken ct) =>
+        {
+            var (content, type, fileName) = await service.DownloadAsync(id, key, ct);
+            await session.CommitAsync(ct);
+            response.Headers["X-Content-Type-Options"] = "nosniff";
+            response.Headers.ContentSecurityPolicy = "default-src 'none'; sandbox";
+            response.Headers.CacheControl = "private, no-store";
+            return Results.File(content, type, fileName);
+        });
+
+        assets.MapGet("/picker", async (string? q, Assets service, CancellationToken ct) => Results.Ok(await service.PickerAsync(q, ct)));
+
+        assets.MapPost("/collections/{id:guid}/access-requests", async (Guid id, AccessRequestBody body, Assets service, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await service.RequestAccessAsync(id, body, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        assets.MapGet("/access-requests", async (Assets service, CancellationToken ct) => Results.Ok(await service.RequestsAsync(ct)));
+
+        assets.MapPost("/access-requests/{id:guid}", async (Guid id, AccessDecision decision, Assets service, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await service.DecideAsync(id, decision, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        assets.MapGet("/downloads", async (DateTimeOffset? from, DateTimeOffset? to, Assets service, CancellationToken ct) =>
+            Results.Ok(await service.DownloadsAsync(from, to, ct)));
 
         var kb = app.MapGroup("/api/v1/kb").RequireTenantUser().WithTags("Knowledge base");
 

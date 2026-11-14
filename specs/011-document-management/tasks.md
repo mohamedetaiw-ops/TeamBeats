@@ -39,11 +39,11 @@ Depends on 004 (resource grants), 005, 006, 007, 009 (acknowledgement, body docu
 - [x] T018 Records page (labels, where labels apply, disposition, holds) in English and Arabic, RTL; integration tests for each deletion path and cross-tenant targets; e2e with axe
 
 ## R2 Phase 9: User Story 8, view-only and guest sharing (P2)
-- [ ] T019 View-only libraries with a dynamic watermark and no download, enforced in the API
-- [ ] T020 Sharing folders with guest spaces with expiry, read-only, never for Restricted; every guest view audited
+- [x] T019 View-only libraries with a dynamic watermark and no download, enforced in the API
+- [x] T020 Sharing folders with guest spaces with expiry, read-only, never for Restricted; every guest view audited
 
 ## R2 Phase 10: User Story 5, brand asset portal (P2)
-- [ ] T021 Collections, usage rights with expiry, renditions, access requests to the brand manager's inbox, download tracking
+- [x] T021 Collections, usage rights with expiry, renditions, access requests to the brand manager's inbox, download tracking
 
 ## R2 Phase 11: bulk import, OCR and Office editing
 - [ ] T022 Bulk import with a metadata manifest, original dates and authors, per-row report (FR-022)

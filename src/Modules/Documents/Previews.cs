@@ -10,7 +10,11 @@ using TeamBeats.TenantContext;
 namespace TeamBeats.Modules.Documents;
 
 /// <summary>How a version shows in the browser: <c>pdf</c>, <c>image</c>, <c>video</c>, <c>text</c> or <c>unavailable</c>.</summary>
-public sealed record PreviewView(string Kind, string? Url, string? ContentType, DateTimeOffset? ExpiresAt, string? Reason);
+/// <remarks>
+/// <c>Watermark</c> is set for a reader of a view-only library (spec 011 FR-016): the page lays it over the preview and
+/// offers no download, print or copy; a PDF preview also carries it on every page.
+/// </remarks>
+public sealed record PreviewView(string Kind, string? Url, string? ContentType, DateTimeOffset? ExpiresAt, string? Reason, string? Watermark = null);
 
 public static class PreviewKinds
 {
@@ -77,7 +81,7 @@ public sealed class DocumentPreviews(
 
     public async Task<PreviewView> PreviewAsync(Guid documentId, Guid? versionId, CancellationToken ct)
     {
-        var target = await files.OpenableAsync(documentId, versionId, ct);
+        var (target, watermark) = await files.PreviewableAsync(documentId, versionId, ct);
         var row = await RowAsync(target, forUpdate: false, ct);
         var (kind, convert) = PreviewKinds.Of(row.ContentType, row.FileName);
         if (kind == PreviewKinds.Unavailable)
@@ -101,8 +105,12 @@ public sealed class DocumentPreviews(
         }
         var classification = await session.ScalarAsync<string>("select classification from documents.document where id = @documentId", new { documentId }, ct);
         await files.NoteGuestOpenAsync(documentId, row.Library, classification ?? "", ct);
-        var (token, expires) = await files.IssueTokenAsync(documentId, target, TokenPurposes.Preview, ct);
-        return new PreviewView(kind, $"/api/v1/documents/previews/{token}", convert ? "application/pdf" : row.ContentType, expires, null);
+        if (await libraries.Access.LibraryAsync(row.Library, ct) is { } library)
+        {
+            await files.NoteGuestViewAsync(library, documentId, ct);
+        }
+        var (token, expires) = await files.IssueTokenAsync(documentId, target, TokenPurposes.Preview, ct, watermark);
+        return new PreviewView(kind, $"/api/v1/documents/previews/{token}", convert ? "application/pdf" : row.ContentType, expires, null, watermark);
     }
 
     private async Task<Row> RowAsync(Guid versionId, bool forUpdate, CancellationToken ct) =>
@@ -146,13 +154,14 @@ public sealed class DocumentPreviews(
         }
         var row = await session.QuerySingleOrDefaultAsync(
             """
-            select v.object_key, v.content_type, v.file_name, v.scan_state, v.preview_state, v.preview_key
+            select v.object_key, v.content_type, v.file_name, v.scan_state, v.preview_state, v.preview_key, t.watermark, v.size_bytes
             from documents.download_token t
             join documents.document_version v on v.id = t.version_id
             join documents.document d on d.id = t.document_id
             where t.token_hash = @hash and t.user_id = @user and t.expires_at > @now and t.purpose = 'preview' and d.deleted_at is null
             """, new { hash = DocumentFiles.TokenHash(token), user, now = clock.UtcNow },
-            r => (Key: r.GetString(0), Type: r.GetString(1), Name: r.GetString(2), Scan: r.GetString(3), State: r.GetString(4), Preview: r.Get<string>("preview_key")), ct);
+            r => (Key: r.GetString(0), Type: r.GetString(1), Name: r.GetString(2), Scan: r.GetString(3), State: r.GetString(4), Preview: r.Get<string>("preview_key"),
+                Watermark: r.Get<string>("watermark"), Size: r.GetInt64(7)), ct);
         if (row.Key is null || row.Scan != ScanStates.Clean)
         {
             throw AppException.NotFound();
@@ -163,7 +172,13 @@ public sealed class DocumentPreviews(
         {
             throw AppException.NotFound();
         }
-        return (await storage.OpenReadAsync(key, ct) ?? throw AppException.NotFound(), type);
+        var content = await storage.OpenReadAsync(key, ct) ?? throw AppException.NotFound();
+        if (row.Watermark is { } text && type == "application/pdf")
+        {
+            // A view-only preview carries the viewer's watermark on every page (spec 011 FR-016).
+            content = await files.StampTextAsync(content, convert ? (content.CanSeek ? content.Length : 0) : row.Size, text, ct);
+        }
+        return (content, type);
     }
 
     // ---- Controlled copy (US3 scenario 6) ----
@@ -174,7 +189,7 @@ public sealed class DocumentPreviews(
     /// </summary>
     public async Task<DownloadTokenView> ControlledCopyAsync(Guid documentId, Guid? versionId, CancellationToken ct)
     {
-        var target = await files.OpenableAsync(documentId, versionId, ct);
+        var target = await files.DownloadableAsync(documentId, versionId, ct);
         var doc = (await files.RowAsync(documentId, false, ct))!;
         if (doc.Number is not { } number || await libraries.ControlledOfAsync(doc.TypeId, ct) is null)
         {

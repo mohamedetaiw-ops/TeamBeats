@@ -1,0 +1,123 @@
+/* Brand asset portal (spec 011 R2 US5). */
+.assets-layout {
+  display: grid;
+  gap: var(--tb-space-lg);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (width >= 64rem) {
+  .assets-layout {
+    grid-template-columns: 16rem minmax(0, 1fr);
+  }
+}
+
+.assets-main {
+  display: grid;
+  gap: var(--tb-space-lg);
+  align-content: start;
+}
+
+.assets-collections ul {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.assets-collections li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs);
+  align-items: center;
+}
+
+.assets-collections a[aria-current="page"] {
+  font-weight: var(--tb-font-weight-semibold);
+}
+
+.assets-card {
+  display: grid;
+  gap: var(--tb-space-sm);
+  align-content: start;
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-base);
+}
+
+.assets-card h2,
+.assets-card h3 {
+  margin: 0;
+}
+
+.assets-grid {
+  display: grid;
+  gap: var(--tb-space-md);
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.assets-thumb {
+  inline-size: 100%;
+  block-size: 9rem;
+  object-fit: contain;
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-surface-raised);
+}
+
+.assets-meta {
+  margin: 0;
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.assets-notes {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.assets-renditions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs) var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.assets-requests {
+  display: grid;
+  gap: var(--tb-space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.assets-requests p {
+  margin: 0;
+}
+
+.assets-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+}
+
+.assets-table {
+  overflow-x: auto;
+}
+
+.assets-table table {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+
+.assets-table th,
+.assets-table td {
+  padding: var(--tb-space-xs) var(--tb-space-sm);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  text-align: start;
+}

@@ -22,6 +22,12 @@ public interface IDocumentConverter
     /// The page must load nothing from outside: the converter is given the HTML alone.
     /// </summary>
     Task<Stream?> HtmlToPdfAsync(string html, CancellationToken ct = default);
+
+    /// <summary>
+    /// A PNG of a self-contained HTML page at the given size, with a transparent background (spec 011 FR-012 asset
+    /// renditions), or null when it could not be made. The page must load nothing from outside.
+    /// </summary>
+    Task<Stream?> HtmlToPngAsync(string html, int width, int height, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -82,6 +88,21 @@ public sealed class GotenbergConverter(IHttpClientFactory clients, Uri baseUrl) 
         return PostAsync("forms/chromium/convert/html", form, ct);
     }
 
+    /// <summary>Gotenberg 8's Chromium screenshot route with one index.html: a PNG of exactly the given size.</summary>
+    public Task<Stream?> HtmlToPngAsync(string html, int width, int height, CancellationToken ct = default)
+    {
+        var form = new MultipartFormDataContent();
+        var file = new StringContent(html, System.Text.Encoding.UTF8);
+        file.Headers.ContentType = new MediaTypeHeaderValue("text/html") { CharSet = "utf-8" };
+        form.Add(file, "files", "index.html");
+        form.Add(new StringContent(width.ToString(System.Globalization.CultureInfo.InvariantCulture)), "width");
+        form.Add(new StringContent(height.ToString(System.Globalization.CultureInfo.InvariantCulture)), "height");
+        form.Add(new StringContent("true"), "clip");
+        form.Add(new StringContent("png"), "format");
+        form.Add(new StringContent("true"), "omitBackground");
+        return PostAsync("forms/chromium/screenshot/html", form, ct);
+    }
+
     private async Task<Stream?> PostAsync(string route, MultipartFormDataContent form, CancellationToken ct)
     {
         try
@@ -116,4 +137,6 @@ public sealed class UnavailableConverter : IDocumentConverter
     public Task<Stream?> StampFooterAsync(Stream pdf, string text, CancellationToken ct = default) => Task.FromResult<Stream?>(null);
 
     public Task<Stream?> HtmlToPdfAsync(string html, CancellationToken ct = default) => Task.FromResult<Stream?>(null);
+
+    public Task<Stream?> HtmlToPngAsync(string html, int width, int height, CancellationToken ct = default) => Task.FromResult<Stream?>(null);
 }

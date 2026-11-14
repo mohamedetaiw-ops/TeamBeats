@@ -115,6 +115,14 @@ public static class Permissions
     /// </summary>
     public const string RecordsManage = "records.manage";
 
+    /// <summary>
+    /// Spec 011 R2 US5: brand managers curate the asset portal (collections, assets, usage rights, access requests, the
+    /// download report). <c>assets.view</c> reads a collection: every member reads open collections; a restricted
+    /// collection is read through its ACL (the unit it is restricted to, people whose access request was approved).
+    /// </summary>
+    public const string AssetsManage = "assets.manage";
+    public const string AssetsView = "assets.view";
+
     // Spec 025 (R1): policy owners draft and revise their policies; compliance officers manage the register, campaigns
     // and the compliance view at tenant or org scope.
     public const string PolicyAuthor = "policy.author";
@@ -235,7 +243,7 @@ public static class Permissions
         ComplianceManage, ComplianceView,
         ServiceManage, ServiceRequestOnBehalf, ServiceRequestRead,
         ContentAuthor, ContentPublishCritical, ContentAdmin,
-        DocView, DocContribute, DocManage, KbEdit, RecordsManage,
+        DocView, DocContribute, DocManage, KbEdit, RecordsManage, AssetsManage, AssetsView,
         PolicyAuthor, PolicyManage,
         SearchManage,
         AgentDesign, AgentPublish, AgentView, AgentSecurityView, AgentSuspend,

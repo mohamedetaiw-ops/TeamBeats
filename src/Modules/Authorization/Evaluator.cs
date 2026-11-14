@@ -13,6 +13,9 @@ public static class Evaluator
 {
     public static bool IsViewPermission(string permission) => permission.EndsWith(".view", StringComparison.Ordinal);
 
+    private static bool IsGuest(EffectiveGrants g) =>
+        g.UserAttributes.TryGetValue(ConditionAttributes.MembershipType, out var type) && type == TeamBeats.Modules.Tenancy.Contracts.MembershipTypes.Guest;
+
     public static Decision Evaluate(EffectiveGrants g, string permission, AuthzTarget target, IReadOnlyList<AclEntry> acl)
     {
         if (!g.ActiveMember)
@@ -59,7 +62,9 @@ public static class Evaluator
 
         if (descriptor is { } res)
         {
-            if (!g.App && IsViewPermission(permission) && res.Visibility == ResourceVisibility.Tenant)
+            // What every member may view is not open to an app (spec 035) nor to a guest, who reaches only what is shared
+            // into their space (spec 026 FR-009, spec 004 section 6).
+            if (!g.App && !IsGuest(g) && IsViewPermission(permission) && res.Visibility == ResourceVisibility.Tenant)
             {
                 reasons.Add(new DecisionReason("tenant_visibility"));
             }
