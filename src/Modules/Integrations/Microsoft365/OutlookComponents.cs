@@ -20,7 +20,7 @@ public sealed class OutlookComponents : IComponentRegistration
     {
         var key = "experience.component." + id.Replace('.', '_');
         return new(id, "1.0.0", "TeamBeats", "^1", new ComponentDisplay(key + ".name", key + ".description", "personal", icon), properties,
-            new PlacementRules(MinSpan: 4, Source: source), ["locale", "direction"], new ComponentRequirements([Capabilities.IntegrationMicrosoft365], [], feature),
+            new PlacementRules(MinSpan: 4, Source: source, States: PlacementStates.Required), ["locale", "direction"], new ComponentRequirements([Capabilities.IntegrationMicrosoft365], [], feature),
             ComponentEvents.None, data);
     }
 

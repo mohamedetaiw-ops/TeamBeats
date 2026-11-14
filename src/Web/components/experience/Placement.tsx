@@ -87,7 +87,7 @@ export function Placement({ placement, tools }: { placement: RenderedPlacement; 
     <div className="xp-placement" style={{ "--xp-span": placement.span } as CSSProperties} data-placement-id={placement.id}
       data-component={placement.componentRef} data-personal={placement.personal || undefined}>
       {tools}
-      <WidgetBudget span={placement.span}>
+      <WidgetBudget span={placement.span} cap={placement.budget}>
         {Loaded ? (
           <PlacementErrorBoundary placement={placement} fallback={<PlacementState placement={placement} kind="failed" />}>
             <Suspense fallback={<PlacementState placement={placement} kind="loading" />}>

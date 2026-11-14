@@ -36,7 +36,7 @@ public sealed class ServicesComponents : IComponentRegistration
                 ["title"] = new("text", MaxLength: 80),
                 ["top"] = new("integer", Default: J(3), Minimum: 1, Maximum: 10),
             },
-            new PlacementRules(MinSpan: 3, Source: "tasks"), ["locale", "direction"], new ComponentRequirements([Capabilities.WorkflowCatalogue], []), ComponentEvents.None,
+            new PlacementRules(MinSpan: 3, Source: "tasks", States: PlacementStates.Required), ["locale", "direction"], new ComponentRequirements([Capabilities.WorkflowCatalogue], []), ComponentEvents.None,
             ["/api/v1/tasks"]);
     }
 }

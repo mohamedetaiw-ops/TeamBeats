@@ -60,7 +60,13 @@ public sealed record PageSummary(Guid Id, string Slug, Guid? OrgUnitId, string T
 
 /// <summary>A placement as the renderer receives it: only declared context values, defaults applied (FR-025, FR-028).</summary>
 public sealed record RenderedPlacement(string Id, string ComponentRef, string State, int Span, IReadOnlyDictionary<string, JsonElement> Props,
-    IReadOnlyDictionary<string, string> Context, IReadOnlyList<string> Publishes, IReadOnlyList<string> Subscribes, bool Personal = false);
+    IReadOnlyDictionary<string, string> Context, IReadOnlyList<string> Publishes, IReadOnlyList<string> Subscribes, bool Personal = false,
+    int? Budget = null)
+{
+    /// <summary>The component's own budget at this width when it is lower than the platform's (spec 032 FR-071), else null.</summary>
+    public static int? BudgetFor(ComponentManifest manifest, int span) =>
+        manifest.Placement.Budget is { } own && own.ForSpan(span) < ContentBudget.Platform.ForSpan(span) ? own.ForSpan(span) : null;
+}
 
 /// <param name="Rights">What the viewer may change here in personalization mode (spec 008); empty when nothing.</param>
 public sealed record RenderedRegion(string Id, int Span, string Section, IReadOnlyList<RenderedPlacement> Placements, IReadOnlyList<string>? Rights = null);
@@ -575,10 +581,12 @@ public sealed partial class PageService(
                     return new RenderedPlacement(p.Id, p.ComponentRef, "unavailable", p.Span ?? lr.Span,
                         new Dictionary<string, JsonElement>(), new Dictionary<string, string>(), [], []);
                 }
-                return new RenderedPlacement(p.Id, p.ComponentRef, "ready", p.Span ?? Math.Min(lr.Span, manifest.Placement.MaxSpan),
+                var span = p.Span ?? Math.Min(lr.Span, manifest.Placement.MaxSpan);
+                return new RenderedPlacement(p.Id, p.ComponentRef, "ready", span,
                     PropertyValidator.WithDefaults(manifest.Properties, p.Props),
                     manifest.Context.Where(known.ContainsKey).ToDictionary(k => k, k => known[k], StringComparer.Ordinal),
-                    manifest.Events.Publishes.Select(e => e.Name).ToList(), manifest.Events.Subscribes.Select(e => e.Name).ToList());
+                    manifest.Events.Publishes.Select(e => e.Name).ToList(), manifest.Events.Subscribes.Select(e => e.Name).ToList(),
+                    Budget: RenderedPlacement.BudgetFor(manifest, span));
             }).ToList());
         }).ToList();
         return new RenderedPage(page.Id, page.CurrentRelease ?? 0, template.Id, layout.Id, draft.Variant, layout.Fallback, regions, null,
@@ -664,10 +672,12 @@ public sealed partial class PageService(
                     return new RenderedPlacement(p.Id, p.ComponentRef, "unavailable", p.Span ?? lr.Span,
                         new Dictionary<string, JsonElement>(), new Dictionary<string, string>(), [], [], item.Personal);
                 }
-                return new RenderedPlacement(p.Id, p.ComponentRef, "ready", p.Span ?? Math.Min(lr.Span, manifest.Placement.MaxSpan),
+                var span = p.Span ?? Math.Min(lr.Span, manifest.Placement.MaxSpan);
+                return new RenderedPlacement(p.Id, p.ComponentRef, "ready", span,
                     PropertyValidator.WithDefaults(manifest.Properties, p.Props),
                     manifest.Context.Where(known.ContainsKey).ToDictionary(k => k, k => known[k], StringComparer.Ordinal),
-                    manifest.Events.Publishes.Select(e => e.Name).ToList(), manifest.Events.Subscribes.Select(e => e.Name).ToList(), item.Personal);
+                    manifest.Events.Publishes.Select(e => e.Name).ToList(), manifest.Events.Subscribes.Select(e => e.Name).ToList(), item.Personal,
+                    Budget: RenderedPlacement.BudgetFor(manifest, span));
             }).ToList(), rights.TryGetValue(lr.Id, out var r) ? r.Rights : []);
         }).ToList();
 
