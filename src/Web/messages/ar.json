@@ -1642,29 +1642,6 @@
         "attachment": "بها مرفق"
       }
     },
-    "calendar": {
-      "title": "تقويمي",
-      "today": "اليوم",
-      "tomorrow": "غدا",
-      "allDay": "طوال اليوم",
-      "range": "من {start} إلى {end}",
-      "private": "موعد خاص",
-      "online": "عبر الإنترنت",
-      "markers": {
-        "tentative": "مبدئي",
-        "free": "متاح"
-      },
-      "markerSeparator": "، ",
-      "opensOutlook": "(يفتح Outlook في علامة تبويب جديدة)",
-      "join": "انضمام",
-      "joinLabel": "الانضمام إلى {subject} (يفتح الاجتماع في علامة تبويب جديدة)",
-      "empty": "لا شيء في تقويمك",
-      "holiday": "عطلة رسمية",
-      "halfHoliday": "عطلة نصف يوم",
-      "sources": {
-        "holiday": "من تقويم العمل الخاص بك"
-      }
-    },
     "settings": {
       "title": "Outlook",
       "connected": "Outlook مربوط. يقرأ بريدي وتقويمي صندوق بريدك أثناء تسجيل دخولك.",

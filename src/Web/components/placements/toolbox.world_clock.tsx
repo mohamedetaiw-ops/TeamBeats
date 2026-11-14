@@ -4,6 +4,7 @@ import { useSyncExternalStore } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import type { PlacementProps } from "@/lib/experience/contract";
 import "@/components/experience/toolbox.css";
+import { Widget } from "@/components/ui/Widget";
 
 /** Minute-aligned now, so every clock on the page ticks together. Null on the server, so the markup never mismatches. */
 function subscribe(tick: () => void) {
@@ -33,17 +34,14 @@ export default function WorldClock({ props }: PlacementProps) {
   const configured = Array.isArray(props.zones) ? props.zones.filter((z): z is string => typeof z === "string" && valid(z)) : [];
   if (now === null) {
     return (
-      <section className="toolbox" aria-label={t("title")} aria-busy="true">
-        <h2 className="toolbox-title">{t("title")}</h2>
-      </section>
+      <Widget title={t("title")} busy />
     );
   }
   const own = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const zones = configured.length > 0 ? configured : [...new Set([own, "UTC"])];
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: own, dateStyle: "short" }).format(now);
   return (
-    <section className="toolbox" aria-label={t("title")}>
-      <h2 className="toolbox-title">{t("title")}</h2>
+    <Widget title={t("title")}>
       <ul className="toolbox-clocks">
         {zones.map((zone) => {
           const name = new Intl.DateTimeFormat(locale, { timeZone: zone, timeZoneName: "longGeneric" })
@@ -62,6 +60,6 @@ export default function WorldClock({ props }: PlacementProps) {
           );
         })}
       </ul>
-    </section>
+    </Widget>
   );
 }

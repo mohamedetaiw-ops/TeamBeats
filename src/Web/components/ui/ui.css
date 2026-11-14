@@ -898,3 +898,58 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/*
+ * Widget frame (spec 036 DLS-089): the one card every home widget and inner page list card uses. Features lay out
+ * their body only; each design finishes `.ui-widget` in designs.css.
+ */
+.ui-widget {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: var(--tb-space-md);
+  block-size: 100%;
+  min-inline-size: 0;
+  padding: var(--tb-space-lg);
+  border-radius: var(--tb-radius-lg);
+  background: var(--tb-color-surface-raised);
+  box-shadow: var(--tb-shadow-sm);
+  color: var(--tb-color-text-primary);
+}
+
+.ui-widget-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-sm);
+}
+
+.ui-widget-title {
+  margin: 0;
+  font-size: var(--tb-font-size-lg);
+}
+
+.ui-widget-action {
+  margin-inline-start: auto;
+}
+
+.ui-widget-action > :where(a),
+.ui-widget-foot > :where(a) {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tb-space-xs);
+  color: var(--tb-color-link);
+  font-size: var(--tb-font-size-sm);
+  font-weight: var(--tb-font-weight-medium);
+}
+
+.ui-widget-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+}
+
+/* DLS-091: an isolated name or subject starts at the row's start edge whatever its own direction. */
+.ui-widget :is(bdi, [dir="auto"]) {
+  text-align: match-parent;
+}

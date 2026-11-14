@@ -1642,29 +1642,6 @@
         "attachment": "Has attachment"
       }
     },
-    "calendar": {
-      "title": "My calendar",
-      "today": "Today",
-      "tomorrow": "Tomorrow",
-      "allDay": "All day",
-      "range": "{start} to {end}",
-      "private": "Private appointment",
-      "online": "Online",
-      "markers": {
-        "tentative": "Tentative",
-        "free": "Free"
-      },
-      "markerSeparator": ", ",
-      "opensOutlook": "(opens Outlook in a new tab)",
-      "join": "Join",
-      "joinLabel": "Join {subject} (opens the meeting in a new tab)",
-      "empty": "Nothing on your calendar",
-      "holiday": "Public holiday",
-      "halfHoliday": "Half-day holiday",
-      "sources": {
-        "holiday": "From your working calendar"
-      }
-    },
     "settings": {
       "title": "Outlook",
       "connected": "Outlook is connected. My mail and My calendar read your mailbox while you are signed in.",

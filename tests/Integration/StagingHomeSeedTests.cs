@@ -79,6 +79,12 @@ public sealed class StagingHomeSeedTests(TenantWorld world)
         var floor = await OkAsync(emp.GetAsync($"/api/v1/experience/render?slug={views[1].GetProperty("slug").GetString()}"));
         Assert.Contains(floor.GetProperty("regions").EnumerateArray().SelectMany(r => r.GetProperty("placements").EnumerateArray()),
             p => p.GetProperty("id").GetString() == "safety");
+        // Spec 008 FR-051, spec 032 FR-070: the team lead view places My calendar and My mail itself, so the home suggestions
+        // (the calendar card, which My calendar renders, and My mail) are not added beside them; every widget shows once.
+        var lead = await OkAsync(emp.GetAsync($"/api/v1/experience/render?slug={views[0].GetProperty("slug").GetString()}"));
+        var leadGrid = lead.GetProperty("regions").EnumerateArray().Single(r => r.GetProperty("id").GetString() == "grid")
+            .GetProperty("placements").EnumerateArray().Select(p => p.GetProperty("id").GetString()!).ToArray();
+        Assert.Equal(["calendar", "mail", "news"], leadGrid);
         // The shell's own layout never carries the configuration behind them to employees.
         Assert.False(shell.GetProperty("layout").TryGetProperty("homeViews", out var raw) && raw.ValueKind != JsonValueKind.Null);
     }

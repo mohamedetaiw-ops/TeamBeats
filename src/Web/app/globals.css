@@ -579,11 +579,11 @@ html[data-motion="reduced"] *::after {
  * link, so the layout does not move.
  */
 @media (pointer: coarse), (width <= 40rem) {
-  :where(.cal-card-view, .cal-card-all, .home-card-head a, .content-cta-link, .shell-footer-links a, .shell-brand) {
+  :where(.cal-card-view, .ui-widget-action > a, .ui-widget-foot > a, .content-cta-link, .shell-footer-links a, .shell-brand) {
     position: relative;
   }
 
-  :where(.cal-card-view, .cal-card-all, .home-card-head a, .content-cta-link, .shell-footer-links a, .shell-brand)::after {
+  :where(.cal-card-view, .ui-widget-action > a, .ui-widget-foot > a, .content-cta-link, .shell-footer-links a, .shell-brand)::after {
     content: "";
     position: absolute;
     inset-block: min(0rem, calc(50% - 1.375rem));

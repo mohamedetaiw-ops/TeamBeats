@@ -8,6 +8,7 @@ import { useHomeAnswer } from "@/lib/engagementHome";
 import { BarList } from "@/components/ui/Charts";
 import { Button } from "@/components/ui/Button";
 import { StateView } from "@/components/ui/StateView";
+import { Widget } from "@/components/ui/Widget";
 import "@/features/services/home.css";
 
 /**
@@ -23,13 +24,9 @@ export default function LeaderboardCard({ props }: PlacementProps) {
   const { answer, retry } = useHomeAnswer<LeaderboardView>(`${engagementApi}/leaderboard?period=month`);
 
   const shell = (body: React.ReactNode, busy = false) => (
-    <section className="home-card" aria-labelledby="home-leaderboard-title" aria-busy={busy || undefined}>
-      <div className="home-card-head">
-        <h2 id="home-leaderboard-title">{title}</h2>
-        <Link href={recognitionHref}>{t("leaderboardAll")}</Link>
-      </div>
+    <Widget title={title} busy={busy} action={<Link href={recognitionHref}>{t("leaderboardAll")}</Link>}>
       {body}
-    </section>
+    </Widget>
   );
 
   if (answer === "loading") return shell(<StateView kind="loading" minBlockSize="8rem" />, true);
