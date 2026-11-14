@@ -204,6 +204,7 @@
 
 @media (width <= 40rem) {
   .home-briefing {
+    gap: var(--tb-space-md);
     padding: var(--tb-space-lg);
   }
 
@@ -212,10 +213,6 @@
   }
 
   /* Phone: the tag above, then the text with its one action beside it, so three rows and the next card fit the first screen (DLS-100). */
-  .home-briefing {
-    gap: var(--tb-space-md);
-  }
-
   .home-briefing-row {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
