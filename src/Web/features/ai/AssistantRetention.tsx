@@ -3,13 +3,15 @@
 import { useId, useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
+import { Checkbox } from "@/components/ui/Checkbox";
 import { problemMessages } from "@/lib/notifications/types";
 import type { AssistantSettings } from "@/lib/assistant/types";
 
-/** The conversation retention of the assistant (spec 014 section 3), set by the AI Policy Administrator. */
+/** The conversation retention of the assistant (spec 014 section 3) and whether guests may use it (AST-022), set by the AI Policy Administrator. */
 export function AssistantRetention({ initial, canManage }: { initial: AssistantSettings; canManage: boolean }) {
   const t = useTranslations("assistant.admin");
   const [days, setDays] = useState(String(initial.retentionDays));
+  const [guests, setGuests] = useState(initial.guestsAllowed);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ error: boolean; text: string } | null>(null);
   const id = useId();
@@ -22,7 +24,7 @@ export function AssistantRetention({ initial, canManage }: { initial: AssistantS
       const response = await fetch("/api/v1/assistant/settings", {
         method: "PUT",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ retentionDays: Number.parseInt(days, 10) || null }),
+        body: JSON.stringify({ retentionDays: Number.parseInt(days, 10) || null, guestsAllowed: guests }),
       });
       setMessage(response.ok ? { error: false, text: t("saved") } : { error: true, text: (await problemMessages(response)).join(" ") || t("failed") });
     } catch {
@@ -52,6 +54,14 @@ export function AssistantRetention({ initial, canManage }: { initial: AssistantS
           onChange={(e) => setDays(e.target.value)}
         />
       </div>
+      <Checkbox
+        label={t("guests")}
+        hint={t("guestsHint")}
+        name="guests-allowed"
+        checked={guests}
+        disabled={!canManage}
+        onChange={(e) => setGuests(e.target.checked)}
+      />
       {canManage ? (
         <div className="button-row">
           <Button type="submit" variant="primary" busy={busy} busyLabel={t("busy")}>

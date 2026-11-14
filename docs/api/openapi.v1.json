@@ -28154,6 +28154,12 @@
               "string"
             ],
             "format": "int32"
+          },
+          "guestsAllowed": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },

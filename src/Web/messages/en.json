@@ -5589,13 +5589,15 @@
     },
     "admin": {
       "title": "Assistant",
-      "intro": "Choose how long the assistant keeps conversations. People can delete their own at any time.",
+      "intro": "Choose how long the assistant keeps conversations and whether guests may use it. People can delete their own conversations at any time.",
       "retention": "Keep conversations for (days)",
       "retentionHint": "From 1 to 365 days. The default is 30.",
       "save": "Save",
       "busy": "Saving",
       "saved": "Saved.",
-      "failed": "That did not work. Try again in a moment."
+      "failed": "That did not work. Try again in a moment.",
+      "guests": "Let guests use the assistant",
+      "guestsHint": "Guests see answers only from the spaces they were invited to. Off by default."
     },
     "marker": "[{n}]",
     "tools": {

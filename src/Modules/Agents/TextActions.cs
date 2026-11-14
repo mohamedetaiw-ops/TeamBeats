@@ -38,7 +38,8 @@ public sealed record TextActionResult(string Action, string Outcome, string? Rea
 /// own and is sent as Internal. Both go in the untrusted envelope; nothing is published, sent or stored, and the result is
 /// labelled as AI generated.
 /// </summary>
-public sealed class AssistantTextActions(ITenantContext context, IEntitlementService entitlements, ISearchRetrieval retrieval, IAiGateway gateway)
+public sealed class AssistantTextActions(ITenantContext context, IEntitlementService entitlements, ISearchRetrieval retrieval, IAiGateway gateway,
+    AssistantGuests guests)
 {
     public const int MaxText = 20_000;
     public const int MaxInstructions = 500;
@@ -92,6 +93,7 @@ public sealed class AssistantTextActions(ITenantContext context, IEntitlementSer
         errors.ThrowIfAny();
         await entitlements.DemandAsync(Capabilities.AiAssistant, ct);
         context.RequireUser();
+        await guests.DemandAsync(ct);
 
         var useCase = UseCase(action);
         CitationView? cited = null;

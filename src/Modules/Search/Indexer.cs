@@ -49,7 +49,9 @@ public sealed class SearchIndexer(IDbSession session, IEnumerable<ISearchSource>
 
     private const int EmbedBatch = 16;
 
-    private readonly Dictionary<string, ISearchSource> bySource = sources.ToDictionary(s => s.Source, StringComparer.Ordinal);
+    // A source on the AI deny list is never indexed (spec 014 AST-020), so it can reach neither results nor a model.
+    private readonly Dictionary<string, ISearchSource> bySource = sources.Where(s => !AiExcludedSources.Contains(s.Source))
+        .ToDictionary(s => s.Source, StringComparer.Ordinal);
 
     public Task HandleAsync(SearchItemChanged message, CancellationToken ct) => IndexAsync(message.Source, message.ItemId, ct);
 

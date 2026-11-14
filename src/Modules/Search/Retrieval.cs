@@ -114,6 +114,7 @@ public sealed class SearchRetrieval(IDbSession session, ITenantContext context, 
 
         var item = new ItemFilter(request.Source, request.ItemId);
         var (ranked, degraded) = await RankedAsync(table, settings, query, request.Kinds, item, ct);
+        ranked.RemoveAll(r => AiExcludedSources.Contains(r.Passage.Source));
         var perItemCap = request.ItemId is null ? PerItem : topK;
         var readable = await search.ReadableAsync(ranked.Select(r => (r.Passage.Source, r.Passage.ItemId)), ct);
 
@@ -156,6 +157,10 @@ public sealed class SearchRetrieval(IDbSession session, ITenantContext context, 
         }
         await entitlements.DemandAsync(Capabilities.SearchCore, ct);
         context.RequireUser();
+        if (AiExcludedSources.Contains(source))
+        {
+            return new RetrievalResult([], 0, false);
+        }
         var rows = await session.QueryAsync(
             $"""
             select {Columns} from search.unit

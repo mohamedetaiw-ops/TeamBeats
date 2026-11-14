@@ -72,7 +72,7 @@ internal sealed record PreparedTurn(
 /// holds no tools (FR-005).
 /// </summary>
 public sealed class AssistantService(IDbSession session, ITenantContext context, IEntitlementService entitlements, ISearchRetrieval retrieval,
-    IAiGateway gateway, IOutbox outbox, IClock clock, AgentRouter router, AgentRuns runs, IAuditWriter audit)
+    IAiGateway gateway, IOutbox outbox, IClock clock, AgentRouter router, AgentRuns runs, IAuditWriter audit, AssistantGuests guests)
 {
     public const int MaxQuestionLength = 2000;
     public const int HistoryTurns = 3;
@@ -89,6 +89,7 @@ public sealed class AssistantService(IDbSession session, ITenantContext context,
         }
         await entitlements.DemandAsync(Capabilities.AiAssistant, ct);
         var user = context.RequireUser();
+        await guests.DemandAsync(ct);
 
         var conversationId = request.ConversationId ?? Ids.New();
         var position = 1;
