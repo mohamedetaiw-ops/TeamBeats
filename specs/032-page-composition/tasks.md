@@ -38,3 +38,4 @@ Depends on 002 (org units), 004 (authorization), 005 (entitlements), 006 (audit)
 
 ## Final phase
 - [x] T021 Performance budgets in CI (LCP, INP, CLS on reference profiles), frontend failure telemetry without content, OpenAPI, R1 implementation notes, spec evidence
+- [ ] T022 One rendering and one instance per data source (FR-070 to FR-073): the data source key and view in the manifest, the validator warning on both placements, the renderer leaving out the later duplicate and recording it, placement states in the widget frame and the content budget by region width are built; the budget, the views list and the supported states in the manifest with refusal at registration, and registry tests at quarter, half and full width are still to do

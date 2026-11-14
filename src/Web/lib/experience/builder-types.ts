@@ -121,6 +121,6 @@ export type PickerItem = {
   reasonKey: string | null;
   reason: string | null;
   properties: Record<string, PropertySchema> | null;
-  placement: { minSpan: number; maxSpan: number; singleton: boolean } | null;
+  placement: { minSpan: number; maxSpan: number; singleton: boolean; source?: string | null; view?: string } | null;
   labels: Record<string, string> | null;
 };

@@ -178,6 +178,20 @@ public sealed class ExperienceValidationTests
     }
 
     [Fact]
+    public void Components_that_show_the_same_data_declare_the_same_source_and_view()
+    {
+        // Spec 032 FR-071: My calendar and the calendar card are one source, so a page shows only one of them (FR-072).
+        var outlook = new TeamBeats.Modules.Integrations.Microsoft365.OutlookComponents().Manifests().ToDictionary(m => m.Id);
+        var calendar = new TeamBeats.Modules.Calendar.CalendarComponents().Manifests().Single();
+        Assert.Equal("calendar:summary", calendar.Placement.SourceView);
+        Assert.Equal(calendar.Placement.SourceView, outlook["outlook.my_calendar"].Placement.SourceView);
+        Assert.Equal("mail:summary", outlook["outlook.my_mail"].Placement.SourceView);
+        // A component that holds its own content declares no source, and a second view of a source is a different key.
+        Assert.Null(new PlacementRules().SourceView);
+        Assert.Equal("calendar:month", new PlacementRules(Source: "calendar", View: "month").SourceView);
+    }
+
+    [Fact]
     public void Your_day_is_a_personal_singleton_that_reads_tasks_and_the_calendar()
     {
         var registry = new ComponentRegistry([new PlatformComponents()], Localizer, NullLogger<ComponentRegistry>.Instance);

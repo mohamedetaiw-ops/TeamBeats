@@ -116,6 +116,8 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
     test.use({ locale: locale === "ar" ? "ar-AE" : "en-US", timezoneId: "Asia/Dubai" });
     let tenant: TestTenant;
     let slug: string;
+    // One page per state: a page shows a data source once (spec 032 FR-072), so each mail state has its own page.
+    const states: Record<string, string> = {};
 
     test.beforeAll(async () => {
       tenant = await createTenant(`outlook-${locale}`, locale, "workplace_plus");
@@ -126,13 +128,17 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
         placements: i > 0 ? [] : [
           { id: "mail", componentRef: "outlook.my_mail@1", props: { view: "focused", top: 5 } },
           { id: "calendar", componentRef: "outlook.my_calendar@1", props: { days: 7, hidePrivate: true } },
-          { id: "no-mailbox", componentRef: "outlook.my_mail@1", props: { top: 1 } },
-          { id: "not-connected", componentRef: "outlook.my_mail@1", props: { top: 2 } },
-          { id: "degraded", componentRef: "outlook.my_mail@1", props: { top: 3 } },
-          { id: "managed", componentRef: "outlook.my_mail@1", props: { top: 4 } },
         ],
       })));
       slug = page.slug;
+      for (const [id, top] of [["no-mailbox", 1], ["not-connected", 2], ["degraded", 3], ["managed", 4]] as const) {
+        const state = await createPage(api, "T01", unique(`outlook-${id}`));
+        await saveAndPublish(api, state, state.draft.regions.map((r, i) => ({
+          ...r,
+          placements: i > 0 ? [] : [{ id, componentRef: "outlook.my_mail@1", props: { top } }],
+        })));
+        states[id] = state.slug;
+      }
       await api.dispose();
     });
 
@@ -144,7 +150,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
 
       const mails = page.getByRole("region", { name: msg(locale, "outlook.mail.title") });
       const calendars = page.getByRole("region", { name: msg(locale, "calendar.title") });
-      await expect(mails).toHaveCount(5);
+      await expect(mails).toHaveCount(1);
       await expect(calendars).toHaveCount(1);
 
       // My mail: unread count, newest Focused messages with text markers, each opening Outlook in a new tab.
@@ -176,17 +182,6 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(main.getByRole("listitem").first()).toContainText("Subject other");
       expect(seen).toContain("/api/v1/me/mail?view=all&top=5");
 
-      // States: no mailbox, not connected with Connect Outlook back to this page, degraded with its age, managed device.
-      await expect(mails.nth(1).getByRole("status")).toContainText(msg(locale, "outlook.state.noMailbox"));
-      const connect = mails.nth(2).getByRole("link", { name: msg(locale, "outlook.state.connect") });
-      await expect(connect).toHaveAttribute("href", `/api/v1/me/outlook/connect?returnTo=${encodeURIComponent(`/p/${slug}`)}`);
-      await expect(mails.nth(3).getByRole("listitem")).toHaveCount(1);
-      await expect(mails.nth(3).getByRole("status")).toContainText(msg(locale, "outlook.state.stale", { time: "§" }).split("§")[0].trim());
-      await mails.nth(3).getByRole("button", { name: msg(locale, "outlook.state.retry") }).click();
-      await expect.poll(() => seen.filter((s) => s === "/api/v1/me/mail?view=focused&top=3&refresh=true").length).toBe(1);
-      await expect(mails.nth(4).getByRole("status")).toContainText(msg(locale, "outlook.state.conditionalAccess"));
-      await expect(mails.nth(4).getByRole("link", { name: msg(locale, "outlook.state.openOutlook") })).toHaveAttribute("target", "_blank");
-
       // My calendar is the calendar card: the week strip and agenda rows, not the R1 list, and no call to the R1 endpoint.
       const cal = calendars.first();
       await expect(cal.getByRole("list", { name: msg(locale, "calendar.weekLabel") }).getByRole("listitem")).toHaveCount(7);
@@ -195,6 +190,24 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
 
       await expect(page.locator("html")).toHaveAttribute("dir", locale === "ar" ? "rtl" : "ltr");
       await expectAccessible(page, testInfo, `outlook-${locale}`);
+
+      // States, each on its own page: no mailbox, not connected with Connect Outlook back to that page, degraded with
+      // its age, managed device.
+      const mailOn = async (id: string) => {
+        await page.goto(`${hostOrigin(tenant.key)}/p/${states[id]}`);
+        return page.getByRole("region", { name: msg(locale, "outlook.mail.title") });
+      };
+      await expect((await mailOn("no-mailbox")).getByRole("status")).toContainText(msg(locale, "outlook.state.noMailbox"));
+      const connect = (await mailOn("not-connected")).getByRole("link", { name: msg(locale, "outlook.state.connect") });
+      await expect(connect).toHaveAttribute("href", `/api/v1/me/outlook/connect?returnTo=${encodeURIComponent(`/p/${states["not-connected"]}`)}`);
+      const degraded = await mailOn("degraded");
+      await expect(degraded.getByRole("listitem")).toHaveCount(1);
+      await expect(degraded.getByRole("status")).toContainText(msg(locale, "outlook.state.stale", { time: "§" }).split("§")[0].trim());
+      await degraded.getByRole("button", { name: msg(locale, "outlook.state.retry") }).click();
+      await expect.poll(() => seen.filter((s) => s === "/api/v1/me/mail?view=focused&top=3&refresh=true").length).toBe(1);
+      const managed = await mailOn("managed");
+      await expect(managed.getByRole("status")).toContainText(msg(locale, "outlook.state.conditionalAccess"));
+      await expect(managed.getByRole("link", { name: msg(locale, "outlook.state.openOutlook") })).toHaveAttribute("target", "_blank");
     });
 
     test("the Outlook section in Connected apps disconnects and offers Connect Outlook", async ({ page }, testInfo) => {

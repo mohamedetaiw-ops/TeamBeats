@@ -46,8 +46,19 @@ public sealed record PropertySchema(
     PropertySchema? Items = null,
     int? MaxItems = null);
 
-/// <summary>Placement capabilities: column spans the component supports and whether it may appear once per page only.</summary>
-public sealed record PlacementRules(int MinSpan = 1, int MaxSpan = 12, bool Singleton = false);
+/// <summary>
+/// Placement capabilities: column spans the component supports and whether it may appear once per page only.
+/// </summary>
+/// <param name="Source">
+/// The data source key for the one instance rule (spec 032 FR-071, FR-072): two placements with the same source and the
+/// same view show the same data twice. Null for components that hold their own content or whose properties pick the data.
+/// </param>
+/// <param name="View">The view of the source this component offers; different views of one source may share a page.</param>
+public sealed record PlacementRules(int MinSpan = 1, int MaxSpan = 12, bool Singleton = false, string? Source = null, string View = "summary")
+{
+    /// <summary>The key the one instance rule compares, or null when the component declares no source.</summary>
+    public string? SourceView => Source is null ? null : $"{Source}:{View}";
+}
 
 /// <summary>Capabilities and permissions a component needs, and the connection feature it reads (spec 032 FR-069).</summary>
 public sealed record ComponentRequirements(IReadOnlyList<string> Capabilities, IReadOnlyList<string> Permissions, string? ConnectionFeature = null)
