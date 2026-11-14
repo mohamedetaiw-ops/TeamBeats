@@ -7,6 +7,8 @@
 //  5. Every home widget (components/placements) is built on the shared Widget frame (spec 036 DLS-089): no placement
 //     draws its own section, article or nav card. Banners and content blocks are the listed exceptions; the calendar
 //     placements render the feature's CalendarCard, which is itself on the frame.
+//  6. Every page under app/ starts with the shared page header (spec 036 DLS-105, DLS-118). Pages that predate the
+//     rule are listed in scripts/page-header-baseline.json; the list may only shrink, and a new page is never added.
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, extname, relative } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -58,8 +60,52 @@ for (const file of walk(root)) {
   }
 }
 
+// Rule 6: the page header on every page. A page passes when it renders PageHeader itself or hands the whole page to
+// one feature component that does. Full-screen surfaces with no shell (sign-in, kiosk, signage, previews) are exempt.
+const headerExempt = /^app\/(signin|kiosk|signage|offline|preview|dev|ui-gallery|letters\/verify|preboarding|app-consent|release)\//;
+const baselinePath = join(root, "scripts/page-header-baseline.json");
+const baseline = new Set(JSON.parse(readFileSync(baselinePath, "utf8")));
+const usesHeader = (file, seen = new Set()) => {
+  if (seen.has(file) || seen.size > 12) return false;
+  seen.add(file);
+  let source;
+  try {
+    source = readFileSync(file, "utf8");
+  } catch {
+    return false;
+  }
+  if (/<PageHeader[\s>]/.test(source)) return true;
+  for (const m of source.matchAll(/from "@\/(features\/[^"]+)"/g)) {
+    for (const ext of [".tsx", "/index.tsx"]) {
+      if (usesHeader(join(root, m[1] + ext), seen)) return true;
+    }
+  }
+  return false;
+};
+const missing = [];
+for (const file of walk(join(root, "app"))) {
+  const rel = relative(root, file).replaceAll("\\", "/");
+  if (!rel.endsWith("/page.tsx") && rel !== "app/page.tsx") continue;
+  if (headerExempt.test(rel) || rel === "app/page.tsx" || rel === "app/[...path]/page.tsx" || rel === "app/p/[...slug]/page.tsx") continue;
+  if (!usesHeader(file)) missing.push(rel);
+}
+for (const rel of missing) {
+  if (!baseline.has(rel)) errors.push(`${rel}: no shared page header; start the page with <PageHeader> from components/ui/PageHeader (DLS-105)`);
+}
+// A listed page that now has the header only earns a reminder, so two changes moving pages at once do not block each other.
+const moved = [...baseline].filter((rel) => !missing.includes(rel));
+if (moved.length > 0) {
+  console.warn(`scripts/page-header-baseline.json: ${moved.length} listed pages now have the page header; run check:design with --write-page-header-baseline to drop them.`);
+}
+if (process.argv.includes("--write-page-header-baseline")) {
+  const { writeFileSync } = await import("node:fs");
+  writeFileSync(baselinePath, JSON.stringify(missing.sort(), null, 2) + "\n");
+  console.log(`Wrote ${missing.length} pages to scripts/page-header-baseline.json.`);
+  process.exit(0);
+}
+
 if (errors.length > 0) {
   console.error(errors.join("\n"));
   process.exit(1);
 }
-console.log("Design gate passed: icons, images, type tokens and design rules are consistent.");
+console.log(`Design gate passed: icons, images, type tokens, design rules and page headers are consistent (${baseline.size} pages still to move onto the page header).`);

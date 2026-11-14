@@ -84,7 +84,8 @@ export async function Shell({ me, breadcrumbs = [] }: { me: Me; breadcrumbs?: Cr
           </p>
         ) : null;
       case "breadcrumbs":
-        return breadcrumbs.length > 0 ? <Breadcrumb key={region} className="shell-breadcrumbs" label={t("breadcrumbs")} crumbs={breadcrumbs} /> : null;
+        // A top-level page shows no breadcrumb: one item would only repeat the page title (spec 036 DLS-105).
+        return breadcrumbs.length > 1 ? <Breadcrumb key={region} className="shell-breadcrumbs" label={t("breadcrumbs")} crumbs={breadcrumbs} /> : null;
       default:
         return null;
     }

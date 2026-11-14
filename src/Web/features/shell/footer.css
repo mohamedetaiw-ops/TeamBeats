@@ -54,13 +54,6 @@
   margin-inline-start: auto;
 }
 
-/* Inside the rail frame the page keeps its height, minus the footer row, so the footer lands at the bottom of a short page. */
-@media (width > 64rem) {
-  :root:not([data-nav="top"]) body:has(.shell-rail):has(.shell-footer) main {
-    min-block-size: calc(100vh - var(--xp-bar-size) - 3.5rem);
-  }
-}
-
 @media (width <= 40rem) {
   .shell-footer-inner {
     padding-inline: var(--tb-space-md);

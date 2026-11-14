@@ -7,6 +7,7 @@ import type { AssistantScope, Conversation, ConversationSummary } from "@/lib/as
 import { nameIn, policyHref, type PolicyView } from "@/lib/policies/types";
 import { AssistantChat } from "@/features/assistant/Assistant";
 import { TextTools } from "@/features/assistant/TextActions";
+import { PageHeader } from "@/components/ui/PageHeader";
 import "@/features/assistant/assistant.css";
 
 const ID = /^[0-9a-f-]{36}$/i;
@@ -41,7 +42,7 @@ export default async function AssistantPage({ searchParams }: { searchParams: Pr
     <>
       <Header me={me.data} breadcrumbs={[{ label: t("title"), href: "/assistant" }]} />
       <main id="main" className="page assistant-page">
-        <h1>{t("title")}</h1>
+        <PageHeader title={t("title")} description={t("intro")} icon="spark" />
         {!list.ok ? (
           <p className="notice" role="alert">
             {list.status === 403 ? t("notAvailable") : t("failed")}
