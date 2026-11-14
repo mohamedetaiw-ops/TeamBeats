@@ -281,7 +281,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await editor.getByRole("button", { name: msg(locale, "search.admin.judged.keepQuery") }).click();
       await expect(editor.getByRole("cell", { name: "shuttle" })).toBeVisible();
       await editor.getByRole("button", { name: msg(locale, "search.admin.judged.save") }).click();
-      await expect(panel.getByRole("status").filter({ hasText: msg(locale, "search.admin.judged.saved", { version: 1 }) })).toBeVisible();
+      await expect(panel.getByRole("status").filter({ hasText: msg(locale, "search.admin.judged.saved", { version: "1" }) })).toBeVisible();
 
       // Search words in analytics are kept until a search administrator turns them off.
       const words = page.getByRole("region", { name: msg(locale, "search.admin.queryText.title") });
