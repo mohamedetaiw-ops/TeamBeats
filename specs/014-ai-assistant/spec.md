@@ -9,7 +9,7 @@
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R1 (universal assistant panel, cited answers from permitted content, routing to agents, conversation history, feedback, Q&A, summarize, translate, rewrite and draft), R2 (AI summary of search results for spec 012, file upload in a conversation, voice input and read aloud, French, Urdu and Hindi, assistant in Microsoft Teams, personal context answers such as my leave balance and my open requests through agents), R3 (proactive suggestions across the intranet) |
-| Last updated | 2026-11-08 |
+| Last updated | 2026-11-14 |
 | Approved | 2026-11-07 by Mohamed (standing approval to proceed) |
 | Requirement IDs | AI-005, AI-007, KNO-007, AST-001 to AST-022 (new) |
 | Use cases | UC-06 |
@@ -141,6 +141,11 @@ Ahmed asks "Can I carry over unused leave?". The assistant answers in Arabic fro
 - **AST-021 / FR-021**: Each answer MUST record the model, prompt version and retrieval configuration in the execution record for evaluation (034).
 - **AST-022 / FR-022**: Guests (026) MUST NOT use the assistant unless the tenant enables it for guests, and then only over spaces they were invited to.
 - **FR-023**: Deleting all conversations MUST be offered from a menu on the conversation list (or the assistant settings), styled as a destructive menu item, and confirmed in a dialog that states the number of conversations to delete (DLS-084). Acceptance: the assistant page shows no delete all button in the main view; the dialog says "Delete 12 conversations?" when there are 12.
+- **FR-024**: The assistant page MUST be one conversation workspace (spec 036 DLS-114): past conversations in a side list that can be searched, renamed and deleted within the retention policy; the transcript; one composer with Send, a visible hint for the keyboard, and attachments only where enabled. An empty conversation shows starter suggestions drawn from what the person can do (their services, policies and tasks).
+- **FR-025**: The text tools (rewrite, translate, summarize, explain, draft) MUST be modes of the same composer, chosen from a control beside it, with the instruction as an optional line, and their result MUST appear in the transcript with Copy and the "AI generated" label. There is no second form on the page.
+- **FR-026**: An answer MUST show its sources as titled links with the kind of source and its date, opening in context. When the retrieved sources do not support an answer, the assistant MUST say it cannot verify the answer, MUST NOT cite an unrelated source as authority, and SHOULD offer the nearest sources or the service to ask a person. This state has its own look and is covered by the evaluation corpus of spec 034.
+- **FR-027**: Contextual entry points (a policy, a service, a document, a news article, a task) MUST open the assistant with the scope shown as a removable chip ("Asking about: Leave and holidays policy"), and the answer MUST stay within that scope and the person's access.
+- **FR-028**: Feedback on an answer MUST be compact (helpful, not helpful, with an optional reason: incorrect, missing, out of date) and each answer offers the output actions the person is entitled to (copy, start the related service).
 
 ## 6. Business and validation rules
 - Maximum question length 2,000 characters.

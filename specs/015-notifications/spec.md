@@ -9,7 +9,7 @@
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R1 (send contract for modules, in-app notification centre, email through SMTP, user channel preferences with mandatory messages exempt, grouping, daily digest, quiet hours, templates per locale, delivery records, retries and bounces), R2 (Microsoft Teams activity feed and bot messages, web push through spec 030, Slack direct messages through spec 017, digital signage feed, audience sends for spec 009 campaigns with delivery reports, SMS for mandatory messages to frontline staff without email) |
-| Last updated | 2026-11-07 |
+| Last updated | 2026-11-14 |
 | Approved | 2026-11-07 by Mohamed (standing approval to proceed) |
 | Requirement IDs | INT-008, INT-003 (Teams path, R2), NOT-001 to NOT-024 (new) |
 | Use cases | UC-04 |
@@ -149,6 +149,7 @@ Acme works in Microsoft Teams all day.
 - **NOT-023 / FR-023**: Sends MUST be accepted only for recipients in the sender's tenant; the tenant comes from the sending context, never from parameters.
 - **NOT-024 / FR-024**: The in-app centre MUST work with keyboard and screen readers and announce new notifications politely.
 - **FR-025**: A notification that asks the person to act on something (an approval waiting, a task assigned) MUST be resolved when the thing is done or no longer theirs: when the task is completed by anyone, reassigned, or its request is withdrawn or ends, the owning module tells this module and the notification is marked read and leaves the unread count; pending emails for it are dropped. The bell's approvals and the task badge then agree, because both reflect open tasks. Acceptance: approving a task as one approver resolves the "approval waiting" notification of every other named approver; withdrawing a request resolves its waiting notifications; a test checks that a resolve call in one tenant never touches another tenant's notifications.
+- **FR-026**: The Notifications page MUST use the same row, groups and tabs as the inbox popover (spec 036 DLS-046): Needs your action, Today and Earlier; one contextual action per row revealed on hover or focus and always present on touch as a menu; no button repeated under every row; "Mark all as read" once in the header; paging in place of an endless list.
 
 ## 6. Business and validation rules
 - Platform mandatory categories: security notices, critical announcements, attestation due, approval escalations, site emergencies. Tenants may add more, not remove these.
