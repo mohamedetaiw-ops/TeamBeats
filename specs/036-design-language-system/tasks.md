@@ -63,7 +63,7 @@ From the UX, DLS and frontend enhancement report of 14 November 2026. Foundation
 - [ ] T041 Content budgets and View all in `Widget`, one instance per source in the renderer and the builder, placement states in the frame (DLS-101 to DLS-103, spec 032 FR-071 to FR-073)
 - [x] T042 Tasks: row actions, type icons, review side panel, delegation as a guided dialog; the four inbox tabs and Undo wait for the API (spec 016 FR-020) (DLS-108, DLS-115, spec 016)
 - [x] T043 Calendar: agenda grouping, week overlaps, month overflow, one agenda, home summary in T041 with the widget frame (DLS-119, spec 037)
-- [ ] T044 Assistant workspace on the assistant parts with tools as composer modes and the cannot verify state (DLS-114, spec 014)
+- [x] T044 Assistant workspace on the assistant parts with tools as composer modes and the cannot verify state (DLS-114, spec 014); searching and renaming past conversations and starters drawn from the person's own services wait for the API (spec 014 FR-024)
 - [ ] T045 Home views: first viewport contract, Team lead and Plant floor as persona views, no repeated counts, news lead without a placeholder (DLS-100, DLS-102, spec 008)
 - [x] T046 Services marketplace layout and My requests progress (DLS-063, DLS-107, spec 016); the step by step progress line on My requests waits for the request summary to carry its steps
 - [ ] T047 People toolbar, person forms and quick actions; policies summary and uniform status; knowledge and documents search first; editorial article, reactions and comments (DLS-109, DLS-112, DLS-113, specs 009, 010, 011, 025)

@@ -98,11 +98,14 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expectAccessible(page, testInfo, `assistant-item-${locale}`);
 
       await page.goto(`${hostOrigin(tenant.key)}/assistant`);
-      const tools = page.locator(".assistant-tools");
-      await tools.getByLabel(msg(locale, "assistant.tools.text"), { exact: true }).fill("pls send the report by friday thx");
-      await tools.getByRole("button", { name: msg(locale, "assistant.tools.run"), exact: true }).click();
-      await expect(tools.getByText(msg(locale, "assistant.generated"))).toBeVisible();
-      await expect(tools.getByRole("button", { name: msg(locale, "assistant.tools.copy"), exact: true })).toBeVisible();
+      // The text tools are modes of the one composer; the result joins the transcript (FR-025).
+      const main = page.locator(".assistant-main");
+      await expect(page.locator(".assistant-tools")).toHaveCount(0);
+      await main.getByLabel(msg(locale, "assistant.mode.label"), { exact: true }).selectOption("rewrite");
+      await main.getByLabel(msg(locale, "assistant.tools.text"), { exact: true }).fill("pls send the report by friday thx");
+      await main.getByRole("button", { name: msg(locale, "assistant.tools.run"), exact: true }).click();
+      await expect(main.getByText(msg(locale, "assistant.generated"))).toBeVisible();
+      await expect(main.getByRole("button", { name: msg(locale, "assistant.tools.copy"), exact: true })).toBeVisible();
       await expectAccessible(page, testInfo, `assistant-tools-${locale}`);
     });
   });
