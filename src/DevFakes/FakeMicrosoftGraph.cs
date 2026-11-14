@@ -668,12 +668,49 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
     public void SetSharePointReaders(string itemId, params string[] readers) =>
         _spItems[itemId] = _spItems[itemId] with { Readers = readers.Select(r => r.ToLowerInvariant()).ToList(), Version = Interlocked.Increment(ref _spVersion) };
 
-    public void EditSharePointItem(string itemId, string? name = null, byte[]? content = null) =>
-        _spItems[itemId] = _spItems[itemId] with
+    /// <summary>Changes a file; new content keeps the old content as an earlier version, as SharePoint's version history does.</summary>
+    public void EditSharePointItem(string itemId, string? name = null, byte[]? content = null, string? editor = null)
+    {
+        var before = _spItems[itemId];
+        if (content is not null)
         {
-            Name = name ?? _spItems[itemId].Name, Content = content ?? _spItems[itemId].Content, Modified = DateTimeOffset.UtcNow,
-            Version = Interlocked.Increment(ref _spVersion),
+            var history = _spHistory.GetOrAdd(itemId, _ => []);
+            lock (history)
+            {
+                history.Add(new SpVersion($"{history.Count + 1}.0", before.Content, before.Modified, _spEditors.GetValueOrDefault(itemId)));
+            }
+            if (editor is not null)
+            {
+                _spEditors[itemId] = editor.ToLowerInvariant();
+            }
+        }
+        _spItems[itemId] = before with
+        {
+            Name = name ?? before.Name, Content = content ?? before.Content, Modified = DateTimeOffset.UtcNow, Version = Interlocked.Increment(ref _spVersion),
         };
+    }
+
+    /// <summary>A past version of a file: its content, when it was saved and who saved it.</summary>
+    public sealed record SpVersion(string Id, byte[] Content, DateTimeOffset Modified, string? Editor);
+
+    private readonly ConcurrentDictionary<string, List<SpVersion>> _spHistory = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, string> _spEditors = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, (string? Author, DateTimeOffset Created, IReadOnlyDictionary<string, object> Fields)> _spDetails =
+        new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, IReadOnlyList<(string Name, string Display)>> _spColumns = new(StringComparer.Ordinal);
+
+    /// <summary>Who created a file and when, and its library column values, as SharePoint's list item holds them.</summary>
+    public void SetSharePointDetails(string itemId, string? author, DateTimeOffset created, IReadOnlyDictionary<string, object>? fields = null)
+    {
+        _spDetails[itemId] = (author?.ToLowerInvariant(), created, fields ?? new Dictionary<string, object>());
+        if (author is not null)
+        {
+            _spEditors.TryAdd(itemId, author.ToLowerInvariant());
+        }
+    }
+
+    /// <summary>The columns of a drive's library, by internal name and display name.</summary>
+    public void SetSharePointColumns(string driveId, params (string Name, string Display)[] columns) => _spColumns[driveId] = columns;
 
     /// <summary>Puts a Microsoft Purview sensitivity label on a file, or takes it off with null.</summary>
     public void SetSharePointLabel(string itemId, string? labelId, string? labelName = null) =>
@@ -798,6 +835,48 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
         if (segments is [_, "items", var folder, "children"])
         {
             return SpChildren(driveId, folder, query, _ => true);
+        }
+        if (segments is [_, "list", "columns"])
+        {
+            var columns = _spColumns.GetValueOrDefault(driveId) ?? [];
+            return Json(new
+            {
+                value = new object[] { new { name = "FileLeafRef", displayName = "Name", readOnly = false, hidden = false } }
+                    .Concat(columns.Select(c => (object)new { name = c.Name, displayName = c.Display, readOnly = false, hidden = false })),
+            });
+        }
+        if (segments is [_, "items", var fileId, .. var tail] && tail.Length > 0 && _spItems.TryGetValue(fileId, out var file) && file.DriveId == driveId && !file.Deleted)
+        {
+            var history = _spHistory.GetValueOrDefault(fileId) ?? [];
+            switch (tail)
+            {
+                case ["content"]:
+                    return new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(file.Content) };
+                case ["listItem"]:
+                    var details = _spDetails.GetValueOrDefault(fileId);
+                    return Json(new Dictionary<string, object?>
+                    {
+                        ["createdDateTime"] = (details.Author is null && details.Fields is null ? file.Modified : details.Created).UtcDateTime
+                            .ToString("yyyy-MM-ddTHH:mm:ssZ", System.Globalization.CultureInfo.InvariantCulture),
+                        ["createdBy"] = details.Author is null ? null : new { user = new { email = details.Author } },
+                        ["fields"] = new Dictionary<string, object>(details.Fields ?? new Dictionary<string, object>()) { ["FileLeafRef"] = file.Name, ["ContentType"] = "Document" },
+                    });
+                case ["versions"]:
+                    var current = new SpVersion($"{history.Count + 1}.0", file.Content, file.Modified, _spEditors.GetValueOrDefault(fileId));
+                    return Json(new
+                    {
+                        value = history.Append(current).Reverse().Select(v => new
+                        {
+                            id = v.Id, size = v.Content.Length,
+                            lastModifiedDateTime = v.Modified.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ", System.Globalization.CultureInfo.InvariantCulture),
+                            lastModifiedBy = v.Editor is null ? null : new { user = new { email = v.Editor } },
+                        }),
+                    });
+                case ["versions", var versionId, "content"]:
+                    var version = history.FirstOrDefault(v => v.Id == versionId);
+                    return version is not null ? new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(version.Content) }
+                        : versionId == $"{history.Count + 1}.0" ? new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(file.Content) } : SpMissing();
+            }
         }
         if (segments is [_, "items", var id, ..] && _spItems.TryGetValue(id, out var item) && item.DriveId == driveId && !item.Deleted)
         {

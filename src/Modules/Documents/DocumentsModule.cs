@@ -34,6 +34,7 @@ public static class DocumentsModule
         services.AddScoped<GuestShares>();
         services.AddScoped<Assets>();
         services.AddScoped<DocumentImports>();
+        services.AddScoped<SharePointImports>();
         services.AddMessageHandler<DocumentImportRequested, DocumentImportRunner>("documents.import");
         services.AddMessageHandler<DocumentTextRequested, DocumentText>("documents.text");
         services.AddMessageHandler<ConnectedLibrarySyncRequested, ConnectedSync>("documents.connected_sync");
@@ -212,6 +213,20 @@ public static class DocumentsModule
             await session.CommitAsync(ct);
             return Results.Created($"/api/v1/documents/imports/{view.Id}", view);
         }).DisableAntiforgery();
+
+        // Import from SharePoint (FR-033): the source is listed and read by the import job with the connection's own access.
+        libraries.MapPost("/{id:guid}/imports/sharepoint", async (Guid id, SharePointImportRequest request, SharePointImports imports, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var view = await imports.StartAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/documents/imports/{view.Id}", view);
+        });
+
+        root.MapGet("/connected-sources/{connection:guid}/columns", async (Guid connection, string? container, SharePointImports imports, CancellationToken ct) =>
+            Results.Ok(await imports.ColumnsAsync(connection, container ?? string.Empty, ct)));
+        root.MapGet("/connected-sources/{connection:guid}/folders", async (Guid connection, string? container, string? folder, SharePointImports imports,
+            CancellationToken ct) => Results.Ok(await imports.FoldersAsync(connection, container ?? string.Empty, folder, ct)));
 
         libraries.MapGet("/{id:guid}/imports", async (Guid id, DocumentImports imports, CancellationToken ct) => Results.Ok(await imports.ListAsync(id, ct)));
 

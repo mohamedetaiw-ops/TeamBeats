@@ -285,7 +285,7 @@ export type ImportView = {
   folderId: string | null;
   fileName: string;
   sizeBytes: number;
-  status: "queued" | "running" | "completed";
+  status: "listing" | "queued" | "running" | "completed";
   total: number;
   pending: number;
   imported: number;
@@ -296,7 +296,13 @@ export type ImportView = {
   createdBy: string;
   createdAt: string;
   finishedAt: string | null;
+  /** zip for a ZIP with a manifest, sharepoint for an import from SharePoint. */
+  source: "zip" | "sharepoint";
 };
+
+/** A SharePoint column an import can map to a field, or a folder it can start from. */
+export type RemoteColumn = { name: string; displayName: string };
+export type RemoteFolder = { id: string; name: string };
 
 export const importRowStates = ["pending", "imported", "incomplete", "skipped", "failed", "quarantined"] as const;
 export type ImportRowState = (typeof importRowStates)[number];
@@ -309,6 +315,8 @@ export type ImportRow = {
   problemText: string | null;
   documentId: string | null;
   authorMatched: boolean | null;
+  permissionsDiffer?: boolean | null;
+  versions?: number | null;
 };
 
 export type ImportRowPage = { rows: ImportRow[]; total: number };

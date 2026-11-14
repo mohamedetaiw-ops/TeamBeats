@@ -334,4 +334,14 @@ public sealed class GoogleDrive(GoogleApi api, GoogleSignIn signIn, IHttpClientF
 
     public Task<RepositoryWrite> RenameAsUserAsync(Guid connectionId, string itemId, string name, string userEmail, CancellationToken ct = default) =>
         Task.FromResult(RepositoryWrite.Not("forbidden"));
+
+    /// <summary>Import from Google Drive is not offered yet (spec 011 FR-033 names SharePoint).</summary>
+    public Task<IReadOnlyList<RepositoryColumn>> ColumnsAsync(Guid connectionId, string containerId, CancellationToken ct = default) =>
+        Task.FromResult<IReadOnlyList<RepositoryColumn>>([]);
+
+    public Task<RepositoryItemDetails?> DetailsAsync(Guid connectionId, string itemId, bool versions, CancellationToken ct = default) =>
+        Task.FromResult<RepositoryItemDetails?>(null);
+
+    public Task<RepositoryContent?> ReadAsync(Guid connectionId, string itemId, string? versionId, CancellationToken ct = default) =>
+        Task.FromResult<RepositoryContent?>(null);
 }

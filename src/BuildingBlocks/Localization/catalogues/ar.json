@@ -2436,6 +2436,8 @@
   "validation.documents.import_rows": "يمكن أن يحتوي ملف البيان على 10,000 صف كحد أقصى.",
   "validation.documents.import_paths": "يحتاج كل صف إلى مسار ملف داخل ملف ZIP، ولا يتكرر المسار.",
   "validation.documents.import_date": "يجب أن تكون التواريخ بصيغة ISO وفي الماضي، ولا يسبق تاريخ التعديل تاريخ الإنشاء.",
+  "validation.documents.import_columns_map": "اربط كل عمود من SharePoint بحقل من نوع المستند المختار، 50 عمودًا على الأكثر.",
+  "validation.documents.import_source_missing": "لم يعد هذا الملف في SharePoint، أو لم يعد الاتصال قادرًا على قراءته.",
   "validation.documents.import_missing": "لا يوجد ملف بهذا المسار داخل ملف ZIP.",
   "validation.documents.import_status": "اختر نتيجة صف معروفة.",
   "notifications.template.documents.import_finished.title": "اكتمل الاستيراد",
