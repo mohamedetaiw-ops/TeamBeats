@@ -376,7 +376,8 @@ public sealed class SharePointLibrariesTests(TenantWorld world)
         Assert.Equal("restricted", await IndexedAsync(t, "Salaries.xlsx"));
         // Another tenant sees none of this tenant's labels.
         var other = await world.CreateTenantAsync("sp-l-" + Guid.NewGuid().ToString("N")[..6], "workplace_plus");
-        Assert.Empty((await OkAsync(other["admin"].Client.GetAsync(labels))).EnumerateArray());
+        Assert.Equal(HttpStatusCode.NotFound, (await other["admin"].Client.GetAsync(labels)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await other["admin"].Client.PutAsJsonAsync($"{labels}/{label}", new { classification = "public" })).StatusCode);
 
         // Removing the site retires the library: archived, its synced copy deleted and its files gone from search.
         Assert.Equal(HttpStatusCode.NoContent, (await t["admin"].Client.DeleteAsync($"{Sites(o)}/{Uri.EscapeDataString(o.HrSite)}")).StatusCode);

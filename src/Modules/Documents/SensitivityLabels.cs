@@ -2,6 +2,7 @@ using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Messaging;
+using TeamBeats.Modules.Integrations.Contracts;
 using TeamBeats.Modules.Search.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
@@ -28,13 +29,13 @@ public sealed record SensitivityLabelRemapped(Guid ConnectionId, string LabelId)
 /// on files, so no extra Microsoft permission is needed.
 /// </summary>
 public sealed class SensitivityLabels(IDbSession session, ITenantContext context, IAuthorizationService authz, IEntitlementService entitlements,
-    IAuditWriter audit, IOutbox outbox, IClock clock) : IMessageHandler<SensitivityLabelRemapped>
+    IAuditWriter audit, IOutbox outbox, IClock clock, IConnectionFeatures connections) : IMessageHandler<SensitivityLabelRemapped>
 {
     public const int MaxLabels = 500;
 
     public async Task<IReadOnlyList<SensitivityLabelView>> ListAsync(Guid connectionId, CancellationToken ct)
     {
-        await DemandAsync(ct);
+        await DemandAsync(connectionId, ct);
         return await session.QueryAsync(
             """
             with seen as (
@@ -53,7 +54,7 @@ public sealed class SensitivityLabels(IDbSession session, ITenantContext context
     /// <summary>Maps a label to a classification, or removes its mapping when <paramref name="request"/> names none.</summary>
     public async Task<SensitivityLabelView> MapAsync(Guid connectionId, string labelId, SensitivityLabelMapRequest request, CancellationToken ct)
     {
-        await DemandAsync(ct);
+        await DemandAsync(connectionId, ct);
         if (!Guid.TryParse(labelId, out var label))
         {
             throw AppException.Validation("labelId", "validation.documents.sensitivity_label");
@@ -95,10 +96,15 @@ public sealed class SensitivityLabels(IDbSession session, ITenantContext context
         }
     }
 
-    private async Task DemandAsync(CancellationToken ct)
+    /// <summary>The integration administrator of this tenant, and a connection of this tenant with SharePoint documents turned on.</summary>
+    private async Task DemandAsync(Guid connectionId, CancellationToken ct)
     {
         await entitlements.DemandAsync(Capabilities.DocsCore, ct);
         context.RequireUser();
         await authz.DemandAsync(Permissions.IntegrationManage, AuthzTarget.Tenant, ct);
+        if ((await connections.FindAsync(ConnectionKinds.Microsoft365, Microsoft365Features.SharePointDocuments, ct))?.ConnectionId != connectionId)
+        {
+            throw AppException.NotFound();
+        }
     }
 }
