@@ -485,7 +485,7 @@ export function AssistantChat({
           <div className="assistant-composer-bar">
             <label className="ui-toolbar-select" htmlFor={modeId}>
               <span>{t("mode.label")}</span>
-              <select id={modeId} value={mode} onChange={(e) => setMode(e.target.value as Mode)}>
+              <select id={modeId} aria-label={t("mode.label")} value={mode} onChange={(e) => setMode(e.target.value as Mode)}>
                 <option value="ask">{t("mode.ask")}</option>
                 {textActions.map((a) => (
                   <option key={a} value={a}>
@@ -497,7 +497,7 @@ export function AssistantChat({
             {mode === "translate" ? (
               <label className="ui-toolbar-select" htmlFor={languageId}>
                 <span>{t("tools.language")}</span>
-                <select id={languageId} value={language} onChange={(e) => setLanguage(e.target.value)}>
+                <select id={languageId} aria-label={t("tools.language")} value={language} onChange={(e) => setLanguage(e.target.value)}>
                   <option value="ar">{t("tools.languages.ar")}</option>
                   <option value="en">{t("tools.languages.en")}</option>
                 </select>
