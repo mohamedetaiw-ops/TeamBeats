@@ -1129,7 +1129,10 @@
       "shadow": "Shadows",
       "motion": "Motion",
       "state": "Interaction states",
-      "layout": "Layout"
+      "layout": "Layout",
+      "density": "Default density",
+      "imagery": "Imagery",
+      "variant": "Part variants"
     },
     "contrast": {
       "title": "Contrast and size checks",

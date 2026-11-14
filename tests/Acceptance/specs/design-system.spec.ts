@@ -19,11 +19,23 @@ import { hostOrigin } from "../support/stack";
  * Set DESIGN_SCREENSHOTS_DIR to also write full-page screenshots for design reviews (post-development fidelity check).
  */
 const designs = [
-  { key: "beats", navigation: "rail", accent: "#4338ca", font: "Readex Pro", arabicFont: "Readex Pro" },
-  { key: "atlas", navigation: "top", accent: "#0b6e4f", font: "IBM Plex Sans", arabicFont: "IBM Plex Sans Arabic" },
-  { key: "pulse", navigation: "sidebar", accent: "#c2185b", font: "Cairo", arabicFont: "Cairo" },
+  {
+    key: "beats", navigation: "rail", accent: "#4338ca", font: "Readex Pro", arabicFont: "Readex Pro", density: "comfortable",
+    variants: { news: "editorial", stats: "tinted", rows: "comfortable", tabs: "underline", cards: "raised", briefing: "night" },
+  },
+  {
+    key: "atlas", navigation: "top", accent: "#0b6e4f", font: "IBM Plex Sans", arabicFont: "IBM Plex Sans Arabic", density: "comfortable",
+    variants: { news: "compact", stats: "outlined", rows: "comfortable", tabs: "underline", cards: "outlined", briefing: "light" },
+  },
+  {
+    key: "pulse", navigation: "sidebar", accent: "#c2185b", font: "Cairo", arabicFont: "Cairo", density: "comfortable",
+    variants: { news: "editorial", stats: "tinted", rows: "comfortable", tabs: "segmented", cards: "raised", briefing: "night" },
+  },
   // Inter has no Arabic, so Studio pairs it with IBM Plex Sans Arabic.
-  { key: "studio", navigation: "sidebar", accent: "#155dfc", font: "Inter", arabicFont: "IBM Plex Sans Arabic" },
+  {
+    key: "studio", navigation: "sidebar", accent: "#155dfc", font: "Inter", arabicFont: "IBM Plex Sans Arabic", density: "compact",
+    variants: { news: "compact", stats: "plain", rows: "dense", tabs: "segmented", cards: "outlined", briefing: "light" },
+  },
 ] as const;
 
 /** Hides what the development server draws over the page, so baselines hold only the design. */
@@ -92,6 +104,12 @@ for (const design of designs) {
         await expect(html).toHaveAttribute("data-design", design.key);
         await expect(html).toHaveAttribute("data-nav", design.navigation);
         await expect(html).toHaveAttribute("dir", locale === "ar" ? "rtl" : "ltr");
+        // The design's descriptor reaches the page as variant attributes, and its default density applies to a person
+        // who has not chosen one (DLS-110).
+        for (const [part, variant] of Object.entries(design.variants)) {
+          await expect(html).toHaveAttribute(`data-v-${part}`, variant);
+        }
+        await expect(html).toHaveAttribute("data-density", design.density);
         const styles = await page.evaluate(() => {
           const root = getComputedStyle(document.documentElement);
           return { accent: root.getPropertyValue("--tb-color-accent-base").trim(), font: getComputedStyle(document.body).fontFamily };

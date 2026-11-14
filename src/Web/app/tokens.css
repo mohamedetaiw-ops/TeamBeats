@@ -3,6 +3,14 @@
 :root{
   --tb-design-preset:beats;
   --tb-layout-navigation:rail;
+  --tb-density-default:comfortable;
+  --tb-imagery-style:balanced;
+  --tb-variant-news-lead:editorial;
+  --tb-variant-stat-tiles:tinted;
+  --tb-variant-work-rows:comfortable;
+  --tb-variant-section-tabs:underline;
+  --tb-variant-page-cards:raised;
+  --tb-variant-briefing:night;
   --tb-color-surface-base:#f7f8fb;
   --tb-color-surface-raised:#ffffff;
   --tb-color-surface-sunken:#eef0f5;
@@ -107,6 +115,14 @@
   :root{
     --tb-design-preset:beats;
     --tb-layout-navigation:rail;
+    --tb-density-default:comfortable;
+    --tb-imagery-style:balanced;
+    --tb-variant-news-lead:editorial;
+    --tb-variant-stat-tiles:tinted;
+    --tb-variant-work-rows:comfortable;
+    --tb-variant-section-tabs:underline;
+    --tb-variant-page-cards:raised;
+    --tb-variant-briefing:night;
     --tb-color-surface-base:#0f0d24;
     --tb-color-surface-raised:#1b1838;
     --tb-color-surface-sunken:#0a0918;
