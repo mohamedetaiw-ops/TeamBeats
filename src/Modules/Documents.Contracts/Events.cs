@@ -20,6 +20,18 @@ public sealed record DocumentPermissionsChanged(Guid LibraryId, string ResourceT
 /// <summary>A document went to the recycle bin (spec 011 FR-018), so search and subscriptions stop showing it.</summary>
 public sealed record DocumentDeleted(Guid DocumentId, Guid LibraryId) : IIntegrationEvent;
 
+/// <summary>
+/// A document and all its versions were deleted by retention (spec 011 FR-014), so search and vector indexes drop it.
+/// Only a content-free disposition record is left.
+/// </summary>
+public sealed record DocumentDisposed(Guid DocumentId, Guid LibraryId) : IIntegrationEvent;
+
+/// <summary>A records manager placed a legal hold (spec 011 US7). The hold's details stay with records managers.</summary>
+public sealed record LegalHoldApplied(Guid HoldId) : IIntegrationEvent;
+
+/// <summary>A records manager released a legal hold; normal retention resumes through disposition review.</summary>
+public sealed record LegalHoldReleased(Guid HoldId) : IIntegrationEvent;
+
 /// <summary>A controlled document's owner withdrew it on review (spec 011 US3 scenario 5); readers no longer get it.</summary>
 public sealed record DocumentWithdrawn(Guid DocumentId, Guid LibraryId) : IIntegrationEvent;
 

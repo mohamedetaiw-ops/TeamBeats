@@ -31,3 +31,25 @@ Depends on 004 (resource grants), 005, 006, 007, 009 (acknowledgement, body docu
 
 ## Final phase
 - [x] T014 OpenAPI; R1 implementation notes (scanner, converter, controlled routes); spec evidence
+
+## R2 Phase 8: User Stories 6 and 7, retention, disposition and legal hold (P2)
+- [x] T015 Records Manager role and `records.manage`; retention labels by library, type and document; label in period refuses deletion; shorter period only on reapply
+- [x] T016 Disposition: review queue, automatic deletion, archive, content-free disposition record, search told with `DocumentDisposed`
+- [x] T017 Legal holds by custodian and range, library or folder, and document; every deletion path blocked and audited; release sends ended periods to review; audit purge keeps held records through the contract
+- [x] T018 Records page (labels, where labels apply, disposition, holds) in English and Arabic, RTL; integration tests for each deletion path and cross-tenant targets; e2e with axe
+
+## R2 Phase 9: User Story 8, view-only and guest sharing (P2)
+- [ ] T019 View-only libraries with a dynamic watermark and no download, enforced in the API
+- [ ] T020 Sharing folders with guest spaces with expiry, read-only, never for Restricted; every guest view audited
+
+## R2 Phase 10: User Story 5, brand asset portal (P2)
+- [ ] T021 Collections, usage rights with expiry, renditions, access requests to the brand manager's inbox, download tracking
+
+## R2 Phase 11: bulk import, OCR and Office editing
+- [ ] T022 Bulk import with a metadata manifest, original dates and authors, per-row report (FR-022)
+- [ ] T023 Office web editing through the Microsoft 365 connection (FR-010)
+- [ ] T026 Text from scanned PDFs and images by OCR for search where the tenant enables it (`docs.ocr`, FR-020)
+
+## R2 Phase 12: User Stories 9 and 10, SharePoint Online
+- [ ] T024 Connected libraries through the Microsoft 365 connection with live permission checks, sync, degraded mode and label mapping
+- [ ] T025 Import from SharePoint into TeamBeats libraries through bulk import

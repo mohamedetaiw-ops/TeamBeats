@@ -394,6 +394,17 @@ public static class AuditActions
     public const string DocVersionEffective = "doc.version_effective";
     public const string DocReviewed = "doc.reviewed";
     public const string DocReadConfirmed = "doc.read_confirmed";
+
+    // Spec 011 R2 section 13: retention labels, disposition and legal holds.
+    public const string RecordsLabelCreated = "records.label_created";
+    public const string RecordsLabelChanged = "records.label_changed";
+    public const string RecordsLabelApplied = "records.label_applied";
+    public const string RecordsDispositionApproved = "records.disposition_approved";
+    public const string RecordsDispositionKept = "records.disposition_kept";
+    public const string RecordsArchived = "records.archived";
+    public const string RecordsHoldApplied = "records.hold_applied";
+    public const string RecordsHoldReleased = "records.hold_released";
+    public const string RecordsDeletionBlocked = "records.deletion_blocked";
     public const string PolicyCreated = "policy.created";
     public const string PolicyChanged = "policy.changed";
     public const string PolicyDraftSaved = "policy.draft_saved";
@@ -573,6 +584,8 @@ public static class AuditActions
         DocPermissionsBroken, DocPermissionsChanged, DocCheckedOut, DocCheckedIn, DocForcedCheckIn, DocVersionCreated, DocRestored, DocDeleted,
         DocRestoredFromBin, DocPurged, DocReleaseSubmitted, DocReleaseWithdrawn, DocReleaseApproved, DocReleaseReturned, DocVersionEffective, DocReviewed,
         DocReadConfirmed,
+        RecordsLabelCreated, RecordsLabelChanged, RecordsLabelApplied, RecordsDispositionApproved, RecordsDispositionKept, RecordsArchived,
+        RecordsHoldApplied, RecordsHoldReleased, RecordsDeletionBlocked,
         PolicyCreated, PolicyChanged, PolicyDraftSaved, PolicySubmitted, PolicyWithdrawn, PolicyApproved, PolicyReturned, PolicyPublished, PolicySuperseded,
         PolicyRetired, PolicyCampaignLaunched, PolicyCampaignReminded, PolicyCampaignClosed, PolicyAttested, PolicyTrainingLinked,
         AiPolicyChanged, AiRouteChangeProposed, AiRouteChangeOverridden, AiRouteChangeApplied, AiRouteChangeRejected, AiCatalogueChanged, AiLoggingWindowOpened, AiLoggingWindowClosed,

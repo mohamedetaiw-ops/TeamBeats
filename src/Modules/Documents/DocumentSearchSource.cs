@@ -7,14 +7,14 @@ namespace TeamBeats.Modules.Documents;
 
 /// <summary>
 /// Documents for search (spec 012 section 2, spec 011): the version readers get (the latest major version in force),
-/// never minor drafts, deleted or withdrawn documents (FR-011). The unit holds the name, the number, metadata values and
+/// never minor drafts, deleted, withdrawn or archived documents (FR-011, US6). The unit holds the name, the number, metadata values and
 /// the text extracted at upload. Reading is decided by the library, folder and document rights of spec 011, in batch.
 /// </summary>
 internal sealed class DocumentSearchSource(IDbSession session, IEntitlementService entitlements, DocumentAccess access) : ISearchSource
 {
     public string Source => "documents";
 
-    private const string Readable = "d.deleted_at is null and d.checked_in and d.effective_version_id is not null";
+    private const string Readable = "d.deleted_at is null and d.checked_in and d.effective_version_id is not null and d.disposition is distinct from 'archived'";
 
     public async Task<IReadOnlyList<SearchUnit>> UnitsAsync(Guid itemId, CancellationToken ct = default)
     {

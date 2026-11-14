@@ -44,6 +44,8 @@ public static class BuiltInRoleDefinitions
         new(BuiltInRoles.LearningAdministrator, Delegable: true, DelegatedAdmin: false,
             [P.OrgUnitView, P.PeopleView, P.LearningTake, P.LearningManage, P.LearningReport]),
         new(BuiltInRoles.ComplianceOfficer, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PeopleView, P.PolicyAuthor, P.PolicyManage, P.LearningReport, P.LearningAssignLinked, P.ComplianceManage, P.ComplianceView]),
+        // Spec 011 R2: retention labels, disposition and legal holds across every library of the tenant.
+        new(BuiltInRoles.RecordsManager, Delegable: false, DelegatedAdmin: false, [P.OrgUnitView, P.PeopleView, P.RecordsManage]),
         new(BuiltInRoles.SpacesAdministrator, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PeopleView, P.SpacesCreate, P.SpacesManage]),
         new(BuiltInRoles.FacilitiesAdministrator, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PeopleView, P.BookingBook, P.BookingManage, P.BookingReport]),
         new(BuiltInRoles.FacilitiesAnalyst, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.BookingReport]),

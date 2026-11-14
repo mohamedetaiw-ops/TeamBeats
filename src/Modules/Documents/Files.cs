@@ -241,6 +241,7 @@ public sealed class DocumentFiles(
                 documentId, lib = library.Id, folder = request.FolderId, type = request.TypeId, name, number, metadata = new Jsonb(DocJson.Write(values)), classification, user,
                 checkIn, holder = checkIn ? (Guid?)null : user, heldAt = checkIn ? (DateTimeOffset?)null : now, securableType = securable.Type, securable = securable.Id, now,
             }, ct);
+        await RecordsSql.InheritAsync(session, now, ct, ids: [documentId]);
         await session.ExecAsync(
             """
             insert into documents.document_version (tenant_id, id, document_id, library_id, major, minor, object_key, content_hash, size_bytes, content_type, file_name,
@@ -395,7 +396,7 @@ public sealed class DocumentFiles(
     {
         public const string Columns = "id, library_id, folder_id, type_id, name, number, metadata::text, classification, owner_user_id, checked_in, checked_out_by, " +
             "checked_out_at, pending_version_id, current_version_id, effective_version_id, inherits, securable_type, securable_id, row_version, " +
-            "release_instance_id, release_version_id, scheduled_version_id, review_due_at, review_instance_id";
+            "release_instance_id, release_version_id, scheduled_version_id, review_due_at, review_instance_id, disposition";
 
         /// <summary>The release under approval (controlled documents), if any.</summary>
         public Guid? ReleaseInstance { get; init; }
@@ -409,6 +410,9 @@ public sealed class DocumentFiles(
 
         public Guid? ReviewInstance { get; init; }
 
+        /// <summary>Archived by its retention label (spec 011 US6): kept for contributors, read-only, gone for readers and search.</summary>
+        public bool Archived { get; init; }
+
         public static DocRow Read(Npgsql.NpgsqlDataReader r) => new(r.GetGuid(0), r.GetGuid(1), r.Get<Guid?>("folder_id"), r.Get<Guid?>("type_id"), r.GetString(4),
             r.Get<string>("number"), r.GetString(6), r.GetString(7), r.GetGuid(8), r.GetBoolean(9), r.Get<Guid?>("checked_out_by"), r.Get<DateTimeOffset?>("checked_out_at"),
             r.Get<Guid?>("pending_version_id"), r.Get<Guid?>("current_version_id"), r.Get<Guid?>("effective_version_id"), r.GetBoolean(15), r.GetString(16), r.GetGuid(17), r.GetInt32(18))
@@ -418,6 +422,7 @@ public sealed class DocumentFiles(
             Scheduled = r.Get<Guid?>("scheduled_version_id"),
             ReviewDueAt = r.Get<DateTimeOffset?>("review_due_at"),
             ReviewInstance = r.Get<Guid?>("review_instance_id"),
+            Archived = r.Get<string>("disposition") == "archived",
         };
     }
 
@@ -433,7 +438,7 @@ public sealed class DocumentFiles(
             new { id }, DocRow.Read, ct) ?? throw AppException.NotFound();
         var library = await Access.LibraryAsync(doc.LibraryId, ct) ?? throw AppException.NotFound();
         var rights = await Access.RightsAsync(library, new Securable(doc.SecurableType, doc.Securable, doc.Classification), ct);
-        var visible = doc.CheckedIn ? rights.Contribute || (rights.View && doc.Effective is not null) : doc.CheckedOutBy == user;
+        var visible = doc.CheckedIn ? rights.Contribute || (rights.View && doc.Effective is not null && !doc.Archived) : doc.CheckedOutBy == user;
         if (!visible)
         {
             throw AppException.NotFound();
@@ -598,7 +603,7 @@ public sealed class DocumentFiles(
             """
             d.library_id = @lib and d.deleted_at is null
             and ((d.checked_in and d.securable_id = any(@contribute))
-              or (d.checked_in and d.effective_version_id is not null and d.securable_id = any(@view))
+              or (d.checked_in and d.effective_version_id is not null and d.disposition is distinct from 'archived' and d.securable_id = any(@view))
               or (not d.checked_in and d.checked_out_by = @user))
             and d.classification <> all(@closed)
             """);

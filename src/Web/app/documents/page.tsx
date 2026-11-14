@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
@@ -10,6 +11,7 @@ import { Header } from "@/components/shell/Header";
 import { StateView } from "@/components/ui/StateView";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { TileCard, type TileTone } from "@/components/ui/TileCard";
+import { recordsHref } from "@/lib/records/types";
 
 const tones: readonly TileTone[] = ["accent", "highlight", "success", "info"];
 
@@ -19,9 +21,11 @@ export default async function LibrariesPage() {
   if (!me.ok) {
     redirect("/signin");
   }
-  const libraries = await apiGet<LibrarySummary[]>(
-    "/api/v1/documents/libraries",
-  );
+  const [libraries, records] = await Promise.all([
+    apiGet<LibrarySummary[]>("/api/v1/documents/libraries"),
+    // Records managers get a way in; the API decides who that is.
+    apiGet<unknown[]>("/api/v1/records/disposition"),
+  ]);
   if (!libraries.ok) {
     notFound();
   }
@@ -35,6 +39,11 @@ export default async function LibrariesPage() {
       />
       <main id="main" className="page">
         <PageHeader title={t("title")} description={t("intro")} icon="files" />
+        {records.ok ? (
+          <p>
+            <Link href={recordsHref}>{t("recordsLink")}</Link>
+          </p>
+        ) : null}
         {libraries.data.length === 0 ? (
           <StateView kind="empty" title={t("none")} message="" />
         ) : (

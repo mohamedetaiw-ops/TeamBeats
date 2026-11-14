@@ -537,7 +537,8 @@
         "app_request_reader": "Request reader for apps",
         "app_request_filer": "Request filer for apps",
         "process_operator": "Process operator",
-        "process_analyst": "Process analyst"
+        "process_analyst": "Process analyst",
+        "records_manager": "Records manager"
       },
       "tabs": "Roles and access sections",
       "unknownUnit": "a unit outside your view",
@@ -4036,7 +4037,8 @@
         "org_unit": "Organization unit",
         "site": "Site",
         "space": "Project space"
-      }
+      },
+      "recordsLink": "Records management"
     },
     "browser": {
       "filters": "Find documents",
@@ -12244,6 +12246,117 @@
         "action_not_run": "not carried out in a test run"
       },
       "testGroups": "members of the step's groups ({count})"
+    }
+  },
+  "records": {
+    "title": "Records management",
+    "intro": "Retention labels, disposition of documents whose period has ended, and legal holds across the TeamBeats libraries of this organization.",
+    "denied": "Records management is for records managers, in plans that include it.",
+    "failed": "That did not work. Check your connection and try again.",
+    "labels": {
+      "title": "Retention labels",
+      "intro": "A label keeps documents for a period that starts with an event, then sends them to review, deletes them or archives them.",
+      "empty": "No labels yet.",
+      "summary": "{months, plural, one {# month} other {# months}} after {trigger}, then {action}",
+      "documents": "{count, plural, =0 {No documents} one {# document} other {# documents}}",
+      "retired": "Retired",
+      "edit": "Edit {name}",
+      "createTitle": "New label",
+      "editTitle": "Edit {name}",
+      "nameEn": "Name in English",
+      "nameAr": "Name in Arabic",
+      "months": "Period in months",
+      "triggerLabel": "The period starts",
+      "trigger": {
+        "created": "when the document is created",
+        "modified": "when the document last changed",
+        "effective": "when the version in force became effective",
+        "superseded": "when the document was withdrawn",
+        "field": "on a date field of the document"
+      },
+      "field": "Date field key",
+      "fieldHint": "The key of a date field of the document type, such as contract_end.",
+      "actionLabel": "When the period ends",
+      "action": {
+        "review": "review",
+        "delete": "delete without review",
+        "archive": "archive"
+      },
+      "retire": "Retire this label so it is no longer applied",
+      "reapply": "Apply to documents already labelled",
+      "reapplyHint": "A shorter period or another action reaches documents labelled before only when this is on. A longer period always reaches them.",
+      "saving": "Saving",
+      "save": "Save label",
+      "create": "Create label",
+      "cancel": "Cancel",
+      "saved": "Label saved."
+    },
+    "apply": {
+      "title": "Where labels apply",
+      "intro": "Give a library or a document type a label. When both have one, the longer period wins. Labels set on one document stay as they are.",
+      "empty": "No libraries yet.",
+      "none": "No label",
+      "library": "Library {name}",
+      "type": "Type {name} in {library}"
+    },
+    "disposition": {
+      "title": "Disposition review",
+      "intro": "Documents whose retention period has ended. Dispose of a document to delete it with all its versions, or keep it for more months.",
+      "empty": "Nothing waits for review.",
+      "ended": "Period ended on {date}",
+      "held": "Under a legal hold",
+      "dispose": "Dispose",
+      "disposeQuestion": "Delete {name} and all its versions? Only a disposition record without its content is kept.",
+      "disposeConfirm": "Dispose",
+      "cancel": "Cancel",
+      "keepMonths": "Keep for months",
+      "keep": "Keep",
+      "saving": "Saving",
+      "recordsTitle": "Disposition records",
+      "noRecords": "No documents disposed of yet.",
+      "noNumber": "No document number",
+      "mode": {
+        "reviewed": "Reviewed",
+        "automatic": "Deleted without review"
+      },
+      "versions": "{count, plural, one {# version} other {# versions}}"
+    },
+    "holds": {
+      "title": "Legal holds",
+      "intro": "A hold stops every deletion of the documents it covers, including retention and the recycle bin, until it is released.",
+      "reach": "Holds cover documents in TeamBeats libraries only. Content kept in other systems, such as SharePoint, must be held there.",
+      "empty": "No holds yet.",
+      "status": {
+        "active": "Active",
+        "released": "Released"
+      },
+      "byCustodian": "By custodian",
+      "byLibrary": "Library {name}",
+      "byDocument": "One document",
+      "documents": "{count, plural, =0 {No documents held} one {# document held} other {# documents held}}",
+      "placed": "Placed on {date}",
+      "showDocuments": "Show the documents of {name}",
+      "documentsOf": "Documents held by {name}",
+      "noDocuments": "This hold covers no documents now.",
+      "loadFailed": "The documents could not be loaded. Try again.",
+      "release": "Release",
+      "releaseQuestion": "Release {name}? Documents whose retention period has passed go to disposition review.",
+      "releaseConfirm": "Release hold",
+      "cancel": "Cancel",
+      "createTitle": "New hold",
+      "name": "Name",
+      "reason": "Reason",
+      "target": "Hold by",
+      "targetCustodian": "Custodian",
+      "targetLibrary": "Library",
+      "custodian": "Custodian",
+      "from": "From",
+      "to": "To",
+      "includeAudit": "Also keep their audit records",
+      "includeAuditHint": "Audit records with the custodian as actor or target in the range are kept until the hold is released.",
+      "library": "Library",
+      "saving": "Saving",
+      "create": "Place hold"
     }
   }
 }

@@ -230,7 +230,8 @@ public sealed class AuditQueries(IDbSession session, IAuthorizationService authz
 }
 
 /// <summary>Sealing, verification and retention purge for the current tenant.</summary>
-public sealed class AuditMaintenance(IDbSession session, ITenantContext context, IAuditWriter audit, IObjectStorage storage, ILogger<AuditMaintenance> logger)
+public sealed class AuditMaintenance(IDbSession session, ITenantContext context, IAuditWriter audit, IObjectStorage storage, ILogger<AuditMaintenance> logger,
+    IEnumerable<TeamBeats.Modules.Documents.Contracts.ILegalHolds> holds)
 {
     /// <summary>Export files live 7 days (spec 006 section 8), then the file is deleted and the job keeps only metadata.</summary>
     public async Task<int> DeleteExpiredExportsAsync(CancellationToken ct)
@@ -264,9 +265,30 @@ public sealed class AuditMaintenance(IDbSession session, ITenantContext context,
         return new IntegrityResult(checkedRows, firstBreak, sealedThrough, unsealed, firstBreak is null);
     }
 
-    public async Task<long> PurgeAsync(CancellationToken ct) =>
-        await session.ScalarAsync<long>("select audit.purge_expired(@actor, @corr)",
-            new { actor = context.ActorType == ActorType.User ? context.ActorId : null, corr = Correlation.Id }, ct);
+    /// <summary>
+    /// Removes records past the tenant's retention, never one a legal hold selects (spec 011 FR-015): the purge stops before
+    /// the earliest record with a held custodian as actor or target in the hold's range.
+    /// </summary>
+    public async Task<long> PurgeAsync(CancellationToken ct)
+    {
+        long? keepFrom = null;
+        var selections = holds.FirstOrDefault() is { } register ? await register.AuditSelectionsAsync(ct) : [];
+        foreach (var selection in selections)
+        {
+            var first = await session.ScalarAsync<long?>(
+                """
+                select min(chain_pos) from audit.audit_event
+                where chain_pos is not null and (actor_id = @custodian or target_id = @text)
+                  and occurred_at >= coalesce(@from, '-infinity'::timestamptz) and occurred_at <= coalesce(@to, 'infinity'::timestamptz)
+                """, new { custodian = selection.CustodianId, text = selection.CustodianId.ToString(), from = selection.From, to = selection.To }, ct);
+            if (first is { } position && (keepFrom is null || position < keepFrom))
+            {
+                keepFrom = position;
+            }
+        }
+        return await session.ScalarAsync<long>("select audit.purge_expired(@actor, @corr, @keep)",
+            new { actor = context.ActorType == ActorType.User ? context.ActorId : null, corr = Correlation.Id, keep = keepFrom }, ct);
+    }
 }
 
 /// <summary>Streams an export file to tenant-scoped storage (AUD-007). Runs in the worker with tenant context from the message.</summary>

@@ -35,7 +35,7 @@ public sealed class SearchIndexer(IDbSession session, IEnumerable<ISearchSource>
     IClock clock, ILogger<SearchIndexer> logger)
     : IMessageHandler<SearchItemChanged>,
       IMessageHandler<C.ContentPublished>, IMessageHandler<C.ContentUnpublished>, IMessageHandler<C.ContentExpired>,
-      IMessageHandler<D.DocumentVersionPublished>, IMessageHandler<D.DocumentDeleted>, IMessageHandler<D.DocumentWithdrawn>,
+      IMessageHandler<D.DocumentVersionPublished>, IMessageHandler<D.DocumentDeleted>, IMessageHandler<D.DocumentWithdrawn>, IMessageHandler<D.DocumentDisposed>,
       IMessageHandler<P.PolicyPublished>, IMessageHandler<P.PolicySuperseded>,
       IMessageHandler<S.ServicePublished>, IMessageHandler<S.ServiceRetired>,
       IMessageHandler<Pe.ProfileUpdated>, IMessageHandler<T.TenantMembershipDisabled>, IMessageHandler<T.OrganizationMembershipChanged>,
@@ -64,6 +64,8 @@ public sealed class SearchIndexer(IDbSession session, IEnumerable<ISearchSource>
     public Task HandleAsync(D.DocumentDeleted message, CancellationToken ct) => IndexAsync(SearchSources.Documents, message.DocumentId, ct);
 
     public Task HandleAsync(D.DocumentWithdrawn message, CancellationToken ct) => IndexAsync(SearchSources.Documents, message.DocumentId, ct);
+
+    public Task HandleAsync(D.DocumentDisposed message, CancellationToken ct) => IndexAsync(SearchSources.Documents, message.DocumentId, ct);
 
     public Task HandleAsync(P.PolicyPublished message, CancellationToken ct) => IndexAsync(SearchSources.Policies, message.PolicyId, ct);
 

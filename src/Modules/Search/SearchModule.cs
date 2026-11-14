@@ -41,6 +41,7 @@ public static class SearchModule
         services.AddMessageHandler<D.DocumentVersionPublished, SearchIndexer>("search.index_document_published");
         services.AddMessageHandler<D.DocumentDeleted, SearchIndexer>("search.index_document_deleted");
         services.AddMessageHandler<D.DocumentWithdrawn, SearchIndexer>("search.index_document_withdrawn");
+        services.AddMessageHandler<D.DocumentDisposed, SearchIndexer>("search.index_document_disposed");
         services.AddMessageHandler<P.PolicyPublished, SearchIndexer>("search.index_policy_published");
         services.AddMessageHandler<P.PolicySuperseded, SearchIndexer>("search.index_policy_superseded");
         services.AddMessageHandler<S.ServicePublished, SearchIndexer>("search.index_service_published");
