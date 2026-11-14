@@ -1,22 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { createContext, useContext, useId, type ReactNode } from "react";
+import { createContext, useContext, useId, useMemo, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 
 /** The platform content budgets of spec 036 DLS-101, by the width of the region on the 12 column grid. */
 export type WidgetBudgetSize = 3 | 5 | 8;
 
-const BudgetContext = createContext<WidgetBudgetSize | null>(null);
+const BudgetContext = createContext<{ size: WidgetBudgetSize; cap: number | null } | null>(null);
 
 /** Quarter and third width regions show 3 items, half and two thirds 5, wider regions 8. */
 export function budgetForSpan(span: number): WidgetBudgetSize {
   return span <= 4 ? 3 : span <= 8 ? 5 : 8;
 }
 
-/** Set by the page runtime around each placement, so the frame knows the budget of the region it sits in. */
-export function WidgetBudget({ span, children }: { span: number; children: ReactNode }) {
-  return <BudgetContext.Provider value={budgetForSpan(span)}>{children}</BudgetContext.Provider>;
+/**
+ * Set by the page runtime around each placement, so the frame knows the budget of the region it sits in. `cap` is the
+ * component's own lower budget from its manifest (spec 032 FR-071); it can lower the region's budget and never raise it.
+ */
+export function WidgetBudget({ span, cap, children }: { span: number; cap?: number | null; children: ReactNode }) {
+  const size = budgetForSpan(span);
+  const value = useMemo(() => ({ size, cap: cap ?? null }), [size, cap]);
+  return <BudgetContext.Provider value={value}>{children}</BudgetContext.Provider>;
 }
 
 /**
@@ -24,10 +29,11 @@ export function WidgetBudget({ span, children }: { span: number; children: React
  * component may lower its budget and never raise it. Outside a budgeted region (an inner page) the request stands.
  */
 export function useWidgetBudget(requested?: number): number {
-  const budget = useContext(BudgetContext);
-  if (budget === null) {
+  const region = useContext(BudgetContext);
+  if (region === null) {
     return requested ?? 5;
   }
+  const budget = region.cap === null ? region.size : Math.max(1, Math.min(Math.floor(region.cap), region.size));
   return requested === undefined ? budget : Math.max(1, Math.min(Math.floor(requested), budget));
 }
 
@@ -74,7 +80,7 @@ export function Widget({
 }) {
   const id = useId();
   const t = useTranslations("ui.widget");
-  const budget = useContext(BudgetContext);
+  const budget = useContext(BudgetContext)?.size ?? null;
   const custom = head !== undefined && head !== null;
   const named = custom ? { "aria-label": title } : { "aria-labelledby": id };
   const viewAll = more && more.total > (more.shown ?? budget ?? 0) ? more : null;

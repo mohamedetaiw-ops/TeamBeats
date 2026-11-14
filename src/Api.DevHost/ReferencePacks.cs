@@ -65,7 +65,7 @@ public sealed class ReferencePacks : IComponentRegistration
         }, requires: new ComponentRequirements([Capabilities.IntegrationMicrosoft365], [])),
         Manifest("reference.beta.restricted", "utility", [], requires: new ComponentRequirements([], [Authorization.Contracts.Permissions.ContentPublish])),
         Manifest("reference.beta.legacy", "content", [], state: ComponentStates.Retired),
-        Manifest("reference.beta.old", "content", [], new PlacementRules(Source: "reference.old"), state: ComponentStates.Deprecated),
+        Manifest("reference.beta.old", "content", [], new PlacementRules(Source: "reference.old", States: PlacementStates.Required), state: ComponentStates.Deprecated),
         // Fault injection for the renderer tests (spec 032 T017): throws, or loads slowly, as its mode says.
         Manifest("reference.alpha.fault", "utility", new()
         {
