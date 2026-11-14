@@ -476,6 +476,8 @@ public static class AuditActions
     public const string AssistantHistoryDeleted = "assistant.history_deleted";
     public const string AssistantRetentionChanged = "assistant.retention_changed";
     public const string AssistantGuestsChanged = "assistant.guests_changed";
+    public const string AssistantFileAdded = "assistant.file_added";
+    public const string AssistantFileRefused = "assistant.file_refused";
 
     // Specs 020 and 027 (R1): agents and the tenant agent policy.
     public const string AgentInstalledFromTemplate = "agent.installed_from_template";
@@ -628,7 +630,7 @@ public static class AuditActions
         AiPolicyChanged, AiRouteChangeProposed, AiRouteChangeOverridden, AiRouteChangeApplied, AiRouteChangeRejected, AiCatalogueChanged, AiLoggingWindowOpened, AiLoggingWindowClosed,
         SearchBestBetChanged, SearchSynonymsChanged, SearchRetrievalChangeProposed, SearchRetrievalChangeDecided, SearchRetrievalChangeOverridden,
         SearchRetrievalChangeCancelled, SearchFederatedChanged, SearchAiSummaryChanged, SearchQueryTextChanged,
-        AssistantHistoryDeleted, AssistantRetentionChanged, AssistantGuestsChanged,
+        AssistantHistoryDeleted, AssistantRetentionChanged, AssistantGuestsChanged, AssistantFileAdded, AssistantFileRefused,
         AgentInstalledFromTemplate, AgentTemplateUpdateApplied, AgentAudienceChanged, AgentOwnerChanged, AgentPolicyChanged, AgentToolCalled, AgentExternalCallRefused, AgentToolDenied, AgentInjectionDetected, AgentActionConfirmed, AgentActionRejected,
         AgentVersionSubmitted, AgentVersionApproved, AgentVersionRejected, AgentVersionPublished, AgentRolledBack, AgentSuspended, AgentResumed,
         AgentRetired, AgentKillSwitch,

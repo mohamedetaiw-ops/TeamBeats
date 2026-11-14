@@ -98,6 +98,7 @@ public sealed class AssistantHistory(IDbSession session, ITenantContext context,
     {
         var user = await UserAsync(ct, deleting: true);
         var removed = await session.ExecAsync("delete from agents.conversation where user_id = @user", new { user }, ct);
+        await session.ExecAsync("delete from agents.conversation_file where user_id = @user", new { user }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.AssistantHistoryDeleted, "assistant_history", user.ToString(),
             Changes: new { scope = "all", conversations = removed }), ct);
         return removed;
@@ -193,6 +194,9 @@ public sealed class AssistantHistory(IDbSession session, ITenantContext context,
             new { cutoff = now.AddDays(-days) }, ct);
         var feedback = await session.ExecAsync("delete from agents.feedback where created_at < @cutoff",
             new { cutoff = now.AddMonths(-FeedbackRetentionMonths) }, ct);
+        // Files of a conversation go with it; a file no turn ever used goes after a day (spec 014 US5).
+        await session.ExecAsync("delete from agents.conversation_file where conversation_id is null and created_at < @cutoff",
+            new { cutoff = now - AssistantFiles.PendingFor }, ct);
         return (conversations, feedback);
     }
 }

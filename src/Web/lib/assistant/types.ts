@@ -44,6 +44,11 @@ export type AssistantScope = { source: "policies"; itemId: string };
 
 export type Conversation = { id: string; title: string; createdAt: string; lastTurnAt: string; turns: Turn[]; scope: AssistantScope | null };
 
+/** A file the person brought to a conversation (spec 014 US5); only its text is kept, by the API. */
+export type ConversationFile = { id: string; conversationId: string | null; name: string; mediaType: string; size: number; classification: string; createdAt: string };
+
+export const FILE_CLASSIFICATIONS = ["public", "internal", "confidential", "restricted"] as const;
+
 export type AssistantSettings = { retentionDays: number; updatedAt: string | null; guestsAllowed: boolean };
 
 /** Splits an answer into text and citation markers, keeping only markers that have a citation. */

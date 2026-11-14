@@ -24,6 +24,7 @@ public static class AgentsModule
     {
         services.AddScoped<AssistantService>();
         services.AddScoped<AssistantGuests>();
+        services.AddScoped<AssistantFiles>();
         services.AddScoped<TeamBeats.Modules.Agents.Contracts.ISearchSummaries, SearchSummaries>();
         services.AddScoped<AssistantHistory>();
         services.AddScoped<AssistantTextActions>();
@@ -59,7 +60,24 @@ public static class AgentsModule
         await response.Body.FlushAsync(ct);
     }
 
-    public static IEndpointRouteBuilder MapAgentsEndpoints(this IEndpointRouteBuilder app)
+    /// <summary>Reads a request body up to <paramref name="max"/> bytes; one byte more is kept so the caller sees it was too large.</summary>
+    private static async Task<byte[]> ReadCappedAsync(Stream body, long max, CancellationToken ct)
+    {
+        using var buffer = new MemoryStream();
+        var chunk = new byte[81920];
+        int read;
+        while ((read = await body.ReadAsync(chunk, ct)) > 0)
+        {
+            buffer.Write(chunk, 0, read);
+            if (buffer.Length > max)
+            {
+                break;
+            }
+        }
+        return buffer.ToArray();
+    }
+
+        public static IEndpointRouteBuilder MapAgentsEndpoints(this IEndpointRouteBuilder app)
     {
         var root = app.MapGroup("/api/v1/assistant").RequireTenantUser().WithTags("Assistant");
 
@@ -137,6 +155,26 @@ public static class AgentsModule
             var removed = await history.DeleteAllAsync(ct);
             await session.CommitAsync(ct);
             return Results.Ok(new { removed });
+        });
+
+        // Files the person brings to a conversation (US5, AST-015). The raw file is the body; only its text is kept.
+        root.MapPost("/files", async (HttpRequest http, string? name, string? classification, Guid? conversationId, AssistantFiles files, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var data = await ReadCappedAsync(http.Body, AssistantFiles.MaxBytes, ct);
+            var view = await files.UploadAsync(conversationId, name, classification, data, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/assistant/files/{view.Id}", view);
+        }).DisableAntiforgery();
+
+        root.MapGet("/files", async (Guid? conversationId, AssistantFiles files, CancellationToken ct) =>
+            Results.Ok(new { files = await files.ListAsync(conversationId, ct) }));
+
+        root.MapDelete("/files/{id:guid}", async (Guid id, AssistantFiles files, IDbSession session, CancellationToken ct) =>
+        {
+            await files.DeleteAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
         });
 
         root.MapGet("/settings", async (AssistantHistory history, CancellationToken ct) => Results.Ok(await history.SettingsAsync(ct)));

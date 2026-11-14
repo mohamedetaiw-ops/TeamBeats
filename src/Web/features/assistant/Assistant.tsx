@@ -15,6 +15,7 @@ import {
   readTurnStream,
   unavailableReasons,
   type Conversation,
+  type ConversationFile,
   type ConversationSummary,
   type FeedbackReason,
   type AssistantScope,
@@ -22,6 +23,7 @@ import {
   type TextActionResult,
   type Turn,
 } from "@/lib/assistant/types";
+import { ConversationFiles } from "./ConversationFiles";
 import { Result, runAction } from "./TextActions";
 
 const textActions = ["rewrite", "draft", "summarize", "explain", "translate"] as const;
@@ -190,10 +192,13 @@ export function AssistantChat({
   conversations,
   scope = null,
   uiLocale,
+  files: initialFiles = null,
 }: {
   initial: Conversation | null;
   conversations: ConversationSummary[];
   uiLocale: string;
+  /** The conversation's files, or null when the API does not offer files to this person. */
+  files?: ConversationFile[] | null;
   /** Keeps a new conversation to one item; the API keeps it for every later turn. */
   scope?: AssistantScope | null;
 }) {
@@ -210,6 +215,7 @@ export function AssistantChat({
   const [language, setLanguage] = useState(uiLocale === "ar" ? "en" : "ar");
   const [runs, setRuns] = useState<ToolRun[]>([]);
   const [working, setWorking] = useState(false);
+  const [files, setFiles] = useState<ConversationFile[]>(initialFiles ?? []);
   const inputId = useId();
   const hintId = useId();
   const modeId = useId();
@@ -268,7 +274,12 @@ export function AssistantChat({
       const response = await fetch("/api/v1/assistant/turns", {
         method: "POST",
         headers: { "content-type": "application/json", accept: "text/event-stream" },
-        body: JSON.stringify({ question: q, conversationId, scope: conversationId === null ? scope : null }),
+        body: JSON.stringify({
+          question: q,
+          conversationId,
+          scope: conversationId === null ? scope : null,
+          fileIds: files.filter((f) => f.conversationId === null).map((f) => f.id),
+        }),
       });
       if (!response.ok) {
         setError(response.status === 403 ? t("notAvailable") : (await problemMessages(response)).join(" ") || t("failed"));
@@ -282,6 +293,7 @@ export function AssistantChat({
         return;
       }
       setQuestion("");
+      setFiles((list) => list.map((f) => ({ ...f, conversationId: done.conversationId })));
       setStatus(t("answerReady"));
       if (conversationId === null) {
         router.replace(`/assistant?c=${encodeURIComponent(done.conversationId)}`);
@@ -469,6 +481,9 @@ export function AssistantChat({
               }
             }}
           />
+          {mode === "ask" && initialFiles !== null && !scope ? (
+            <ConversationFiles conversationId={conversationId} files={files} onChange={setFiles} disabled={pending !== null} />
+          ) : null}
           {mode !== "ask" ? (
             <div className="field">
               <label htmlFor={instructionsId}>{mode === "draft" ? t("tools.brief") : t("tools.instructions")}</label>

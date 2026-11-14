@@ -108,5 +108,27 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(main.getByRole("button", { name: msg(locale, "assistant.tools.copy"), exact: true })).toBeVisible();
       await expectAccessible(page, testInfo, `assistant-tools-${locale}`);
     });
+
+    // Spec 014 US5: a file brought to a new conversation is read, shown as a chip and cited by the answer.
+    test("a file brought to a conversation is cited in its answer", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/assistant`);
+      const files = page.locator(".assistant-files");
+      await expect(files.getByRole("button", { name: msg(locale, "assistant.files.attach"), exact: true })).toBeVisible();
+      await files.locator('input[type="file"]').setInputFiles({
+        name: "falcon-notes.txt",
+        mimeType: "text/plain",
+        buffer: Buffer.from("Project Falcon notes. The Falcon pilot starts in the Riyadh warehouse with forty scanners."),
+      });
+      await expect(files.getByRole("list", { name: msg(locale, "assistant.files.list") }).getByText("falcon-notes.txt")).toBeVisible();
+      await expectAccessible(page, testInfo, `assistant-files-${locale}`);
+
+      await page.getByLabel(msg(locale, "assistant.label"), { exact: true }).fill("Where does the Falcon pilot start?");
+      await page.getByRole("button", { name: msg(locale, "assistant.ask"), exact: true }).click();
+      await page.waitForURL(/\/assistant\?c=/);
+      const turn = page.locator(".assistant-turn").first();
+      await expect(turn.locator(".assistant-sources").getByRole("link", { name: "falcon-notes.txt" })).toBeVisible();
+      await expect(page.locator(".assistant-files").getByText("falcon-notes.txt")).toBeVisible();
+    });
   });
 }

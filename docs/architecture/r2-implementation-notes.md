@@ -1839,3 +1839,13 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - Each result carries `readAt` and, per balance, its source (`teambeats` or `hr`) and as-of time; the tool source goes into the run's sources, which the answer cites.
 - Open service requests use the existing `requests.status` tool, so no new Services tool was needed.
 - The platform template `my_hr_helper` ("My HR helper") holds the three tools at L2 with an evaluation suite `template.my_hr_helper` in Arabic and English. Routing picks it for such questions with no assistant code.
+
+## Spec 014 R2 slice 3: files in a conversation (T013, T014, US5, AST-015)
+
+- Only the extracted text is kept (`agents.conversation_file`), never the file, so nothing is left in object storage when a conversation goes. The plan's conversation-scoped storage was dropped for this reason.
+- The upload is the raw body of `POST /api/v1/assistant/files`, like document uploads. With no conversation yet, the file waits until the first turn names it in `fileIds`; a waiting file no turn used is deleted by the assistant retention job after a day.
+- Order of checks: capability and guest access, type and size, the AI policy ceiling for the `assistant` use case (`conflict.assistant.file_above_policy`), the malware scan (an infected file is refused and audited as `assistant.file_refused`, committed although the request fails), then text reading. A file with no readable text is refused (`validation.assistant.file_no_text`).
+- Text extraction moved from Documents to the persistence building block (`TextExtraction`) so both modules share it; PDFs and pictures use the existing text recognition service with OCR.
+- In a turn, the files' text is cut into 1,500 character chunks and the four sharing most words with the question go first as untrusted passages, cited as the file. A conversation with files is answered by the knowledge agent only and never routed, so file text never reaches an agent's tools. A file above the ceiling at turn time is withheld.
+- Capabilities `ai.assistant.file_upload` and `ai.assistant.voice` are off in Workplace and on in Workplace Plus and Enterprise Gov (spec 014 section 9).
+- The audit keeps size, media type and classification, never the file name or text.

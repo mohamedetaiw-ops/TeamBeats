@@ -2506,5 +2506,13 @@
   "conflict.ai.endpoint_changed": "قام شخص آخر بتغيير نقطة الاتصال هذه. أعد تحميلها وحاول مرة أخرى.",
   "conflict.ai.endpoint_enabled": "عطّل نقطة الاتصال قبل حذفها.",
   "conflict.ai.endpoint_untested": "شغّل اختبار الاتصال أولاً. لا يمكن تفعيل نقطة الاتصال إلا بعد اجتياز اختبار خلال آخر 24 ساعة.",
-  "validation.ai.display_currency": "أدخل رمز عملة من ثلاثة أحرف، مثل SAR، وسعرها مقابل الدولار الأمريكي، بقيمة أكبر من 0."
+  "validation.ai.display_currency": "أدخل رمز عملة من ثلاثة أحرف، مثل SAR، وسعرها مقابل الدولار الأمريكي، بقيمة أكبر من 0.",
+  "validation.assistant.file_type": "اختر ملف PDF أو Word أو Excel أو PowerPoint أو نص OpenDocument أو نص عادي أو CSV أو Markdown أو PNG أو JPEG.",
+  "validation.assistant.file_size": "يجب أن يكون حجم الملف أقل من 20 ميغابايت.",
+  "validation.assistant.file_classification": "اختر تصنيفًا: عام أو داخلي أو سري أو مقيد.",
+  "validation.assistant.file_no_text": "تعذرت قراءة أي نص من هذا الملف.",
+  "conflict.assistant.file_above_policy": "لا تسمح سياسة الذكاء الاصطناعي للمساعد بقراءة ملفات بهذا التصنيف.",
+  "conflict.assistant.file_infected": "رُفض الملف لأن فحص البرامج الضارة وجد تهديدًا.",
+  "conflict.assistant.file_scan_failed": "تعذر فحص الملف. حاول مرة أخرى بعد قليل.",
+  "conflict.assistant.file_limit": "يمكن أن تحتوي المحادثة على 5 ملفات على الأكثر. احذف ملفًا أولًا."
 }

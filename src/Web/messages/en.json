@@ -827,7 +827,9 @@
         "workflow_connector_fulfilment": "Connector and webhook steps in services",
         "ai_budgets": "AI budget",
         "ai_budgets_scoped": "AI budgets for units, agents and people",
-        "ai_models_private_endpoint": "Private model endpoints"
+        "ai_models_private_endpoint": "Private model endpoints",
+        "ai_assistant_file_upload": "Files in assistant conversations",
+        "ai_assistant_voice": "Assistant voice input and read aloud"
       },
       "searchLabel": "Search capabilities",
       "searchPlaceholder": "Search by name",
@@ -5701,6 +5703,21 @@
       "remove": "Ask about everything instead",
       "policy": "Answers come only from <name></name>.",
       "notFound": "This policy is not available to ask about. You can ask about anything you can open instead."
+    },
+    "files": {
+      "list": "Files in this conversation",
+      "attach": "Attach a file",
+      "uploading": "Reading the file",
+      "classification": "File classification",
+      "hint": "PDF, Office, text or image, up to 20 MB. Used only in this conversation.",
+      "remove": "Remove {name}",
+      "failed": "That did not work. Try again in a moment.",
+      "classifications": {
+        "public": "Public",
+        "internal": "Internal",
+        "confidential": "Confidential",
+        "restricted": "Restricted"
+      }
     }
   },
   "agents": {

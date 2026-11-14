@@ -827,7 +827,9 @@
         "workflow_connector_fulfilment": "خطوات الموصلات وخطافات الويب في الخدمات",
         "ai_budgets": "ميزانية الذكاء الاصطناعي",
         "ai_budgets_scoped": "ميزانيات الذكاء الاصطناعي للوحدات والوكلاء والأشخاص",
-        "ai_models_private_endpoint": "نقاط نماذج خاصة"
+        "ai_models_private_endpoint": "نقاط نماذج خاصة",
+        "ai_assistant_file_upload": "الملفات في محادثات المساعد",
+        "ai_assistant_voice": "الإدخال الصوتي والقراءة بصوت عالٍ في المساعد"
       },
       "searchLabel": "البحث في الإمكانات",
       "searchPlaceholder": "ابحث بالاسم",
@@ -5701,6 +5703,21 @@
       "remove": "اسأل عن كل شيء بدلاً من ذلك",
       "policy": "تأتي الإجابات من <name></name> فقط.",
       "notFound": "لا يمكن السؤال عن هذه السياسة. يمكنك السؤال عن أي محتوى تستطيع فتحه."
+    },
+    "files": {
+      "list": "الملفات في هذه المحادثة",
+      "attach": "إرفاق ملف",
+      "uploading": "جارٍ قراءة الملف",
+      "classification": "تصنيف الملف",
+      "hint": "ملف PDF أو Office أو نص أو صورة، حتى 20 ميغابايت. يُستخدم في هذه المحادثة فقط.",
+      "remove": "إزالة {name}",
+      "failed": "لم ينجح ذلك. حاول مرة أخرى بعد قليل.",
+      "classifications": {
+        "public": "عام",
+        "internal": "داخلي",
+        "confidential": "سري",
+        "restricted": "مقيد"
+      }
     }
   },
   "agents": {

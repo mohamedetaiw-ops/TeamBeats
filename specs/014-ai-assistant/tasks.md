@@ -16,8 +16,8 @@ Depends on 008, 012, 013, 020, 027, 034. R1: US1 to US4. R2: US5 to US8.
 - [x] T010 Assistant setting for guests and the source kind deny list (AST-020, AST-022)
 - [x] T011 [P] [US7] Tests: personal tools read only the caller's records, refuse others unless 004 allows, show source and time
 - [x] T012 [US7] Self-scoped `my_leave_balance` and `my_open_requests` tools and the "My HR helper" template
-- [ ] T013 [P] [US5] Tests: scan, classification ceiling, use only in the conversation, deletion with the conversation and by retention
-- [ ] T014 [US5] File upload in conversations, panel controls, in English and Arabic, RTL; e2e with axe
+- [x] T013 [P] [US5] Tests: scan, classification ceiling, use only in the conversation, deletion with the conversation and by retention
+- [x] T014 [US5] File upload in conversations, panel controls, in English and Arabic, RTL; e2e with axe
 - [ ] T015 [US6] Voice input and read aloud through gateway `transcribe` and `speak`; panel controls; tests
 - [ ] T016 [US8] Teams personal app: built with spec 015 US5 (the Teams app), see plan
 - [ ] T017 OpenAPI; R2 implementation notes; spec evidence

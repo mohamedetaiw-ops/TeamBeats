@@ -193,6 +193,25 @@
   margin: 0;
 }
 
+/* Files in the conversation (spec 014 US5): the chips, then the classification and the attach button. */
+.assistant-files {
+  display: grid;
+  gap: var(--tb-space-xs);
+}
+
+.assistant-files-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-sm);
+}
+
+.assistant-files-bar .field-hint {
+  flex: 1 1 12rem;
+  margin: 0;
+}
+
+.assistant-files-bar select,
 .assistant-composer-bar select {
   min-block-size: 2.5rem;
   font-size: var(--tb-font-size-sm);

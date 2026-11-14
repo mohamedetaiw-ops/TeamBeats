@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
 import { Header } from "@/components/shell/Header";
-import type { AssistantScope, Conversation, ConversationSummary } from "@/lib/assistant/types";
+import type { AssistantScope, Conversation, ConversationFile, ConversationSummary } from "@/lib/assistant/types";
 import { nameIn, policyHref, type PolicyView } from "@/lib/policies/types";
 import { AssistantChat } from "@/features/assistant/Assistant";
 import { Icon } from "@/components/ui/Icon";
@@ -26,9 +26,11 @@ export default async function AssistantPage({ searchParams }: { searchParams: Pr
   const t = await getTranslations("assistant");
   const locale = await getLocale();
   const { c, policy } = await searchParams;
-  const [list, open] = await Promise.all([
+  const [list, open, attached] = await Promise.all([
     apiGet<{ conversations: ConversationSummary[] }>("/api/v1/assistant/conversations"),
     c && ID.test(c) ? apiGet<Conversation>(`/api/v1/assistant/conversations/${c}`) : Promise.resolve(null),
+    // Files are offered only when the API answers; without the capability it refuses and the controls stay hidden.
+    apiGet<{ files: ConversationFile[] }>(c && ID.test(c) ? `/api/v1/assistant/files?conversationId=${c}` : "/api/v1/assistant/files"),
   ]);
   const wanted: AssistantScope | null = open?.ok
     ? open.data.scope
@@ -86,6 +88,7 @@ export default async function AssistantPage({ searchParams }: { searchParams: Pr
               conversations={list.data.conversations}
               scope={scope}
               uiLocale={locale}
+              files={attached.ok ? attached.data.files : null}
             />
           </>
         )}
