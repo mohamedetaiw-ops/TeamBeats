@@ -66,17 +66,19 @@ function areCounts(series: readonly Series[]): boolean {
  */
 function SinglePoint({ label, category, series, format }: { label: string; category: string; series: readonly Series[]; format: Format }) {
   return (
-    <dl className="ui-chart-single" role="group" aria-label={label} data-chart="single">
-      {series.map((s) => (
-        <div key={s.key}>
-          <dt>
-            {s.label}
-            {category ? <span className="ui-chart-single-category">{category}</span> : null}
-          </dt>
-          <dd className="ui-chart-figure">{format(s.values[0] ?? 0)}</dd>
-        </div>
-      ))}
-    </dl>
+    <div className="ui-chart-single" role="group" aria-label={label} data-chart="single">
+      <dl>
+        {series.map((s) => (
+          <div key={s.key}>
+            <dt>
+              {s.label}
+              {category ? <span className="ui-chart-single-category">{category}</span> : null}
+            </dt>
+            <dd className="ui-chart-figure">{format(s.values[0] ?? 0)}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
   );
 }
 

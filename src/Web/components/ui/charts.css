@@ -86,7 +86,7 @@
 }
 
 /* One data point: the number with its series and category, no axes (DLS-111). */
-.ui-chart-single {
+.ui-chart-single dl {
   display: flex;
   flex-wrap: wrap;
   gap: var(--tb-space-lg);
