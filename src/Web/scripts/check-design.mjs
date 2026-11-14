@@ -74,7 +74,8 @@ const usesHeader = (file, seen = new Set()) => {
   } catch {
     return false;
   }
-  if (/<PageHeader[\s>]/.test(source)) return true;
+  // AdminHeader (components/shell) is the admin form of PageHeader: it renders PageHeader with the section's icon and title.
+  if (/<(PageHeader|AdminHeader)[\s>]/.test(source)) return true;
   for (const m of source.matchAll(/from "@\/(features\/[^"]+)"/g)) {
     for (const ext of [".tsx", "/index.tsx"]) {
       if (usesHeader(join(root, m[1] + ext), seen)) return true;
