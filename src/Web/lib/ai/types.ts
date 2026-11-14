@@ -29,6 +29,8 @@ export type PolicyDocument = {
   regions: string[] | null;
   logging: string;
   sovereign?: string[] | null;
+  displayCurrency?: string | null;
+  displayRate?: number | null;
 };
 
 export type RouteChange = {
@@ -60,7 +62,7 @@ export type ModelPolicyView = {
 
 export type PolicySaveResult = { applied: boolean; policy: ModelPolicyView; routeChange: RouteChange | null };
 
-export const USAGE_GROUPS = ["day", "use_case", "model", "provider", "unit", "agent", "user"] as const;
+export const USAGE_GROUPS = ["day", "use_case", "model", "provider", "classification", "unit", "agent", "user"] as const;
 
 export type UsageRow = { key: string | null; requests: number; inputTokens: number; outputTokens: number; cost: number; users: number };
 
@@ -75,6 +77,26 @@ export type UsageView = {
   minimumGroupSize: number;
   hiddenGroups: number;
   labels: Record<string, Record<string, string>>;
+  currency: string;
+  rate: number;
+};
+
+export type BudgetForecast = { id: string; scope: string; scopeId: string | null; amount: number; used: number; projected: number; overBudget: boolean };
+
+export type UsageForecast = {
+  monthStart: string;
+  monthEnd: string;
+  daysElapsed: number;
+  daysInMonth: number;
+  monthToDate: number;
+  dailyRate: number;
+  projected: number;
+  byProvider: UsageRow[];
+  byClassification: UsageRow[];
+  budgets: BudgetForecast[];
+  scope: "tenant" | "units";
+  currency: string;
+  rate: number;
 };
 
 export type DebugWindow = {

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Modules.AiGateway.Contracts;
 using TeamBeats.Modules.Identity.Contracts;
@@ -98,13 +99,37 @@ public static class UsageGroups
     public const string Unit = "unit";
     public const string Agent = "agent";
     public const string User = "user";
+    public const string Classification = "classification";
 
-    public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal) { Day, UseCase, Model, Provider, Unit, Agent, User };
+    public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal) { Day, UseCase, Model, Provider, Unit, Agent, User, Classification };
 }
 
 public sealed record UsageRow(string? Key, long Requests, long InputTokens, long OutputTokens, decimal Cost, long Users);
 
 public sealed record DeniedRow(string Reason, long Requests);
+
+/// <summary>A monthly USD budget with what it has used so far and where it ends at the current daily rate.</summary>
+public sealed record BudgetForecast(Guid Id, string Scope, Guid? ScopeId, decimal Amount, decimal Used, decimal Projected, bool OverBudget);
+
+/// <summary>
+/// Month to date spend (UTC calendar month) in the viewer's scope, the daily rate so far and the projected month end at
+/// that rate, with cost by provider and by classification (SC-002), and the tenant's monthly USD budgets for viewers
+/// who may see them.
+/// </summary>
+public sealed record UsageForecast(
+    DateOnly MonthStart,
+    DateOnly MonthEnd,
+    int DaysElapsed,
+    int DaysInMonth,
+    decimal MonthToDate,
+    decimal DailyRate,
+    decimal Projected,
+    IReadOnlyList<UsageRow> ByProvider,
+    IReadOnlyList<UsageRow> ByClassification,
+    IReadOnlyList<BudgetForecast> Budgets,
+    string Scope,
+    string Currency,
+    decimal Rate);
 
 public sealed record UsageView(
     DateOnly From,
@@ -116,7 +141,9 @@ public sealed record UsageView(
     IReadOnlyList<DeniedRow> Denied,
     int MinimumGroupSize,
     int HiddenGroups,
-    IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> Labels);
+    IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> Labels,
+    string Currency = "USD",
+    decimal Rate = 1m);
 
 /// <summary>
 /// The AI usage view (spec 013 US4, R1 part): requests, tokens and estimated cost by day, use case, model, provider,
@@ -124,45 +151,96 @@ public sealed record UsageView(
 /// scope see the whole tenant and named users; an org-scoped <c>ai.policy_manage</c> holder sees calls made in their
 /// subtree only, and groups with fewer than five people are hidden from them (scenario 3). Unit rows carry the unit's
 /// names and user rows the person's display name, under <c>Labels</c>, so the page never shows bare ids.
+/// R2 adds cost by classification, a CSV export, the month end forecast against budgets and a display currency, and
+/// reads the daily aggregates kept after call records pass 25 months.
 /// </summary>
-public sealed class UsageReports(IDbSession session, IAuthorizationService authz, IOrganizationHierarchy hierarchy, IUserDirectory users, IClock clock)
+public sealed class UsageReports(
+    IDbSession session,
+    IAuthorizationService authz,
+    IOrganizationHierarchy hierarchy,
+    IUserDirectory users,
+    IClock clock,
+    ModelPolicies policies,
+    AiBudgets budgets,
+    IAuditWriter audit)
 {
     public const int MinimumGroupSize = 5;
     public const int MaxDays = 400;
 
-    public async Task<UsageView> ViewAsync(DateOnly? from, DateOnly? to, string? groupBy, CancellationToken ct)
+    /// <summary>
+    /// Live call records and the daily aggregates of older ones, in one shape. An aggregate row has no person; its
+    /// <c>archived_users</c> says how many people it covered.
+    /// </summary>
+    private const string Source = """
+        (select at, unit_id, user_id, use_case, agent_id, model, provider, classification, decision, denial, 1::bigint as requests,
+                input_tokens::bigint as input_tokens, output_tokens::bigint as output_tokens, cost, 0 as archived_users
+           from ai.usage_record
+         union all
+         select (day::timestamp at time zone 'UTC'), unit_id, null::uuid, use_case, agent_id, model, provider, classification, decision, denial, requests,
+                input_tokens, output_tokens, cost, users
+           from ai.usage_daily) u
+        """;
+
+    private const string Sums = "coalesce(sum(requests), 0)::bigint, coalesce(sum(input_tokens), 0)::bigint, coalesce(sum(output_tokens), 0)::bigint, " +
+        "coalesce(sum(cost), 0), greatest(count(distinct user_id), coalesce(max(archived_users), 0))::bigint";
+
+    private static UsageRow Row(Npgsql.NpgsqlDataReader r) => new(r.Get<string>("key"), r.GetInt64(1), r.GetInt64(2), r.GetInt64(3), r.GetDecimal(4), r.GetInt64(5));
+
+    private static DateTimeOffset Start(DateOnly day) => new(day.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
+
+    /// <summary>
+    /// Whose calls the viewer may see: null for the whole tenant (<c>ai.policy_manage</c> or <c>ai.policy_view</c> at
+    /// tenant scope), else the units of their <c>ai.policy_manage</c> subtrees. Nobody else sees usage.
+    /// </summary>
+    private async Task<Guid[]?> ScopeAsync(CancellationToken ct)
     {
-        var group = groupBy ?? UsageGroups.Day;
+        if ((await authz.CheckAsync(Permissions.AiPolicyManage, AuthzTarget.Tenant, ct)).Allowed ||
+            (await authz.CheckAsync(Permissions.AiPolicyView, AuthzTarget.Tenant, ct)).Allowed)
+        {
+            return null;
+        }
+        var coverage = await authz.CoverageAsync(Permissions.AiPolicyManage, ct);
+        if (!coverage.Any)
+        {
+            throw AppException.Denied();
+        }
+        return [.. await hierarchy.GetSubtreesAsync(coverage.Units, ct)];
+    }
+
+    private async Task<(string Currency, decimal Rate)> DisplayAsync(CancellationToken ct)
+    {
+        var document = (await policies.EffectiveAsync(ct)).Document;
+        return document.DisplayCurrency is { } currency && document.DisplayRate is { } rate ? (currency, rate) : ("USD", 1m);
+    }
+
+    private (DateOnly Start, DateOnly End) Period(DateOnly? from, DateOnly? to, ValidationErrors errors)
+    {
         var today = DateOnly.FromDateTime(clock.UtcNow.UtcDateTime);
         var end = to ?? today;
         var start = from ?? end.AddDays(-29);
+        if (start > end || end.DayNumber - start.DayNumber > MaxDays)
+        {
+            errors.Add("from", "validation.ai.usage_period");
+        }
+        return (start, end);
+    }
+
+    public async Task<UsageView> ViewAsync(DateOnly? from, DateOnly? to, string? groupBy, CancellationToken ct)
+    {
+        var group = groupBy ?? UsageGroups.Day;
         var errors = new ValidationErrors();
         if (!UsageGroups.All.Contains(group))
         {
             errors.Add("groupBy", "validation.ai.usage_group");
         }
-        if (start > end || end.DayNumber - start.DayNumber > MaxDays)
-        {
-            errors.Add("from", "validation.ai.usage_period");
-        }
+        var (start, end) = Period(from, to, errors);
         errors.ThrowIfAny();
 
-        var tenantWide = (await authz.CheckAsync(Permissions.AiPolicyManage, AuthzTarget.Tenant, ct)).Allowed ||
-            (await authz.CheckAsync(Permissions.AiPolicyView, AuthzTarget.Tenant, ct)).Allowed;
-        Guid[]? units = null;
-        if (!tenantWide)
+        var units = await ScopeAsync(ct);
+        if (units is not null && group == UsageGroups.User)
         {
-            var coverage = await authz.CoverageAsync(Permissions.AiPolicyManage, ct);
-            if (!coverage.Any)
-            {
-                throw AppException.Denied();
-            }
-            units = [.. await hierarchy.GetSubtreesAsync(coverage.Units, ct)];
-            if (group == UsageGroups.User)
-            {
-                // Named users only for tenant-wide viewers (scenario 3).
-                throw AppException.Denied();
-            }
+            // Named users only for tenant-wide viewers (scenario 3).
+            throw AppException.Denied();
         }
 
         var key = group switch
@@ -173,18 +251,17 @@ public sealed class UsageReports(IDbSession session, IAuthorizationService authz
             UsageGroups.Provider => "provider",
             UsageGroups.Unit => "unit_id::text",
             UsageGroups.Agent => "agent_id::text",
+            UsageGroups.Classification => "classification",
             _ => "user_id::text",
         };
         var filter = "at >= @start and at < @end" + (units is null ? string.Empty : " and unit_id = any(@units)");
-        var args = new { start = new DateTimeOffset(start.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero), end = new DateTimeOffset(end.AddDays(1).ToDateTime(TimeOnly.MinValue), TimeSpan.Zero), units };
+        var args = new { start = Start(start), end = Start(end.AddDays(1)), units };
 
-        static UsageRow Row(Npgsql.NpgsqlDataReader r) => new(r.Get<string>("key"), r.GetInt64(1), r.GetInt64(2), r.GetInt64(3), r.GetDecimal(4), r.GetInt64(5));
-        const string Sums = "count(*), coalesce(sum(input_tokens), 0)::bigint, coalesce(sum(output_tokens), 0)::bigint, coalesce(sum(cost), 0), count(distinct user_id)";
         var rows = await session.QueryAsync(
-            $"select {key} as key, {Sums} from ai.usage_record where {filter} and decision = 'served' group by 1 order by 1", args, Row, ct);
-        var totals = (await session.QueryAsync($"select null::text as key, {Sums} from ai.usage_record where {filter} and decision = 'served'", args, Row, ct))[0];
+            $"select {key} as key, {Sums} from {Source} where {filter} and decision = 'served' group by 1 order by 1", args, Row, ct);
+        var totals = (await session.QueryAsync($"select null::text as key, {Sums} from {Source} where {filter} and decision = 'served'", args, Row, ct))[0];
         var denied = await session.QueryAsync(
-            $"select denial, count(*) from ai.usage_record where {filter} and decision = 'denied' group by 1 order by 2 desc", args,
+            $"select denial, sum(requests)::bigint from {Source} where {filter} and decision = 'denied' group by 1 order by 2 desc", args,
             r => new DeniedRow(r.GetString(0), r.GetInt64(1)), ct);
 
         var hidden = 0;
@@ -212,7 +289,120 @@ public sealed class UsageReports(IDbSession session, IAuthorizationService authz
                 }
             }
         }
-        return new UsageView(start, end, group, units is null ? "tenant" : "units", totals, rows, denied, MinimumGroupSize, hidden, labels);
+        var display = await DisplayAsync(ct);
+        return new UsageView(start, end, group, units is null ? "tenant" : "units", totals, rows, denied, MinimumGroupSize, hidden, labels, display.Currency, display.Rate);
+    }
+
+    /// <summary>The month end forecast (US4 R2). Unit viewers get their subtree only, with small groups hidden, and no budgets.</summary>
+    public async Task<UsageForecast> ForecastAsync(CancellationToken ct)
+    {
+        var units = await ScopeAsync(ct);
+        var now = clock.UtcNow;
+        var today = DateOnly.FromDateTime(now.UtcDateTime);
+        var monthStart = new DateOnly(today.Year, today.Month, 1);
+        var daysInMonth = DateTime.DaysInMonth(today.Year, today.Month);
+        var elapsed = today.Day;
+        var filter = "at >= @start and at < @end and decision = 'served'" + (units is null ? string.Empty : " and unit_id = any(@units)");
+        var args = new { start = Start(monthStart), end = Start(today.AddDays(1)), units };
+        var total = (await session.QueryAsync($"select null::text as key, {Sums} from {Source} where {filter}", args, Row, ct))[0];
+        async Task<IReadOnlyList<UsageRow>> ByAsync(string column)
+        {
+            var rows = await session.QueryAsync($"select {column} as key, {Sums} from {Source} where {filter} group by 1 order by 5 desc", args, Row, ct);
+            return units is null ? rows : [.. rows.Where(r => r.Users >= MinimumGroupSize)];
+        }
+        var byProvider = await ByAsync("provider");
+        var byClassification = await ByAsync("classification");
+
+        var rate = Math.Round(total.Cost / elapsed, 6);
+        decimal Project(decimal used) => Math.Round(used / elapsed * daysInMonth, 2);
+        var forecasts = new List<BudgetForecast>();
+        if (units is null)
+        {
+            foreach (var b in (await budgets.ListAsync(ct)).Budgets.Where(b => b.Period == BudgetPeriods.Month && b.Amount is not null && b.Used is not null))
+            {
+                var projected = Project(b.Used!.Value);
+                forecasts.Add(new BudgetForecast(b.Id, b.Scope, b.ScopeId, b.Amount!.Value, b.Used.Value, projected, projected > b.Amount.Value));
+            }
+        }
+        var display = await DisplayAsync(ct);
+        return new UsageForecast(monthStart, monthStart.AddDays(daysInMonth - 1), elapsed, daysInMonth, total.Cost, rate, Project(total.Cost), byProvider,
+            byClassification, forecasts, units is null ? "tenant" : "units", display.Currency, display.Rate);
+    }
+
+    /// <summary>
+    /// The CSV export (US4 scenario 4): one line per day, use case, model, provider, classification, unit and agent, with
+    /// requests, tokens and cost in USD (and in the display currency when one is set). Tenant-wide viewers also get the
+    /// person; unit viewers get their subtree only, without people, and lines covering fewer than five people are left
+    /// out. Every export is audited with its period and scope.
+    /// </summary>
+    public async Task<(string FileName, string Csv)> ExportAsync(DateOnly? from, DateOnly? to, CancellationToken ct)
+    {
+        var errors = new ValidationErrors();
+        var (start, end) = Period(from, to, errors);
+        errors.ThrowIfAny();
+        var units = await ScopeAsync(ct);
+        var named = units is null;
+        var filter = "at >= @start and at < @end and decision = 'served'" + (named ? string.Empty : " and unit_id = any(@units)");
+        var args = new { start = Start(start), end = Start(end.AddDays(1)), units };
+        var rows = await session.QueryAsync(
+            $"""
+            select to_char(at at time zone 'UTC', 'YYYY-MM-DD'), use_case, model, provider, classification, unit_id::text, agent_id::text{(named ? ", user_id::text" : ", null::text")},
+                   {Sums}
+              from {Source} where {filter}
+             group by 1, 2, 3, 4, 5, 6, 7{(named ? ", 8" : string.Empty)}
+             order by 1, 2, 3, 4, 5, 6, 7{(named ? ", 8" : string.Empty)}
+            """, args,
+            r => (Day: r.GetString(0), UseCase: r.GetString(1), Model: r.Get<string?>("model"), Provider: r.Get<string?>("provider"),
+                Classification: r.Get<string?>("classification"), Unit: r.Get<string?>("unit_id"), Agent: r.Get<string?>("agent_id"), User: r.IsDBNull(7) ? null : r.GetString(7),
+                Requests: r.GetInt64(8), Input: r.GetInt64(9), Output: r.GetInt64(10), Cost: r.GetDecimal(11), Users: r.GetInt64(12)), ct);
+        if (!named)
+        {
+            rows = [.. rows.Where(r => r.Users >= MinimumGroupSize)];
+        }
+        var display = await DisplayAsync(ct);
+        var converted = display.Currency != "USD";
+        var inv = System.Globalization.CultureInfo.InvariantCulture;
+        var csv = new System.Text.StringBuilder();
+        csv.Append("date,use_case,model,provider,classification,unit_id,agent_id");
+        csv.Append(named ? ",user_id" : string.Empty);
+        csv.Append(",requests,input_tokens,output_tokens,cost_usd");
+        csv.Append(converted ? $",cost_{display.Currency.ToLowerInvariant()}" : string.Empty);
+        csv.Append("\r\n");
+        foreach (var r in rows)
+        {
+            csv.Append(r.Day).Append(',').Append(Csv(r.UseCase)).Append(',').Append(Csv(r.Model)).Append(',').Append(Csv(r.Provider)).Append(',')
+                .Append(Csv(r.Classification)).Append(',').Append(r.Unit).Append(',').Append(r.Agent);
+            if (named)
+            {
+                csv.Append(',').Append(r.User);
+            }
+            csv.Append(',').Append(r.Requests.ToString(inv)).Append(',').Append(r.Input.ToString(inv)).Append(',').Append(r.Output.ToString(inv))
+                .Append(',').Append(r.Cost.ToString("0.000000", inv));
+            if (converted)
+            {
+                csv.Append(',').Append(Math.Round(r.Cost * display.Rate, 6).ToString("0.000000", inv));
+            }
+            csv.Append("\r\n");
+        }
+        await audit.WriteAsync(new AuditEntry(AuditActions.AiUsageExported, "ai_usage", null,
+            Changes: new { from = start, to = end, scope = named ? "tenant" : "units", rows = rows.Count, people = named }), ct);
+        return ($"ai-usage-{start:yyyy-MM-dd}-to-{end:yyyy-MM-dd}.csv", csv.ToString());
+    }
+
+    /// <summary>CSV escaping with formula-injection protection for spreadsheet tools.</summary>
+    internal static string Csv(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return string.Empty;
+        }
+        if (value[0] is '=' or '+' or '-' or '@')
+        {
+            value = "'" + value;
+        }
+        return value.Contains(',') || value.Contains('"') || value.Contains('\n') || value.Contains('\r')
+            ? "\"" + value.Replace("\"", "\"\"", StringComparison.Ordinal) + "\""
+            : value;
     }
 }
 

@@ -459,6 +459,7 @@ public static class AuditActions
     public const string AiEndpointTested = "ai.endpoint_tested";
     public const string AiEndpointEnabled = "ai.endpoint_enabled";
     public const string AiEndpointDisabled = "ai.endpoint_disabled";
+    public const string AiUsageExported = "ai.usage_exported";
 
     // 012
     public const string SearchBestBetChanged = "search.best_bet_changed";

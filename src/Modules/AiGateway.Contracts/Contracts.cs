@@ -207,3 +207,13 @@ public sealed record AiBudgetThresholdReached(Guid BudgetId, string Scope, Guid?
 
 public sealed record AiModelRouteChangeProposed(Guid RouteChangeId, IReadOnlyList<string> UseCases, IReadOnlyDictionary<string, IReadOnlyList<string>> Before,
     IReadOnlyDictionary<string, IReadOnlyList<string>> After, Guid? ProposedBy = null) : IIntegrationEvent;
+
+/// <summary>
+/// Tokens for the internal OpenAI-compatible facade of evaluator workers (spec 013 FR-018, ADR-0015). A token is for the
+/// current tenant, one evaluation run and the <c>evaluation</c> use case only, carries the run's classification and the
+/// model under test, and is valid for 15 minutes. Null when the installation has not turned the facade on.
+/// </summary>
+public interface IAiEvaluatorTokens
+{
+    string? Mint(Guid runId, DataClassification classification, string? modelUnderTest);
+}

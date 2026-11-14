@@ -29,6 +29,8 @@ export function PolicyEditor({ catalogue, initial }: { catalogue: CatalogueEntry
   const [maxTokens, setMaxTokens] = useState(initial.policy.maxOutputTokens === null ? "" : String(initial.policy.maxOutputTokens));
   const [minTemp, setMinTemp] = useState(initial.policy.minTemperature === null ? "" : String(initial.policy.minTemperature));
   const [maxTemp, setMaxTemp] = useState(initial.policy.maxTemperature === null ? "" : String(initial.policy.maxTemperature));
+  const [currency, setCurrency] = useState(initial.policy.displayCurrency ?? "");
+  const [rate, setRate] = useState(initial.policy.displayRate == null ? "" : String(initial.policy.displayRate));
   const [sovereign, setSovereign] = useState(new Set(initial.policy.sovereign ?? []));
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Result>(null);
@@ -59,6 +61,9 @@ export function PolicyEditor({ catalogue, initial }: { catalogue: CatalogueEntry
           minTemperature: number(minTemp),
           maxTemperature: number(maxTemp),
           sovereign: [...sovereign],
+          // An empty currency shows US dollars again.
+          displayCurrency: currency.trim(),
+          displayRate: currency.trim() === "" ? null : number(rate),
         }),
       });
       if (response.ok) {
@@ -192,6 +197,28 @@ export function PolicyEditor({ catalogue, initial }: { catalogue: CatalogueEntry
             value={maxTemp}
             disabled={!editable}
             onChange={(e) => setMaxTemp(e.target.value)}
+          />
+        </div>
+        <div className="ai-row">
+          <FormField
+            label={t("limits.displayCurrency")}
+            hint={t("limits.displayCurrencyHint")}
+            name="displayCurrency"
+            dir="ltr"
+            maxLength={3}
+            value={currency}
+            disabled={!editable}
+            onChange={(e) => setCurrency(e.target.value.toUpperCase())}
+          />
+          <FormField
+            label={t("limits.displayRate")}
+            name="displayRate"
+            type="number"
+            min={0}
+            step="any"
+            value={rate}
+            disabled={!editable || currency.trim() === ""}
+            onChange={(e) => setRate(e.target.value)}
           />
         </div>
       </section>

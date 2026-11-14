@@ -50,12 +50,12 @@ Depends on 005 (quota tolerance), 015 (budget notifications), 017 (address check
 - [x] T025 [US6] Private endpoints page, in English and Arabic, RTL; e2e with axe
 
 ### Phase 9: User Story 4 R2, cost analytics and export
-- [ ] T026 [P] [US4] Tests: CSV export audited and scoped; forecast; display currency; 25 month aggregation
-- [ ] T027 [US4] Export, forecast, display currency, retention job, AI usage page additions
+- [x] T026 [P] [US4] Tests: CSV export audited and scoped; forecast; display currency; 25 month aggregation
+- [x] T027 [US4] Export, forecast, display currency, retention job, AI usage page additions
 
 ### Phase 10: FR-018, evaluator facade
-- [ ] T028 [P] Tests: token for one tenant, run and use case; expired, tampered and other tenant tokens refused; full pipeline applied; off unless enabled
-- [ ] T029 Internal OpenAI-compatible facade and token minting for evaluator workers
+- [x] T028 [P] Tests: token for one tenant, run and use case; expired, tampered and other tenant tokens refused; full pipeline applied; off unless enabled
+- [x] T029 Internal OpenAI-compatible facade and token minting for evaluator workers
 
 ### Final phase R2
-- [ ] T030 OpenAPI; R2 implementation notes; spec evidence
+- [x] T030 OpenAPI; R2 implementation notes; spec evidence

@@ -24,7 +24,9 @@ public sealed record PolicyDocument(
     double? MaxTemperature,
     List<string>? Regions,
     string Logging = PolicyDocument.MetadataOnly,
-    List<string>? Sovereign = null)
+    List<string>? Sovereign = null,
+    string? DisplayCurrency = null,
+    decimal? DisplayRate = null)
 {
     public const string MetadataOnly = "metadata";
 
@@ -64,7 +66,9 @@ public sealed record ModelPolicyRequest(
     double? MaxTemperature,
     List<string>? Regions,
     string? Logging,
-    List<string>? Sovereign = null);
+    List<string>? Sovereign = null,
+    string? DisplayCurrency = null,
+    decimal? DisplayRate = null);
 
 public sealed record RouteChangeView(
     Guid Id,
@@ -467,6 +471,19 @@ public sealed class ModelPolicies(
         {
             errors.Add("sovereign", "validation.ai.classification");
         }
+        // US4 R2: a display currency and its fixed rate per USD change only the figures shown; records stay in USD.
+        // An empty currency switches the display back to USD.
+        var currency = request.DisplayCurrency is null ? current.DisplayCurrency : request.DisplayCurrency.Trim().ToUpperInvariant();
+        var rate = request.DisplayCurrency is null && request.DisplayRate is null ? current.DisplayRate : request.DisplayRate;
+        if (currency is { Length: 0 } or "USD")
+        {
+            currency = null;
+            rate = null;
+        }
+        if (currency is not null && (!System.Text.RegularExpressions.Regex.IsMatch(currency, "^[A-Z]{3}$") || rate is not (> 0 and <= 1_000_000)))
+        {
+            errors.Add("displayCurrency", "validation.ai.display_currency");
+        }
         var logging = request.Logging ?? current.Logging;
         if (logging != PolicyDocument.MetadataOnly)
         {
@@ -475,7 +492,7 @@ public sealed class ModelPolicies(
         }
         errors.ThrowIfAny();
         return new PolicyDocument(allowlist, routes, confidential, maxTokens, minT, maxT, regions?.Distinct(StringComparer.Ordinal).ToList(), logging,
-            sovereign.Count == 0 ? null : sovereign);
+            sovereign.Count == 0 ? null : sovereign, currency, currency is null ? null : rate);
     }
 }
 

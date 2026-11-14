@@ -20577,6 +20577,48 @@
         }
       }
     },
+    "/api/v1/ai/usage/forecast": {
+      "get": {
+        "tags": [
+          "AI gateway"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/ai/usage/export": {
+      "get": {
+        "tags": [
+          "AI gateway"
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/ai/debug-windows": {
       "get": {
         "tags": [
@@ -34771,6 +34813,21 @@
             "items": {
               "type": "string"
             }
+          },
+          "displayCurrency": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "displayRate": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
           }
         }
       },

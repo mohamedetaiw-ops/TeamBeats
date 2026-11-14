@@ -28,6 +28,9 @@ public static class AiGatewayModule
         services.AddScoped<OrgPolicies>();
         services.AddScoped<PrivateEndpoints>();
         services.AddScoped<UsageReports>();
+        services.AddScoped<UsageRetention>();
+        services.AddScoped<EvaluatorTokens>();
+        services.AddScoped<IAiEvaluatorTokens>(sp => sp.GetRequiredService<EvaluatorTokens>());
         services.AddScoped<IAiAgentUsage, AiAgentUsage>();
         services.AddScoped<AiGatewayService>();
         services.AddScoped<IAiGateway>(sp => sp.GetRequiredService<AiGatewayService>());
@@ -39,6 +42,7 @@ public static class AiGatewayModule
 
     public static IEndpointRouteBuilder MapAiGatewayEndpoints(this IEndpointRouteBuilder app)
     {
+        app.MapEvaluatorFacade();
         var ai = app.MapGroup("/api/v1/ai").RequireTenantUser().InAdminArea().WithTags("AI gateway");
 
         ai.MapGet("/catalogue", async (ModelPolicies policies, CancellationToken ct) => Results.Ok(await policies.CatalogueAsync(ct)));
@@ -60,6 +64,16 @@ public static class AiGatewayModule
 
         ai.MapGet("/usage", async (DateOnly? from, DateOnly? to, string? groupBy, UsageReports reports, CancellationToken ct) =>
             Results.Ok(await reports.ViewAsync(from, to, groupBy, ct)));
+
+        ai.MapGet("/usage/forecast", async (UsageReports reports, CancellationToken ct) => Results.Ok(await reports.ForecastAsync(ct)));
+
+        // US4 scenario 4: the export is audited, so the audit entry is committed before the file is sent.
+        ai.MapGet("/usage/export", async (DateOnly? from, DateOnly? to, UsageReports reports, IDbSession session, CancellationToken ct) =>
+        {
+            var (name, csv) = await reports.ExportAsync(from, to, ct);
+            await session.CommitAsync(ct);
+            return Results.File(System.Text.Encoding.UTF8.GetPreamble().Concat(System.Text.Encoding.UTF8.GetBytes(csv)).ToArray(), "text/csv; charset=utf-8", name);
+        });
 
         ai.MapGet("/debug-windows", async (DebugWindows windows, CancellationToken ct) => Results.Ok(await windows.ListAsync(ct)));
 
