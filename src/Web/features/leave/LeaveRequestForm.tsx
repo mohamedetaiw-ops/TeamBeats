@@ -135,6 +135,8 @@ export function LeaveRequestForm({ types, onSubmitted }: { types: LeaveType[]; o
 
   if (types.length === 0) return <p className="field-hint">{t("noTypes")}</p>;
   const blocked = (preview?.problems.length ?? 0) > 0 || (preview?.documentRequired === true && !attached);
+  // With a field empty the button stays on, so pressing it names the missing field (DLS-083) whatever the last preview said.
+  const filled = Boolean(start) && (byHour ? Boolean(hours.trim()) : Boolean(end));
 
   return (
     <form
@@ -226,7 +228,7 @@ export function LeaveRequestForm({ types, onSubmitted }: { types: LeaveType[]; o
         </Alert>
       ) : null}
       <div className="leave-actions">
-        <Button type="submit" variant="primary" busy={busy} busyLabel={t("submitting")} disabled={blocked || !preview}>
+        <Button type="submit" variant="primary" busy={busy} busyLabel={t("submitting")} disabled={filled && (blocked || !preview)}>
           {t("submit")}
         </Button>
       </div>
