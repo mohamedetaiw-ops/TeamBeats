@@ -1831,3 +1831,11 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - A guest is refused (403) on turns, text actions, history and feedback while it is off, and the AI summary of search returns `unavailable` for them. Deleting their own conversations stays open to a guest, so turning the setting off never traps their data.
 - When it is on nothing else changes: retrieval already runs as the guest, so owners show only the spaces they were invited to.
 - The deny list is `AiExcludedSources` in the search contracts (`payslip`, `engagement_anonymous`). The indexer never registers a source with one of those names, and retrieval drops such passages for every AI use case without counting them as withheld, so their existence is not hinted. Payslips (019) and anonymous engagement (023) are not search sources today; the list guards against a future one.
+
+## Spec 014 R2 slice 2: personal context answers (T011, T012, US7)
+
+- The Hr module registers `leave.balance` and `leave.my_requests` as read tools (capability `hr.leave`). They run as the person through the leave use cases, so they return what the leave page shows.
+- `leave.balance` takes an optional `person`. Anyone other than the caller is refused with `tool.other_person` unless the caller is an HR officer covering that person (the same rule as the leave ledger). The refusal is the same whether or not the person exists.
+- Each result carries `readAt` and, per balance, its source (`teambeats` or `hr`) and as-of time; the tool source goes into the run's sources, which the answer cites.
+- Open service requests use the existing `requests.status` tool, so no new Services tool was needed.
+- The platform template `my_hr_helper` ("My HR helper") holds the three tools at L2 with an evaluation suite `template.my_hr_helper` in Arabic and English. Routing picks it for such questions with no assistant code.

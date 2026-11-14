@@ -554,7 +554,45 @@ public sealed partial class LeaveRequests(
             return [];
         }
         var me = context.RequireUser();
-        var person = await ledger.PersonAsync(me, ct);
+        return await BalancesOfAsync(me, await ledger.PersonAsync(me, ct), ct);
+    }
+
+    /// <summary>
+    /// Another person's balances, for an HR officer covering them (the same rule as their ledger). Null when the person is
+    /// not found or the caller may not see them, so an agent tool can refuse without saying which.
+    /// </summary>
+    internal async Task<IReadOnlyList<LeaveBalance>?> BalancesForAsync(Guid userId, CancellationToken ct)
+    {
+        await entitlements.DemandAsync(Capabilities.HrLeave, ct);
+        if (userId == context.RequireUser())
+        {
+            return await MyBalancesAsync(ct);
+        }
+        if (await ledger.PersonAsync(userId, ct) is not { } person || !await ledger.HrCoversAsync(person, ct))
+        {
+            return null;
+        }
+        return await BalancesOfAsync(userId, person, ct);
+    }
+
+    /// <summary>The person's own open leave: pending requests and approved leave that has not ended, soonest first.</summary>
+    internal async Task<IReadOnlyList<LeaveRequestView>> MyOpenAsync(int limit, CancellationToken ct)
+    {
+        await entitlements.DemandAsync(Capabilities.HrLeave, ct);
+        var me = context.RequireUser();
+        var rows = await session.QueryAsync(
+            $"select {Columns} from hr.leave_request where user_id = @me and (status = 'pending' or status = 'approved' and end_date >= @today) order by start_date, created_at limit @limit",
+            new { me, today = await ledger.TodayAsync(ct), limit }, Read, ct);
+        var list = new List<LeaveRequestView>();
+        foreach (var row in rows)
+        {
+            list.Add(await ViewAsync(row, Access.Person, ct));
+        }
+        return list;
+    }
+
+    private async Task<IReadOnlyList<LeaveBalance>> BalancesOfAsync(Guid me, LeavePerson? person, CancellationToken ct)
+    {
         var today = await ledger.TodayAsync(ct);
         var list = new List<LeaveBalance>();
         var hr = await ledger.HrBalancesAsync(me, ct);
