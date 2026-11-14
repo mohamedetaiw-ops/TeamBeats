@@ -28,9 +28,10 @@
   text-decoration: none;
 }
 
+/* 8rem keeps two tiles side by side on a phone, so the strip is three short rows there and one row on a desktop. */
 .home-tiles {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
   gap: var(--tb-space-sm);
   margin: 0;
   padding: 0;

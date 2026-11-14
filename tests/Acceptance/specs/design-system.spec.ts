@@ -235,6 +235,24 @@ for (const design of designs) {
           await expect(widget.getByRole("listitem")).toHaveCount(rows);
           await expect(widget.locator("[data-widget-more]")).toContainText(/7|٧/);
         }
+        // DLS-110 page cards: outlined draws the hairline on the frame, flat draws neither line nor shadow, in any design.
+        const cards = await page.evaluate(() => {
+          const root = document.documentElement;
+          const before = root.getAttribute("data-v-cards");
+          const frame = document.querySelector('[data-testid="cg-budget-third"] .ui-widget')!;
+          const read = (variant: string) => {
+            root.setAttribute("data-v-cards", variant);
+            const style = getComputedStyle(frame);
+            return { line: style.borderTopWidth !== "0px" && style.borderTopColor !== "rgba(0, 0, 0, 0)", shadow: style.boxShadow !== "none" };
+          };
+          const seen = { outlined: read("outlined"), flat: read("flat") };
+          if (before === null) root.removeAttribute("data-v-cards");
+          else root.setAttribute("data-v-cards", before);
+          return seen;
+        });
+        expect(cards.outlined.line, "outlined page cards draw a hairline").toBe(true);
+        expect(cards.flat, "flat page cards draw no line and no shadow").toEqual({ line: false, shadow: false });
+
         // DLS-103: a placement state sits inside the widget frame.
         await expect(page.getByTestId("cg-budget-state").locator(".ui-widget .ui-state")).toBeVisible();
 
