@@ -1904,3 +1904,13 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - Internal Communications ships at its default L1 and only drafts news (`draft_news`, confirmed by the person). Publishing at L3 with communications owner approval waits for spec 027 L3; the instructions say it never publishes.
 - New categories: people, learning, procurement, finance and communications.
 - Evaluation cases may now name tools without a module prefix (`find_person`), matching how such tools are registered.
+
+## Spec 020 R2 slice 6: streamed answers and resume after restart (T021, plan item 6, closes T004 and T005)
+
+- `POST /agents/{id}/runs` with `Accept: text/event-stream` streams `run` (its ID), `step` (each tool decision, never parameters), `delta` (answer text) and `done` (the checked answer, as the plain call returns). Every check runs before the stream starts, so a refusal is still a problem response. The run goes on if the person leaves the page; `GET /agents/runs/{id}/result` returns it to its person only (404 for anyone else and other tenants).
+- The gateway now reads tool calls from streamed provider replies (OpenAI format, pieces keyed by index), and the fake router streams them the same way.
+- A person's own run (mode run, not routed by the assistant) is durable: after every model turn and its tool calls the run row, its checkpoint and the work so far are committed (`IDbSession.CheckpointAsync`). Test panel, evaluation, briefing and assistant-routed runs stay in their caller's transaction, unchanged.
+- A worker (`AgentRunResumeService`, every minute) claims durable runs idle for 3 minutes with a checkpoint, raises `attempt`, and continues each as its person from the last checkpoint. Kill switch on, package without agents or the person out of the audience stop the run instead. Each run is resumed at most twice; after that the purge closes it as interrupted (10 minutes, as before). The purge now keeps checkpoints of running runs.
+- Every run update checks `attempt`: a request that lost its run to the worker fails with `conflict.agent_run.resumed_elsewhere` and rolls back its work since the last checkpoint, so a tool call is not kept twice. Default kept: a tool with effects outside TeamBeats (L3, not built) would need its own idempotency key before it can be made durable.
+- Runs now keep their answer and cited sources (`agents.run.answer`, `cited`) for the result endpoint; they are deleted with the run after the record retention.
+- Web: the agent conversation streams the answer and shows the tool in use; when the connection drops after the run started, the turn offers "Check for the answer".

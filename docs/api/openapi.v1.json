@@ -22858,6 +22858,29 @@
         }
       }
     },
+    "/api/v1/agents/runs/{id}/result": {
+      "get": {
+        "tags": [
+          "Agents"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/agents/{id}/test": {
       "post": {
         "tags": [

@@ -159,13 +159,15 @@ public sealed class AgentRunResumeTests(TenantWorld world)
     }
 
     [Fact]
-    public async Task A_resumed_run_stops_when_agents_were_switched_off_and_runs_are_not_resumed_forever()
+    public async Task The_kill_switch_stops_a_cut_off_run_and_runs_are_not_resumed_forever()
     {
         var t = await FreshAsync();
         var agent = await PublishedAsync(t);
         var stopped = await CutOffAsync(t, agent);
+        // The kill switch stops a run that is still going and takes it from its holder, so nothing resumes it.
         await OkAsync(t["sec"].Client.PutAsJsonAsync($"{Agents}/kill-switch", new { active = true, confirmation = $"{t.Key} holding", reason = "Checking a problem" }));
-        Assert.Equal(1, await ResumeAsync(t));
+        Assert.Equal(1, await world.Database.TenantScalarAsync<int>(t.Id, "select attempt from agents.run where id = @id", ("id", stopped)));
+        Assert.Equal(0, await ResumeAsync(t));
         var result = await OkAsync(t["emp"].Client.GetAsync($"{Agents}/runs/{stopped}/result"));
         Assert.Equal("stopped", result.GetProperty("status").GetString());
         Assert.Equal("suspended", result.GetProperty("outcome").GetString());

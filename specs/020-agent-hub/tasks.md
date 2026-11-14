@@ -8,8 +8,8 @@ Depends on 004, 005, 006, 013, 016, 027 (same module), 034; 012 (search source),
 - [x] T003 Definition schema and validator with unit tests
 
 ## Phase 2: Runtime
-- [ ] T004 [P] Tests: run loop with the fake OpenRouter; tool calls through the gateway; confirmation checkpoint; restart resumes; streaming
-- [ ] T005 Run loop, checkpoints, worker resumption and server-sent events
+- [x] T004 [P] Tests: run loop with the fake OpenRouter; tool calls through the gateway; confirmation checkpoint; restart resumes; streaming
+- [x] T005 Run loop, checkpoints, worker resumption and server-sent events
 
 ## Phase 3: User Stories 1 to 3 and 5, templates and lifecycle (P1)
 - [x] T006 [P] [US1] Tests: template library by package with "not ready"; edits within policy limits; sources limited to what the designer can read; test panel executes no writes; submit locks and creates an inbox task
@@ -35,6 +35,6 @@ Depends on 004, 005, 006, 013, 016, 027 (same module), 034; 012 (search source),
 - [x] T018 [US9] Persistent memory: policy switch, consent, `memory.remember`, My agents page, retention, leaver and withdrawal deletion; tests
 - [x] T019 [US8] Briefings: policy switch with risk classes, subscription, worker running as the user, notification delivery; tests
 - [x] T020 Department templates 7 to 12 with suites, L3 ones "not ready" until spec 027 L3
-- [ ] T021 Runtime: streamed agent answers and resumption after restart (closes T004, T005)
+- [x] T021 Runtime: streamed agent answers and resumption after restart (closes T004, T005)
 - [ ] T022 Detailed agent analytics through spec 021 under `analytics.advanced`
 - [ ] T023 OpenAPI; R2 implementation notes; spec evidence
