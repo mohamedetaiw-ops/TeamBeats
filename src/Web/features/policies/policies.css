@@ -174,3 +174,12 @@
   grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
   gap: var(--tb-space-md);
 }
+
+/* The policies that need attention, named inside the alert above the register (DLS-109). */
+.policies-attention {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

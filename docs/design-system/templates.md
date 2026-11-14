@@ -7,7 +7,7 @@ Templates are ready page patterns built only from the shared components. Adminis
 | Home | Home layout with hero and grid regions | A compact greeting, then the attention queue (wide) beside the next up panel (narrow), then your services beside the lead story, then calendar and mail summaries and role components, the campaign band last. Each home view (My day, Team lead, Plant floor) is its own preset for its kind of work (spec 008 FR-067 to FR-069). Cards for features not built yet stay hidden | Employee home, organization homes |
 | List | Contained page | Page header, section tabs, what needs attention, the filter toolbar, data table or list rows, empty state | Policy register, requests, my policies |
 | Catalogue | Contained page | Page header, filter toolbar, tile cards grouped by category, favourites | Services, knowledge spaces, document libraries |
-| Directory | Contained page | Page header, section tabs, search, person cards | People, my team |
+| Directory | Contained page | Page header, section tabs, filter toolbar with cards or list, results first, discovery after | People, my team |
 | Detail | Split view | Page header with actions, main content, side column for related actions | A policy, a request, tasks with delegation |
 | Article | Article layout | Title, metadata, hero `Media`, readable column (45 to 80 characters), related links, acknowledgement when required | News, announcements, policies, knowledge articles |
 | Listing | Listing layout | Title, search and filters, results as `Card` grid or table rows, paging, empty state | News archive, services catalogue, document libraries, people search |

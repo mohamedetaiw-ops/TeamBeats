@@ -2332,7 +2332,16 @@
       "failed": "People could not be loaded.",
       "retry": "Try again"
     },
-    "noTitle": "Title not set"
+    "noTitle": "Title not set",
+    "layout": {
+      "label": "Layout",
+      "grid": "Cards",
+      "list": "List"
+    },
+    "quick": {
+      "email": "Email {name}",
+      "call": "Call {name}"
+    }
   },
   "security": {
     "tabsLabel": "Security pages",
@@ -4088,7 +4097,16 @@
       "recordsLink": "Records management",
       "assetsLink": "Brand assets",
       "importLink": "Import files",
-      "connectedMeta": "{scope}, SharePoint"
+      "connectedMeta": "{scope}, SharePoint",
+      "search": "Search documents",
+      "searchHint": "Search libraries by name",
+      "apply": "Search",
+      "searchInside": "Search inside files for “{q}”",
+      "scopeFilter": "Scope",
+      "anyScope": "Any scope",
+      "noMatch": "No library name matches.",
+      "noMatchHint": "Search inside the files, or clear the search.",
+      "clear": "Clear search"
     },
     "browser": {
       "filters": "Find documents",
@@ -4248,7 +4266,16 @@
       "readTime": "{minutes} min read",
       "noBody": "This article has no text yet.",
       "noBodyEditor": "Add the steps with Edit so readers can follow them.",
-      "noBodyReader": "The owner is still writing it. Check back soon."
+      "noBodyReader": "The owner is still writing it. Check back soon.",
+      "search": "Search knowledge",
+      "searchHint": "Search articles by title",
+      "apply": "Search",
+      "searchInside": "Search inside articles for “{q}”",
+      "kind": "Kind",
+      "anyKind": "Any kind",
+      "noMatch": "No article title matches.",
+      "noMatchHint": "Search inside the articles, or clear the search.",
+      "clear": "Clear search"
     },
     "feedback": {
       "choose": "Say whether the article helped.",
@@ -4467,7 +4494,12 @@
       "none": "None",
       "working": "new version {state}",
       "create": "New policy",
-      "description": "Every policy in force, its owner and when it is reviewed next."
+      "description": "Every policy in force, its owner and when it is reviewed next.",
+      "overdue": "{count, plural, one {# policy is past its review date} other {# policies are past their review date}}",
+      "reviewWas": "review was due {date}",
+      "late": "Late",
+      "allStatus": "{count, plural, other {All # policies are {status}}}",
+      "allOwner": "Owner: {owner}"
     },
     "my": {
       "title": "My policies",
