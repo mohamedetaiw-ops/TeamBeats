@@ -5,8 +5,11 @@ import { apiGet, type Me } from "@/lib/api";
 import {
   libraryHref,
   nameIn,
+  type ConnectedSource,
   type LibrarySummary,
 } from "@/lib/documents/types";
+import type { OrgUnitView } from "@/lib/admin/types";
+import { ConnectLibraryForm } from "@/features/documents/ConnectLibraryForm";
 import { Header } from "@/components/shell/Header";
 import { StateView } from "@/components/ui/StateView";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -22,12 +25,15 @@ export default async function LibrariesPage() {
   if (!me.ok) {
     redirect("/signin");
   }
-  const [libraries, records, assets] = await Promise.all([
+  const [libraries, records, assets, sources, units] = await Promise.all([
     apiGet<LibrarySummary[]>("/api/v1/documents/libraries"),
     // Records managers get a way in; the API decides who that is.
     apiGet<unknown[]>("/api/v1/records/disposition"),
     // The brand asset portal, where the plan has it (spec 011 US5).
     apiGet<unknown[]>("/api/v1/assets/collections"),
+    // People who manage libraries somewhere can connect SharePoint libraries (spec 011 US9); the API decides who.
+    apiGet<ConnectedSource[]>("/api/v1/documents/connected-sources"),
+    apiGet<OrgUnitView[]>("/api/v1/org/units"),
   ]);
   if (!libraries.ok) {
     notFound();
@@ -58,11 +64,30 @@ export default async function LibrariesPage() {
           <ul className="ui-tiles" data-testid="library-list">
             {libraries.data.map((l, i) => (
               <li key={l.id}>
-                <TileCard title={nameIn(l.names, locale)} href={libraryHref(l.id)} icon="files" tone={tones[i % tones.length]} meta={t(`scope.${l.scope}`)} />
+                <TileCard
+                  title={nameIn(l.names, locale)}
+                  href={libraryHref(l.id)}
+                  icon="files"
+                  tone={tones[i % tones.length]}
+                  meta={l.connected ? t("connectedMeta", { scope: t(`scope.${l.scope}`) }) : t(`scope.${l.scope}`)}
+                />
               </li>
             ))}
           </ul>
         )}
+        {sources.ok && sources.data.length > 0 ? (
+          <ConnectLibraryForm
+            sources={sources.data}
+            scopes={[
+              { value: "tenant", label: t("scope.tenant") },
+              ...(units.ok
+                ? units.data
+                    .filter((u) => u.status === "active")
+                    .map((u) => ({ value: `org_unit|${u.id}`, label: nameIn(u.names, locale) }))
+                : []),
+            ]}
+          />
+        ) : null}
       </main>
     </>
   );

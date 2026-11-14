@@ -491,6 +491,10 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
         }
         if (parts.Length < 3)
         {
+            if (path.StartsWith("/v1.0/sites/", StringComparison.Ordinal) || path.StartsWith("/v1.0/drives/", StringComparison.Ordinal))
+            {
+                return SharePointApp(directory, Uri.UnescapeDataString(path), FakeIdentityProvider.ParseQuery(uri.Query));
+            }
             // An application token: these calls need a signed-in user.
             return new HttpResponseMessage(HttpStatusCode.Forbidden);
         }
@@ -501,6 +505,12 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
         {
             var owner = UpnOf(bearer) is { Length: > 0 } driveUpn ? driveUpn.ToLowerInvariant() : $"{directory}/{userId}";
             return await DriveAsync(request, Uri.UnescapeDataString(path), owner, scopes, ct);
+        }
+        if (path.StartsWith("/v1.0/drives/", StringComparison.Ordinal))
+        {
+            var reader = UpnOf(bearer) is { Length: > 0 } readerUpn ? readerUpn
+                : data.CurrentUsers().FirstOrDefault(u => u.Id == userId).Properties?.GetValueOrDefault("mail") as string;
+            return SharePointUser(directory, Uri.UnescapeDataString(path), FakeIdentityProvider.ParseQuery(uri.Query), reader?.ToLowerInvariant(), scopes);
         }
         var me = data.CurrentUsers().FirstOrDefault(u => u.Id == userId);
         // Tokens hold everything the fake needs, so a mailbox token still works after the host restarts (staging redeploys).
@@ -604,6 +614,227 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
             return Json(new { value });
         }
         return new HttpResponseMessage(HttpStatusCode.NotFound);
+    }
+
+    // SharePoint Online (spec 011 US9): sites granted to the application with Sites.Selected, their document libraries
+    // and items. Readers are the emails that may read an item; an item without readers is read by everyone in the
+    // directory. Application tokens list, read items with permissions and read changes; delegated tokens with
+    // Files.Read.All list and read content as the person, so items they may not read are never returned.
+
+    public sealed record SpSite(string Id, string Directory, string Host, string Path, string Name, bool Granted);
+
+    public sealed record SpDrive(string Id, string SiteId, string Name);
+
+    public sealed record SpItem(string Id, string DriveId, string? ParentId, string Name, bool Folder, byte[] Content, IReadOnlyList<string> Readers,
+        DateTimeOffset Modified, long Version, bool Deleted = false);
+
+    private readonly ConcurrentDictionary<string, SpSite> _spSites = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, SpDrive> _spDrives = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, SpItem> _spItems = new(StringComparer.Ordinal);
+    private long _spVersion;
+
+    /// <summary>Adds a site; <paramref name="granted"/> false is a site the customer has not granted to the application.</summary>
+    public string AddSharePointSite(Guid directoryId, string host, string path, string name, bool granted = true)
+    {
+        var id = $"{host},{Guid.NewGuid():D},{Guid.NewGuid():D}";
+        _spSites[id] = new SpSite(id, directoryId.ToString("D"), host.ToLowerInvariant(), path, name, granted);
+        return id;
+    }
+
+    /// <summary>Grants or withdraws a site for the application, as the customer would with Sites.Selected.</summary>
+    public void GrantSharePointSite(string siteId, bool granted) => _spSites[siteId] = _spSites[siteId] with { Granted = granted };
+
+    public string AddSharePointDrive(string siteId, string name)
+    {
+        var id = "b!" + Guid.NewGuid().ToString("N");
+        _spDrives[id] = new SpDrive(id, siteId, name);
+        return id;
+    }
+
+    /// <summary>Adds a file or folder; the ID returned is the item ID within the drive.</summary>
+    public string AddSharePointItem(string driveId, string? parentId, string name, bool folder = false, byte[]? content = null, params string[] readers)
+    {
+        var id = "01SP" + Guid.NewGuid().ToString("N")[..22].ToUpperInvariant();
+        _spItems[id] = new SpItem(id, driveId, parentId, name, folder, content ?? [], readers.Select(r => r.ToLowerInvariant()).ToList(), DateTimeOffset.UtcNow,
+            Interlocked.Increment(ref _spVersion));
+        return id;
+    }
+
+    /// <summary>Changes who may read an item, as a site owner would in SharePoint.</summary>
+    public void SetSharePointReaders(string itemId, params string[] readers) =>
+        _spItems[itemId] = _spItems[itemId] with { Readers = readers.Select(r => r.ToLowerInvariant()).ToList(), Version = Interlocked.Increment(ref _spVersion) };
+
+    public void EditSharePointItem(string itemId, string? name = null, byte[]? content = null) =>
+        _spItems[itemId] = _spItems[itemId] with
+        {
+            Name = name ?? _spItems[itemId].Name, Content = content ?? _spItems[itemId].Content, Modified = DateTimeOffset.UtcNow,
+            Version = Interlocked.Increment(ref _spVersion),
+        };
+
+    public void DeleteSharePointItem(string itemId) =>
+        _spItems[itemId] = _spItems[itemId] with { Deleted = true, Version = Interlocked.Increment(ref _spVersion) };
+
+    private static HttpResponseMessage SpMissing() =>
+        new(HttpStatusCode.NotFound) { Content = new StringContent("{\"error\":{\"code\":\"itemNotFound\"}}") };
+
+    private static HttpResponseMessage SpDenied() =>
+        new(HttpStatusCode.Forbidden) { Content = new StringContent("{\"error\":{\"code\":\"accessDenied\"}}") };
+
+    private bool SpDriveGranted(string directory, string driveId) =>
+        _spDrives.TryGetValue(driveId, out var drive) && _spSites.TryGetValue(drive.SiteId, out var site) && site.Directory == directory && site.Granted;
+
+    private object SpItemJson(SpItem i, bool withDeleted = false)
+    {
+        var body = new Dictionary<string, object?>
+        {
+            ["id"] = i.Id, ["name"] = i.Name, ["eTag"] = $"\"{{{i.Id}}},{i.Version}\"",
+            ["lastModifiedDateTime"] = i.Modified.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ", System.Globalization.CultureInfo.InvariantCulture),
+            ["webUrl"] = $"https://fake-sharepoint.example/{i.DriveId}/{i.Id}",
+            ["parentReference"] = new Dictionary<string, object?>
+            {
+                ["driveId"] = i.DriveId, ["id"] = i.ParentId ?? $"ROOT{i.DriveId[2..]}", ["path"] = i.ParentId is null ? $"/drives/{i.DriveId}/root:" : $"/drives/{i.DriveId}/root:/x",
+            },
+        };
+        if (i.Folder)
+        {
+            body["folder"] = new { childCount = _spItems.Values.Count(c => c.ParentId == i.Id && !c.Deleted) };
+        }
+        else
+        {
+            body["file"] = new { mimeType = FileMime(i.Name) };
+            body["size"] = i.Content.Length;
+        }
+        if (withDeleted && i.Deleted)
+        {
+            body["deleted"] = new { state = "deleted" };
+        }
+        return body;
+    }
+
+    private static string FileMime(string name) => Path.GetExtension(name).ToLowerInvariant() switch
+    {
+        ".pdf" => "application/pdf",
+        ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ".txt" => "text/plain",
+        _ => "application/octet-stream",
+    };
+
+    private HttpResponseMessage SpChildren(string driveId, string folder, IReadOnlyDictionary<string, string> query, Func<SpItem, bool> visible)
+    {
+        var parent = folder == "root" ? null : folder;
+        if (parent is not null && (!_spItems.TryGetValue(parent, out var p) || p.DriveId != driveId || p.Deleted || !p.Folder || !visible(p)))
+        {
+            return SpMissing();
+        }
+        var all = _spItems.Values.Where(i => i.DriveId == driveId && i.ParentId == parent && !i.Deleted && visible(i)).OrderBy(i => i.Name, StringComparer.Ordinal).ToList();
+        var top = query.TryGetValue("$top", out var t) && int.TryParse(t, out var n) ? Math.Clamp(n, 1, 200) : 200;
+        var skip = query.TryGetValue("$skiptoken", out var k) && int.TryParse(k, out var m) ? m : 0;
+        var body = new Dictionary<string, object?> { ["value"] = all.Skip(skip).Take(top).Select(i => SpItemJson(i)).ToList() };
+        if (skip + top < all.Count)
+        {
+            body["@odata.nextLink"] = $"https://graph.microsoft.com/v1.0/drives/{driveId}/items/{folder}/children?$top={top}&$skiptoken={skip + top}";
+        }
+        return Json(body);
+    }
+
+    /// <summary>Application calls: resolve a site by address, list its drives, list and read items with permissions, and delta.</summary>
+    private HttpResponseMessage SharePointApp(string directory, string path, IReadOnlyDictionary<string, string> query)
+    {
+        if (!_directories.TryGetValue(directory, out var d) || !d.Roles.Contains("Sites.Selected"))
+        {
+            return SpDenied();
+        }
+        const string sites = "/v1.0/sites/";
+        if (path.StartsWith(sites, StringComparison.Ordinal))
+        {
+            var rest = path[sites.Length..];
+            if (rest.EndsWith("/drives", StringComparison.Ordinal))
+            {
+                var siteId = rest[..^"/drives".Length];
+                return _spSites.TryGetValue(siteId, out var site) && site.Directory == directory && site.Granted
+                    ? Json(new { value = _spDrives.Values.Where(x => x.SiteId == siteId).OrderBy(x => x.Name).Select(x => new { id = x.Id, name = x.Name }) })
+                    : SpMissing();
+            }
+            var colon = rest.IndexOf(':', StringComparison.Ordinal);
+            var found = colon > 0
+                ? _spSites.Values.FirstOrDefault(x => x.Directory == directory && x.Host == rest[..colon].ToLowerInvariant()
+                    && string.Equals(x.Path.TrimEnd('/'), rest[(colon + 1)..].TrimEnd('/'), StringComparison.OrdinalIgnoreCase))
+                : _spSites.GetValueOrDefault(rest);
+            return found is { Granted: true } && found.Directory == directory
+                ? Json(new { id = found.Id, displayName = found.Name, webUrl = $"https://{found.Host}{(found.Path == "/" ? string.Empty : found.Path)}" })
+                : SpMissing();
+        }
+        var segments = path["/v1.0/drives/".Length..].Split('/');
+        var driveId = segments[0];
+        if (!SpDriveGranted(directory, driveId))
+        {
+            return SpMissing();
+        }
+        if (segments is [_, "root", "delta"])
+        {
+            var since = query.TryGetValue("token", out var tk) && tk != "latest" && long.TryParse(tk, out var v) ? v : -1;
+            var now = Interlocked.Read(ref _spVersion);
+            var changed = since < 0 ? [] : _spItems.Values.Where(i => i.DriveId == driveId && i.Version > since).OrderBy(i => i.Version).Select(i => SpItemJson(i, true)).ToList();
+            return Json(new Dictionary<string, object?>
+            {
+                ["value"] = changed, ["@odata.deltaLink"] = $"https://graph.microsoft.com/v1.0/drives/{driveId}/root/delta?token={now}",
+            });
+        }
+        if (segments is [_, "items", var folder, "children"])
+        {
+            return SpChildren(driveId, folder, query, _ => true);
+        }
+        if (segments is [_, "items", var id, ..] && _spItems.TryGetValue(id, out var item) && item.DriveId == driveId && !item.Deleted)
+        {
+            if (segments.Length == 3)
+            {
+                return Json(SpItemJson(item));
+            }
+            if (segments is [_, _, _, "permissions"])
+            {
+                return Json(new
+                {
+                    value = item.Readers.Select(r => new { id = r, roles = new[] { "read" }, grantedToV2 = new { user = new { email = r } } }),
+                });
+            }
+        }
+        return SpMissing();
+    }
+
+    /// <summary>Delegated calls with Files.Read.All: children, item and content, limited to what the person may read.</summary>
+    private HttpResponseMessage SharePointUser(string directory, string path, IReadOnlyDictionary<string, string> query, string? reader, IReadOnlySet<string> scopes)
+    {
+        if (!scopes.Overlaps(["Files.Read.All", "Files.ReadWrite.All"]))
+        {
+            return SpDenied();
+        }
+        var segments = path["/v1.0/drives/".Length..].Split('/');
+        var driveId = segments[0];
+        if (!_spDrives.TryGetValue(driveId, out var drive) || !_spSites.TryGetValue(drive.SiteId, out var site) || site.Directory != directory)
+        {
+            return SpMissing();
+        }
+        bool Visible(SpItem i) => i.Readers.Count == 0 || (reader is not null && i.Readers.Contains(reader));
+        if (segments is [_, "items", var folder, "children"])
+        {
+            return SpChildren(driveId, folder, query, Visible);
+        }
+        if (segments is [_, "items", var id, ..] && _spItems.TryGetValue(id, out var item) && item.DriveId == driveId && !item.Deleted)
+        {
+            if (!Visible(item))
+            {
+                return SpDenied();
+            }
+            if (segments.Length == 3)
+            {
+                return Json(SpItemJson(item));
+            }
+            if (segments is [_, _, _, "content"])
+            {
+                return new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(item.Content) };
+            }
+        }
+        return SpMissing();
     }
 
     /// <summary>A file in an employee's OneDrive. <see cref="Owner"/> is the UPN, or directory/user ID for directory users.</summary>

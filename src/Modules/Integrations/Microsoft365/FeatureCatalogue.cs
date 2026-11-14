@@ -52,7 +52,18 @@ public static class FeatureCatalogue
         [
             new("Files.ReadWrite", PermissionType.Delegated, "integrations.permission.files_read_write"),
         ]),
+        // SharePoint documents (spec 011 FR-025): the application reads only the sites an administrator granted it
+        // (Sites.Selected) for listing and sync; people browse and open files with their own access.
+        new(Microsoft365Features.SharePointDocuments, Capabilities.IntegrationMicrosoft365,
+        [
+            new("Sites.Selected", PermissionType.Application, "integrations.permission.sites_selected"),
+            new("Files.Read.All", PermissionType.Delegated, "integrations.permission.files_read_all"),
+        ]),
     ];
+
+    /// <summary>The permissions an employee's own token carries for a feature.</summary>
+    public static IEnumerable<GraphPermission> DelegatedFor(FeatureDefinition feature, FeatureOptions options) =>
+        PermissionsFor(feature, options).Where(p => p.Type == PermissionType.Delegated);
 
     public static FeatureDefinition? Find(string key) => All.FirstOrDefault(f => f.Key == key);
 

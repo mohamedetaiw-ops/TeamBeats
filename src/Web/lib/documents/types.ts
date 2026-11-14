@@ -10,6 +10,8 @@ export type LibrarySummary = {
   scopeId: string | null;
   orgUnitId: string | null;
   rights: Rights;
+  /** A connected library (spec 011 US9): its content stays in SharePoint. */
+  connected?: boolean;
 };
 
 export type FieldOption = { value: string; names: Names };
@@ -49,7 +51,33 @@ export type LibraryView = {
   version: number;
   viewOnly?: boolean;
   guestSharing?: boolean;
+  connected?: ConnectedLibrary | null;
 };
+
+/** Where a connected library's content lives (spec 011 US9). */
+export type ConnectedLibrary = { connectionId: string; containerName: string | null; folder: boolean; uploadEnabled: boolean };
+
+/** A connection that serves documents, with the document libraries a manager may connect (spec 011 FR-026). */
+export type ConnectedSource = { connectionId: string; kind: string; name: string; containers: { id: string; name: string }[]; state: string };
+
+export type ConnectedItem = {
+  id: string;
+  name: string;
+  folder: boolean;
+  mediaType: string | null;
+  size: number | null;
+  modifiedAt: string | null;
+  webLink: string | null;
+};
+
+/** A page of a connected library as the person sees it in SharePoint; state says why nothing is listed. */
+export type ConnectedPage = { state: string; items: ConnectedItem[]; nextCursor: string | null };
+
+export const CONNECTED_STATES = ["ok", "not_connected", "reconnect", "not_found", "unavailable"] as const;
+
+export function connectedContentHref(libraryId: string, itemId: string): string {
+  return `/api/v1/documents/libraries/${encodeURIComponent(libraryId)}/connected/content?item=${encodeURIComponent(itemId)}`;
+}
 
 export type FolderView = {
   id: string;

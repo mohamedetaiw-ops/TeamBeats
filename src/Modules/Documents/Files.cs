@@ -153,6 +153,7 @@ public sealed class DocumentFiles(
     {
         var user = context.RequireUser();
         var (library, _) = await libraries.VisibleAsync(libraryId, ct);
+        library.RequireOwn();
         if (library.Status != "active")
         {
             throw AppException.Conflict("conflict.documents.library_archived");

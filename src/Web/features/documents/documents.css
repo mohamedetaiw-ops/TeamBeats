@@ -647,3 +647,14 @@
 .documents-import-counts a[aria-current="page"] {
   font-weight: var(--tb-font-weight-semibold);
 }
+
+.documents-form {
+  display: grid;
+  gap: var(--tb-space-md);
+  max-inline-size: 36rem;
+  justify-items: start;
+}
+
+.documents-form .field {
+  inline-size: 100%;
+}

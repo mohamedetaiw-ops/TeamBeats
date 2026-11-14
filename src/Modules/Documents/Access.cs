@@ -6,6 +6,15 @@ using TeamBeats.TenantContext;
 
 namespace TeamBeats.Modules.Documents;
 
+/// <summary>Where a connected library's content lives: the connection, the document library and an optional folder in it.</summary>
+internal sealed record ConnectedSource(Guid ConnectionId, string ContainerId, string? ContainerName, string? FolderId, bool UploadEnabled);
+
+internal static class LibrarySources
+{
+    public const string TeamBeats = "teambeats";
+    public const string Connected = "connected";
+}
+
 internal sealed record LibraryRow(
     Guid Id,
     IReadOnlyDictionary<string, string> Names,
@@ -20,14 +29,32 @@ internal sealed record LibraryRow(
     bool GuestConfidential = false)
 {
     public const string Columns = "id, names::text, scope, scope_id, org_unit_id, allowed_extensions, max_file_mb, classification_default, status, row_version, guest_confidential, " +
-        "view_only, guest_sharing";
+        "view_only, guest_sharing, source, connection_id, container_id, container_name, remote_folder_id, upload_enabled";
 
     public static LibraryRow Read(Npgsql.NpgsqlDataReader r) => new(r.GetGuid(0), DocJson.Read<Dictionary<string, string>>(r.GetString(1)), r.GetString(2),
         r.Get<Guid?>("scope_id"), r.Get<Guid?>("org_unit_id"), r.Get<string[]>("allowed_extensions"), r.Get<int?>("max_file_mb"), r.GetString(7), r.GetString(8), r.GetInt32(9), r.GetBoolean(10))
     {
         ViewOnly = r.GetBoolean(11),
         GuestSharing = r.GetBoolean(12),
+        Connected = r.GetString(13) == LibrarySources.Connected && r.Get<Guid?>("connection_id") is { } connection
+            ? new ConnectedSource(connection, r.GetString(15), r.Get<string>("container_name"), r.Get<string>("remote_folder_id"), r.GetBoolean(18))
+            : null,
     };
+
+    /// <summary>Spec 011 US9: where a connected library's content lives; null for a TeamBeats library.</summary>
+    public ConnectedSource? Connected { get; init; }
+
+    /// <summary>
+    /// Records, controlled documents, holds, watermark, guest sharing, the recycle bin and TeamBeats folders apply to
+    /// TeamBeats libraries only (FR-030): a connected library refuses them with the reason.
+    /// </summary>
+    public void RequireOwn()
+    {
+        if (Connected is not null)
+        {
+            throw AppException.Conflict("conflict.documents.connected_library");
+        }
+    }
 
     /// <summary>Spec 011 FR-016: readers preview with a watermark and never download.</summary>
     public bool ViewOnly { get; init; }
