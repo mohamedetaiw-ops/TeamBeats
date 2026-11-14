@@ -15,9 +15,9 @@ export default async function ServicesPage({ searchParams }: { searchParams: Pro
     redirect("/signin");
   }
   // The search and category come from the address, so a reload or a shared link shows the same list (spec 008 FR-065).
+  // The category is a tab over the services the search returned, so every tab keeps its count.
   const params = new URLSearchParams();
   if (q.trim()) params.set("q", q.trim());
-  if (category) params.set("category", category);
   const view = await apiGet<CatalogueView>(`/api/v1/services${params.size ? `?${params.toString()}` : ""}`);
   if (!view.ok) {
     notFound();

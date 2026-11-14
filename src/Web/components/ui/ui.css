@@ -875,8 +875,10 @@
 @media (pointer: coarse), (width <= 40rem) {
   .ui-toolbar :is(input, select, .button),
   .ui-toolbar-select,
-  .ui-tablist[data-size="sm"] > .ui-tab {
+  .ui-tablist[data-size="sm"] > .ui-tab,
+  .ui-chips a {
     min-block-size: 2.75rem;
+    min-inline-size: 2.75rem;
   }
 }
 
@@ -1063,6 +1065,13 @@
 
 .ui-row-link:hover {
   text-decoration: none;
+}
+
+/* The row's next action (DLS-108) sits above the covering title link, so both can be reached. */
+.ui-row > .button {
+  position: relative;
+  z-index: 1;
+  flex: none;
 }
 
 /* Split page: the main column and a side panel at the end, stacked on narrow screens (Detail and List templates). */
