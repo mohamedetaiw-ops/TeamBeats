@@ -16,6 +16,8 @@ export type RenderedPlacement = {
   subscribes: string[];
   /** Added by this viewer in personalization mode (spec 008); visible to them only. */
   personal: boolean;
+  /** The component's own content budget at this width when it is lower than the platform's (spec 032 FR-071). */
+  budget?: number | null;
 };
 
 export type SectionMode = "contained" | "full_bleed" | "fixed" | "fluid";
