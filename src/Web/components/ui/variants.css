@@ -251,3 +251,10 @@
 :root[data-v-briefing="light"] .home-briefing :focus-visible {
   outline-color: var(--tb-color-focus-ring);
 }
+
+/* The briefing actions are 44 px on a touch screen or a phone in both variants (DLS-085). */
+@media (pointer: coarse), (width <= 40rem) {
+  :root[data-v-briefing] .home-briefing-action {
+    min-block-size: 2.75rem;
+  }
+}

@@ -47,6 +47,35 @@ const viewports = [
   { name: "desktop", width: 1440, height: 900 },
 ] as const;
 
+/** The main pages of spec 036 DLS-118: employee and administration screens, which share one system (DLS-116). */
+const mainPages = [
+  "/", "/tasks", "/services", "/requests", "/calendar", "/assistant", "/people", "/policies", "/documents", "/kb", "/notifications", "/settings",
+  "/admin", "/admin/users", "/admin/plan",
+] as const;
+
+/** What the frame promises on every page: no sideways scrolling, no text under 12 px, one title, the shared page header. */
+function frameFacts(page: Page) {
+  return page.evaluate(() => {
+    const width = document.documentElement.clientWidth;
+    const small = new Set<string>();
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const el = node.parentElement;
+      if (!node.textContent?.trim() || !el || el.closest("nextjs-portal, script, style, noscript")) continue;
+      const style = getComputedStyle(el);
+      if (style.visibility === "hidden" || el.getClientRects().length === 0) continue;
+      if (parseFloat(style.fontSize) < 12) small.add(`${el.tagName.toLowerCase()}.${el.className} ${style.fontSize}`);
+    }
+    return {
+      overflow: document.documentElement.scrollWidth - width,
+      small: [...small].slice(0, 5),
+      titles: document.querySelectorAll("main h1").length,
+      header: document.querySelector("main .ui-page-header") !== null,
+      font: getComputedStyle(document.body).fontFamily,
+    };
+  });
+}
+
 async function chooseDesign(tenant: TestTenant, key: string) {
   const api = await tenantApi(tenant);
   const brands = (await (await api.get("/api/v1/experience/brands")).json()) as { id: string; name: string }[];
@@ -133,6 +162,28 @@ for (const design of designs) {
           });
           expect(overflow.by, `horizontal scrolling at ${viewport.name} width: ${overflow.wide.join(", ")}`).toBeLessThanOrEqual(1);
           await screenshotForReview(page, `home-${design.key}-${locale}-${viewport.name}`);
+        }
+      });
+
+      test("the main pages keep the frame, the type floor and the design at every width", async ({ page }, testInfo) => {
+        test.slow();
+        await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+        for (const path of mainPages) {
+          await page.setViewportSize({ width: 1440, height: 900 });
+          await page.goto(`${hostOrigin(tenant.key)}${path}`);
+          await expect(page.locator("main h1").first()).toBeVisible();
+          await expectAccessible(page, testInfo, `page-${design.key}-${locale}${path.replace(/\//g, "-")}`);
+          for (const viewport of [viewports[2], viewports[1], { name: "phone", width: 390, height: 844 }]) {
+            await page.setViewportSize({ width: viewport.width, height: viewport.height });
+            const facts = await frameFacts(page);
+            const where = `${path} at ${viewport.name} width`;
+            // Soft, so one run reports every page that moved.
+            expect.soft(facts.overflow, `horizontal scrolling on ${where}`).toBeLessThanOrEqual(1);
+            expect.soft(facts.small, `text under 12 px on ${where}`).toEqual([]);
+            expect.soft(facts.titles, `page titles on ${where}`).toBe(1);
+            if (path !== "/") expect.soft(facts.header, `shared page header on ${where}`).toBe(true);
+            expect.soft(facts.font, `font family on ${where}`).toContain(locale === "ar" ? design.arabicFont : design.font);
+          }
         }
       });
 

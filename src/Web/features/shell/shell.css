@@ -847,6 +847,25 @@
 }
 
 
+/*
+ * On a phone the bar of the home holds six controls (ask, notifications, tasks, edit, settings, account). Each keeps
+ * its 44 px target and gives up its side padding, so the account menu stays on the screen (DLS-085, WCAG 1.4.10).
+ */
+@media (width <= 40rem) {
+  .shell-bar :is(.shell-icon-button, .notification-bell-button, .task-badge) {
+    justify-content: center;
+    min-inline-size: 2.75rem;
+    padding-inline: var(--tb-space-xs);
+  }
+}
+
+/* At the narrowest reflow width (320 px) the bar has no room for the page edit control; editing a layout needs more room anyway. */
+@media (width < 22.5rem) {
+  .shell-bar .pz-toggle {
+    display: none;
+  }
+}
+
 @media (width <= 40rem) {
   .shell-popover {
     position: fixed;
