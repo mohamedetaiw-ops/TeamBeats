@@ -39,3 +39,18 @@ Depends on 002 (org units), 004 (authorization), 005 (entitlements), 006 (audit)
 ## Final phase
 - [x] T021 Performance budgets in CI (LCP, INP, CLS on reference profiles), frontend failure telemetry without content, OpenAPI, R1 implementation notes, spec evidence
 - [x] T022 One rendering and one instance per data source (FR-070 to FR-073): the data source key and view in the manifest, the validator warning on both placements, the renderer leaving out the later duplicate and recording it, placement states in the widget frame, the content budget by region width, and the budget, views list and supported states in the manifest with refusal at registration (reasons `budget`, `views`, `states`), tested at quarter, half and full width
+
+## R2: Governance, fragments and portability
+
+R2 covers User Story 6 approval, impact and scheduling, User Story 7 independent deployment, and FR-007, FR-022, FR-033 and FR-045. Approval routes run on the spec 024 engine and land in the spec 016 inbox, as for agent approvals.
+
+- [ ] T023 [US6 scenario 1] Approval routes for pages: a route per site or scope (`page.approve`), submit for approval with a visual and structural diff for the approver, approve or return with a comment, an editor never approves their own change; inbox task source; tests including a scoped approver of another organization
+- [ ] T024 [US6 scenario 2] Impact reports: before a shared layout, global page area or template change is published, the affected organizations, audiences, pages and the count of personal layouts touched, with cancel; also used by theme publishing in spec 033
+- [ ] T025 [US6 scenario 4] Scheduled releases: go live and expire at tenant-local times; validation again at go-live, a failed release does not go live, the publisher is notified and the current release stays; tests with the clock
+- [ ] T026 [US6 scenario 6] Edit conflicts: a second save gets both versions and a merge or overwrite choice; nothing lost
+- [ ] T027 Fragments (FR-045): save a section or region pattern as a governed fragment with owner, scope and version; apply to new pages as references, never copied component code; tests for scope and another tenant
+- [ ] T028 Template import and export (FR-022): documented JSON with structure and policies and no secrets, tenant IDs or personal data; import validates as a new draft
+- [ ] T029 Resizable regions (FR-007): editors resize regions within declared constraints, persisted, never overlapping, by pointer and keyboard
+- [ ] T030 Feature controls (`feature_control.manage`): tenant and scope switches for components and templates as versioned configuration, read by the picker and the renderer
+- [ ] T031 [US7] Independent component deployment (FR-033): a registered package version is deployable and updatable without rebuilding page definitions, migration hooks run on upgrade, pages that do not use it are untouched
+- [ ] T032 Builder pages for approval, schedule, impact, fragments and import, in `ar` and `en`, RTL; OpenAPI, R2 implementation notes, e2e with axe
