@@ -481,6 +481,46 @@ public sealed partial class ShellService(
         return new ResolveResult("page", pageSlug, null, node.Id, crumbs, section, []);
     }
 
+    /// <summary>
+    /// The shell addresses among <paramref name="paths"/> the caller may open now, with the label to show (favorites and
+    /// recents, FR-017): an address in the information architecture (or an old slug that redirects to one) under the
+    /// same visibility rule as resolve, or a composed page at <c>/p/{slug}</c>. Anything else is left out.
+    /// </summary>
+    public async Task<IReadOnlyDictionary<string, string>> OpenableAsync(IReadOnlyCollection<string> paths, string locale, CancellationToken ct)
+    {
+        var result = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (paths.Count == 0)
+        {
+            return result;
+        }
+        var nodes = await NodesAsync(ct);
+        var visible = await VisibleNodesAsync(nodes, ct);
+        var redirects = await RedirectsAsync(ct);
+        foreach (var path in paths.Distinct(StringComparer.Ordinal))
+        {
+            var slug = path.Trim('/').ToLowerInvariant();
+            if (slug.StartsWith("p/", StringComparison.Ordinal))
+            {
+                var pageSlug = slug[2..];
+                if (await PageBySlugAsync(pageSlug, ct) is { } page && await CanViewPageAsync(page.OrgUnitId, page.Published, ct))
+                {
+                    result[path] = pageSlug;
+                }
+                continue;
+            }
+            var node = nodes.Values.FirstOrDefault(n => n.Slug == slug);
+            if (node is null && redirects.FirstOrDefault(r => r.OldSlug == slug) is { NodeId: var target } && target != Guid.Empty)
+            {
+                node = nodes.GetValueOrDefault(target);
+            }
+            if (node is not null && visible.Contains(node.Id))
+            {
+                result[path] = Label(node.Labels, locale) ?? node.Slug;
+            }
+        }
+        return result;
+    }
+
     public async Task<IReadOnlyList<QuickNavItem>> QuickNavAsync(string? q, string locale, CancellationToken ct)
     {
         var term = (q ?? "").Trim();

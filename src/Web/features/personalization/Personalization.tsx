@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { ConfirmAction } from "@/components/ui/ConfirmAction";
+import { Suggestions } from "./Suggestions";
 import type { LayoutOperation, LayoutView } from "./types";
 import "./personalization.css";
 
@@ -49,7 +50,7 @@ export function PersonalizationProvider({
 }: {
   pageId: string;
   regions: string[];
-  initial: { operations: LayoutOperation[]; eTag: string };
+  initial: { operations: LayoutOperation[]; eTag: string; deviceClass?: string };
   canPersonalize: boolean;
   children: ReactNode;
 }) {
@@ -58,6 +59,7 @@ export function PersonalizationProvider({
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [operations, setOperations] = useState(initial.operations);
+  const [device, setDevice] = useState(initial.deviceClass ?? "any");
   const [history, setHistory] = useState<LayoutOperation[][]>([]);
   const [focus, setFocus] = useState<Focus | null>(null);
   const [announcement, setAnnouncement] = useState("");
@@ -82,23 +84,25 @@ export function PersonalizationProvider({
       const view = (await response.json()) as LayoutView;
       eTag.current = view.eTag;
       setOperations(view.operations);
+      setDevice(view.deviceClass ?? "any");
     }
     router.refresh();
   }, [pageId, router]);
 
   const save = useCallback(
-    async (next: LayoutOperation[]): Promise<boolean> => {
+    async (next: LayoutOperation[], thisDevice?: boolean): Promise<boolean> => {
       setBusy(true);
       try {
         const response = await fetch(`/api/v1/me/pages/${pageId}/layout`, {
           method: "PUT",
           headers: { "content-type": "application/json", "if-match": eTag.current },
-          body: JSON.stringify({ operations: next }),
+          body: JSON.stringify(thisDevice === undefined ? { operations: next } : { operations: next, thisDevice }),
         });
         if (response.ok) {
           const view = (await response.json()) as LayoutView;
           eTag.current = view.eTag;
           setOperations(view.operations);
+          setDevice(view.deviceClass ?? "any");
           router.refresh();
           return true;
         }
@@ -141,6 +145,33 @@ export function PersonalizationProvider({
     if (await save(previous)) {
       setHistory((h) => h.slice(0, -1));
       announce(t("undone"));
+    }
+  }
+
+  // Keeping the layout for this device only (FR-032): the same changes saved as this device's own list, or back to every device.
+  async function keepForDevice(on: boolean) {
+    if (await save(operations, on)) announce(on ? t("thisDeviceOn") : t("thisDeviceOff"));
+  }
+
+  async function preset(name: "compact" | "focus") {
+    setBusy(true);
+    try {
+      const response = await fetch(`/api/v1/me/pages/${pageId}/layout/preset`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ preset: name }),
+      });
+      if (!response.ok) {
+        announce(t("failed"));
+        return;
+      }
+      setHistory((h) => [...h, operations].slice(-undoDepth));
+      await reload();
+      announce(t(`presets.${name}Done`));
+    } catch {
+      announce(t("failed"));
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -203,6 +234,19 @@ export function PersonalizationProvider({
                 <Button variant="secondary" disabled={history.length === 0 || busy} onClick={() => void undo()}>
                   {t("undo")}
                 </Button>
+                {/* Presets (FR-026): one action each, built from what the person may already change; Reset returns to the default. */}
+                <div className="pz-presets" role="group" aria-label={t("presets.label")}>
+                  <Button variant="quiet" disabled={busy} onClick={() => void preset("compact")}>
+                    {t("presets.compact")}
+                  </Button>
+                  <Button variant="quiet" disabled={busy} onClick={() => void preset("focus")}>
+                    {t("presets.focus")}
+                  </Button>
+                </div>
+                <label className="pz-device">
+                  <input type="checkbox" checked={device !== "any"} disabled={busy} onChange={(e) => void keepForDevice(e.target.checked)} />
+                  {t("thisDevice")}
+                </label>
                 <ConfirmAction label={t("reset")} question={t("resetQuestion")} confirmLabel={t("resetConfirm")} cancelLabel={t("cancel")} onConfirm={reset} />
               </>
             ) : (
@@ -215,6 +259,7 @@ export function PersonalizationProvider({
         <p role="status" aria-live="polite" className="visually-hidden">
           {announcement}
         </p>
+        {!editing ? <Suggestions pageId={pageId} /> : null}
         {children}
       </div>
     </PersonalizationContext.Provider>

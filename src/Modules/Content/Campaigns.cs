@@ -442,6 +442,70 @@ public sealed class ContentCampaigns(
         return new CampaignDashboard(campaign.Id, MinimumGroupSize, total, bySteps, unitRows, Breakdown(byLocation));
     }
 
+    /// <summary>The raw funnel of a campaign for the analytics workspace (spec 021 US2); the same rights as the dashboard.</summary>
+    public async Task<TeamBeats.Modules.Analytics.Contracts.AnalyticsCampaignFunnel> FunnelAsync(Guid id, CancellationToken ct)
+    {
+        var (campaign, _) = await ManagedAsync(id, false, ct);
+        var view = await ViewAsync(campaign, ct);
+        var steps = await StepsAsync(id, ct);
+        var confirms = new Dictionary<Guid, bool>();
+        foreach (var itemId in steps.Select(s => s.ItemId).Distinct())
+        {
+            confirms[itemId] = await items.RowAsync(itemId, false, ct) is { Critical.Confirms: true };
+        }
+        var sends = await session.QueryAsync(
+            """
+            select s.step_id, s.item_id, s.user_id, s.viewed_at is not null, s.clicked_at is not null,
+              exists (select 1 from content.acknowledgement a where a.item_id = s.item_id and a.user_id = s.user_id)
+            from content.campaign_send s where s.campaign_id = @id
+            """, new { id }, r => (Step: r.GetGuid(0), Item: r.GetGuid(1), User: r.GetGuid(2), Viewed: r.GetBoolean(3), Clicked: r.GetBoolean(4), Acked: r.GetBoolean(5)), ct);
+        bool Completed((Guid Step, Guid Item, Guid User, bool Viewed, bool Clicked, bool Acked) x) => confirms.GetValueOrDefault(x.Item) ? x.Acked : x.Viewed;
+        var stepViews = view.Steps.ToDictionary(s => s.Id);
+        var funnelSteps = steps.Select(s =>
+        {
+            var mine = sends.Where(x => x.Step == s.Id).ToList();
+            var titles = stepViews.TryGetValue(s.Id, out var sv) ? sv.ItemTitle : new Dictionary<string, string>();
+            return new TeamBeats.Modules.Analytics.Contracts.AnalyticsCampaignStep(s.Id, s.Position, s.ItemId, titles, s.Status, s.At, s.SentAt, CampaignLink(s.ItemId, s.Id),
+                confirms.GetValueOrDefault(s.ItemId), mine.Count, s.Delivered ?? 0, mine.Count(x => x.Viewed), mine.Count(x => x.Clicked), mine.Count(Completed));
+        }).ToList();
+        var people = sends.GroupBy(x => x.User)
+            .Select(g => (User: g.Key, Viewed: g.Any(x => x.Viewed), Clicked: g.Any(x => x.Clicked), Completed: g.Any(Completed))).ToList();
+        var groups = new Dictionary<(string, string), (int Audience, int Viewed, int Completed)>();
+        void Count(string dimension, string key, bool viewed, bool completed)
+        {
+            var c = groups.GetValueOrDefault((dimension, key));
+            groups[(dimension, key)] = (c.Audience + 1, c.Viewed + (viewed ? 1 : 0), c.Completed + (completed ? 1 : 0));
+        }
+        foreach (var p in people)
+        {
+            var f = await facts.ForAsync(p.User, ct);
+            foreach (var unit in f.DirectUnits)
+            {
+                Count("unit", unit.ToString(), p.Viewed, p.Completed);
+            }
+            if (!string.IsNullOrWhiteSpace(f.Location))
+            {
+                Count("location", f.Location, p.Viewed, p.Completed);
+            }
+        }
+        var summary = new TeamBeats.Modules.Analytics.Contracts.AnalyticsCampaign(campaign.Id, campaign.Name, campaign.SiteId, campaign.Status, campaign.CreatedAt,
+            steps.Count, steps.Where(s => s.SentAt is not null).Select(s => s.SentAt).Min());
+        return new TeamBeats.Modules.Analytics.Contracts.AnalyticsCampaignFunnel(summary, funnelSteps, people.Count, people.Count(p => p.Viewed), people.Count(p => p.Clicked),
+            people.Count(p => p.Completed), groups.Select(g => new TeamBeats.Modules.Analytics.Contracts.AnalyticsCampaignGroup(g.Key.Item1, g.Key.Item2, g.Value.Audience,
+                g.Value.Viewed, g.Value.Completed)).ToList());
+    }
+
+    /// <summary>The campaigns the person may run, as a short list for the analytics workspace (spec 021 US2).</summary>
+    public async Task<IReadOnlyList<TeamBeats.Modules.Analytics.Contracts.AnalyticsCampaign>> AnalyticsListAsync(CancellationToken ct)
+    {
+        var list = new List<TeamBeats.Modules.Analytics.Contracts.AnalyticsCampaign>();
+        foreach (var c in await ListAsync(ct))
+        {
+            list.Add(new(c.Id, c.Name, c.SiteId, c.Status, c.CreatedAt, c.Steps.Count, c.Steps.Where(s => s.SentAt is not null).Select(s => s.SentAt).Min()));
+        }
+        return list;
+    }
+
     private static void Add(Dictionary<string, List<(bool, bool)>> groups, string key, (bool, bool) value)
     {
         if (!groups.TryGetValue(key, out var list))

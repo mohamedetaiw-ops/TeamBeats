@@ -45,6 +45,11 @@ public static class ExperienceModule
         services.AddSingleton<Offline.OfflineKeySource>();
         services.AddScoped<Offline.OfflineBundles>();
         services.AddScoped<ShellService>();
+        services.AddScoped<Favorites>();
+        services.AddScoped<Commands>();
+        services.AddScoped<PreferenceExport>();
+        services.AddScoped<Help>();
+        services.AddScoped<Personalization.Suggestions>();
         return services;
     }
 
@@ -180,13 +185,13 @@ public static class ExperienceModule
         x.MapGet("/pages/{id:guid}/components", async (Guid id, string? region, PageService pages, CancellationToken ct) =>
             Results.Ok(await pages.PickerAsync(id, region, ct)));
 
-        x.MapGet("/render", async (string? slug, PageService pages, RequestLocale locale, CancellationToken ct) =>
+        x.MapGet("/render", async (string? slug, PageService pages, RequestLocale locale, HttpRequest http, CancellationToken ct) =>
         {
             if (string.IsNullOrEmpty(slug))
             {
                 throw Primitives.AppException.NotFound();
             }
-            return Results.Ok(await pages.RenderAsync(slug, locale.Locale, locale.Direction, ct));
+            return Results.Ok(await pages.RenderAsync(slug, locale.Locale, locale.Direction, DeviceClasses.From(http), ct));
         });
 
         x.MapGet("/components", async (ComponentEnablement enablement, CancellationToken ct) => Results.Ok(await enablement.ListAsync(ct)));
@@ -213,6 +218,8 @@ public static class ExperienceModule
 
         MapThemeEndpoints(app);
         MapShellEndpoints(app);
+        MapFavoriteEndpoints(app);
+        MapHelpEndpoints(app);
         MapPersonalizationEndpoints(app);
         return app;
     }
@@ -448,11 +455,79 @@ public static class ExperienceModule
             return Results.Ok(result);
         });
 
+        x.MapGet("/commands", async (Commands commands, CancellationToken ct) => Results.Ok(await commands.ListAsync(ct)));
+
         x.MapGet("/quick-nav", async (string? q, ShellService shell, RequestLocale locale, IDbSession session, CancellationToken ct) =>
         {
             var items = await shell.QuickNavAsync(q, locale.Locale, ct);
             await session.CommitAsync(ct);
             return Results.Ok(items);
+        });
+    }
+
+    /// <summary>Help hints and tours (spec 008 T024, FR-020): the tenant configuration for <c>help.edit</c>, and each person's view and dismissals.</summary>
+    private static void MapHelpEndpoints(IEndpointRouteBuilder app)
+    {
+        var x = app.MapGroup("/api/v1/experience").RequireTenantUser().WithTags("Experience: help and tours");
+        x.MapGet("/help", async (Help help, CancellationToken ct) => Results.Ok(await help.GetAdminAsync(ct)));
+        x.MapPut("/help", async (HelpDefinition request, Help help, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await help.PublishAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        var me = app.MapGroup("/api/v1/me").RequireTenantUser().WithTags("Me: help and tours");
+        me.MapGet("/help", async (string? path, Help help, RequestLocale locale, CancellationToken ct) => Results.Ok(await help.ForPathAsync(path, locale.Locale, ct)));
+        me.MapPost("/help/{key}/dismiss", async (string key, Help help, IDbSession session, CancellationToken ct) =>
+        {
+            await help.SetDismissedAsync(key, true, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+        me.MapDelete("/help/{key}/dismiss", async (string key, Help help, IDbSession session, CancellationToken ct) =>
+        {
+            await help.SetDismissedAsync(key, false, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+    }
+
+    /// <summary>Favorites and recents of the signed in person (spec 008 T019, FR-017). Writes commit.</summary>
+    private static void MapFavoriteEndpoints(IEndpointRouteBuilder app)
+    {
+        var me = app.MapGroup("/api/v1/me").RequireTenantUser().WithTags("Me: favorites and recents");
+
+        me.MapGet("/favorites", async (Favorites f, RequestLocale locale, CancellationToken ct) => Results.Ok(await f.ListAsync(locale.Locale, ct)));
+
+        me.MapPost("/favorites", async (FavoriteRequest request, Favorites f, RequestLocale locale, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await f.AddAsync(request, locale.Locale, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        me.MapDelete("/favorites/{id:guid}", async (Guid id, Favorites f, IDbSession session, CancellationToken ct) =>
+        {
+            await f.RemoveAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        me.MapGet("/recents", async (Favorites f, RequestLocale locale, CancellationToken ct) => Results.Ok(await f.RecentsAsync(locale.Locale, ct)));
+
+        me.MapPost("/recents", async (RecentRequest request, Favorites f, IDbSession session, CancellationToken ct) =>
+        {
+            await f.VisitAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        me.MapDelete("/recents", async (Favorites f, IDbSession session, CancellationToken ct) =>
+        {
+            await f.ClearRecentsAsync(ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
         });
     }
 
@@ -462,18 +537,35 @@ public static class ExperienceModule
         var me = app.MapGroup("/api/v1/me").RequireTenantUser().WithTags("Me: personalization");
 
         // Language stays on PUT /api/v1/me/preferences of the user account; this profile holds appearance and accessibility.
-        me.MapGet("/preference-profile", async (PersonalizationService p, CancellationToken ct) => Results.Ok(await p.GetProfileAsync(ct)));
+        me.MapGet("/preference-profile", async (PersonalizationService p, HttpRequest http, CancellationToken ct) =>
+            Results.Ok(await p.GetProfileAsync(DeviceClasses.From(http), ct)));
 
-        me.MapPut("/preference-profile", async (PreferenceProfileRequest request, PersonalizationService p, IDbSession session, CancellationToken ct) =>
+        me.MapPut("/preference-profile", async (PreferenceProfileRequest request, PersonalizationService p, IDbSession session, HttpRequest http,
+            CancellationToken ct) =>
         {
-            var view = await p.SaveProfileAsync(request, ct);
+            var view = await p.SaveProfileAsync(request, DeviceClasses.From(http), ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });
 
+        // Export and reset of the person's own preferences (FR-034): a versioned file, never another person's data.
+        me.MapGet("/preferences/export", async (PreferenceExport export, HttpResponse response, CancellationToken ct) =>
+        {
+            var file = await export.ExportAsync(ct);
+            response.Headers.ContentDisposition = "attachment; filename=\"teambeats-preferences.json\"";
+            return Results.Ok(file);
+        });
+
+        me.MapDelete("/preferences", async (PreferenceExport export, IDbSession session, CancellationToken ct) =>
+        {
+            await export.ResetAsync(ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
         me.MapGet("/pages/{pageId:guid}/layout", async (Guid pageId, HttpResponse response, PersonalizationService p, CancellationToken ct) =>
         {
-            var view = await p.GetLayoutAsync(pageId, ct);
+            var view = await p.GetLayoutAsync(pageId, DeviceClasses.From(response.HttpContext.Request), ct);
             response.Headers.ETag = view.ETag;
             return Results.Ok(view);
         });
@@ -481,7 +573,7 @@ public static class ExperienceModule
         me.MapPut("/pages/{pageId:guid}/layout", async (Guid pageId, LayoutRequest request, HttpRequest http, PersonalizationService p, IDbSession session,
             CancellationToken ct) =>
         {
-            var view = await p.SaveLayoutAsync(pageId, http.Headers.IfMatch.ToString() is { Length: > 0 } tag ? tag : null, request, ct);
+            var view = await p.SaveLayoutAsync(pageId, http.Headers.IfMatch.ToString() is { Length: > 0 } tag ? tag : null, request, DeviceClasses.From(http), ct);
             await session.CommitAsync(ct);
             http.HttpContext.Response.Headers.ETag = view.ETag;
             return Results.Ok(view);
@@ -494,6 +586,15 @@ public static class ExperienceModule
             return Results.NoContent();
         });
 
+        me.MapPost("/pages/{pageId:guid}/layout/preset", async (Guid pageId, PresetRequest request, HttpResponse response, PersonalizationService p,
+            IDbSession session, CancellationToken ct) =>
+        {
+            var view = await p.ApplyPresetAsync(pageId, request.Preset, DeviceClasses.From(response.HttpContext.Request), ct);
+            await session.CommitAsync(ct);
+            response.Headers.ETag = view.ETag;
+            return Results.Ok(view);
+        });
+
         me.MapDelete("/layouts", async (PersonalizationService p, IDbSession session, CancellationToken ct) =>
         {
             await p.ResetAllLayoutsAsync(ct);
@@ -501,8 +602,35 @@ public static class ExperienceModule
             return Results.NoContent();
         });
 
-        me.MapGet("/pages/{pageId:guid}/add-panel", async (Guid pageId, string? region, PersonalizationService p, CancellationToken ct) =>
-            Results.Ok(await p.AddPanelAsync(pageId, region, ct)));
+        // Safe suggestions (FR-035): offered with a reason, changed only on acceptance, and undone on request.
+        me.MapGet("/suggestions", async (Guid? pageId, Suggestions s, HttpRequest http, RequestLocale locale, CancellationToken ct) =>
+            Results.Ok(await s.ListAsync(pageId, DeviceClasses.From(http), locale.Locale, ct)));
+
+        me.MapPost("/suggestions/accept", async (SuggestionRequest request, Suggestions s, HttpRequest http, RequestLocale locale, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var view = await s.AcceptAsync(request, DeviceClasses.From(http), locale.Locale, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        me.MapPost("/suggestions/decline", async (SuggestionRequest request, Suggestions s, HttpRequest http, RequestLocale locale, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var view = await s.DeclineAsync(request, DeviceClasses.From(http), locale.Locale, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        me.MapPost("/suggestions/undo", async (SuggestionRequest request, Suggestions s, HttpRequest http, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await s.UndoAsync(request, DeviceClasses.From(http), ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        me.MapGet("/pages/{pageId:guid}/add-panel", async (Guid pageId, string? region, PersonalizationService p, HttpRequest http, CancellationToken ct) =>
+            Results.Ok(await p.AddPanelAsync(pageId, region, DeviceClasses.From(http), ct)));
 
         var x = app.MapGroup("/api/v1/experience").RequireTenantUser().WithTags("Experience: personalization");
 

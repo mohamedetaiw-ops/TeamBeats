@@ -7,6 +7,11 @@ import { NotificationBell } from "@/features/notifications/NotificationBell";
 import { TaskBadge } from "@/features/services/TaskBadge";
 import { CriticalNotices } from "@/features/content/CriticalNotices";
 import { AccountMenu } from "./AccountMenu";
+import { FavoritesMenu } from "./FavoritesMenu";
+import { RecentVisits } from "./RecentVisits";
+import { DeviceClass } from "./DeviceClass";
+import { FocusToggle } from "./FocusToggle";
+import { HelpCenter } from "./HelpCenter";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { GlobalMenu } from "./GlobalMenu";
 import { MobileNav } from "./MobileNav";
@@ -33,7 +38,10 @@ const fallbackLayout: ShellLayout = {
  * gives, independent of page content. Contextual actions and utilities belong to their modules and render nothing until
  * those modules register them; notifications come from spec 015 and the task badge from spec 016.
  */
-export async function Shell({ me, breadcrumbs = [] }: { me: Me; breadcrumbs?: Crumb[] }) {
+/** A shell address the page offers to keep as a favorite, with its name. */
+export type FavoriteHere = { path: string; label?: string };
+
+export async function Shell({ me, breadcrumbs = [], favorite }: { me: Me; breadcrumbs?: Crumb[]; favorite?: FavoriteHere }) {
   const [shell, values, t] = await Promise.all([getShell(), getPreferences(), getTranslations("shell")]);
   const layout = shell.ok ? shell.data.layout : fallbackLayout;
   const locales = me.tenant.enabledLocales.filter((l) => l === "ar" || l === "en");
@@ -107,6 +115,10 @@ export async function Shell({ me, breadcrumbs = [] }: { me: Me; breadcrumbs?: Cr
           {shell.ok && shell.data.assistant ? (
             <AssistantPanel />
           ) : null}
+          {/* Page tools come first, so the tenant's end controls (settings) stay beside the account menu and their panels never cover it. */}
+          <FocusToggle initial={values.focus === "on"} />
+          {!me.sharedDevice ? <HelpCenter /> : null}
+          {regions.includes("identity") && !me.sharedDevice ? <FavoritesMenu here={favorite?.path} label={favorite?.label} /> : null}
           {layout.end.map(render)}
           {regions.includes("identity") ? <AccountMenu name={me.displayName} administration={shell.ok && shell.data.administration} /> : null}
         </div>
@@ -120,7 +132,10 @@ export async function Shell({ me, breadcrumbs = [] }: { me: Me; breadcrumbs?: Cr
         <GlobalMenu key={menu.orgUnitId} id={`organization-${menu.orgUnitId}`} label={t("organizationNav", { name: menu.name })} links={menu.items} />
       ))}
       <div className="shell-below">{layout.below.map(render)}</div>
+      {/* Help hints and the open tour (spec 008 FR-020) sit here, in the page flow, never over the page. */}
+      <div data-shell-help="" />
       <CriticalNotices />
+      <DeviceClass />
       {shell.ok && regions.includes("global_navigation") && shell.data.mobileNav?.length ? <MobileNav items={shell.data.mobileNav} all={shell.data.globalMenu} /> : null}
       {me.sharedDevice ? (
         // A shared kiosk keeps nothing on the device: no push offer, no offline copy, and a timer that signs out (spec 030 US4).
@@ -128,6 +143,7 @@ export async function Shell({ me, breadcrumbs = [] }: { me: Me; breadcrumbs?: Cr
       ) : (
         <>
           <PushOffer owner={`${me.tenant.id}:${me.id}`} />
+          <RecentVisits />
           <OfflineSync />
         </>
       )}

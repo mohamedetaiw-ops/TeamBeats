@@ -255,6 +255,8 @@ async function seedExtras(api: APIRequestContext, found: Found): Promise<void> {
   found.set("/admin/templates/[id]", `/admin/templates/${(template.id as string | undefined) ?? "a11y-landing"}`);
   const campaign = await ok(await api.post("/api/v1/content/campaigns", { data: { name: "Benefits month", siteId: null } }));
   found.set("/content/campaigns/[id]", `/content/campaigns/${campaign.id as string}`);
+  // Campaign analytics (spec 021 T011) open on a campaign before it is sent.
+  found.set("/analytics/campaigns/[id]", `/analytics/campaigns/${campaign.id as string}`);
 }
 
 const detailRoutes = routes.filter((r) => r.tier === "detail" && !r.reason).map((r) => r.path);

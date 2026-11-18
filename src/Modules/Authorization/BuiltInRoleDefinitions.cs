@@ -50,6 +50,8 @@ public static class BuiltInRoleDefinitions
         new(BuiltInRoles.SpacesAdministrator, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PeopleView, P.SpacesCreate, P.SpacesManage]),
         new(BuiltInRoles.FacilitiesAdministrator, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PeopleView, P.BookingBook, P.BookingManage, P.BookingReport]),
         new(BuiltInRoles.FacilitiesAnalyst, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.BookingReport]),
+        // Spec 021 R2 US6: location and unit heads read the analytics workspace for the units they are given.
+        new(BuiltInRoles.AnalyticsViewer, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.AnalyticsView]),
         new(BuiltInRoles.DeviceAdministrator, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PeopleView, P.DeviceManage]),
         new(BuiltInRoles.KioskUser, Delegable: true, DelegatedAdmin: false, [P.KioskSignIn]),
         // Spec 035 FR-011: what an integration usually needs to read, and nothing an app may not hold.

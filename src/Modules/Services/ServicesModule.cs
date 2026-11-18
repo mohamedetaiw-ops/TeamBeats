@@ -19,6 +19,7 @@ public static class ServicesModule
         services.AddScoped<TeamBeats.Modules.PublicApi.Contracts.IPublicResourceVisibility, RequestVisibility>();
         services.AddScoped<TeamBeats.Modules.Search.Contracts.ISearchSource, ServiceSearchSource>();
         services.AddScoped<Catalogue>();
+        services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IShellCommands, ServiceCommands>();
         services.AddSingleton<Experience.Contracts.IComponentRegistration, ServicesComponents>();
         services.AddScoped<ServiceAdmin>();
         services.AddScoped<RouteTests>();

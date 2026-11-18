@@ -15,6 +15,7 @@ const options: Record<PreferenceKey, string[]> = {
   density: ["comfortable", "compact"],
   motion: ["system", "reduced"],
   text_scale: ["100", "125", "150", "200"],
+  focus: ["off", "on"],
 };
 
 /** Saves one preference and renders the page again with it: language on the account (spec 007), the rest in the profile. */

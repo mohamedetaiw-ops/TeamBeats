@@ -139,6 +139,7 @@ public static class AuditActions
 
     // 008
     public const string ShellPublished = "shell.published";
+    public const string HelpPublished = "help.published";
     public const string NavigationPublished = "navigation.published";
     public const string NavigationNodeChanged = "navigation.node_changed";
     public const string PersonalizationPolicyChanged = "personalization.policy_changed";
@@ -595,6 +596,7 @@ public static class AuditActions
 
     // 021
     public const string AnalyticsPrivacySettingChanged = "analytics.privacy_setting_changed";
+    public const string AnalyticsEstimatesChanged = "analytics.estimates_changed";
 
     /// <summary>Events that R0 must emit and test. R2 items (add-ons, overrides, quotas, IdP config UI) are listed separately.</summary>
     public static readonly IReadOnlyList<string> RequiredInR0 =

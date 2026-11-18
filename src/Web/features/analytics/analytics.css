@@ -83,3 +83,10 @@
 .analytics-figure {
   font-size: var(--tb-font-size-xl);
 }
+
+/* Two campaigns side by side on wide screens, one under the other on narrow ones (spec 021 US2 scenario 3). */
+.analytics-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 28rem), 1fr));
+  gap: var(--tb-space-lg);
+}

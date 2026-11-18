@@ -61,7 +61,7 @@ public sealed record PageSummary(Guid Id, string Slug, Guid? OrgUnitId, string T
 /// <summary>A placement as the renderer receives it: only declared context values, defaults applied (FR-025, FR-028).</summary>
 public sealed record RenderedPlacement(string Id, string ComponentRef, string State, int Span, IReadOnlyDictionary<string, JsonElement> Props,
     IReadOnlyDictionary<string, string> Context, IReadOnlyList<string> Publishes, IReadOnlyList<string> Subscribes, bool Personal = false,
-    int? Budget = null)
+    int? Budget = null, IReadOnlyList<int>? Widths = null)
 {
     /// <summary>The component's own budget at this width when it is lower than the platform's (spec 032 FR-071), else null.</summary>
     public static int? BudgetFor(ComponentManifest manifest, int span) =>
@@ -615,7 +615,7 @@ public sealed partial class PageService(
     }
 
     /// <summary>The latest release of a page for the current viewer, with the effective structure (FR-002, FR-028, FR-066).</summary>
-    public async Task<RenderedPage> RenderAsync(string slug, string locale, string direction, CancellationToken ct)
+    public async Task<RenderedPage> RenderAsync(string slug, string locale, string direction, string? device, CancellationToken ct)
     {
         var page = await session.QuerySingleOrDefaultAsync(PageSelect + " where slug = @slug", new { slug }, MapPage, ct);
         if (page?.CurrentRelease is not { } current)
@@ -645,10 +645,11 @@ public sealed partial class PageService(
         var targeted = Personalization.LayoutEngine.ForAudience(snapshot.Definition.Regions, rules, viewer);
         var canPersonalize = (await authz.CheckAsync(Permissions.PersonalLayoutEdit, Target(page.OrgUnitId), ct)).Allowed;
         var rights = await layouts.RightsAsync(page.Id, template, viewer, rules, canPersonalize, ct);
-        var (_, operations) = await layouts.OperationsAsync(context.RequireUser(), page.Id, ct);
+        // The person's layout for this device class when they kept one, else the one for every device (FR-032).
+        var (_, operations, _) = await layouts.OperationsAsync(context.RequireUser(), page.Id, device, ct);
         var defaults = await homeDefaults.ForAsync(template, rights, availability, ct, targeted);
         var personal = Personalization.LayoutEngine.Apply(layout.Regions.Select(lr => targeted.FirstOrDefault(r => r.Id == lr.Id) ?? new PageRegion(lr.Id, [])).ToList(),
-            operations, rights, defaults: defaults);
+            operations, rights, defaults: defaults, widths: r => registry.Find(r)?.Placement);
 
         var shownSources = new Dictionary<string, string>(StringComparer.Ordinal);
         var dropped = new List<DroppedPlacement>();
@@ -672,12 +673,15 @@ public sealed partial class PageService(
                     return new RenderedPlacement(p.Id, p.ComponentRef, "unavailable", p.Span ?? lr.Span,
                         new Dictionary<string, JsonElement>(), new Dictionary<string, string>(), [], [], item.Personal);
                 }
-                var span = p.Span ?? Math.Min(lr.Span, manifest.Placement.MaxSpan);
+                // A personal width (FR-025 R2) never goes past the region.
+                var span = Math.Min(p.Span ?? manifest.Placement.MaxSpan, lr.Span);
                 return new RenderedPlacement(p.Id, p.ComponentRef, "ready", span,
                     PropertyValidator.WithDefaults(manifest.Properties, p.Props),
                     manifest.Context.Where(known.ContainsKey).ToDictionary(k => k, k => known[k], StringComparer.Ordinal),
                     manifest.Events.Publishes.Select(e => e.Name).ToList(), manifest.Events.Subscribes.Select(e => e.Name).ToList(), item.Personal,
-                    Budget: RenderedPlacement.BudgetFor(manifest, span));
+                    Budget: RenderedPlacement.BudgetFor(manifest, span),
+                    // The widths the viewer may choose in this region (FR-025 R2): the manifest's range, never past the region.
+                    Widths: Enumerable.Range(Math.Max(1, manifest.Placement.MinSpan), Math.Max(0, Math.Min(manifest.Placement.MaxSpan, lr.Span) - Math.Max(1, manifest.Placement.MinSpan) + 1)).ToList());
             }).ToList(), rights.TryGetValue(lr.Id, out var r) ? r.Rights : []);
         }).ToList();
 

@@ -53,3 +53,11 @@
     padding: var(--tb-space-md);
   }
 }
+
+/* Export and reset of the person's own preferences sit on one line and wrap on a phone. */
+.preferences-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--tb-space-sm);
+}
