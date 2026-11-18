@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
-import { initials, isPhoneField, localName, locationName, personName, type OrgChart, type PersonView } from "@/lib/people/types";
+import { initials, isPhoneField, photoAt, localName, locationName, personName, type OrgChart, type PersonView } from "@/lib/people/types";
 import type { RecognitionView } from "@/lib/engagement";
 import { Header } from "@/components/shell/Header";
 import { RecognitionCard } from "@/features/engagement/RecognitionWall";
@@ -67,7 +67,13 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
       <main id="main" className="page people">
         <div className="people-head">
           <span className="people-avatar people-avatar-large" aria-hidden="true">
-            {initials(name)}
+            {p.photo ? (
+              // A session-protected API file; the image optimizer cannot fetch it. The name is the heading beside it.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={photoAt(p.photo, 96) ?? undefined} alt="" decoding="async" />
+            ) : (
+              initials(name)
+            )}
           </span>
           <div className="people-item-text">
             <h1>

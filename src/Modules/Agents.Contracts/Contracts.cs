@@ -72,7 +72,9 @@ public static class ToolApprovalRules
 /// is the JSON schema of the arguments the model may pass; <paramref name="OutputClassification"/> is the highest
 /// classification of what the tool can return. <paramref name="Description"/> tells the model what the tool does; people
 /// see the tool's title and description from the web message catalogue, keyed by the tool name, or, for a tenant tool,
-/// the <paramref name="Title"/> per language its administrator entered.
+/// the <paramref name="Title"/> per language its administrator entered. <paramref name="ApproverPermission"/> names who
+/// approves a call when its rule is "approval" (spec 027 US4): holders of that permission at the agent's unit, unless
+/// the tenant policy names other approvers for the tool.
 /// </summary>
 public sealed record ToolDefinition(
     string Name,
@@ -87,7 +89,8 @@ public sealed record ToolDefinition(
     string Description,
     string? RequiredCapability = null,
     IReadOnlyDictionary<string, string>? Title = null,
-    bool Exposable = false);
+    bool Exposable = false,
+    string? ApproverPermission = null);
 
 /// <summary>
 /// Who a tool call runs for: the person, through an agent, in a run. Authorization is the person's at the time of the

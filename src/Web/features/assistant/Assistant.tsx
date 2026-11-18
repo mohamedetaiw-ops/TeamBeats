@@ -103,7 +103,7 @@ function Feedback({ turn }: { turn: Turn }) {
 }
 
 /** One turn: the question, then the answer with its citations, or the message for why there is none (FR-011). */
-function TurnItem({ turn, voice }: { turn: Turn; voice: boolean }) {
+export function TurnItem({ turn, voice }: { turn: Turn; voice: boolean }) {
   const t = useTranslations("assistant");
   const tk = useTranslations("search.kinds");
   const format = useFormatter();

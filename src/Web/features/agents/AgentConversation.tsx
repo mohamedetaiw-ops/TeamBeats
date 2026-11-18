@@ -21,16 +21,17 @@ function show(value: unknown): string {
 /**
  * The confirmation card (spec 027 FR-010, US4): the exact action and parameters the agent asks to run, with values
  * that also appeared in content the agent read marked for a second look. Nothing runs until the person confirms, and
- * the API runs exactly what the card shows, bound by its hash.
+ * the API runs exactly what the card shows, bound by its hash. An L3 action waits for an approver instead: the card
+ * says so, and the person can stop the run or check for the answer once it was decided.
  */
-function Card({ card, busy, onDecide }: { card: ConfirmationCard; busy: boolean; onDecide: (confirm: boolean) => void }) {
+function Card({ card, busy, onDecide, onCheck }: { card: ConfirmationCard; busy: boolean; onDecide: (confirm: boolean) => void; onCheck: () => void }) {
   const ts = useTranslations("agents");
   const id = useId();
   const tool = ts.has(`toolNames.${card.tool}`) ? ts(`toolNames.${card.tool}`) : card.tool;
   return (
     <section className="agents-card" aria-labelledby={`${id}-title`} data-testid="agent-confirmation">
-      <h3 id={`${id}-title`}>{ts("card.title")}</h3>
-      <p>{ts("card.intro", { tool })}</p>
+      <h3 id={`${id}-title`}>{card.awaitingApproval ? ts("card.approvalTitle") : ts("card.title")}</h3>
+      <p>{card.awaitingApproval ? ts("card.approvalIntro", { tool }) : ts("card.intro", { tool })}</p>
       <dl>
         {Object.entries(card.parameters).map(([key, value]) => (
           <div key={key} className="agents-card-row">
@@ -44,14 +45,25 @@ function Card({ card, busy, onDecide }: { card: ConfirmationCard; busy: boolean;
           </div>
         ))}
       </dl>
-      <div className="agents-row">
-        <Button variant="primary" busy={busy} busyLabel={ts("card.working")} onClick={() => onDecide(true)}>
-          {ts("card.confirm")}
-        </Button>
-        <Button busy={busy} busyLabel={ts("card.working")} onClick={() => onDecide(false)}>
-          {ts("card.cancel")}
-        </Button>
-      </div>
+      {card.awaitingApproval ? (
+        <div className="agents-row">
+          <Button variant="primary" busy={busy} busyLabel={ts("card.working")} onClick={onCheck}>
+            {ts("use.checkResult")}
+          </Button>
+          <Button busy={busy} busyLabel={ts("card.working")} onClick={() => onDecide(false)}>
+            {ts("card.stop")}
+          </Button>
+        </div>
+      ) : (
+        <div className="agents-row">
+          <Button variant="primary" busy={busy} busyLabel={ts("card.working")} onClick={() => onDecide(true)}>
+            {ts("card.confirm")}
+          </Button>
+          <Button busy={busy} busyLabel={ts("card.working")} onClick={() => onDecide(false)}>
+            {ts("card.cancel")}
+          </Button>
+        </div>
+      )}
     </section>
   );
 }
@@ -92,6 +104,7 @@ export function AgentConversation({ agentId, item }: { agentId: string; item: { 
       }
       const run = (await response.json()) as RunView;
       if (run.status === "running") setError([ts("use.stillWorking")]);
+      else if (run.status === "waiting" && run.confirmation?.awaitingApproval) setError([ts("use.stillWaiting")]);
       else replace(run);
     } catch {
       setError([ts("use.failed")]);
@@ -146,11 +159,14 @@ export function AgentConversation({ agentId, item }: { agentId: string; item: { 
     setBusy(true);
     setError([]);
     try {
-      const response = await fetch(`/api/v1/agents/runs/${run.id}/confirmations/${card.id}`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ confirm, hash: card.hash }),
-      });
+      // An action waiting for an approver is not the person's to confirm; they can only stop the run.
+      const response = card.awaitingApproval
+        ? await fetch(`/api/v1/agents/runs/${run.id}/stop`, { method: "POST" })
+        : await fetch(`/api/v1/agents/runs/${run.id}/confirmations/${card.id}`, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ confirm, hash: card.hash }),
+          });
       if (response.ok) replace((await response.json()) as RunView);
       else setError(await problemMessages(response));
     } catch {
@@ -194,7 +210,12 @@ export function AgentConversation({ agentId, item }: { agentId: string; item: { 
                 </div>
               ) : null}
               {turn.run.status === "waiting" && turn.run.confirmation ? (
-                <Card card={turn.run.confirmation} busy={busy} onDecide={(confirm) => void decide(turn.run!, turn.run!.confirmation!, confirm)} />
+                <Card
+                  card={turn.run.confirmation}
+                  busy={busy || checking === turn.run.id}
+                  onDecide={(confirm) => void decide(turn.run!, turn.run!.confirmation!, confirm)}
+                  onCheck={() => void check(turn.run!.id)}
+                />
               ) : null}
               {!turn.run.answer && turn.run.status !== "waiting" ? <p role="status">{ts(`outcomes.${turn.run.outcome ?? "none"}`)}</p> : null}
               {turn.run.citations.length > 0 ? (

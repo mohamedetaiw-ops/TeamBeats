@@ -186,7 +186,7 @@ public sealed class AgentAnalytics(IDbSession session, AgentRegistry registry, I
         var tools = steps.GroupBy(s => s.Tool).Select(g =>
         {
             var calls = g.Sum(s => s.Count);
-            var succeeded = g.Where(s => s.Decision is ToolDecisions.Executed or ToolDecisions.Confirmed).Sum(s => s.Count);
+            var succeeded = g.Where(s => s.Decision is ToolDecisions.Executed or ToolDecisions.Confirmed or ToolDecisions.Approved).Sum(s => s.Count);
             var failed = g.Where(s => s.Decision == ToolDecisions.Refused).Sum(s => s.Count);
             var failures = g.Where(s => s.Decision == ToolDecisions.Refused && s.Reason is not null).GroupBy(s => s.Reason!)
                 .Select(r => new AgentFailureReason(r.Key, r.Sum(s => s.Count)))

@@ -314,11 +314,15 @@ public sealed class AgentLifecycle(IDbSession session, ITenantContext context, I
         await audit.WriteAsync(new AuditEntry(AuditActions.AgentSuspended, "agent", id.ToString(), TargetOrgUnitId: unit, Changes: new { reason }), ct);
     }
 
-    /// <summary>Waiting runs stop and their pending actions are cancelled.</summary>
-    /// <summary>Stops waiting and running runs. Raising the attempt makes a request still running one roll back at its next checkpoint (020 T021).</summary>
+    /// <summary>
+    /// Stops waiting and running runs; their pending actions are cancelled and approvals they wait on leave the approvers'
+    /// inbox (027 US7 scenario 1). Raising the attempt makes a request still running one roll back at its next checkpoint (020 T021).
+    /// </summary>
     private async Task StopWaitingAsync(string where, object args, CancellationToken ct) =>
         await session.ExecAsync(
             $"""
+            update agents.run_approval a set status = 'cancelled', decided_at = @now
+            from agents.run r where r.id = a.run_id and r.status = 'waiting' and a.status = 'pending' and r.{where};
             delete from agents.run_checkpoint c using agents.run r where r.id = c.run_id and r.status = 'waiting' and r.{where};
             update agents.run set status = 'stopped', outcome = 'suspended', reason = 'agent.suspended', finished_at = @now, updated_at = @now,
               attempt = attempt + 1

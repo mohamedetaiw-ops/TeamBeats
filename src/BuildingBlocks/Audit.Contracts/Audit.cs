@@ -225,6 +225,7 @@ public static class AuditActions
     public const string PeopleProfileUpdated = "people.profile_updated";
     public const string PeopleReportingCycleDetected = "people.reporting_cycle_detected";
     public const string PeopleSettingsChanged = "people.settings_changed";
+    public const string PeoplePhotoRemoved = "people.photo_removed";
 
     // Spec 026 (R1): security policy and network refusals.
     public const string SecurityPolicyChanged = "security.policy_changed";
@@ -500,6 +501,12 @@ public static class AuditActions
     public const string AgentInjectionDetected = "agent.injection_detected";
     public const string AgentActionConfirmed = "agent.action_confirmed";
     public const string AgentActionRejected = "agent.action_rejected";
+
+    /// <summary>An approver approved an agent action that waited in the inbox (spec 027 US4, R2).</summary>
+    public const string AgentActionApproved = "agent.action_approved";
+
+    /// <summary>An agent action waited past its due time and was cancelled (spec 027 US4 scenario 3).</summary>
+    public const string AgentActionExpired = "agent.action_expired";
     public const string AgentVersionSubmitted = "agent.version_submitted";
     public const string AgentVersionApproved = "agent.version_approved";
     public const string AgentVersionRejected = "agent.version_rejected";
@@ -609,7 +616,7 @@ public static class AuditActions
         HrLeaveRecounted, HrLeaveSourceChanged, HrLeaveHandOffRetried,
         HrJourneyTemplateChanged, HrJourneyStarted, HrJourneyRescheduled, HrJourneyStepCompleted, HrJourneyCancelled, HrAccessRemovalConfirmed, HrAccessRemovalEscalated, HrExitInterviewRecorded, HrJourneySettingsChanged, HrPreboardingSent, HrAttendanceSettingsChanged, HrWorkRuleChanged, HrAttendanceExported, HrAttendanceRequested, HrAttendanceCorrected, HrCompensationCredited, HrAttendanceRequestRejected, HrLetterTypeChanged, HrLetterSettingsChanged, HrLetterRequested, HrLetterIssued, HrLetterRejected, HrLetterVerified, HrDataChangeSettingsChanged, HrDataChangeRequested, HrDataChangeApproved, HrDataChangeRejected, HrDataChangeWrittenBack, HrDataChangeWriteFailed, HrExpensePolicyChanged, HrExpenseRatesChanged, HrExpenseSubmitted, HrExpenseApproved, HrExpenseRejected, HrExpenseHandedOff,
         CalendarEventCreated, CalendarEventChanged, CalendarEventCancelled, CalendarEventDeleted, CalendarSettingsChanged, CalendarTeamViewed,
-        PeopleVisibilityChanged, PeopleFieldSourceChanged, PeopleManagerSetManually, PeopleProfileUpdated, PeopleReportingCycleDetected, PeopleSettingsChanged,
+        PeopleVisibilityChanged, PeopleFieldSourceChanged, PeopleManagerSetManually, PeopleProfileUpdated, PeopleReportingCycleDetected, PeopleSettingsChanged, PeoplePhotoRemoved,
         SecurityPolicyChanged, MobileOfflinePolicyChanged, DeviceKioskEnrolled, DeviceKioskChanged, DeviceKioskRevoked, DeviceKioskSignIn, DeviceKioskLockout,
         ApiAppRegistered, ApiAppChanged, ApiAppDisabled, ApiCredentialAdded, ApiCredentialRevoked, ApiConsentGranted, ApiConsentRevoked,
         ApiTokenFamilyRevoked, ApiTokenRefused, ApiSettingsChanged, ApiRoleAssignedToApp, ApiVerifiedClientChanged, ApiClientBlocked, ApiClientUnblocked, ApiTokensRevoked,
@@ -638,7 +645,7 @@ public static class AuditActions
         SearchBestBetChanged, SearchSynonymsChanged, SearchRetrievalChangeProposed, SearchRetrievalChangeDecided, SearchRetrievalChangeOverridden,
         SearchRetrievalChangeCancelled, SearchFederatedChanged, SearchAiSummaryChanged, SearchQueryTextChanged,
         AssistantHistoryDeleted, AssistantRetentionChanged, AssistantGuestsChanged, AssistantFileAdded, AssistantFileRefused,
-        AgentInstalledFromTemplate, AgentCreated, AgentCloned, AgentAccessRequested, AgentAccessGranted, AgentAccessDenied, AgentMemoryAccepted, AgentMemoryDeleted, AgentTemplateUpdateApplied, AgentAudienceChanged, AgentOwnerChanged, AgentPolicyChanged, AgentToolCalled, AgentExternalCallRefused, AgentToolDenied, AgentInjectionDetected, AgentActionConfirmed, AgentActionRejected,
+        AgentInstalledFromTemplate, AgentCreated, AgentCloned, AgentAccessRequested, AgentAccessGranted, AgentAccessDenied, AgentMemoryAccepted, AgentMemoryDeleted, AgentTemplateUpdateApplied, AgentAudienceChanged, AgentOwnerChanged, AgentPolicyChanged, AgentToolCalled, AgentExternalCallRefused, AgentToolDenied, AgentInjectionDetected, AgentActionConfirmed, AgentActionRejected, AgentActionApproved, AgentActionExpired,
         AgentVersionSubmitted, AgentVersionApproved, AgentVersionRejected, AgentVersionPublished, AgentRolledBack, AgentSuspended, AgentResumed,
         AgentRetired, AgentKillSwitch,
         EvalSuiteCreated, EvalSuiteChanged, EvalDatasetVersionCreated, EvalDatasetImported, EvalPolicyChanged, EvalPersonaCreated, EvalGateDecided, EvalGateOverridden,
