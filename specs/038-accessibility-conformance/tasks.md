@@ -19,7 +19,7 @@ Depends on 007 (baseline), 008 (shell and preferences), 032 (page builder), 033 
 - [x] T010 Target size, reflow at 320 pixels, 200 percent text, text spacing, reduced motion on primary pages (A11Y-011 to A11Y-015)
 - [x] T011 Overlay focus trap, Escape and return in the component gallery (A11Y-016)
 - [x] T012 `jsx-a11y` recommended rules at error level and the fixes they need (A11Y-017)
-- [ ] T013 Token contrast checks cover focus ring and status colours in every design and mode (A11Y-018)
+- [x] T013 Token contrast checks cover focus ring and status colours in every design and mode, on base and raised surfaces (A11Y-018)
 
 ## Phase 4: Interaction rules (US4, US5)
 - [x] T014 Non-drag move controls with announcements: page builder, home arrange mode, process modeler, boards (A11Y-019)
