@@ -32,6 +32,8 @@ public static class AnalyticsModule
         services.AddScoped<Workspace>();
         services.AddScoped<AnalyticsEstimates>();
         services.AddScoped<CampaignAnalytics>();
+        services.AddScoped<ServiceAnalytics>();
+        services.AddScoped<ComplianceAnalytics>();
         services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IShellCommands, AnalyticsCommands>();
         services.AddScoped<IAnalyticsEvents, AnalyticsEventsEmitter>();
         services.AddMessageHandler<AnalyticsEventEmitted, AnalyticsEventHandler>("analytics.write_event");
@@ -74,6 +76,12 @@ public static class AnalyticsModule
         analytics.MapGet("/campaigns/compare", async (Guid first, Guid second, CampaignAnalytics campaigns, CancellationToken ct) =>
             Results.Ok(await campaigns.CompareAsync(first, second, ct)));
         analytics.MapGet("/campaigns/{id:guid}", async (Guid id, CampaignAnalytics campaigns, CancellationToken ct) => Results.Ok(await campaigns.GetAsync(id, ct)));
+        // Service analytics (spec 021 US4, T012): Services decides who may see a service; the package needs analytics.advanced.
+        analytics.MapGet("/services", async (ServiceAnalytics services, CancellationToken ct) => Results.Ok(await services.ListAsync(ct)));
+        analytics.MapGet("/services/{id:guid}", async (Guid id, DateOnly? from, DateOnly? to, ServiceAnalytics services, CancellationToken ct) =>
+            Results.Ok(await services.GetAsync(id, from, to, ct)));
+        // Policy compliance analytics (spec 021 US5, T013): Policies decides whose attestations a viewer counts.
+        analytics.MapGet("/compliance", async (ComplianceAnalytics compliance, CancellationToken ct) => Results.Ok(await compliance.GetAsync(ct)));
         analytics.MapGet("/estimates", async (AnalyticsEstimates estimates, CancellationToken ct) => Results.Ok(await estimates.ViewAsync(ct)));
 
         var admin = analytics.MapGroup("").InAdminArea();

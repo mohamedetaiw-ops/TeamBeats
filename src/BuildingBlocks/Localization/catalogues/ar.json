@@ -2601,5 +2601,6 @@
   "validation.analytics.estimate": "أدخل رقما من الصفر حتى الحد الأقصى المسموح.",
   "validation.analytics.currency": "أدخل رمز عملة من ثلاثة أحرف، مثل SAR أو USD.",
   "validation.analytics.compare": "اختر حملتين مختلفتين للمقارنة.",
-  "conflict.analytics.estimates_version": "غيّر شخص آخر التقديرات أثناء تحريرك. أعد التحميل وحاول مرة أخرى."
+  "conflict.analytics.estimates_version": "غيّر شخص آخر التقديرات أثناء تحريرك. أعد التحميل وحاول مرة أخرى.",
+  "validation.services.field_reportable": "لا يمكن الإبلاغ عن سبب منظم إلا من حقل اختيار واحد."
 }

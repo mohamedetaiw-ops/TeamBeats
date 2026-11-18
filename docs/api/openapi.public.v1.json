@@ -1378,6 +1378,10 @@
           "mustBeCurrent": {
             "type": "boolean",
             "default": false
+          },
+          "reportable": {
+            "type": "boolean",
+            "default": false
           }
         }
       },

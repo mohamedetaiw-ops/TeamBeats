@@ -131,7 +131,8 @@ public sealed record FormField(
     IReadOnlyDictionary<string, string>? Note = null,
     IReadOnlyList<string>? Currencies = null,
     bool ReadOnly = false,
-    bool MustBeCurrent = false);
+    bool MustBeCurrent = false,
+    bool Reportable = false);
 
 public sealed record FormDefinition(IReadOnlyList<FormField> Fields)
 {
@@ -235,6 +236,11 @@ public static partial class FormValidator
             if ((f.ReadOnly || f.MustBeCurrent) && !PrefillSources.IsHr(f.Prefill))
             {
                 errors.Add($"{at}.prefill", "validation.services.field_prefill_hr_only");
+            }
+            // A structured reason for analytics (spec 016 FR-012, spec 021 US4): only a single choice from a fixed list, never free text.
+            if (f.Reportable && f.Type != FieldTypes.Choice)
+            {
+                errors.Add($"{at}.reportable", "validation.services.field_reportable");
             }
             var allowed = RuleKinds.For(f.Type);
             var rules = f.Rules ?? [];
