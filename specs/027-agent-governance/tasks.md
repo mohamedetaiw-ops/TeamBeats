@@ -26,7 +26,7 @@ Depends on 004, 005, 006, 013 (AI Gateway), 016 (inbox), 020 (definitions and ru
 - [x] T013 Agent policy page, runs search and run timeline, confirmation card component, kill switch control, in English and Arabic, RTL; e2e with axe
 
 ## Final phase
-- [ ] T014 Kill tests (worker restart mid-run); OpenAPI; R1 implementation notes; spec evidence
+- [x] T014 Kill tests (worker restart mid-run, `AgentRunResumeTests` from spec 020 R2); OpenAPI; R1 implementation notes; spec evidence
 
 ## R2: L3, org unit policies and the Agent Security Center
 
@@ -35,4 +35,4 @@ Depends on 004, 005, 006, 013 (AI Gateway), 016 (inbox), 020 (definitions and ru
 - [ ] T017 [US6 scenarios 4 and 5, US9 scenario 3, FR-023] Agent Security Center: anomaly rules and alerts to the owner and security officer, incidents with severity, linked runs, actions and closure note, evidence export, and the watch list for High risk agents for 30 days; tests
 - [ ] T018 [US7 scenarios 3 and 4] A disabled connector disables its tools for every agent with a degraded notice; revoking an agent's tokens; tests
 - [ ] T019 Pages: approval detail, org unit policy, Security Center, in English and Arabic, RTL; e2e with axe
-- [ ] T020 OpenAPI; R2 implementation notes; spec evidence (closes T014 with `AgentRunResumeTests`)
+- [ ] T020 OpenAPI; R2 implementation notes; spec evidence
