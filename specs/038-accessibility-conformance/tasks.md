@@ -10,8 +10,8 @@ Depends on 007 (baseline), 008 (shell and preferences), 032 (page builder), 033 
 - [x] T005 Matrix suite: primary pages in 32 combinations, other routes rotated (A11Y-005, A11Y-006)
 
 ## Phase 2: Fixes found by the gate (US1)
-- [ ] T006 Shell and shared parts: every serious and critical finding fixed in `components/ui`, shell and global CSS
-- [ ] T007 Primary pages: findings fixed in their feature code
+- [x] T006 Shell and shared parts: every serious and critical finding fixed in `components/ui`, shell and global CSS
+- [x] T007 Primary pages: findings fixed in their feature code
 - [ ] T008 Other routes, grouped by module
 
 ## Phase 3: Real-page checks (US2, US3)
@@ -22,7 +22,7 @@ Depends on 007 (baseline), 008 (shell and preferences), 032 (page builder), 033 
 - [ ] T013 Token contrast checks cover focus ring and status colours in every design and mode (A11Y-018)
 
 ## Phase 4: Interaction rules (US4, US5)
-- [ ] T014 Non-drag move controls with announcements: page builder, home arrange mode, process modeler, boards (A11Y-019)
+- [x] T014 Non-drag move controls with announcements: page builder, home arrange mode, process modeler, boards (A11Y-019)
 - [x] T015 Sign-in fields: autocomplete and paste, checked by `a11y/authentication.spec.ts` (A11Y-022)
 - [ ] T021 Redundant entry review of multi-step forms (A11Y-021)
 

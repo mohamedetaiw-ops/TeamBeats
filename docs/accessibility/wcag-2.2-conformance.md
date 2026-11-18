@@ -45,7 +45,7 @@ Last updated: 2026-11-18. Scope: the TeamBeats web app and installable web app (
 
 | SC | Level | How TeamBeats meets it | Verification | Status |
 |---|---|---|---|---|
-| 2.1.1 Keyboard | A | Native controls first; composite widgets (tabs, menus, tree, grid, calendar) have arrow key support | Page check (`interaction.spec.ts`, keyboard journeys in feature suites); Manual | Partial: drag-only moves remain in some editors until T014 |
+| 2.1.1 Keyboard | A | Native controls first; composite widgets (tabs, menus, tree, grid, calendar) have arrow key support | Page check (`interaction.spec.ts`, keyboard journeys in feature suites, `dragging.spec.ts`); Manual | Supports |
 | 2.1.2 No keyboard trap | A | Overlays trap focus only while open and release on Escape | Page check (`overlays.spec.ts`: Tab stays inside while open, Escape closes and returns focus) | Supports |
 | 2.1.4 Character key shortcuts | A | No single character shortcuts; the command palette opens with a modifier | Manual | Manual only |
 | 2.2.1 Timing adjustable | A | No time limits on tasks; an idle session ends on the server per the tenant session policy (spec 003), and the shared kiosk signs out after inactivity (spec 030), which is a security exception | Manual | Partial: no warning before an idle session ends |
@@ -63,7 +63,7 @@ Last updated: 2026-11-18. Scope: the TeamBeats web app and installable web app (
 | 2.5.2 Pointer cancellation | A | Actions run on click (up event), native buttons | Manual | Manual only |
 | 2.5.3 Label in name | A | Accessible names start with the visible text | Gate (`label-content-name-mismatch`) | Supports |
 | 2.5.4 Motion actuation | A | No device motion input | | Not applicable |
-| 2.5.7 Dragging movements | AA | Move menus and buttons beside every drag (A11Y-019) | Page check (T014) | Partial until T014 is built |
+| 2.5.7 Dragging movements | AA | Move menus and buttons beside every drag (A11Y-019) | Page check (`dragging.spec.ts` lists every drag with its alternative and the feature test that checks it) | Supports |
 | 2.5.8 Target size (minimum) | AA | Buttons 44 px, compact 28 px, nothing under 24 px (DLS-033, DLS-085) | Page check (`interaction.spec.ts` on primary pages; design suite galleries) | Supports |
 
 ## Understandable
@@ -98,7 +98,6 @@ Moderate and minor findings from the gate, and gaps from manual review, with the
 
 | Issue | Criterion | Task |
 |---|---|---|
-| Drag-only moves in some editors | 2.1.1, 2.5.7 | T014 |
 | Uploaded video previews have no caption track unless the uploader provides captions | 1.2.2 | Listed as a limitation in the statement |
 | Detail routes checked only by their feature suites, not yet in the matrix | all | T008 |
 | Generated PDFs are not tagged | 1.3.1, 4.1.2 for documents | T019 (R3) |

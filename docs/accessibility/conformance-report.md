@@ -24,7 +24,7 @@ Spec 038 A11Y-002. This report follows the layout of the ITI Accessibility Confo
 | 1.3.3 Sensory characteristics | Supports | Met by design; verified by internal review only until the external audit. |
 | 1.4.1 Use of color | Supports |  |
 | 1.4.2 Audio control | Supports | Met by design; verified by internal review only until the external audit. |
-| 2.1.1 Keyboard | Partially supports | Some editors still move items by dragging only; move menus are being added. |
+| 2.1.1 Keyboard | Supports |  |
 | 2.1.2 No keyboard trap | Supports |  |
 | 2.1.4 Character key shortcuts | Supports | Met by design; verified by internal review only until the external audit. |
 | 2.2.1 Timing adjustable | Partially supports | No warning before an idle session ends. |
@@ -67,7 +67,7 @@ Spec 038 A11Y-002. This report follows the layout of the ITI Accessibility Confo
 | 2.4.6 Headings and labels | Supports |  |
 | 2.4.7 Focus visible | Supports |  |
 | 2.4.11 Focus not obscured (minimum) | Supports |  |
-| 2.5.7 Dragging movements | Partially supports | Some editors still move items by dragging only; move menus are being added. |
+| 2.5.7 Dragging movements | Supports |  |
 | 2.5.8 Target size (minimum) | Supports |  |
 | 3.1.2 Language of parts | Partially supports | User names in another script are isolated (`bdi`) but not language tagged. |
 | 3.2.3 Consistent navigation | Supports |  |
