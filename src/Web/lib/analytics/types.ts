@@ -243,3 +243,21 @@ export type ExperienceAnalyticsView = {
   };
   outcomes: { flow: string; started: number; completed: number; abandoned: number; completionRate: number | null; dropOffStep: string | null }[];
 };
+
+// Spec 021 T017 (US8): sentiment labels with the minimum group size; no text is ever shown.
+export type SentimentCounts = { texts: number | null; positive: number | null; neutral: number | null; negative: number | null; score: number | null };
+export type SentimentGroup = { group: string; names: Record<string, string>; counts: SentimentCounts };
+export type SentimentView = {
+  enabled: boolean;
+  from: string;
+  to: string;
+  minGroupSize: number;
+  total: SentimentCounts;
+  weeks: { week: string; counts: SentimentCounts }[];
+  topics: SentimentGroup[];
+  units: SentimentGroup[];
+  locations: SentimentGroup[];
+  sources: SentimentGroup[];
+  paused: { source: string; denial: string; at: string }[];
+};
+export type AnalyticsPolicyView = { sentiment: boolean; sentimentAvailable: boolean; canChange: boolean; version: number };

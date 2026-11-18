@@ -25359,6 +25359,36 @@
         }
       }
     },
+    "/api/v1/analytics/sentiment": {
+      "get": {
+        "tags": [
+          "Analytics"
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/analytics/reports/options": {
       "get": {
         "tags": [
@@ -29464,6 +29494,12 @@
               "string"
             ],
             "format": "int32"
+          },
+          "sentiment": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },

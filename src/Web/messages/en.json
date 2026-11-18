@@ -7577,7 +7577,8 @@
       "complianceLink": "Policy compliance",
       "scopesLink": "Locations and units",
       "experienceLink": "Experience",
-      "reportsLink": "Reports"
+      "reportsLink": "Reports",
+      "sentimentLink": "Sentiment"
     },
     "campaigns": {
       "workspace": "Analytics",
@@ -7939,7 +7940,8 @@
         "compliance": "Policy compliance",
         "scope_unit": "Unit dashboard",
         "scope_location": "Location dashboard",
-        "experience": "Experience"
+        "experience": "Experience",
+        "sentiment": "Sentiment"
       },
       "column": {
         "name": "Name",
@@ -7981,6 +7983,66 @@
         "counts": "Counts",
         "people": "People"
       }
+    },
+    "sentiment": {
+      "title": "Sentiment",
+      "intro": "How people feel in comments and survey answers, by week, topic, unit, location and source. No text and no person is shown.",
+      "workspace": "Analytics",
+      "denied": "You cannot open sentiment",
+      "deniedHint": "Sentiment needs a package that includes it and permission to view analytics for the whole organization.",
+      "error": "Sentiment could not be loaded",
+      "errorHint": "Try again in a few minutes.",
+      "setting": "Sentiment analysis",
+      "switch": "Label comments and survey answers by sentiment",
+      "switchHint": "Texts are sent through the AI gateway to be labelled. Only the label is kept, never the text.",
+      "switchFailed": "The setting could not be changed. Try again.",
+      "hidden": "Hidden (fewer than {size} people)",
+      "other": "Other (groups under {size} people)",
+      "noUnit": "No unit",
+      "notRecorded": "Not recorded",
+      "source": {
+        "content_comment": "News and page comments",
+        "community_comment": "Community comments",
+        "survey_answer": "Survey answers"
+      },
+      "paused": "{source} is paused",
+      "denial": {
+        "classification_blocked": "The AI policy does not allow texts of this classification to be sent to a model.",
+        "provider_unavailable": "The AI provider is not available. Labelling resumes on its own.",
+        "quota_exhausted": "The AI quota is used up for now. Labelling resumes when it is renewed.",
+        "budget_exhausted": "The AI budget is used up for now. Labelling resumes when it is renewed.",
+        "not_in_package": "Your package does not include AI for this use.",
+        "unusable_answer": "The model gave an answer that could not be used. Labelling tries again later.",
+        "other": "The AI gateway refused the request. Labelling tries again later."
+      },
+      "off": "Sentiment is off",
+      "offHint": "Turn it on to start labelling new comments and survey answers.",
+      "empty": "Nothing labelled yet",
+      "emptyHint": "Comments and answers from closed surveys are labelled within a few minutes.",
+      "tooFew": "Too few people to show",
+      "tooFewHint": "Figures appear once at least {size} people have written.",
+      "texts": "Texts",
+      "positive": "Positive",
+      "neutral": "Neutral",
+      "negative": "Negative",
+      "score": "Score",
+      "scoreHint": "The score runs from minus 1 (all negative) to plus 1 (all positive).",
+      "trend": "Score by week",
+      "trendSummary": "Sentiment score over {weeks} weeks",
+      "column": {
+        "week": "Week",
+        "topic": "Topic",
+        "unit": "Unit",
+        "location": "Location",
+        "source": "Source"
+      },
+      "by": {
+        "topic": "By topic",
+        "unit": "By unit",
+        "location": "By location",
+        "source": "By source"
+      },
+      "privacyNote": "Each figure stands for at least {size} people. Smaller groups are combined so that no one can be singled out."
     }
   },
   "design_system": {

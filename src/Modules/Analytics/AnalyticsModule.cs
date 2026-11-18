@@ -39,6 +39,8 @@ public static class AnalyticsModule
         services.AddScoped<ReportDefinitions>();
         services.AddScoped<AnalyticsReports>();
         services.AddScoped<ReportRunner>();
+        services.AddScoped<SentimentClassifier>();
+        services.AddScoped<SentimentAnalytics>();
         services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IShellCommands, AnalyticsCommands>();
         services.AddScoped<IAnalyticsEvents, AnalyticsEventsEmitter>();
         services.AddMessageHandler<AnalyticsEventEmitted, AnalyticsEventHandler>("analytics.write_event");
@@ -96,6 +98,9 @@ public static class AnalyticsModule
         // Experience dashboards (spec 021 US9, T015): analytics.view for the whole tenant.
         analytics.MapGet("/experience", async (DateOnly? from, DateOnly? to, ExperienceAnalytics experience, CancellationToken ct) =>
             Results.Ok(await experience.GetAsync(from, to, ct)));
+        // Sentiment (spec 021 US8, T017): labels only, with the minimum group size; analytics.view for the whole tenant.
+        analytics.MapGet("/sentiment", async (DateOnly? from, DateOnly? to, SentimentAnalytics sentiment, CancellationToken ct) =>
+            Results.Ok(await sentiment.GetAsync(from, to, ct)));
         // Scheduled reports and exports (spec 021 US7, T016): computed in the background as each recipient.
         analytics.MapGet("/reports/options", async (AnalyticsReports reports, CancellationToken ct) => Results.Ok(await reports.OptionsAsync(ct)));
         analytics.MapGet("/reports", async (AnalyticsReports reports, CancellationToken ct) => Results.Ok(await reports.ListAsync(ct)));

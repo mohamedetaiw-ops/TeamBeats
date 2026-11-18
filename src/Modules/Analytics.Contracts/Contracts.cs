@@ -386,3 +386,33 @@ public interface IAnalyticsPseudonyms
 {
     Task<string> KeyAsync(Guid userId, CancellationToken ct = default);
 }
+
+/// <summary>The kinds of free text sentiment is worked out from (spec 021 US8).</summary>
+public static class AnalyticsTextSources
+{
+    public const string ContentComment = "content_comment";
+    public const string CommunityComment = "community_comment";
+    public const string SurveyAnswer = "survey_answer";
+}
+
+/// <summary>Where a source left off: the time and id of the last text read. Texts come in that order.</summary>
+public sealed record AnalyticsTextCursor(DateTimeOffset At, Guid Id);
+
+/// <summary>
+/// One free text for sentiment (spec 021 US8, FR-013). <see cref="AuthorId"/> is set only when the text is not anonymous,
+/// so Analytics can count it in the author's unit and location and then drops it; an anonymous survey answer carries
+/// only the group unit it already counts in and the day its survey closed. <see cref="Classification"/> is the source's
+/// data classification (public, internal, confidential, restricted) for the AI Gateway. The text is never stored.
+/// </summary>
+public sealed record AnalyticsText(AnalyticsTextCursor Cursor, string Text, DateOnly Day, Guid? AuthorId, Guid? GroupUnitId, string Topic, string Classification);
+
+/// <summary>
+/// A module's free text for sentiment, oldest first after a cursor. The module decides what counts: visible comments,
+/// and survey text answers once the survey has closed. Only asked when the tenant has turned sentiment on.
+/// </summary>
+public interface IAnalyticsTextSource
+{
+    string Source { get; }
+
+    Task<IReadOnlyList<AnalyticsText>> AfterAsync(AnalyticsTextCursor? after, int limit, CancellationToken ct = default);
+}
