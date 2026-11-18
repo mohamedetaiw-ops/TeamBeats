@@ -53,7 +53,7 @@ Last updated: 2026-11-18. Scope: the TeamBeats web app and installable web app (
 | 2.3.1 Three flashes or below threshold | A | No flashing content | Manual | Manual only |
 | 2.4.1 Bypass blocks | A | Skip link to `main` on every page; landmarks | Gate (`bypass`, `region`); Page check (A11Y-009, T009) | Supports |
 | 2.4.2 Page titled | A | Every page sets a title from its header | Gate (`document-title`) | Supports |
-| 2.4.3 Focus order | A | DOM order; focus moves into dialogs and back to the trigger | Page check (`interaction.spec.ts` Tab walk; overlays in T011); Manual | Partial until T011 is built |
+| 2.4.3 Focus order | A | DOM order; focus moves into dialogs and back to the trigger | Page check (`interaction.spec.ts` Tab walk; `overlays.spec.ts` dialog, drawer and assistant panel); Manual | Supports |
 | 2.4.4 Link purpose (in context) | A | Link text names its target; repeated links carry the record name (`aria-label` starting with the visible text) | Gate (`link-name`, `label-content-name-mismatch`) | Supports |
 | 2.4.5 Multiple ways | AA | Navigation, search, command palette and quick navigation (spec 008) | Manual | Manual only |
 | 2.4.6 Headings and labels | AA | One `h1` per page, ordered headings, visible labels | Gate (`heading-order`, `empty-heading`); Page check (design suite) | Supports |
@@ -99,7 +99,6 @@ Moderate and minor findings from the gate, and gaps from manual review, with the
 | Issue | Criterion | Task |
 |---|---|---|
 | Drag-only moves in some editors | 2.1.1, 2.5.7 | T014 |
-| Overlay focus trap, Escape and return not yet checked on real pages | 2.4.3 | T011 |
 | Uploaded video previews have no caption track unless the uploader provides captions | 1.2.2 | Listed as a limitation in the statement |
 | Detail routes checked only by their feature suites, not yet in the matrix | all | T008 |
 | Generated PDFs are not tagged | 1.3.1, 4.1.2 for documents | T019 (R3) |

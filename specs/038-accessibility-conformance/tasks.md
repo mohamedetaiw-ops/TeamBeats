@@ -17,7 +17,7 @@ Depends on 007 (baseline), 008 (shell and preferences), 032 (page builder), 033 
 ## Phase 3: Real-page checks (US2, US3)
 - [x] T009 Skip link, focus indicator, no positive tabindex, focus not obscured (A11Y-009, A11Y-010)
 - [x] T010 Target size, reflow at 320 pixels, 200 percent text, text spacing, reduced motion on primary pages (A11Y-011 to A11Y-015)
-- [ ] T011 Overlay focus trap, Escape and return in the component gallery (A11Y-016)
+- [x] T011 Overlay focus trap, Escape and return in the component gallery (A11Y-016)
 - [x] T012 `jsx-a11y` recommended rules at error level and the fixes they need (A11Y-017)
 - [ ] T013 Token contrast checks cover focus ring and status colours in every design and mode (A11Y-018)
 
