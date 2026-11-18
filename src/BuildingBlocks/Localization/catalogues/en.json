@@ -2601,5 +2601,6 @@
   "validation.analytics.estimate": "Enter a number from zero up to the allowed maximum.",
   "validation.analytics.currency": "Enter a three-letter currency code, such as SAR or USD.",
   "validation.analytics.compare": "Choose two different campaigns to compare.",
-  "conflict.analytics.estimates_version": "Someone changed the estimates while you were editing. Reload and try again."
+  "conflict.analytics.estimates_version": "Someone changed the estimates while you were editing. Reload and try again.",
+  "validation.services.field_reportable": "Only a single choice field can be reported as a structured reason."
 }

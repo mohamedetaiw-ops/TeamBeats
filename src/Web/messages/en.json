@@ -3444,7 +3444,8 @@
       "useSimpleRouteQuestion": "Drop the designed route and go back to one approval and connector steps? The steps you drew are lost when you save.",
       "useSimpleRouteConfirm": "Use the simple route",
       "openDesigner": "Open in the route designer",
-      "openDesignerHint": "The designer starts from the approval and steps above and adds conditions, parallel paths, tasks, notices and waits."
+      "openDesignerHint": "The designer starts from the approval and steps above and adds conditions, parallel paths, tasks, notices and waits.",
+      "reportable": "Report this field as a structured reason in analytics"
     },
     "team": {
       "title": "Team requests",
@@ -7163,7 +7164,9 @@
         "contractor": "Contractors",
         "guest": "Guests"
       },
-      "campaignsLink": "Campaigns"
+      "campaignsLink": "Campaigns",
+      "servicesLink": "Services",
+      "complianceLink": "Policy compliance"
     },
     "campaigns": {
       "workspace": "Analytics",
@@ -7257,6 +7260,81 @@
         "email": "Email",
         "slack": "Slack",
         "push": "Push"
+      }
+    },
+    "services": {
+      "workspace": "Analytics",
+      "title": "Services",
+      "intro": "How the services you own perform: volume, cycle time, steps and reasons.",
+      "detailIntro": "The last 90 days of requests, with no person in the figures.",
+      "denied": "Service analytics are not available",
+      "deniedHint": "They need advanced analytics in your package and services you own.",
+      "listCaption": "Your services",
+      "empty": "No services yet",
+      "emptyHint": "Services you own appear here.",
+      "column": {
+        "service": "Service",
+        "week": "Week",
+        "step": "Step",
+        "decisions": "Decisions",
+        "automated": "Automated",
+        "rejected": "Rejected",
+        "unit": "Unit",
+        "total": "Total"
+      },
+      "hidden": "Hidden (under {size})",
+      "minutes": "{count, plural, one {# minute} other {# minutes}}",
+      "hours": "{count} hours",
+      "days": "{count} days",
+      "requests": "Requests",
+      "median": "Median time",
+      "p90": "90th percentile",
+      "rejectedShare": "Rejected",
+      "breachedShare": "Missed the service level",
+      "automationRate": "Decided by automation",
+      "weeks": "Requests by week",
+      "weeksSummary": "{weeks, plural, one {# week} other {# weeks}}, {total} requests in total.",
+      "steps": "Time per step",
+      "heatmap": "Open the process heatmap",
+      "slow": "Slow",
+      "reasonsTitle": "Reasons: {field}",
+      "reasonsNote": "Units with fewer than {size} requests are combined into Other, and counts under {size} are hidden.",
+      "other": "Other (units under {size})",
+      "noUnit": "No unit recorded",
+      "allUnits": "All units",
+      "noRequests": "No requests in this period",
+      "noRequestsHint": "Figures appear once people file requests for this service."
+    },
+    "compliance": {
+      "title": "Policy compliance",
+      "workspace": "Analytics",
+      "intro": "Attestation across open campaigns for the people you look after, by unit and location. Names stay in each policy's compliance report.",
+      "denied": "Policy compliance analytics are not available to you",
+      "deniedHint": "They are for compliance officers, in packages with advanced analytics.",
+      "error": "Policy compliance could not be loaded",
+      "errorHint": "Try again in a moment.",
+      "empty": "No open attestation campaigns",
+      "emptyHint": "When a policy owner launches a campaign, its progress shows here.",
+      "audience": "In the audience",
+      "rate": "Attested",
+      "attested": "People attested",
+      "overdue": "Overdue",
+      "hidden": "Fewer than {size}",
+      "other": "Other (groups under {size})",
+      "noUnit": "No unit",
+      "noLocation": "No location",
+      "daysLeft": "{count, plural, =0 {Deadline passed} one {# day left} other {# days left}}",
+      "window": "Version {version}, launched {launched}, due {deadline}",
+      "report": "Open the attestation report",
+      "trend": "Progress to the deadline",
+      "trendSummary": "{name}: {rate} attested so far",
+      "byUnit": "By unit",
+      "byLocation": "By location",
+      "tooFew": "Too few people to show groups of fewer than {size}.",
+      "column": {
+        "day": "Day",
+        "unit": "Unit",
+        "location": "Location"
       }
     }
   },

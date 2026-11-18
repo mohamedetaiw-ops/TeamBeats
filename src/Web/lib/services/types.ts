@@ -105,6 +105,8 @@ export type FormField = {
   currencies?: string[] | null;
   readOnly?: boolean;
   mustBeCurrent?: boolean;
+  /** A structured reason for analytics (spec 016 FR-012): single choice fields only. */
+  reportable?: boolean;
 };
 
 export type FormDefinition = { fields: FormField[] };

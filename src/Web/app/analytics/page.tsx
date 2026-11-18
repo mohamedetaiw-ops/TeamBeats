@@ -29,9 +29,17 @@ export default async function AnalyticsWorkspacePage() {
           description={t("intro")}
           icon="trend-up"
           actions={
-            <ButtonLink href="/analytics/campaigns" icon="megaphone" size="sm">
-              {t("campaignsLink")}
-            </ButtonLink>
+            <>
+              <ButtonLink href="/analytics/campaigns" icon="megaphone" size="sm">
+                {t("campaignsLink")}
+              </ButtonLink>
+              <ButtonLink href="/analytics/services" icon="services" size="sm">
+                {t("servicesLink")}
+              </ButtonLink>
+              <ButtonLink href="/analytics/compliance" icon="policy" size="sm">
+                {t("complianceLink")}
+              </ButtonLink>
+            </>
           }
         />
         {!workspace.ok ? (

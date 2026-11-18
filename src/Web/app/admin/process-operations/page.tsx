@@ -7,9 +7,11 @@ import { ProcessOperationsTabs } from "@/features/processes/ProcessOperationsTab
 /**
  * Process operations (spec 024 US5, FR-013, FR-014): the operator view of instances and incidents, and monitoring per
  * process version. The section appears only when the API lists it, which needs the BPMN capability and
- * `process.operate` or `process.analyze`. Every call is authorized again by the API.
+ * `process.operate` or `process.analyze`. Every call is authorized again by the API. `?tab=monitoring&process=key` opens the
+ * monitoring of one process, as service analytics link to it (spec 021 US4 scenario 2).
  */
-export default async function ProcessOperationsPage() {
+export default async function ProcessOperationsPage({ searchParams }: { searchParams: Promise<{ tab?: string; process?: string }> }) {
+  const { tab, process } = await searchParams;
   const nav = await apiGet<NavigationSection[]>("/api/v1/admin/navigation");
   if (!nav.ok || !nav.data.some((s) => s.key === "process_operations")) {
     notFound();
@@ -21,7 +23,7 @@ export default async function ProcessOperationsPage() {
       <h1>{t("pageTitle")}</h1>
       <p className="notice">{t("pageIntro")}</p>
       <div className="processes">
-        <ProcessOperationsTabs processes={processes.ok ? processes.data : []} />
+        <ProcessOperationsTabs processes={processes.ok ? processes.data : []} initialTab={tab} initialProcess={process} />
       </div>
     </>
   );

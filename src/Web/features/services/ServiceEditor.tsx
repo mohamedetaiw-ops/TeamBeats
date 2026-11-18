@@ -176,6 +176,7 @@ export function ServiceEditor({
             prefill: f.prefill || null,
             readOnly: isHrSource(f.prefill) ? (f.readOnly ?? false) : false,
             mustBeCurrent: isHrSource(f.prefill) ? (f.mustBeCurrent ?? false) : false,
+            reportable: f.type === "choice" ? (f.reportable ?? false) : false,
             options: withOptions.has(f.type) ? (f.options ?? []).map((o) => ({ value: o.value, labels: clean(o.labels) ?? {} })) : null,
             rules: f.rules && f.rules.length > 0 ? f.rules : null,
             showWhen: f.showWhen && f.showWhen.field ? f.showWhen : null,
@@ -317,6 +318,12 @@ export function ServiceEditor({
               {t("hrMustBeCurrent")}
             </label>
           </>
+        ) : null}
+        {f.type === "choice" ? (
+          <label className="services-check">
+            <input type="checkbox" checked={f.reportable ?? false} onChange={(e) => update(i, { reportable: e.target.checked })} />
+            {t("reportable")}
+          </label>
         ) : null}
         {withRange.has(f.type) ? (
           <div className="services-row">

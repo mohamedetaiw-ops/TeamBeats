@@ -38,6 +38,7 @@ const finders: Finder[] = [
   { route: "/content/sites/[id]", list: "/content/sites" },
   { route: "/services/[id]", list: "/services" },
   { route: "/admin/services/[id]", list: "/admin/services" },
+  { route: "/analytics/services/[id]", list: "/analytics/services" },
   { route: "/requests/[id]", list: "/requests" },
   { route: "/documents/libraries/[id]", list: "/documents" },
   // Documents sit in folders, which the library opens in place; each folder has its own address.

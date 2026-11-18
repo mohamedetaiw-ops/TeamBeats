@@ -18,12 +18,12 @@ import "./processes.css";
  * durations, and per step the instances waiting there now, open incidents and how long the step took. Numbers only:
  * no variables and no people. The API decides who may see them (process analysts and operators at the owner's unit).
  */
-export function MonitoringPanel({ processes }: { processes: ProcessModelSummary[] }) {
+export function MonitoringPanel({ processes, initialProcess }: { processes: ProcessModelSummary[]; initialProcess?: string }) {
   const t = useTranslations("processes.monitoring");
   const locale = useLocale();
   const format = useFormatter();
   const published = processes.filter((p) => p.latestVersion != null);
-  const [process, setProcess] = useState(published[0]?.key ?? "");
+  const [process, setProcess] = useState(published.find((p) => p.key === initialProcess)?.key ?? published[0]?.key ?? "");
   const [version, setVersion] = useState("");
   const [days, setDays] = useState("30");
   const [data, setData] = useState<ProcessMonitoring | null>(null);

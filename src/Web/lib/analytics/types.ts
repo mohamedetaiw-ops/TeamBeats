@@ -143,3 +143,63 @@ export type EffortEstimatesView = {
 export const notificationChannels = ["in_app", "email", "slack", "push"] as const;
 
 export const campaignAnalyticsHref = (id: string) => `/analytics/campaigns/${encodeURIComponent(id)}`;
+
+/** Service analytics (spec 021 T012). Figures under the minimum group size arrive as null. */
+export type AnalyticsService = { id: string; names: Record<string, string>; processKey: string; ownerOrgUnitId: string | null };
+
+export type ServiceReasonRow = { group: string; names: Record<string, string>; total: number; counts: Record<string, number | null> };
+
+export type ServiceAnalyticsView = {
+  service: AnalyticsService;
+  from: string;
+  to: string;
+  minGroupSize: number;
+  requests: number;
+  weeks: { week: string; requests: number }[];
+  cycle: { closed: number; medianSeconds: number | null; p90Seconds: number | null };
+  breached: number;
+  breachedShare: number | null;
+  rejected: number;
+  rejectedShare: number | null;
+  automationRate: number | null;
+  steps: { step: string; decisions: number; medianSeconds: number | null; p90Seconds: number | null; automated: number; rejected: number; slow: boolean }[];
+  reasons: {
+    field: string;
+    labels: Record<string, string>;
+    options: { value: string; labels: Record<string, string> }[];
+    rows: ServiceReasonRow[];
+    all: ServiceReasonRow;
+  }[];
+  heatmapHref: string | null;
+};
+
+export const serviceAnalyticsHref = (id: string) => `/analytics/services/${encodeURIComponent(id)}`;
+
+/** Policy compliance analytics (spec 021 T013). Counts and rates under the minimum group size arrive as null. */
+export type ComplianceCounts = { audience: number; attested: number | null; overdue: number | null; rate: number | null };
+
+export type ComplianceGroup = { group: string; names: Record<string, string>; counts: ComplianceCounts };
+
+export type ComplianceCampaignView = {
+  campaignId: string;
+  policyId: string;
+  version: number;
+  names: Record<string, string>;
+  launchedAt: string;
+  deadline: string;
+  daysLeft: number;
+  total: ComplianceCounts;
+  units: ComplianceGroup[];
+  locations: ComplianceGroup[];
+  trend: { day: string; rate: number }[];
+};
+
+export type ComplianceAnalyticsView = { minGroupSize: number; total: ComplianceCounts; campaigns: ComplianceCampaignView[] };
+
+/** The spec 025 compliance view of a campaign, which keeps its own permissions, narrowed to a unit or a location. */
+export const complianceReportHref = (policyId: string, campaignId: string, filter?: { unit?: string; location?: string }) => {
+  const query = new URLSearchParams({ campaign: campaignId });
+  if (filter?.unit) query.set("unit", filter.unit);
+  if (filter?.location) query.set("location", filter.location);
+  return `/policies/${encodeURIComponent(policyId)}/compliance?${query.toString()}`;
+};

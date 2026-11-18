@@ -22,6 +22,7 @@ public static class ServicesModule
         services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IShellCommands, ServiceCommands>();
         services.AddSingleton<Experience.Contracts.IComponentRegistration, ServicesComponents>();
         services.AddScoped<ServiceAdmin>();
+        services.AddScoped<TeamBeats.Modules.Analytics.Contracts.IAnalyticsServiceSource, ServiceAnalyticsSource>();
         services.AddScoped<RouteTests>();
         services.AddScoped<ServiceTemplates>();
         services.AddScoped<RequestSummaries>();

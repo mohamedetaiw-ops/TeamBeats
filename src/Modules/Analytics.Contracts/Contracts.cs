@@ -276,6 +276,63 @@ public interface IAnalyticsCampaignSource
     Task<AnalyticsCampaignFunnel> FunnelAsync(Guid campaignId, CancellationToken ct = default);
 }
 
+/// <summary>A service the person owns, for service analytics (spec 021 US4, spec 016). <see cref="ProcessKey"/> is its route in the process engine.</summary>
+public sealed record AnalyticsService(Guid Id, IReadOnlyDictionary<string, string> Names, string ProcessKey, Guid? OwnerOrgUnitId);
+
+/// <summary>
+/// One decision on a request step: its outcome (<c>approved</c>, <c>rejected</c>, <c>returned</c>, <c>done</c>,
+/// <c>skipped</c>, <c>failed</c>), how long the step waited since the previous event of the request, and whether
+/// automation decided it rather than a person.
+/// </summary>
+public sealed record AnalyticsStepFact(string Step, string Outcome, double Seconds, bool Automated);
+
+/// <summary>
+/// One request of a service with no person in it: when it was filed and closed, its status, the requester's unit, whether
+/// it breached its service level, its step decisions, and the values of the service's reportable choice fields.
+/// </summary>
+public sealed record AnalyticsRequestFact(DateTimeOffset SubmittedAt, DateTimeOffset? ClosedAt, string Status, Guid? OrgUnitId, bool Breached,
+    IReadOnlyList<AnalyticsStepFact> Steps, IReadOnlyDictionary<string, string> Reasons);
+
+public sealed record AnalyticsReasonOption(string Value, IReadOnlyDictionary<string, string> Labels);
+
+/// <summary>A structured reason: a single choice field the service owner marked reportable (spec 016 FR-012).</summary>
+public sealed record AnalyticsReasonField(string Key, IReadOnlyDictionary<string, string> Labels, IReadOnlyList<AnalyticsReasonOption> Options);
+
+public sealed record AnalyticsServiceFacts(AnalyticsService Service, IReadOnlyList<AnalyticsRequestFact> Requests, IReadOnlyList<AnalyticsReasonField> ReasonFields);
+
+/// <summary>
+/// The owner of services and requests (Services, spec 016). It decides who may see a service's analytics, its owners
+/// with <c>service.manage</c> at the owning unit, and answers a service they may not see as not found. The facts are raw:
+/// Analytics applies the minimum group size.
+/// </summary>
+public interface IAnalyticsServiceSource
+{
+    Task<IReadOnlyList<AnalyticsService>> ListAsync(CancellationToken ct = default);
+
+    /// <summary>The requests filed from <paramref name="from"/> up to, not including, <paramref name="to"/>.</summary>
+    Task<AnalyticsServiceFacts> FactsAsync(Guid serviceId, DateTimeOffset from, DateTimeOffset to, CancellationToken ct = default);
+}
+
+/// <summary>
+/// One member of an attestation campaign with no person in it: the primary unit, the location key, the status
+/// (<c>open</c>, <c>attested</c>, <c>overdue</c>) and when they attested. People who left the audience are not given.
+/// </summary>
+public sealed record AnalyticsComplianceMember(Guid? OrgUnitId, string? Location, string Status, DateTimeOffset? AttestedAt);
+
+/// <summary>An open attestation campaign for the version in force of a policy (spec 025), with the viewer's members.</summary>
+public sealed record AnalyticsComplianceCampaign(Guid CampaignId, Guid PolicyId, int Version, IReadOnlyDictionary<string, string> Names,
+    DateTimeOffset LaunchedAt, DateTimeOffset Deadline, IReadOnlyList<AnalyticsComplianceMember> Members);
+
+/// <summary>
+/// The owner of policies and attestation campaigns (Policies, spec 025). It decides whose attestations a viewer may count:
+/// the people placed in the units where they hold <c>policy.manage</c>, everyone at tenant scope; anyone without it is
+/// denied. Campaigns with none of the viewer's people are left out. The facts are raw: Analytics applies the minimum group size.
+/// </summary>
+public interface IAnalyticsComplianceSource
+{
+    Task<IReadOnlyList<AnalyticsComplianceCampaign>> OpenCampaignsAsync(CancellationToken ct = default);
+}
+
 /// <summary>
 /// The person's pseudonymous key in this tenant (spec 021 FR-003), for a module that keeps its own pseudonymous records,
 /// such as the search query log (spec 012 FR-013). The same key as analytics events carry.
