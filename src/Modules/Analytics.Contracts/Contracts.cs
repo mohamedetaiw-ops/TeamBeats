@@ -334,6 +334,37 @@ public interface IAnalyticsComplianceSource
 }
 
 /// <summary>
+/// One figure of a module for a set of people (spec 021 US6): <see cref="Value"/> out of <see cref="Of"/> for a share,
+/// or a count alone when <see cref="Of"/> is null. Keys are listed in <see cref="AnalyticsScopeFigures"/>.
+/// </summary>
+public sealed record AnalyticsScopeFigure(string Key, int Value, int? Of);
+
+public static class AnalyticsScopeFigures
+{
+    /// <summary>People attested out of the people in open campaigns for the version in force (Policies).</summary>
+    public const string Compliance = "compliance";
+
+    /// <summary>Requests the people filed that are still open (Services); a count.</summary>
+    public const string OpenRequests = "open_requests";
+
+    /// <summary>Requests filed in the period that breached their service level, out of those filed (Services).</summary>
+    public const string Breaches = "breaches";
+
+    /// <summary>Working days with an exception (late, early leave, missing punch, absent) out of working days (HR attendance).</summary>
+    public const string AttendanceExceptions = "attendance_exceptions";
+}
+
+/// <summary>
+/// A module's figures for the location and unit dashboards (spec 021 US6, FR-010). Analytics has already decided that the
+/// viewer may see the scope these people make up, through <c>analytics.view</c>; the module answers counts only, never
+/// a person, and nothing when its capability is off. Analytics applies the minimum group size.
+/// </summary>
+public interface IAnalyticsScopeSource
+{
+    Task<IReadOnlyList<AnalyticsScopeFigure>> FiguresAsync(IReadOnlyCollection<Guid> people, DateTimeOffset from, DateTimeOffset to, CancellationToken ct = default);
+}
+
+/// <summary>
 /// The person's pseudonymous key in this tenant (spec 021 FR-003), for a module that keeps its own pseudonymous records,
 /// such as the search query log (spec 012 FR-013). The same key as analytics events carry.
 /// </summary>

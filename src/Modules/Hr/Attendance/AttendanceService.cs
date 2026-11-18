@@ -459,6 +459,72 @@ public sealed class AttendanceService(
         return new DateTimeOffset(at, zone.GetUtcOffset(at)).ToUniversalTime();
     }
 
+    /// <summary>
+    /// Working days with an exception (late, early leave, missing punch, absent) and working days of many people up to
+    /// today, for the location and unit dashboards (spec 021 US6). The same day rules as the month view, in three reads.
+    /// </summary>
+    internal async Task<(int Exceptions, int WorkingDays)> ExceptionDaysAsync(IReadOnlyCollection<Guid> userIds, DateOnly from, DateOnly to, CancellationToken ct)
+    {
+        var today = await people.TodayAsync(ct);
+        if (to > today)
+        {
+            to = today;
+        }
+        if (from > to || userIds.Count == 0)
+        {
+            return (0, 0);
+        }
+        var persons = (await people.PeopleAsync(userIds, ct)).Values.Where(p => p.Active).ToList();
+        var ids = persons.Select(p => p.UserId).ToArray();
+        var rules = await RulesAsync(ct);
+        var start = new DateTimeOffset(from.AddDays(-1).ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
+        var end = new DateTimeOffset(to.AddDays(2).ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
+        var punches = (await session.QueryAsync(
+            "select user_id, at, direction, remote, source from hr.attendance_punch where user_id = any(@ids) and at >= @start and at < @end order by at",
+            new { ids, start, end }, r => (User: r.GetGuid(0), Punch: new Punch(r.GetFieldValue<DateTimeOffset>(1), r.GetString(2), r.GetBoolean(3), r.GetString(4))), ct))
+            .ToLookup(p => p.User, p => p.Punch);
+        var leave = (await session.QueryAsync(
+            """
+            select r.user_id, d.date, sum(d.fraction) from hr.leave_request_day d join hr.leave_request r on r.id = d.request_id
+            where r.user_id = any(@ids) and r.status = 'approved' and d.date between @from and @to group by r.user_id, d.date
+            """, new { ids, from, to }, r => (User: r.GetGuid(0), Date: DateOnly.FromDateTime(r.GetDateTime(1)), Fraction: r.GetDecimal(2)), ct))
+            .ToDictionary(x => (x.User, x.Date), x => x.Fraction);
+        var calendarsByUnit = new Dictionary<Guid, WorkingCalendarSnapshot>();
+        WorkingCalendarSnapshot? fallback = null;
+        int exceptions = 0, working = 0;
+        foreach (var person in persons)
+        {
+            WorkingCalendarSnapshot calendar;
+            if (person.PrimaryUnit is { } unit)
+            {
+                if (!calendarsByUnit.TryGetValue(unit, out calendar!))
+                {
+                    calendar = calendarsByUnit[unit] = await calendars.ForUnitAsync(unit, ct);
+                }
+            }
+            else
+            {
+                calendar = fallback ??= await calendars.TenantDefaultAsync(ct);
+            }
+            var rule = ToRule(RuleFor(rules, person.Path));
+            var byDay = punches[person.UserId].GroupBy(p => DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(p.At, calendar.Zone).DateTime)).ToDictionary(g => g.Key, g => g.ToList());
+            for (var d = from; d <= to; d = d.AddDays(1))
+            {
+                var day = AttendanceMath.Evaluate(d, byDay.GetValueOrDefault(d) ?? [], rule, calendar, leave.GetValueOrDefault((person.UserId, d)), today);
+                if (day.Kind != AttendanceDayKinds.Working)
+                {
+                    continue;
+                }
+                working++;
+                if (day.Flags.Any(f => f is AttendanceFlags.Late or AttendanceFlags.EarlyLeave or AttendanceFlags.MissingPunch or AttendanceFlags.Absent))
+                {
+                    exceptions++;
+                }
+            }
+        }
+        return (exceptions, working);
+    }
+
     /// <summary>The month's totals of the viewer's direct reports (US3 scenario 5).</summary>
     public async Task<TeamAttendanceView> TeamAsync(string? month, CancellationToken ct)
     {

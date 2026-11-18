@@ -203,3 +203,22 @@ export const complianceReportHref = (policyId: string, campaignId: string, filte
   if (filter?.location) query.set("location", filter.location);
   return `/policies/${encodeURIComponent(policyId)}/compliance?${query.toString()}`;
 };
+
+/** Location and unit dashboards (spec 021 T014). Figures under the minimum group size arrive as null. */
+export type ScopeRef = { kind: "unit" | "location"; key: string; names: Record<string, string> };
+
+export type ScopeTile = { key: string; value: number | null; of: number | null; rate: number | null; groupRate: number | null; enough: boolean };
+
+export type ScopeDashboardView = {
+  scope: ScopeRef;
+  from: string;
+  to: string;
+  minGroupSize: number;
+  people: number;
+  enough: boolean;
+  groupShown: boolean;
+  tiles: ScopeTile[];
+};
+
+export const scopeHref = (scope: Pick<ScopeRef, "kind" | "key">) =>
+  scope.kind === "unit" ? `/analytics/scopes/unit/${encodeURIComponent(scope.key)}` : `/analytics/scopes/location?key=${encodeURIComponent(scope.key)}`;
