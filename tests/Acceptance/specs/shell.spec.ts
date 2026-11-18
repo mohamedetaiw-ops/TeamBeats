@@ -147,11 +147,127 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(palette).toBeVisible();
       const box = palette.getByRole("combobox");
       await expect(box).toBeFocused();
-      await expect(palette.getByRole("status")).toHaveText(msg(locale, "shell.search.palette.hint"));
+      // Before anything is typed it offers the commands the person may use (spec 008 FR-008); typing filters them.
+      const commands = palette.getByRole("group", { name: msg(locale, "shell.search.palette.commands") });
+      await expect(commands.getByRole("option", { name: msg(locale, "shell.search.commands.ask_assistant") })).toBeVisible();
+      await box.fill(msg(locale, "shell.search.commands.ask_assistant"));
+      await expect(commands.getByRole("option", { name: msg(locale, "shell.search.commands.ask_assistant") })).toBeVisible();
+      await expect(commands.getByRole("option", { name: msg(locale, "shell.search.commands.my_tasks") })).toHaveCount(0);
       await box.fill(setup.teamSlug.split("/")[0]!);
       await expect(palette.getByRole("option", { name: about() })).toBeVisible();
       await page.keyboard.press("Escape");
       await expect(palette).toBeHidden();
+    });
+
+    test("a page is kept as a favorite, and favorites and recent visits open from the palette (spec 008 FR-017)", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/${setup.teamSlug}`);
+      await page.getByRole("button", { name: msg(locale, "shell.favorites.button") }).click();
+      const menu = page.getByRole("dialog", { name: msg(locale, "shell.favorites.title") });
+      await expect(menu).toBeVisible();
+      await menu.getByRole("button", { name: msg(locale, "shell.favorites.addHere") }).click();
+      await expect(menu.getByRole("status").filter({ hasText: msg(locale, "shell.favorites.added") })).toBeVisible();
+      await expect(menu.getByRole("link", { name: team() })).toHaveAttribute("href", `/${setup.teamSlug}`);
+      await expect(menu.getByRole("button", { name: msg(locale, "shell.favorites.removeHere") })).toBeVisible();
+      await expectAccessible(page, testInfo, `shell-favorites-${locale}`);
+      await page.keyboard.press("Escape");
+      await expect(menu).toBeHidden();
+
+      // The visit is recorded once the page has settled.
+      await expect
+        .poll(async () => ((await page.evaluate(async (u) => (await fetch(u, { cache: "no-store" })).json(), "/api/v1/me/recents")) as { path: string }[]).map((r) => r.path))
+        .toContain(`/${setup.teamSlug}`);
+      await page.goto(`${hostOrigin(tenant.key)}/`);
+      await expect(page.getByRole("searchbox", { name: msg(locale, "shell.search.label") })).toBeVisible();
+      await page.keyboard.press("Control+K");
+      const palette = page.getByRole("dialog", { name: msg(locale, "shell.search.palette.label") });
+      await expect(palette.getByRole("group", { name: msg(locale, "shell.search.palette.favorites") }).getByRole("option", { name: team() })).toBeVisible();
+      const recents = palette.getByRole("group", { name: msg(locale, "shell.search.palette.recents") });
+      await expect(recents.getByRole("option", { name: new RegExp(setup.teamSlug) })).toBeVisible();
+      await recents.getByRole("option", { name: msg(locale, "shell.search.palette.clearRecents") }).click();
+      await expect
+        .poll(async () => ((await page.evaluate(async (u) => (await fetch(u, { cache: "no-store" })).json(), "/api/v1/me/recents")) as unknown[]).length)
+        .toBe(0);
+
+      // Removing it from the page leaves no favorite behind.
+      await page.goto(`${hostOrigin(tenant.key)}/${setup.teamSlug}`);
+      await page.getByRole("button", { name: msg(locale, "shell.favorites.button") }).click();
+      await menu.getByRole("button", { name: msg(locale, "shell.favorites.removeHere") }).click();
+      await expect(menu.getByRole("status").filter({ hasText: msg(locale, "shell.favorites.removed") })).toBeVisible();
+      await expect(menu.getByText(msg(locale, "shell.favorites.empty"))).toBeVisible();
+    });
+
+    test("focus mode hides the side areas at once and is kept for this device (spec 008 FR-009)", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/${setup.teamSlug}`);
+      const toggle = page.getByRole("button", { name: msg(locale, "shell.focus.label") });
+      await expect(toggle).toHaveAttribute("aria-pressed", "false");
+      await toggle.click();
+      await expect(toggle).toHaveAttribute("aria-pressed", "true");
+      await expect(page.locator("html")).toHaveAttribute("data-focus", "on");
+      await expect(page.getByRole("status").filter({ hasText: msg(locale, "shell.focus.on") })).toBeAttached();
+      await expect(page.locator(".shell-section")).toBeHidden();
+      await expect(page.getByRole("main")).toBeVisible();
+      await expectAccessible(page, testInfo, `shell-focus-${locale}`);
+      // The choice is saved, so it holds after a reload; turning it off brings the side areas back.
+      await expect
+        .poll(async () => ((await page.evaluate(async (u) => (await fetch(u, { cache: "no-store" })).json(), "/api/v1/me/preference-profile")) as { values: Record<string, string> }).values.focus)
+        .toBe("on");
+      await page.reload();
+      await expect(page.locator("html")).toHaveAttribute("data-focus", "on");
+      await page.getByRole("button", { name: msg(locale, "shell.focus.label") }).click();
+      await expect(page.locator("html")).not.toHaveAttribute("data-focus", "on");
+      await expect
+        .poll(async () => ((await page.evaluate(async (u) => (await fetch(u, { cache: "no-store" })).json(), "/api/v1/me/preference-profile")) as { values: Record<string, string> }).values.focus)
+        .toBe("off");
+    });
+
+    test("a hint and a short tour written for a page show below the bar, can be closed and reopened from the help menu (spec 008 FR-020)", async ({ page }, testInfo) => {
+      const api = await tenantApi(tenant);
+      const hintTitle = bilingual("Ask your team", "اسأل فريقك");
+      const published = await api.put("/api/v1/experience/help", {
+        data: {
+          items: [
+            { key: `hint-${locale}`, kind: "hint", path: `/${setup.teamSlug}`, title: hintTitle, body: bilingual("Your team lead answers questions here.", "يجيب قائد فريقك عن الأسئلة هنا."), steps: null },
+            {
+              key: `tour-${locale}`, kind: "tour", path: `/${setup.teamSlug}`, title: bilingual("Team tour", "جولة الفريق"), body: null,
+              steps: [
+                { title: bilingual("Who we are", "من نحن"), body: bilingual("Meet the people on the team.", "تعرف على أعضاء الفريق.") },
+                { title: bilingual("How to reach us", "كيف تصل إلينا"), body: bilingual("Use the help desk link.", "استخدم رابط مكتب المساعدة.") },
+              ],
+            },
+          ],
+        },
+      });
+      expect(published.ok(), await published.text()).toBe(true);
+      await api.dispose();
+
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/${setup.teamSlug}`);
+      const hint = page.locator(".shell-help-area").getByText(hintTitle[locale]);
+      await expect(hint).toBeVisible();
+      await expectAccessible(page, testInfo, `shell-help-${locale}`);
+      await page.locator(".shell-help-area").getByRole("button", { name: msg(locale, "shell.help.dismiss") }).click();
+      await expect(hint).toHaveCount(0);
+
+      // The help menu lists both and starts the tour, one step at a time, in the page flow.
+      await page.getByRole("button", { name: msg(locale, "shell.help.button") }).click();
+      const menu = page.getByRole("dialog", { name: msg(locale, "shell.help.title") });
+      await menu.getByRole("button", { name: new RegExp(locale === "en" ? "Team tour" : "جولة الفريق") }).click();
+      const tour = page.getByRole("region", { name: locale === "en" ? "Who we are" : "من نحن" });
+      await expect(tour).toBeVisible();
+      await expect(page.getByRole("heading", { name: locale === "en" ? "Who we are" : "من نحن" })).toBeFocused();
+      await expectAccessible(page, testInfo, `shell-tour-${locale}`);
+      await tour.getByRole("button", { name: msg(locale, "shell.help.next") }).click();
+      const last = page.getByRole("region", { name: locale === "en" ? "How to reach us" : "كيف تصل إلينا" });
+      await last.getByRole("button", { name: msg(locale, "shell.help.finish") }).click();
+      await expect(last).toHaveCount(0);
+      await expect(page.getByRole("button", { name: msg(locale, "shell.help.button") })).toBeFocused();
+
+      // A dismissed hint comes back from the menu.
+      await page.getByRole("button", { name: msg(locale, "shell.help.button") }).click();
+      await menu.getByRole("button", { name: new RegExp(hintTitle[locale]) }).click();
+      await expect(hint).toBeVisible();
     });
 
     test("only one shell panel is open at a time, and a press outside closes it (spec 008 FR-060)", async ({ page }) => {
@@ -166,7 +282,9 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.getByRole("button", { name: msg(locale, "shell.settings.open") }).click();
       await expect(settings).toBeVisible();
       await expect(account).toBeHidden();
-      await page.locator("main").click({ position: { x: 60, y: 60 } });
+      // A press well away from the bar, below where any panel reaches, in either direction of writing.
+      const size = page.viewportSize()!;
+      await page.mouse.click(size.width / 2, size.height - 20);
       await expect(settings).toBeHidden();
     });
 

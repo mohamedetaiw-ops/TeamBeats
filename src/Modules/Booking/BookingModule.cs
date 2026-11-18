@@ -18,6 +18,7 @@ public static class BookingModule
     public static IServiceCollection AddBookingModule(this IServiceCollection services)
     {
         services.AddScoped<Facilities>();
+        services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IShellCommands, BookingCommands>();
         services.AddScoped<BookingRules>();
         services.AddScoped<BookingCancellations>();
         services.AddScoped<Bookings>();

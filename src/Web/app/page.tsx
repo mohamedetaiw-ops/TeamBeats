@@ -99,7 +99,7 @@ async function HomePage({ me, page, views, current }: { me: Me; page: RenderedPa
           key={page.pageId}
           pageId={page.pageId}
           regions={page.regions.map((r) => r.id)}
-          initial={layout.ok ? { operations: layout.data.operations, eTag: layout.data.eTag } : { operations: [], eTag: "" }}
+          initial={layout.ok ? { operations: layout.data.operations, eTag: layout.data.eTag, deviceClass: layout.data.deviceClass } : { operations: [], eTag: "" }}
           canPersonalize={layout.ok && page.regions.some((r) => rights(r).length > 0)}
         >
           <PageRenderer
@@ -115,6 +115,8 @@ async function HomePage({ me, page, views, current }: { me: Me; page: RenderedPa
                   index={index}
                   count={region.placements.length}
                   personal={placement.personal}
+                  span={placement.span}
+                  widths={placement.widths ?? []}
                   rights={rights(region)}
                   targets={targets}
                   neighbor={region.placements[index + 1]?.id ?? region.placements[index - 1]?.id ?? null}

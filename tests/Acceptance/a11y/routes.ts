@@ -60,6 +60,7 @@ export const routes: readonly Route[] = [
   { path: "/admin/evaluation/runs/[id]/cases/[n]", tier: "detail", reason: "needs agent or assistant runs through the AI gateway and workers; opened by its feature suite" },
   { path: "/admin/evaluation/settings", tier: "other" },
   { path: "/admin/expenses", tier: "other" },
+  { path: "/admin/help", tier: "other" },
   { path: "/admin/hr-integration", tier: "other" },
   { path: "/admin/identity", tier: "other" },
   { path: "/admin/journeys", tier: "other" },

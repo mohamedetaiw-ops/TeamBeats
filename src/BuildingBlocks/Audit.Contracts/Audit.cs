@@ -139,6 +139,7 @@ public static class AuditActions
 
     // 008
     public const string ShellPublished = "shell.published";
+    public const string HelpPublished = "help.published";
     public const string NavigationPublished = "navigation.published";
     public const string NavigationNodeChanged = "navigation.node_changed";
     public const string PersonalizationPolicyChanged = "personalization.policy_changed";

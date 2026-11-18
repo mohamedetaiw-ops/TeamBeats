@@ -247,6 +247,186 @@ public sealed class PersonalizationTests(TenantWorld world)
         Assert.Equal(HttpStatusCode.Conflict, (await t["employee"].Client.SendAsync(stale)).StatusCode);
     }
 
+    private static async Task<Dictionary<string, int>> SpansAsync(TestTenant t, string slug, string user, string region = "canvas") =>
+        (await t[user].Client.GetFromJsonAsync<JsonElement>($"/api/v1/experience/render?slug={slug}"))
+            .GetProperty("regions").EnumerateArray().Single(r => r.GetProperty("id").GetString() == region)
+            .GetProperty("placements").EnumerateArray().ToDictionary(p => p.GetProperty("id").GetString()!, p => p.GetProperty("span").GetInt32());
+
+    // T021: resize within the manifest's widths, and presets
+
+    [Fact]
+    public async Task Resize_stays_within_the_allowed_widths_and_never_touches_a_protected_placement()
+    {
+        var t = await FreshAsync();
+        var (page, slug) = await PageAsync(t, [P("intro"), P("kpi", "reference.alpha.kpi@1")]);
+        await DelegateAsync(t, page);
+        var saved = await LayoutAsync(t, page, "employee", new { op = "resize", placementId = "kpi", span = 4 });
+        Assert.True(saved.IsSuccessStatusCode, await saved.Content.ReadAsStringAsync());
+        Assert.Equal(4, (await SpansAsync(t, slug, "employee"))["kpi"]);
+        // A coworker keeps the published width.
+        Assert.Equal(6, (await SpansAsync(t, slug, "coworker"))["kpi"]);
+
+        // The KPI allows three to six columns; the protected sidebar notice can't be resized at all.
+        Assert.Equal(["validation.personalization.span"], await RefusedAsync(await LayoutAsync(t, page, "employee", new { op = "resize", placementId = "kpi", span = 2 })));
+        Assert.Equal(["validation.personalization.span"], await RefusedAsync(await LayoutAsync(t, page, "employee", new { op = "resize", placementId = "kpi", span = 8 })));
+        Assert.Equal(["validation.personalization.span"], await RefusedAsync(await LayoutAsync(t, page, "employee", new { op = "resize", placementId = "kpi" })));
+        Assert.Equal(["validation.personalization.protected"], await RefusedAsync(await LayoutAsync(t, page, "employee", new { op = "resize", placementId = "notice", span = 3 })));
+        Assert.Equal(4, (await SpansAsync(t, slug, "employee"))["kpi"]);
+    }
+
+    [Fact]
+    public async Task Presets_apply_in_one_action_from_what_the_person_may_do_and_default_resets()
+    {
+        var t = await FreshAsync();
+        var (page, slug) = await PageAsync(t, [P("intro"), P("kpi", "reference.alpha.kpi@1"), P("links", "reference.alpha.links@1")]);
+        await DelegateAsync(t, page);
+        var preset = (string name) => t["employee"].Client.PostAsJsonAsync($"/api/v1/me/pages/{page}/layout/preset", new { preset = name });
+
+        var compact = await preset("compact");
+        Assert.True(compact.IsSuccessStatusCode, await compact.Content.ReadAsStringAsync());
+        Assert.Equal(4, (await SpansAsync(t, slug, "employee"))["kpi"]);
+        Assert.Equal(4, (await SpansAsync(t, slug, "employee"))["intro"]);
+        // The protected sidebar is left as published.
+        Assert.Equal(["notice"], (await RenderAsync(t, slug, "employee"))["sidebar"]);
+
+        Assert.True((await preset("focus")).IsSuccessStatusCode);
+        Assert.Equal(["intro"], (await RenderAsync(t, slug, "employee"))["canvas"]);
+        Assert.Equal(["notice"], (await RenderAsync(t, slug, "employee"))["sidebar"]);
+        Assert.Equal(["intro", "kpi", "links"], (await RenderAsync(t, slug, "coworker"))["canvas"]);
+
+        Assert.True((await preset("default")).IsSuccessStatusCode);
+        Assert.Equal(["intro", "kpi", "links"], (await RenderAsync(t, slug, "employee"))["canvas"]);
+        Assert.Equal(0, (await t["employee"].Client.GetFromJsonAsync<JsonElement>($"/api/v1/me/pages/{page}/layout")).GetProperty("revision").GetInt32());
+
+        var unknown = await preset("cosy");
+        Assert.Equal(HttpStatusCode.BadRequest, unknown.StatusCode);
+        Assert.Contains("validation.personalization.preset", await unknown.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+
+        // Without a delegated region a preset changes nothing.
+        var (other, otherSlug) = await PageAsync(t);
+        Assert.True((await t["employee"].Client.PostAsJsonAsync($"/api/v1/me/pages/{other}/layout/preset", new { preset = "focus" })).IsSuccessStatusCode);
+        Assert.Equal(["intro", "links"], (await RenderAsync(t, otherSlug, "employee"))["canvas"]);
+    }
+
+    // T022: device-specific choices, export and reset
+
+    private static async Task<HttpResponseMessage> OnDeviceAsync(TestTenant t, string user, HttpMethod method, string path, string? device, object? body = null,
+        string? ifMatch = null)
+    {
+        var request = new HttpRequestMessage(method, path) { Content = body is null ? null : JsonContent.Create(body) };
+        if (device is not null)
+        {
+            // A request's own Cookie header replaces the client's, so the session goes along with the device class.
+            request.Headers.TryAddWithoutValidation("Cookie", $"tb_session={t[user].Token}; tb_device={device}");
+        }
+        if (ifMatch is not null)
+        {
+            request.Headers.TryAddWithoutValidation("If-Match", ifMatch);
+        }
+        return await t[user].Client.SendAsync(request);
+    }
+
+    private static async Task<List<string>> CanvasOnAsync(TestTenant t, string slug, string user, string? device)
+    {
+        var response = await OnDeviceAsync(t, user, HttpMethod.Get, $"/api/v1/experience/render?slug={slug}", device);
+        var body = await response.ReadAsync<JsonElement>();
+        return body.GetProperty("regions").EnumerateArray().Single(r => r.GetProperty("id").GetString() == "canvas")
+            .GetProperty("placements").EnumerateArray().Select(p => p.GetProperty("id").GetString()!).ToList();
+    }
+
+    [Fact]
+    public async Task A_layout_kept_for_one_device_leaves_the_others_valid_and_can_go_back_to_every_device()
+    {
+        var t = await FreshAsync();
+        var (page, slug) = await PageAsync(t);
+        await DelegateAsync(t, page);
+        var layout = $"/api/v1/me/pages/{page}/layout";
+
+        // For every device: links first.
+        var all = await OnDeviceAsync(t, "employee", HttpMethod.Put, layout, "desktop", new { operations = new[] { new { op = "move", placementId = "links", regionId = "canvas", position = 0 } } });
+        Assert.True(all.IsSuccessStatusCode, await all.Content.ReadAsStringAsync());
+        Assert.Equal("any", (await all.ReadAsync<JsonElement>()).GetProperty("deviceClass").GetString());
+
+        // The phone keeps its own: intro hidden there only.
+        var phoneView = await (await OnDeviceAsync(t, "employee", HttpMethod.Get, layout, "phone")).ReadAsync<JsonElement>();
+        var phone = await OnDeviceAsync(t, "employee", HttpMethod.Put, layout, "phone",
+            new { operations = new[] { new { op = "hide", placementId = "intro" } }, thisDevice = true }, phoneView.GetProperty("eTag").GetString());
+        Assert.True(phone.IsSuccessStatusCode, await phone.Content.ReadAsStringAsync());
+        Assert.Equal("phone", (await phone.ReadAsync<JsonElement>()).GetProperty("deviceClass").GetString());
+        Assert.Equal(["links"], await CanvasOnAsync(t, slug, "employee", "phone"));
+        Assert.Equal(["links", "intro"], await CanvasOnAsync(t, slug, "employee", "desktop"));
+        Assert.Equal(["links", "intro"], await CanvasOnAsync(t, slug, "employee", "tablet"));
+        Assert.Equal(["links", "intro"], await CanvasOnAsync(t, slug, "employee", null));
+        // An unknown cookie value is no device.
+        Assert.Equal(["links", "intro"], await CanvasOnAsync(t, slug, "employee", "fridge"));
+        Assert.Equal(["intro", "links"], await CanvasOnAsync(t, slug, "coworker", "phone"));
+
+        // Keeping it for this device needs a known device.
+        var noDevice = await OnDeviceAsync(t, "employee", HttpMethod.Put, layout, null, new { operations = Array.Empty<object>(), thisDevice = true });
+        Assert.Equal(HttpStatusCode.BadRequest, noDevice.StatusCode);
+        Assert.Contains("validation.personalization.device", await noDevice.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+
+        // Back to every device: the phone's own list goes and the phone follows the shared one again.
+        phoneView = await (await OnDeviceAsync(t, "employee", HttpMethod.Get, layout, "phone")).ReadAsync<JsonElement>();
+        var back = await OnDeviceAsync(t, "employee", HttpMethod.Put, layout, "phone",
+            new { operations = new[] { new { op = "move", placementId = "links", regionId = "canvas", position = 0 } }, thisDevice = false },
+            phoneView.GetProperty("eTag").GetString());
+        Assert.True(back.IsSuccessStatusCode, await back.Content.ReadAsStringAsync());
+        Assert.Equal(["links", "intro"], await CanvasOnAsync(t, slug, "employee", "phone"));
+        Assert.Equal(1L, await world.Database.TenantScalarAsync<long>(t.Id, "select count(*) from experience.personal_layout where page_id = @p", ("p", page)));
+    }
+
+    [Fact]
+    public async Task Device_specific_preferences_apply_on_their_device_and_export_holds_only_the_persons_own_data()
+    {
+        var t = await FreshAsync();
+        var (page, _) = await PageAsync(t);
+        await DelegateAsync(t, page);
+        const string profile = "/api/v1/me/preference-profile";
+        Assert.True((await OnDeviceAsync(t, "employee", HttpMethod.Put, profile, null, new { values = new Dictionary<string, string> { ["mode"] = "dark", ["density"] = "comfortable" } })).IsSuccessStatusCode);
+        var onPhone = await OnDeviceAsync(t, "employee", HttpMethod.Put, profile, "phone", new { values = new Dictionary<string, string> { ["density"] = "compact", ["mode"] = "light" } });
+        Assert.True(onPhone.IsSuccessStatusCode, await onPhone.Content.ReadAsStringAsync());
+
+        async Task<JsonElement> ValuesAsync(string? device) =>
+            (await (await OnDeviceAsync(t, "employee", HttpMethod.Get, profile, device)).ReadAsync<JsonElement>()).GetProperty("values");
+        // Density is device-specific: compact on the phone only. Mode follows the person everywhere, so the phone's choice of light applies on the desktop too.
+        Assert.Equal("compact", (await ValuesAsync("phone")).GetProperty("density").GetString());
+        Assert.Equal("comfortable", (await ValuesAsync("desktop")).GetProperty("density").GetString());
+        Assert.Equal("light", (await ValuesAsync("desktop")).GetProperty("mode").GetString());
+        var schema = (await (await OnDeviceAsync(t, "employee", HttpMethod.Get, profile, null)).ReadAsync<JsonElement>()).GetProperty("schema")
+            .EnumerateArray().ToDictionary(s => s.GetProperty("key").GetString()!, s => s.GetProperty("scope").GetString());
+        Assert.Equal("device_specific", schema["density"]);
+        Assert.Equal("cross_device", schema["mode"]);
+
+        Assert.True((await LayoutAsync(t, page, "employee", new { op = "hide", placementId = "intro" })).IsSuccessStatusCode);
+        Assert.True((await LayoutAsync(t, page, "coworker", new { op = "hide", placementId = "links" })).IsSuccessStatusCode);
+        var export = await t["employee"].Client.GetAsync("/api/v1/me/preferences/export");
+        Assert.True(export.IsSuccessStatusCode, await export.Content.ReadAsStringAsync());
+        Assert.Contains("attachment", export.Content.Headers.ContentDisposition?.ToString() ?? export.Headers.ToString(), StringComparison.Ordinal);
+        var file = await export.ReadAsync<JsonElement>();
+        Assert.Equal("teambeats.preferences", file.GetProperty("format").GetString());
+        Assert.Equal(1, file.GetProperty("version").GetInt32());
+        Assert.Equal("compact", file.GetProperty("profile").GetProperty("devices").GetProperty("phone").GetProperty("density").GetString());
+        var layouts = file.GetProperty("layouts").EnumerateArray().ToList();
+        Assert.Single(layouts);
+        Assert.Equal("intro", layouts[0].GetProperty("operations")[0].GetProperty("placementId").GetString());
+        var text = file.GetRawText();
+        Assert.DoesNotContain(t["coworker"].Id.ToString(), text, StringComparison.Ordinal);
+        Assert.DoesNotContain(t.Id.ToString(), text, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"links\"", text, StringComparison.Ordinal);
+
+        // Another tenant's export is empty of this person's data.
+        var outsider = await world.CreateTenantAsync("pz-" + Guid.NewGuid().ToString("N")[..8], "workplace_plus");
+        var theirs = await (await outsider["admin"].Client.GetAsync("/api/v1/me/preferences/export")).ReadAsync<JsonElement>();
+        Assert.Empty(theirs.GetProperty("layouts").EnumerateArray());
+
+        // Reset clears the profile on every device and every layout; the coworker keeps theirs.
+        Assert.Equal(HttpStatusCode.NoContent, (await t["employee"].Client.DeleteAsync("/api/v1/me/preferences")).StatusCode);
+        Assert.Equal("comfortable", (await ValuesAsync("phone")).GetProperty("density").GetString());
+        Assert.Equal(0, (await t["employee"].Client.GetFromJsonAsync<JsonElement>($"/api/v1/me/pages/{page}/layout")).GetProperty("revision").GetInt32());
+        Assert.Equal(1, (await t["coworker"].Client.GetFromJsonAsync<JsonElement>($"/api/v1/me/pages/{page}/layout")).GetProperty("revision").GetInt32());
+    }
+
     [Fact]
     public async Task Reset_one_and_reset_all_keep_the_preference_profile()
     {
@@ -325,7 +505,8 @@ public sealed class PersonalizationTests(TenantWorld world)
         var t = await FreshAsync();
         var profile = await t["employee"].Client.GetFromJsonAsync<JsonElement>("/api/v1/me/preference-profile");
         Assert.Equal(1, profile.GetProperty("schemaVersion").GetInt32());
-        Assert.All(profile.GetProperty("schema").EnumerateArray(), s => Assert.Equal("cross_device", s.GetProperty("scope").GetString()));
+        // Every preference is classified (FR-032): cross-device, or kept per device class.
+        Assert.All(profile.GetProperty("schema").EnumerateArray(), s => Assert.Contains(s.GetProperty("scope").GetString(), new[] { "cross_device", "device_specific" }));
         var unknown = await t["employee"].Client.PutAsJsonAsync("/api/v1/me/preference-profile", new { values = new { favouriteColour = "red" } });
         Assert.Contains("validation.preferences.unknown", await unknown.Content.ReadAsStringAsync(), StringComparison.Ordinal);
         var bad = await t["employee"].Client.PutAsJsonAsync("/api/v1/me/preference-profile", new { values = new { density = "tiny" } });

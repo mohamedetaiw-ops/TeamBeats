@@ -34,9 +34,25 @@ export type RendererTools = {
   placement?: (placement: RenderedPlacement, region: RenderedRegion, index: number) => ReactNode;
 };
 
-function Region({ region, index, page, tools }: { region: RenderedRegion; index: number; page: RenderedPage; tools?: RendererTools }) {
+/**
+ * A region of the page. A narrower region beside a wider one in the same row is secondary: focus mode (spec 008 FR-009)
+ * hides it and lets the main region take the row, while headings and landmarks stay.
+ */
+function Region({
+  region,
+  index,
+  page,
+  tools,
+  secondary = false,
+}: {
+  region: RenderedRegion;
+  index: number;
+  page: RenderedPage;
+  tools?: RendererTools;
+  secondary?: boolean;
+}) {
   return (
-    <div className="xp-region" data-region={region.id} style={{ "--xp-region-span": region.span } as CSSProperties}>
+    <div className="xp-region" data-region={region.id} data-secondary={secondary || undefined} style={{ "--xp-region-span": region.span } as CSSProperties}>
       {tools?.region?.(region, index, page)}
       <div className="xp-region-grid">
         {region.placements.map((placement, i) => (
@@ -78,7 +94,14 @@ export function PageRenderer({
         <div key={row.regions[0]!.id} className={`xp-row xp-section-${row.section}`}>
           <div className="xp-row-grid">
             {row.regions.map((region) => (
-              <Region key={region.id} region={region} index={index(region)} page={page} tools={tools} />
+              <Region
+                key={region.id}
+                region={region}
+                index={index(region)}
+                page={page}
+                tools={tools}
+                secondary={row.regions.length > 1 && region.span < Math.max(...row.regions.map((r) => r.span))}
+              />
             ))}
           </div>
         </div>

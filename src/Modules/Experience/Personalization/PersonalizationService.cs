@@ -24,10 +24,17 @@ public sealed record PreferenceProfileView(int SchemaVersion, IReadOnlyDictionar
 
 public sealed record PreferenceProfileRequest(IReadOnlyDictionary<string, string>? Values);
 
+/// <summary>A personal layout as its owner sees it; <paramref name="DeviceClass"/> is <c>any</c> or the device class it was kept for.</summary>
 public sealed record LayoutView(Guid PageId, int Revision, string ETag, IReadOnlyList<LayoutOperation> Operations, IReadOnlyList<SkippedOperation> Skipped,
-    IReadOnlyList<RegionRights> Regions);
+    IReadOnlyList<RegionRights> Regions, string DeviceClass = DeviceClasses.Any);
 
-public sealed record LayoutRequest(IReadOnlyList<LayoutOperation>? Operations);
+/// <summary>
+/// A personal layout to save. <paramref name="ThisDevice"/> true keeps it for the caller's device class only, false for
+/// every device (dropping this device's own), and null keeps it where it is now (FR-032).
+/// </summary>
+public sealed record LayoutRequest(IReadOnlyList<LayoutOperation>? Operations, bool? ThisDevice = null);
+
+public sealed record PresetRequest(string? Preset);
 
 /// <summary>A component of the add panel, with its name, description and any refusal reason in the caller's locale.</summary>
 public sealed record AddPanelItem(string ComponentRef, string NameKey, string DescriptionKey, string Category, string Icon, bool Eligible, string? ReasonKey,
@@ -75,29 +82,58 @@ public sealed partial class PersonalizationService(
     public const int PreferenceSchemaVersion = 1;
     public const int LayoutSchemaVersion = 1;
 
-    /// <summary>The preference schema (FR-021, FR-032). Every R1 preference is cross-device; language stays on the user account.</summary>
+    public const string CrossDevice = "cross_device";
+    public const string DeviceSpecific = "device_specific";
+
+    /// <summary>
+    /// The preference schema (FR-021, FR-032). Theme mode and motion follow the person everywhere; density, text size
+    /// and focus mode can differ by device class, and a value saved on one device applies only there. Language stays on the user account.
+    /// </summary>
     public static readonly IReadOnlyList<PreferenceSetting> PreferenceSchema =
     [
-        new("mode", ["system", "light", "dark"], "light", "cross_device"),
-        new("density", ["comfortable", "compact"], "comfortable", "cross_device"),
-        new("motion", ["system", "reduced"], "system", "cross_device"),
-        new("text_scale", ["100", "125", "150", "200"], "100", "cross_device"),
+        new("mode", ["system", "light", "dark"], "light", CrossDevice),
+        new("density", ["comfortable", "compact"], "comfortable", DeviceSpecific),
+        new("motion", ["system", "reduced"], "system", CrossDevice),
+        new("text_scale", ["100", "125", "150", "200"], "100", DeviceSpecific),
+        // Focus or reading mode (FR-009): kept per device, since a phone and a desktop are read differently.
+        new("focus", ["off", "on"], "off", DeviceSpecific),
     ];
 
     // Preference profile
 
-    public async Task<PreferenceProfileView> GetProfileAsync(CancellationToken ct)
+    private sealed record ProfileRow(Dictionary<string, string> Values, Dictionary<string, Dictionary<string, string>> Devices, DateTimeOffset At);
+
+    private async Task<ProfileRow?> ProfileRowAsync(CancellationToken ct)
     {
-        var row = await session.QuerySingleOrDefaultAsync("select values::text, updated_at from experience.preference_profile where user_id = @u",
-            new { u = context.RequireUser() }, r => (Json: r.GetString(0), At: r.GetFieldValue<DateTimeOffset>(1)), ct);
-        var saved = row.Json is null ? new Dictionary<string, string>() : JsonSerializer.Deserialize<Dictionary<string, string>>(row.Json, JsonDefaults.Options)!;
+        var row = await session.QuerySingleOrDefaultAsync("select values::text, device_values::text, updated_at from experience.preference_profile where user_id = @u",
+            new { u = context.RequireUser() }, r => (Json: r.GetString(0), Devices: r.GetString(1), At: r.GetFieldValue<DateTimeOffset>(2)), ct);
+        return row.Json is null ? null : new ProfileRow(JsonSerializer.Deserialize<Dictionary<string, string>>(row.Json, JsonDefaults.Options)!,
+            JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(row.Devices, JsonDefaults.Options)!, row.At);
+    }
+
+    /// <summary>The profile for this device class: a device-specific value saved on this device wins over the one for every device.</summary>
+    public async Task<PreferenceProfileView> GetProfileAsync(string? device, CancellationToken ct)
+    {
+        var row = await ProfileRowAsync(ct);
+        var saved = new Dictionary<string, string>(row?.Values ?? [], StringComparer.Ordinal);
+        if (device is not null && row?.Devices.GetValueOrDefault(device) is { } mine)
+        {
+            foreach (var setting in PreferenceSchema.Where(x => x.Scope == DeviceSpecific))
+            {
+                if (mine.TryGetValue(setting.Key, out var v))
+                {
+                    saved[setting.Key] = v;
+                }
+            }
+        }
         // Values that left the schema are dropped on read; defaults fill the rest.
         var values = PreferenceSchema.ToDictionary(s => s.Key, s => saved.TryGetValue(s.Key, out var v) && s.Values.Contains(v) ? v : s.Default, StringComparer.Ordinal);
         var chosen = PreferenceSchema.Where(s => saved.TryGetValue(s.Key, out var v) && s.Values.Contains(v)).Select(s => s.Key).ToList();
-        return new PreferenceProfileView(PreferenceSchemaVersion, values, PreferenceSchema, row.Json is null ? null : row.At, chosen);
+        return new PreferenceProfileView(PreferenceSchemaVersion, values, PreferenceSchema, row?.At, chosen);
     }
 
-    public async Task<PreferenceProfileView> SaveProfileAsync(PreferenceProfileRequest request, CancellationToken ct)
+    /// <summary>Saves preferences; on a known device class a device-specific value is kept for that device only (FR-032).</summary>
+    public async Task<PreferenceProfileView> SaveProfileAsync(PreferenceProfileRequest request, string? device, CancellationToken ct)
     {
         var errors = new ValidationErrors();
         var values = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -118,29 +154,42 @@ public sealed partial class PersonalizationService(
             }
         }
         errors.ThrowIfAny();
+        var forDevice = device is null ? new Dictionary<string, string>()
+            : values.Where(v => PreferenceSchema.First(x => x.Key == v.Key).Scope == DeviceSpecific).ToDictionary(v => v.Key, v => v.Value, StringComparer.Ordinal);
+        var everywhere = values.Where(v => !forDevice.ContainsKey(v.Key)).ToDictionary(v => v.Key, v => v.Value, StringComparer.Ordinal);
+        var devices = new Dictionary<string, Dictionary<string, string>>();
+        if (device is not null)
+        {
+            devices[device] = forDevice;
+        }
         await session.ExecAsync(
             """
-            insert into experience.preference_profile (tenant_id, user_id, schema_version, values, updated_at)
-            values (@t, @u, @v, @values, @now)
+            insert into experience.preference_profile (tenant_id, user_id, schema_version, values, device_values, updated_at)
+            values (@t, @u, @v, @values, @devices, @now)
             on conflict (tenant_id, user_id) do update set schema_version = excluded.schema_version,
-              values = experience.preference_profile.values || excluded.values, updated_at = excluded.updated_at
+              values = experience.preference_profile.values || excluded.values,
+              device_values = case when @device::text is null then experience.preference_profile.device_values
+                else jsonb_set(experience.preference_profile.device_values, array[@device::text],
+                  coalesce(experience.preference_profile.device_values -> @device::text, '{}'::jsonb) || (excluded.device_values -> @device::text)) end,
+              updated_at = excluded.updated_at
             """,
-            new { t = context.RequireTenant(), u = context.RequireUser(), v = PreferenceSchemaVersion, values = Jsonb.From(values), now = clock.UtcNow }, ct);
-        return await GetProfileAsync(ct);
+            new { t = context.RequireTenant(), u = context.RequireUser(), v = PreferenceSchemaVersion, values = Jsonb.From(everywhere), devices = Jsonb.From(devices),
+                device, now = clock.UtcNow }, ct);
+        return await GetProfileAsync(device, ct);
     }
 
     // Personal layouts
 
-    public async Task<LayoutView> GetLayoutAsync(Guid pageId, CancellationToken ct)
+    public async Task<LayoutView> GetLayoutAsync(Guid pageId, string? device, CancellationToken ct)
     {
         var page = await pages.PublishedForViewerAsync(pageId, ct);
-        var (revision, operations) = await layouts.OperationsAsync(context.RequireUser(), page.Id, ct);
+        var (revision, operations, scope) = await layouts.OperationsAsync(context.RequireUser(), page.Id, device, ct);
         var (regions, rights, defaults) = await ViewerLayoutAsync(page, ct);
-        var result = LayoutEngine.Apply(regions, operations, rights, defaults: defaults);
-        return new LayoutView(page.Id, revision, ETag(revision), operations, result.Skipped, rights.Values.ToList());
+        var result = LayoutEngine.Apply(regions, operations, rights, defaults: defaults, widths: Widths);
+        return new LayoutView(page.Id, revision, ETag(revision), operations, result.Skipped, rights.Values.ToList(), scope);
     }
 
-    public async Task<LayoutView> SaveLayoutAsync(Guid pageId, string? ifMatch, LayoutRequest request, CancellationToken ct)
+    public async Task<LayoutView> SaveLayoutAsync(Guid pageId, string? ifMatch, LayoutRequest request, string? device, CancellationToken ct)
     {
         var page = await pages.PublishedForViewerAsync(pageId, ct);
         await authz.DemandAsync(Permissions.PersonalLayoutEdit, Target(page.OrgUnitId), ct);
@@ -157,9 +206,13 @@ public sealed partial class PersonalizationService(
                 errors.Add($"operations[{i}].placementId", "validation.personalization.placement_id");
             }
         }
+        if (request.ThisDevice == true && device is null)
+        {
+            errors.Add("thisDevice", "validation.personalization.device");
+        }
         errors.ThrowIfAny();
 
-        var (revision, _) = await layouts.OperationsAsync(context.RequireUser(), page.Id, ct);
+        var (revision, _, current) = await layouts.OperationsAsync(context.RequireUser(), page.Id, device, ct);
         if (ifMatch is not null && ifMatch != ETag(revision))
         {
             throw new AppException(ProblemCodes.Conflict, 409, "conflict.personalization.layout_changed", null,
@@ -167,26 +220,83 @@ public sealed partial class PersonalizationService(
         }
         var (regions, rights, defaults) = await ViewerLayoutAsync(page, ct);
         var check = await NewPlacementCheckAsync(page, ct);
-        var result = LayoutEngine.Apply(regions, operations, rights, check, defaults);
+        var result = LayoutEngine.Apply(regions, operations, rights, check, defaults, Widths);
         if (result.Skipped.Count > 0)
         {
             throw new AppException(ProblemCodes.ValidationFailed, 422, "validation.personalization.refused", null,
                 new Dictionary<string, object?> { ["refused"] = result.Skipped });
         }
         var next = revision + 1;
+        // Each device class keeps its own list, checked on its own; moving back to every device drops this device's list.
+        var scope = request.ThisDevice switch { true => device!, false => DeviceClasses.Any, null => current };
+        if (scope == DeviceClasses.Any && device is not null)
+        {
+            await session.ExecAsync("delete from experience.personal_layout where user_id = @u and page_id = @p and device_class = @d",
+                new { u = context.RequireUser(), p = page.Id, d = device }, ct);
+        }
         await session.ExecAsync(
             """
-            insert into experience.personal_layout (tenant_id, user_id, page_id, schema_version, revision, operations, updated_at)
-            values (@t, @u, @p, @v, @rev, @ops, @now)
-            on conflict (tenant_id, user_id, page_id) do update set schema_version = excluded.schema_version, revision = excluded.revision,
+            insert into experience.personal_layout (tenant_id, user_id, page_id, device_class, schema_version, revision, operations, updated_at)
+            values (@t, @u, @p, @d, @v, @rev, @ops, @now)
+            on conflict (tenant_id, user_id, page_id, device_class) do update set schema_version = excluded.schema_version, revision = excluded.revision,
               operations = excluded.operations, updated_at = excluded.updated_at
             """,
-            new { t = context.RequireTenant(), u = context.RequireUser(), p = page.Id, v = LayoutSchemaVersion, rev = next, ops = Jsonb.From(operations), now = clock.UtcNow }, ct);
+            new { t = context.RequireTenant(), u = context.RequireUser(), p = page.Id, d = scope, v = LayoutSchemaVersion, rev = next, ops = Jsonb.From(operations), now = clock.UtcNow }, ct);
         if (operations.Count > 0)
         {
             await PersonalizedAsync("customize", ct);
         }
-        return new LayoutView(page.Id, next, ETag(next), operations, [], rights.Values.ToList());
+        return new LayoutView(page.Id, next, ETag(next), operations, [], rights.Values.ToList(), scope);
+    }
+
+    private PlacementRules? Widths(string componentRef) => registry.Find(componentRef)?.Placement;
+
+    /// <summary>The personal layout presets (FR-026): one action that replaces this page's personal operations.</summary>
+    public static readonly IReadOnlyList<string> Presets = ["default", "compact", "focus"];
+
+    /// <summary>The width the compact preset gives, so three items share a row of the 12 column grid.</summary>
+    public const int CompactSpan = 4;
+
+    /// <summary>
+    /// Applies a preset to this page in one action (FR-026). Default clears the person's changes; compact sets every
+    /// placement they may resize to a third of the grid (<see cref="CompactSpan"/>), within its allowed widths; focus hides every page placement they may hide except the
+    /// first of each region. Each is built only from what the person may already do, so it never changes entitlements, and
+    /// default resets it.
+    /// </summary>
+    public async Task<LayoutView> ApplyPresetAsync(Guid pageId, string? preset, string? device, CancellationToken ct)
+    {
+        if (preset is null || !Presets.Contains(preset))
+        {
+            throw AppException.Validation("preset", "validation.personalization.preset");
+        }
+        var page = await pages.PublishedForViewerAsync(pageId, ct);
+        await authz.DemandAsync(Permissions.PersonalLayoutEdit, Target(page.OrgUnitId), ct);
+        if (preset == "default")
+        {
+            await ResetLayoutAsync(pageId, ct);
+            return await GetLayoutAsync(pageId, device, ct);
+        }
+        var (regions, rights, defaults) = await ViewerLayoutAsync(page, ct);
+        var current = LayoutEngine.Apply(regions, [], rights, defaults: defaults, widths: Widths);
+        var operations = new List<LayoutOperation>();
+        foreach (var (regionId, items) in current.Regions)
+        {
+            var may = rights.TryGetValue(regionId, out var r) ? r.Rights : [];
+            for (var i = 0; i < items.Count; i++)
+            {
+                var item = items[i];
+                if (preset == "compact" && may.Contains(LayoutEngine.RightReorder) && Widths(item.Placement.ComponentRef) is { } w)
+                {
+                    operations.Add(new LayoutOperation(LayoutEngine.Resize, item.Placement.Id, Span: Math.Clamp(CompactSpan, Math.Max(1, w.MinSpan), Math.Min(12, w.MaxSpan))));
+                }
+                else if (preset == "focus" && i > 0 && !item.Personal && may.Contains(LayoutEngine.RightHide))
+                {
+                    operations.Add(new LayoutOperation(LayoutEngine.Hide, item.Placement.Id));
+                }
+            }
+        }
+        var (revision, _, _) = await layouts.OperationsAsync(context.RequireUser(), page.Id, device, ct);
+        return await SaveLayoutAsync(pageId, ETag(revision), new LayoutRequest(operations), device, ct);
     }
 
     /// <summary>Counts personal layout use for adoption basics (spec 021 T007): the action only, never the layout.</summary>
@@ -208,8 +318,26 @@ public sealed partial class PersonalizationService(
         await PersonalizedAsync("reset", ct);
     }
 
+    /// <summary>
+    /// The component IDs (without version) the viewer sees on this page after their own changes, and the first region they
+    /// may add to, if any. Used by safe suggestions (FR-035) so a suggestion never offers what is already there.
+    /// </summary>
+    public async Task<(IReadOnlySet<string> Shown, string? AddRegion)> ViewerSummaryAsync(Guid pageId, string? device, CancellationToken ct)
+    {
+        var page = await pages.PublishedForViewerAsync(pageId, ct);
+        var (_, operations, _) = await layouts.OperationsAsync(context.RequireUser(), page.Id, device, ct);
+        var (regions, rights, defaults) = await ViewerLayoutAsync(page, ct);
+        var current = LayoutEngine.Apply(regions, operations, rights, defaults: defaults, widths: Widths);
+        var shown = current.Regions.Values.SelectMany(r => r).Select(p => p.Placement.ComponentRef.Split('@')[0]).ToHashSet(StringComparer.Ordinal);
+        var template = await templates.GetAsync(page.Definition.Template, ct);
+        var region = template.Regions.Select(r => r.Id)
+            .FirstOrDefault(id => rights.TryGetValue(id, out var r) && r.Rights.Contains(LayoutEngine.RightAdd)
+                && current.Regions.TryGetValue(id, out var items) && items.Count(p => p.Personal) < r.MaxPersonalPlacements);
+        return (shown, region);
+    }
+
     /// <summary>Components for the add panel of one region, with the reason each ineligible one cannot be added.</summary>
-    public async Task<IReadOnlyList<AddPanelItem>> AddPanelAsync(Guid pageId, string? regionId, CancellationToken ct)
+    public async Task<IReadOnlyList<AddPanelItem>> AddPanelAsync(Guid pageId, string? regionId, string? device, CancellationToken ct)
     {
         var page = await pages.PublishedForViewerAsync(pageId, ct);
         var template = await templates.GetAsync(page.Definition.Template, ct);
@@ -217,9 +345,9 @@ public sealed partial class PersonalizationService(
         {
             throw AppException.Validation("region", "validation.page.region_unknown");
         }
-        var (_, operations) = await layouts.OperationsAsync(context.RequireUser(), page.Id, ct);
+        var (_, operations, _) = await layouts.OperationsAsync(context.RequireUser(), page.Id, device, ct);
         var (regions, rights, defaults) = await ViewerLayoutAsync(page, ct);
-        var current = LayoutEngine.Apply(regions, operations, rights, defaults: defaults);
+        var current = LayoutEngine.Apply(regions, operations, rights, defaults: defaults, widths: Widths);
         var region = rights[regionId];
         var check = await NewPlacementCheckAsync(page, ct);
         string? regionReason = !region.Rights.Contains(LayoutEngine.RightAdd) ? "validation.personalization.region_not_delegated"

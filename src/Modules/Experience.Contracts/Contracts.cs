@@ -221,3 +221,17 @@ public interface ISitePages
 
     Task<SitePageInfo> CreateAsync(string templateId, string slug, Guid? orgUnitId, CancellationToken ct = default);
 }
+
+/// <summary>
+/// A command the shell's command entry point may offer (spec 008 FR-008, US4 scenario 8). <paramref name="Key"/> names it
+/// (the web app shows <c>shell.commands.{Key}</c>); <paramref name="Href"/> is the module's own page that runs it. It is
+/// listed only while <paramref name="Capability"/> is on for the tenant and, when <paramref name="Permission"/> is set, the
+/// person holds it somewhere. The page still checks everything when it opens.
+/// </summary>
+public sealed record ShellCommand(string Key, string Href, string Icon, string Capability, string? Permission = null);
+
+/// <summary>Contributes the commands of one module to the shell (spec 008 FR-008). Each module registers its own.</summary>
+public interface IShellCommands
+{
+    IEnumerable<ShellCommand> Commands();
+}

@@ -168,3 +168,85 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
     });
   });
 }
+
+// Presets and suggestions change the same person's layout and favorites, so they get their own tenant and run in order.
+for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
+  test.describe(`home presets and suggestions in ${locale}`, () => {
+    test.describe.configure({ mode: "serial" });
+    test.use({ locale: locale === "ar" ? "ar-AE" : "en-US" });
+    let tenant: TestTenant;
+    const n = (x: number) => new Intl.NumberFormat(locale).format(x);
+    const favorites = (page: Page) =>
+      page.evaluate(async () => ((await (await fetch("/api/v1/me/favorites", { cache: "no-store" })).json()) as { href: string | null }[]).map((f) => f.href));
+
+    test.beforeAll(async () => {
+      tenant = await createTenant(`homex-${locale}`, locale);
+      await seedHome(tenant);
+    });
+
+    test("layout presets apply in one action and undo steps back (spec 008 FR-026)", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await expect.poll(() => order(page, "grid")).toEqual(["home-calendar-overview", "services", "numbers"]);
+      await page.getByRole("button", { name: msg(locale, "personalization.start") }).click();
+      const status = page.locator("main [role=status]").first();
+      await expect(status).toHaveText(msg(locale, "personalization.modeOn"));
+
+      // Focus keeps the first item of each area; compact narrows them and keeps them all.
+      await page.getByRole("button", { name: msg(locale, "personalization.presets.focus") }).click();
+      await expect(status).toHaveText(msg(locale, "personalization.presets.focusDone"));
+      await expect.poll(() => order(page, "grid")).toEqual(["home-calendar-overview"]);
+      await page.getByRole("button", { name: msg(locale, "personalization.undo") }).click();
+      await expect(status).toHaveText(msg(locale, "personalization.undone"));
+      await expect.poll(() => order(page, "grid")).toEqual(["home-calendar-overview", "services", "numbers"]);
+      await page.getByRole("button", { name: msg(locale, "personalization.presets.compact") }).click();
+      await expect(status).toHaveText(msg(locale, "personalization.presets.compactDone"));
+      await expect.poll(() => order(page, "grid")).toEqual(["home-calendar-overview", "services", "numbers"]);
+      await expectAccessible(page, testInfo, `home-presets-${locale}`);
+      await page.getByRole("button", { name: msg(locale, "personalization.undo") }).click();
+      await expect(status).toHaveText(msg(locale, "personalization.undone"));
+      await page.getByRole("button", { name: msg(locale, "personalization.done") }).click();
+      await expect(status).toHaveText(msg(locale, "personalization.modeOff"));
+    });
+
+    test("a page opened often is suggested for pinning with its reason, and the pin can be undone (spec 008 FR-035)", async ({ page }, testInfo) => {
+      const api = await tenantApi(tenant);
+      const target = await createPage(api, "T01", unique("often"));
+      await saveAndPublish(api, target, target.draft.regions.map((r) => ({ ...r, placements: [] })));
+      const slug = unique("often");
+      const label = locale === "en" ? "Safety rules" : "قواعد السلامة";
+      const entry = await api.put(`/api/v1/experience/ia/${crypto.randomUUID()}`, {
+        data: { labels: { en: "Safety rules", ar: "قواعد السلامة" }, slug, pageId: target.id },
+      });
+      expect(entry.ok(), await entry.text()).toBe(true);
+      for (let i = 0; i < 5; i++) {
+        expect((await api.post("/api/v1/me/recents", { data: { path: `/${slug}`, label } })).ok()).toBe(true);
+      }
+      await api.dispose();
+
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      const suggestion = page.locator(".pz-suggestions");
+      await expect(suggestion.getByText(msg(locale, "personalization.suggestions.pinTitle", { label }))).toBeVisible();
+      await expect(suggestion.getByText(msg(locale, "personalization.suggestions.reasons.pin_page", { count: n(5) }))).toBeVisible();
+      await expectAccessible(page, testInfo, `home-suggestion-${locale}`);
+      // It fits a phone screen.
+      await page.setViewportSize({ width: 375, height: 800 });
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      expect(overflow).toBeLessThanOrEqual(0);
+      await page.setViewportSize({ width: 1280, height: 800 });
+
+      // Nothing changed until it is accepted; accepting pins it, and undo takes it away again.
+      expect(await favorites(page)).not.toContain(`/${slug}`);
+      await suggestion.getByRole("button", { name: msg(locale, "personalization.suggestions.pin"), exact: true }).click();
+      await expect(suggestion.getByText(msg(locale, "personalization.suggestions.accepted", { label }))).toBeVisible();
+      await expect.poll(() => favorites(page)).toContain(`/${slug}`);
+      await suggestion.getByRole("button", { name: msg(locale, "personalization.suggestions.undo") }).click();
+      await expect(suggestion.getByText(msg(locale, "personalization.suggestions.undone", { label }))).toBeVisible();
+      await expect.poll(() => favorites(page)).not.toContain(`/${slug}`);
+
+      // Answered once, it is not offered again.
+      await page.reload();
+      await expect(page.getByRole("button", { name: msg(locale, "personalization.start") })).toBeVisible();
+      await expect(suggestion).toHaveCount(0);
+    });
+  });
+}

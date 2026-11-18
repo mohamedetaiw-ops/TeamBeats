@@ -23,6 +23,7 @@ public static class AgentsModule
     public static IServiceCollection AddAgentsModule(this IServiceCollection services)
     {
         services.AddScoped<AssistantService>();
+        services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IShellCommands, AssistantCommands>();
         services.AddScoped<AssistantGuests>();
         services.AddScoped<AssistantFiles>();
         services.AddScoped<AssistantVoice>();

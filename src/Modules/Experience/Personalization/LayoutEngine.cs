@@ -1,15 +1,19 @@
 using System.Text.Json;
 using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Modules.Experience.Catalogue;
+using TeamBeats.Modules.Experience.Contracts;
 using TeamBeats.Modules.Experience.Pages;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
 
 namespace TeamBeats.Modules.Experience.Personalization;
 
-/// <summary>One personal change over the published page: add, hide, remove or move (spec 008 plan, personal layout model).</summary>
+/// <summary>
+/// One personal change over the published page: add, hide, remove, move or resize (spec 008 plan, personal layout model).
+/// A resize sets <paramref name="Span"/>, the placement's width in grid columns, within the component's allowed widths.
+/// </summary>
 public sealed record LayoutOperation(string? Op, string? PlacementId, string? ComponentRef = null, string? RegionId = null,
-    JsonElement? Props = null, int? Position = null);
+    JsonElement? Props = null, int? Position = null, int? Span = null);
 
 /// <summary>What a viewer may do in one region, after policy, audience, package and region protection.</summary>
 public sealed record RegionRights(string RegionId, IReadOnlyList<string> Rights, int MaxPersonalPlacements);
@@ -35,6 +39,7 @@ public sealed class LayoutEngine(IDbSession session, IEntitlementService entitle
     public const string Hide = "hide";
     public const string Remove = "remove";
     public const string Move = "move";
+    public const string Resize = "resize";
     public const string RightAdd = "add";
     public const string RightHide = "hide";
     public const string RightRemove = "remove";
@@ -84,13 +89,21 @@ public sealed class LayoutEngine(IDbSession session, IEntitlementService entitle
         return result;
     }
 
-    /// <summary>The caller's saved operations for a page and their revision; revision 0 when there is none.</summary>
-    public async Task<(int Revision, IReadOnlyList<LayoutOperation> Operations)> OperationsAsync(Guid userId, Guid pageId, CancellationToken ct)
+    /// <summary>
+    /// The caller's saved operations for a page, their revision and the device class they belong to: the layout of
+    /// <paramref name="device"/> when there is one, else the one for every device; revision 0 when there is none.
+    /// </summary>
+    public async Task<(int Revision, IReadOnlyList<LayoutOperation> Operations, string Device)> OperationsAsync(Guid userId, Guid pageId,
+        string? device, CancellationToken ct)
     {
         var row = await session.QuerySingleOrDefaultAsync(
-            "select revision, operations::text from experience.personal_layout where user_id = @userId and page_id = @pageId",
-            new { userId, pageId }, r => (Found: true, Revision: r.GetInt32(0), Json: r.GetString(1)), ct);
-        return row.Found ? (row.Revision, JsonSerializer.Deserialize<List<LayoutOperation>>(row.Json, JsonDefaults.Options)!) : (0, []);
+            """
+            select revision, operations::text, device_class from experience.personal_layout
+            where user_id = @userId and page_id = @pageId and device_class in ('any', @device)
+            order by (device_class = @device) desc limit 1
+            """,
+            new { userId, pageId, device = device ?? DeviceClasses.Any }, r => (Found: true, Revision: r.GetInt32(0), Json: r.GetString(1), Device: r.GetString(2)), ct);
+        return row.Found ? (row.Revision, JsonSerializer.Deserialize<List<LayoutOperation>>(row.Json, JsonDefaults.Options)!, row.Device) : (0, [], DeviceClasses.Any);
     }
 
     /// <summary>Removes placements whose audience rule does not match the viewer. An unknown rule matches nobody.</summary>
@@ -107,11 +120,13 @@ public sealed class LayoutEngine(IDbSession session, IEntitlementService entitle
     /// Replays the operations in order. Each is checked against the current rights; one that fails is skipped with its
     /// reason. <paramref name="extraCheck"/> lets a save add checks for new placements (component eligibility).
     /// <paramref name="defaults"/> are the home suggestions (spec 008 FR-051): personal placements that come first in their
-    /// region before the operations run, so the viewer can move or remove them like their own.
+    /// region before the operations run, so the viewer can move or remove them like their own. <paramref name="widths"/>
+    /// gives a component's allowed widths (its manifest placement rules); a resize outside them, or of a component it does
+    /// not know, is skipped (FR-025 R2).
     /// </summary>
     public static LayoutResult Apply(IReadOnlyList<PageRegion> regions, IReadOnlyList<LayoutOperation> operations,
         IReadOnlyDictionary<string, RegionRights> rights, Func<LayoutOperation, string?>? extraCheck = null,
-        IReadOnlyDictionary<string, IReadOnlyList<Placement>>? defaults = null)
+        IReadOnlyDictionary<string, IReadOnlyList<Placement>>? defaults = null, Func<string, PlacementRules?>? widths = null)
     {
         var layout = regions.ToDictionary(r => r.Id, r =>
         {
@@ -214,6 +229,29 @@ public sealed class LayoutEngine(IDbSession session, IEntitlementService entitle
                         {
                             layout[from.Region].RemoveAt(from.Index);
                             layout[to].Insert(Clamp(op.Position, layout[to].Count), item);
+                        }
+                    }
+                    break;
+                case Resize:
+                    if (found is not { } sized)
+                    {
+                        reason = "validation.personalization.placement_unknown";
+                    }
+                    else if (!Has(sized.Region, RightReorder))
+                    {
+                        reason = "validation.personalization.protected";
+                    }
+                    else
+                    {
+                        var item = layout[sized.Region][sized.Index];
+                        var allowed = widths?.Invoke(item.Placement.ComponentRef);
+                        if (op.Span is not { } span || allowed is null || span < Math.Max(1, allowed.MinSpan) || span > Math.Min(12, allowed.MaxSpan))
+                        {
+                            reason = "validation.personalization.span";
+                        }
+                        else
+                        {
+                            layout[sized.Region][sized.Index] = item with { Placement = item.Placement with { Span = span } };
                         }
                     }
                     break;

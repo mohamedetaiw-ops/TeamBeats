@@ -14,6 +14,21 @@
   padding-inline: var(--xp-pad, var(--tb-space-lg));
 }
 
+/* "This device only" (spec 008 FR-032): a checkbox with its label on one line. */
+.pz-device {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tb-space-xs);
+  font-size: var(--tb-font-size-sm);
+}
+
+/* The presets (spec 008 FR-026) sit together as one group of quiet buttons. */
+.pz-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs);
+}
+
 .pz-toolbar .ui-confirm {
   flex-basis: 100%;
 }
@@ -123,4 +138,27 @@
 .pz-toggle[aria-pressed="true"] {
   background: var(--tb-color-accent-base);
   color: var(--tb-color-accent-text);
+}
+
+/* Safe suggestions (spec 008 FR-035): above the page content, never over it. */
+.pz-suggestions {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin-block-end: var(--tb-space-md);
+}
+
+.pz-suggestion-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+}
+
+/* On a narrow screen the actions go below the text rather than squeezing it. */
+.pz-suggestions .ui-alert {
+  flex-wrap: wrap;
+}
+
+.pz-suggestions .ui-alert-body {
+  flex: 1 1 14rem;
+  min-inline-size: 0;
 }
