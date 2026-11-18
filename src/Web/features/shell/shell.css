@@ -253,8 +253,8 @@
   gap: var(--tb-space-sm);
 }
 
-/* Narrow screens: the same menu, with the same labels, behind one button (FR-018). */
-@media (width <= 48rem) {
+/* Screens up to 1024px: every navigation style becomes the same menu, with the same labels, behind one button (FR-018). */
+@media (width <= 64rem) {
   .shell-menu-button {
     display: inline-flex;
   }
@@ -277,7 +277,9 @@
     inline-size: 100%;
     box-shadow: none;
   }
+}
 
+@media (width <= 48rem) {
   .shell-search input {
     inline-size: 100%;
   }

@@ -91,6 +91,29 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expectAccessible(page, testInfo, `shell-${locale}`);
     });
 
+    test("up to 1024px the global menu sits behind one disclosure button, and above it the links show (spec 008 FR-018)", async ({ page }) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      const nav = page.getByRole("navigation", { name: msg(locale, "shell.globalNav") });
+      const button = nav.getByRole("button", { name: msg(locale, "shell.menu"), exact: true });
+      const link = nav.getByRole("link", { name: about(), exact: true });
+      for (const width of [700, 900, 1024]) {
+        await page.setViewportSize({ width, height: 800 });
+        await expect(button, `disclosure at ${width}px`).toBeVisible();
+        await expect(button).toHaveAttribute("aria-expanded", "false");
+        await expect(link, `menu closed at ${width}px`).toBeHidden();
+        await button.click();
+        await expect(button).toHaveAttribute("aria-expanded", "true");
+        await expect(link).toBeVisible();
+        await page.keyboard.press("Escape");
+        await expect(button).toHaveAttribute("aria-expanded", "false");
+        await expect(button).toBeFocused();
+        await noHorizontalScroll(page);
+      }
+      await page.setViewportSize({ width: 1025, height: 800 });
+      await expect(button).toBeHidden();
+      await expect(link).toBeVisible();
+    });
+
     test("IA addresses show breadcrumbs and the section menu, old slugs redirect, and unknown addresses recover", async ({ page }) => {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.goto(`${hostOrigin(tenant.key)}/${setup.teamSlug}`);

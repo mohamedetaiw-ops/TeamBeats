@@ -34,6 +34,34 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       tenant = await createTenant(`cg-${locale}`, locale);
     });
 
+    test("a footer button on a linked card takes a pointer click, and the rest of the card opens its link", async ({ page }) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/ui-gallery`);
+      const card = page.locator(".ui-card[data-linked]").first();
+      await expect(card).toBeVisible();
+      // A footer with an action and a badge, as Card renders it, so the test checks the stylesheet and not one page.
+      await card.evaluate((el) => {
+        const footer = document.createElement("div");
+        footer.className = "ui-card-footer";
+        footer.innerHTML = '<button type="button" class="button button-secondary" data-testid="card-action">Act</button> <span class="ui-badge" data-testid="card-badge">Tag</span>';
+        footer.querySelector("button")!.addEventListener("click", () => el.setAttribute("data-acted", "true"));
+        el.append(footer);
+      });
+      const href = await card.locator(".ui-card-link").getAttribute("href");
+      const before = page.url();
+      await card.getByTestId("card-action").click();
+      await expect(card).toHaveAttribute("data-acted", "true");
+      expect(page.url()).toBe(before);
+      // The badge is not a control, so a press on it still lands on the covering card link.
+      const box = (await card.getByTestId("card-badge").boundingBox())!;
+      const hit = await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.closest("a")?.className ?? null, {
+        x: box.x + box.width / 2,
+        y: box.y + box.height / 2,
+      });
+      expect(hit).toBe("ui-card-link");
+      expect(href).toBeTruthy();
+    });
+
     test("buttons, icon buttons and groups have names, sizes and pressed state", async ({ page }, testInfo) => {
       await openGallery(page, tenant, locale);
       const actions = page.locator("section:has(> h2#cg-actions)");
