@@ -2556,5 +2556,7 @@
   "validation.agent_policy.approver": "Name approvers for a registered tool: a known permission, up to 20 people, or both.",
   "validation.people.photo_size": "Choose a photo of up to 2 MB and 8000 pixels on each side.",
   "validation.people.photo_type": "Choose a PNG or JPEG photo.",
-  "conflict.people.photo_processing": "Your photo could not be processed right now. Your profile is unchanged; try again later."
+  "conflict.people.photo_processing": "Your photo could not be processed right now. Your profile is unchanged; try again later.",
+  "validation.agent_policy.tenant_limit": "This is looser than the tenant agent policy allows. Choose the tenant's value or a stricter one.",
+  "validation.agent_policy.unit_limit": "This is looser than a parent unit's agent policy allows. Choose the parent's value or a stricter one."
 }

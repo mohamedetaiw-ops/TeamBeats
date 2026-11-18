@@ -31,7 +31,7 @@ Depends on 004, 005, 006, 013 (AI Gateway), 016 (inbox), 020 (definitions and ru
 ## R2: L3, org unit policies and the Agent Security Center
 
 - [x] T015 [US1, US4] L3 governed execution: the "approval" rule creates an approval task in the spec 016 inbox through the spec 024 engine, with the exact parameters bound to their hash, the requesting person, the agent and its reasoning summary, shown as requested by an AI agent on behalf of the person; separation of duties; 3 working day expiry that cancels the action and tells the person; the action runs as the person only after approval; suspension and the kill switch cancel it; L3 needs `ai.agents.write_tools`; tests including cross-tenant, entitlement and expiry
-- [ ] T016 [US8 scenario 3] Org unit agent policies inheriting the tenant policy, only stricter, rejected with the parent rule named; tests
+- [x] T016 [US8 scenario 3] Org unit agent policies inheriting the tenant policy, only stricter, rejected with the parent rule named; tests
 - [ ] T017 [US6 scenarios 4 and 5, US9 scenario 3, FR-023] Agent Security Center: anomaly rules and alerts to the owner and security officer, incidents with severity, linked runs, actions and closure note, evidence export, and the watch list for High risk agents for 30 days; tests
 - [ ] T018 [US7 scenarios 3 and 4] A disabled connector disables its tools for every agent with a degraded notice; revoking an agent's tokens; tests
 - [ ] T019 Pages: approval detail, org unit policy, Security Center, in English and Arabic, RTL; e2e with axe

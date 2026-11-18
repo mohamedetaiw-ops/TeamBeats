@@ -45,8 +45,8 @@ public sealed record AgentReview(AgentSummary Agent, AgentVersionView Version, A
 /// new agent policy.
 /// </summary>
 public sealed class AgentLifecycle(IDbSession session, ITenantContext context, IEntitlementService entitlements, IAuthorizationService authz,
-    IAuditWriter audit, IClock clock, ToolRegistry tools, AgentPolicyService policies, AgentRegistry registry, IAgentReleaseGate gate,
-    ITenantSettingsReader tenant, INotificationSender notifications)
+    IAuditWriter audit, IClock clock, ToolRegistry tools, AgentRegistry registry, IAgentReleaseGate gate,
+    ITenantSettingsReader tenant, INotificationSender notifications, UnitAgentPolicyService unitPolicies, IOrganizationHierarchy hierarchy)
 {
     public const int MaxReason = 500;
 
@@ -92,7 +92,7 @@ public sealed class AgentLifecycle(IDbSession session, ITenantContext context, I
         {
             throw AppException.Conflict("conflict.agent.revision");
         }
-        AgentDefinitions.Validate(agent.Definition, tools, (await policies.CurrentAsync(ct)).Policy);
+        AgentDefinitions.Validate(agent.Definition, tools, await unitPolicies.ForUnitAsync(agent.Agent.OrgUnitId, ct));
         var now = clock.UtcNow;
         await session.ExecAsync(
             """
@@ -186,7 +186,7 @@ public sealed class AgentLifecycle(IDbSession session, ITenantContext context, I
             });
         }
         var definition = Definition((await VersionDefinitionAsync(id, number, ct))!);
-        AgentDefinitions.Validate(definition, tools, (await policies.CurrentAsync(ct)).Policy);
+        AgentDefinitions.Validate(definition, tools, await unitPolicies.ForUnitAsync(agent.Agent.OrgUnitId, ct));
         var risk = AgentDefinitions.RiskClass(definition, tools);
         if (agent.Agent.CurrentVersion is null)
         {
@@ -265,7 +265,7 @@ public sealed class AgentLifecycle(IDbSession session, ITenantContext context, I
         var definition = Definition((await VersionDefinitionAsync(id, number, ct))!);
         try
         {
-            AgentDefinitions.Validate(definition, tools, (await policies.CurrentAsync(ct)).Policy);
+            AgentDefinitions.Validate(definition, tools, await unitPolicies.ForUnitAsync(agent.Agent.OrgUnitId, ct));
         }
         catch (AppException e) when (e.Errors is not null)
         {
@@ -341,7 +341,7 @@ public sealed class AgentLifecycle(IDbSession session, ITenantContext context, I
         if (agent.Agent.CurrentVersion is { } current)
         {
             // A version that breaks today's policy cannot come back.
-            AgentDefinitions.Validate(Definition((await VersionDefinitionAsync(id, current, ct))!), tools, (await policies.CurrentAsync(ct)).Policy);
+            AgentDefinitions.Validate(Definition((await VersionDefinitionAsync(id, current, ct))!), tools, await unitPolicies.ForUnitAsync(agent.Agent.OrgUnitId, ct));
         }
         var now = clock.UtcNow;
         await session.ExecAsync(
@@ -431,7 +431,7 @@ public sealed class AgentLifecycle(IDbSession session, ITenantContext context, I
     /// After a policy change (027 FR-018): published agents whose version in use breaks the new policy are suspended,
     /// with the policy as the reason. Returns the agents suspended.
     /// </summary>
-    public async Task<IReadOnlyList<Guid>> SuspendBreakingAsync(AgentPolicy policy, CancellationToken ct)
+    public async Task<IReadOnlyList<Guid>> SuspendBreakingAsync(Guid? changedUnit, CancellationToken ct)
     {
         var rows = await session.QueryAsync(
             """
@@ -439,12 +439,14 @@ public sealed class AgentLifecycle(IDbSession session, ITenantContext context, I
             join agents.agent_version v on v.agent_id = a.id and v.number = a.current_version
             where a.status = 'published'
             """, null, r => (Id: r.GetGuid(0), Unit: r.GetGuid(1), Definition: r.GetString(2), Owner: r.GetGuid(3)), ct);
+        // A unit policy change reaches the agents of that unit and the units below it; a tenant change reaches every agent.
+        var reached = changedUnit is { } unit ? await hierarchy.GetSubtreesAsync([unit], ct) : null;
         var suspended = new List<Guid>();
-        foreach (var row in rows)
+        foreach (var row in rows.Where(r => reached is null || reached.Contains(r.Unit)))
         {
             try
             {
-                AgentDefinitions.Validate(Definition(row.Definition), tools, policy);
+                AgentDefinitions.Validate(Definition(row.Definition), tools, await unitPolicies.ForUnitAsync(row.Unit, ct));
             }
             catch (AppException)
             {

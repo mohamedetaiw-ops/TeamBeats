@@ -1934,3 +1934,13 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - Audit: `agent.action_approved`, `agent.action_rejected` (also for confirmations) and `agent.action_expired`. Approved calls count as tool successes in the detailed analytics.
 - Not yet: the policy page does not edit approvers (T019); tools that need approval by default arrive with their owning modules (procurement, communications). Until then a tenant makes a tool stricter with a rule and names its approvers through the policy API.
 
+## Spec 027 R2 slice 2: org unit agent policies (T016)
+
+| Item | Note |
+|---|---|
+| Storage | `agents.unit_agent_policy`, one row per unit (forced RLS), holding only the rules the unit sets; a missing field inherits. A unit can set autonomy, classification, allowed tools, stricter tool rules, scheduled agents and persistent memory (off only), and the four run limits. Approvers, external AI clients and scheduled risk classes stay tenant rules. |
+| Effective policy | The tenant policy narrowed by each unit policy from the top of the hierarchy down to the agent's owning unit; each rule takes the stricter value. The runtime, the lifecycle checks (save, submit, publish, rollback, resume), briefings and memory read this policy; the tool picker and template views still read the tenant policy, and the unit rules apply when the draft is saved. |
+| API | `GET`, `PUT` and `DELETE /api/v1/agents/policy/units/{unitId}` for holders of `ai.policy_manage` at the unit; anyone else, and other tenants, get 404. `PUT` takes `{version, policy}` with the version check of the tenant policy and returns the unit's rules, the inherited policy and the effective one. |
+| Refusals | A rule looser than the policy above is refused on its field: `validation.agent_policy.tenant_limit` when the tenant policy sets the limit and `validation.agent_policy.unit_limit` when a parent unit does (US8 scenario 3, "the parent rule named"). A child unit's saved rules that a later parent change makes looser stay stored but have no effect, since the effective policy always takes the stricter value. |
+| Suspension | A unit policy save suspends, in the same transaction, the published agents of that unit and the units below it whose current version breaks their effective policy, with the owner notice of R1 (FR-018). A tenant change checks every agent against its own effective policy. Changes are audited as `agent.policy_changed` with target `agent_unit_policy`. |
+| Package | `ai.agents.basic`: a unit policy can only restrict, so every package has it. |

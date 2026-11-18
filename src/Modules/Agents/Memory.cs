@@ -33,7 +33,7 @@ public sealed record MyMemoryAgent(Guid AgentId, Dictionary<string, string>? Nam
 /// leaves the tenant (spec 003), or the tenant turns memory off; each deletion is audited as <c>agent.memory_deleted</c>.
 /// </summary>
 public sealed class AgentMemory(IDbSession session, ITenantContext context, IEntitlementService entitlements, IOrganizationHierarchy org,
-    IAuditWriter audit, IClock clock, AgentPolicyService policies)
+    IAuditWriter audit, IClock clock, UnitAgentPolicyService policies)
 {
     public const int MaxText = 500;
     public const int MaxItemsPerAgent = 50;
@@ -47,15 +47,15 @@ public sealed class AgentMemory(IDbSession session, ITenantContext context, IEnt
         return context.RequireUser();
     }
 
-    private sealed record AgentRow(string Status, AgentDefinition? Current);
+    private sealed record AgentRow(string Status, AgentDefinition? Current, Guid Unit);
 
     private async Task<AgentRow?> AgentAsync(Guid agentId, CancellationToken ct) =>
         await session.QuerySingleOrDefaultAsync(
             """
-            select a.status, v.definition::text from agents.agent a
+            select a.status, v.definition::text, a.org_unit_id from agents.agent a
             left join agents.agent_version v on v.agent_id = a.id and v.number = a.current_version
             where a.id = @agentId
-            """, new { agentId }, r => new AgentRow(r.GetString(0), r.Get<string?>("definition") is { } d ? Definition(d) : null), ct);
+            """, new { agentId }, r => new AgentRow(r.GetString(0), r.Get<string?>("definition") is { } d ? Definition(d) : null, r.GetGuid(2)), ct);
 
     private static MemoryItemView Read(Npgsql.NpgsqlDataReader r) =>
         new(r.GetGuid(0), r.GetGuid(1), r.GetString(2), r.GetString(3), r.GetFieldValue<DateTimeOffset>(4), r.GetFieldValue<DateTimeOffset>(5), r.GetFieldValue<DateTimeOffset>(6));
@@ -65,7 +65,7 @@ public sealed class AgentMemory(IDbSession session, ITenantContext context, IEnt
     /// <summary>Whether memory is on for this person and agent: the published definition asks for it, the tenant allows it, and the person may use the agent.</summary>
     private async Task<bool> OfferedAsync(Guid agentId, AgentRow agent, Guid user, CancellationToken ct) =>
         agent.Status == AgentStatuses.Published && agent.Current is { } d && AgentMemorySettings.IsPersistent(d) &&
-        (await policies.CurrentAsync(ct)).Policy.PersistentMemory && await AgentAccess.InAudienceAsync(session, org, agentId, d.Audience, user, ct);
+        (await policies.ForUnitAsync(agent.Unit, ct)).PersistentMemory && await AgentAccess.InAudienceAsync(session, org, agentId, d.Audience, user, ct);
 
     private async Task<bool> AcceptedAsync(Guid agentId, Guid user, CancellationToken ct) =>
         await session.ScalarAsync<bool>("select exists (select 1 from agents.agent_memory_consent where agent_id = @agentId and user_id = @user)", new { agentId, user }, ct);
@@ -204,7 +204,8 @@ public sealed class AgentMemory(IDbSession session, ITenantContext context, IEnt
     {
         var definition = Definition((await session.ScalarAsync<string>("select definition::text from agents.agent_version where agent_id = @agent and number = @version",
             new { agent = call.AgentId, version = call.AgentVersion }, ct))!);
-        if (await RecallAsync(call.AgentId, call.UserId, definition, (await policies.CurrentAsync(ct)).Policy, ct) is null)
+        var unit = await session.ScalarAsync<Guid>("select org_unit_id from agents.agent where id = @agent", new { agent = call.AgentId }, ct);
+        if (await RecallAsync(call.AgentId, call.UserId, definition, await policies.ForUnitAsync(unit, ct), ct) is null)
         {
             return "tool.memory_off";
         }

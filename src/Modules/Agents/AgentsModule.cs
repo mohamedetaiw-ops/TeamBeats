@@ -44,6 +44,7 @@ public static class AgentsModule
         services.AddScoped<Workflow.Contracts.IPersonalTaskSource, ExternalActionTasks>();
         services.AddScoped<ToolRegistry>();
         services.AddScoped<AgentPolicyService>();
+        services.AddScoped<UnitAgentPolicyService>();
         services.AddScoped<AgentRegistry>();
         services.AddScoped<AgentOwnerHandover>();
         services.AddScoped<AgentAnalytics>();
@@ -515,9 +516,28 @@ public static class AgentsModule
         {
             var view = await policies.ChangeAsync(request, ct);
             // Published agents that break the new policy are suspended in the same transaction (027 FR-018).
-            await lifecycle.SuspendBreakingAsync(view.Policy, ct);
+            await lifecycle.SuspendBreakingAsync(null, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
+        });
+
+        // Org unit agent policies (027 US8 scenario 3): only stricter than the policy above, applied to the unit's agents.
+        agents.MapGet("/policy/units/{unitId:guid}", async (Guid unitId, UnitAgentPolicyService units, CancellationToken ct) => Results.Ok(await units.GetAsync(unitId, ct)));
+
+        agents.MapPut("/policy/units/{unitId:guid}", async (Guid unitId, UnitAgentPolicyRequest request, UnitAgentPolicyService units, AgentLifecycle lifecycle,
+            IDbSession session, CancellationToken ct) =>
+        {
+            var view = await units.ChangeAsync(unitId, request, ct);
+            await lifecycle.SuspendBreakingAsync(unitId, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        agents.MapDelete("/policy/units/{unitId:guid}", async (Guid unitId, UnitAgentPolicyService units, IDbSession session, CancellationToken ct) =>
+        {
+            await units.DeleteAsync(unitId, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
         });
 
         app.MapAssistantPublicEndpoints();
