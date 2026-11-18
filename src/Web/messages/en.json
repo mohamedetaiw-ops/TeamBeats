@@ -7072,7 +7072,8 @@
       "errorsLink": "Frontend errors",
       "weeksSummary": "Weekly active people over the last {weeks} weeks; {last} this week.",
       "unitsSummary": "Active people in {count} units this week.",
-      "otherNote": "Units with fewer than {size} active people are counted together as Other."
+      "otherNote": "Units with fewer than {size} active people are counted together as Other.",
+      "estimatesLink": "Effort estimates for campaigns"
     },
     "errors": {
       "title": "Frontend errors",
@@ -7161,6 +7162,101 @@
         "employee": "Employees",
         "contractor": "Contractors",
         "guest": "Guests"
+      },
+      "campaignsLink": "Campaigns"
+    },
+    "campaigns": {
+      "workspace": "Analytics",
+      "title": "Campaigns",
+      "intro": "How the campaigns you run reached people, step by step, and what they cost.",
+      "detailIntro": "Delivered, opened, clicked and completed, for each step and in total.",
+      "denied": "Campaign analytics are not available",
+      "deniedHint": "They need advanced analytics in your package and the right to run campaigns.",
+      "listCaption": "Your campaigns",
+      "compare": "Compare the two",
+      "compareHint": "Select two campaigns to compare them side by side.",
+      "empty": "No campaigns yet",
+      "emptyHint": "Campaigns you run at your sites appear here.",
+      "notSent": "Not sent yet",
+      "column": {
+        "name": "Campaign",
+        "status": "Status",
+        "steps": "Steps",
+        "firstSent": "First sent",
+        "step": "Step",
+        "channel": "Channel",
+        "unit": "Unit",
+        "location": "Location"
+      },
+      "status": {
+        "draft": "Draft",
+        "scheduled": "Scheduled",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+      },
+      "hidden": "Hidden (under {size})",
+      "total": "In total",
+      "viewedShare": "Opened",
+      "completedShare": "Completed the call to action",
+      "stage": {
+        "delivered": "Reached",
+        "viewed": "Opened",
+        "clicked": "Came through the link",
+        "completed": "Completed"
+      },
+      "funnelSummary": "Funnel of the {people} people reached.",
+      "suppressed": "Too few people to show",
+      "suppressedHint": "This campaign reached fewer than {size} people, so what they did is not shown.",
+      "stepsCaption": "Each step of the campaign",
+      "stepName": "{position}. {title}",
+      "confirms": "(asks for confirmation)",
+      "channels": "Deliveries by channel",
+      "channelsSummary": "{count, plural, one {# channel} other {# channels}} used.",
+      "effort": {
+        "title": "Return on effort",
+        "total": "Total cost",
+        "perReached": "Per person reached",
+        "perCompleted": "Per completed action",
+        "none": "Not available",
+        "missing": "Set effort estimates in administration to see the cost of this campaign."
+      },
+      "by": {
+        "unit": "By unit",
+        "location": "By location"
+      },
+      "other": "Other (groups under {size})",
+      "otherNote": "Groups under {size} people are combined into Other, and the next smallest group joins it while it is still too small.",
+      "compareTitle": "Compare campaigns",
+      "compareIntro": "Two campaigns side by side, each with its own figures.",
+      "compareInvalid": "Choose two different campaigns to compare.",
+      "channel": {
+        "in_app": "In-app",
+        "email": "Email",
+        "slack": "Slack",
+        "push": "Push"
+      },
+      "comparePick": "Choose two campaigns"
+    },
+    "estimates": {
+      "title": "Effort estimates",
+      "intro": "Estimates used to work out the return on effort of campaigns. Each change is kept as a new version.",
+      "denied": "Effort estimates are not available",
+      "deniedHint": "They need advanced analytics in your package.",
+      "hours": "Authoring hours per item",
+      "hoursHint": "The time it takes to write and approve one item.",
+      "rate": "Cost of an hour",
+      "currency": "Currency",
+      "currencyHint": "A three-letter code, such as SAR or USD.",
+      "perSend": "Cost of one send",
+      "save": "Save estimates",
+      "saved": "Estimates saved.",
+      "failed": "The estimates could not be saved. Try again.",
+      "readOnly": "Only settings administrators change the estimates.",
+      "channel": {
+        "in_app": "In-app",
+        "email": "Email",
+        "slack": "Slack",
+        "push": "Push"
       }
     }
   },

@@ -2597,5 +2597,9 @@
   "validation.analytics.filter": "Check the filters. One of them is not recognised.",
   "validation.analytics.range": "Choose a date range of up to 400 days, with the start before the end.",
   "validation.analytics.metric": "Choose a metric from the list.",
-  "validation.analytics.group_by": "Choose a breakdown this metric supports."
+  "validation.analytics.group_by": "Choose a breakdown this metric supports.",
+  "validation.analytics.estimate": "Enter a number from zero up to the allowed maximum.",
+  "validation.analytics.currency": "Enter a three-letter currency code, such as SAR or USD.",
+  "validation.analytics.compare": "Choose two different campaigns to compare.",
+  "conflict.analytics.estimates_version": "Someone changed the estimates while you were editing. Reload and try again."
 }

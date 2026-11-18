@@ -247,6 +247,35 @@ public interface IAnalyticsItemSource
     Task<int> RemindAsync(Guid itemId, IReadOnlyCollection<Guid> people, CancellationToken ct = default);
 }
 
+/// <summary>A campaign the person looks after, as its owner lists it (spec 021 US2, spec 009 US8).</summary>
+public sealed record AnalyticsCampaign(Guid Id, string Name, Guid SiteId, string Status, DateTimeOffset CreatedAt, int Steps, DateTimeOffset? FirstSentAt);
+
+/// <summary>
+/// One step of a campaign with raw counts: the people it went to, how many notifications went out, and how many of those
+/// people opened the item, came through the campaign link and completed its call to action (confirmed it when it asks
+/// for confirmation, otherwise opened it). <see cref="Link"/> is the notification link of the step.
+/// </summary>
+public sealed record AnalyticsCampaignStep(Guid StepId, int Position, Guid ItemId, IReadOnlyDictionary<string, string> Titles, string Status, DateTimeOffset At,
+    DateTimeOffset? SentAt, string Link, bool AcknowledgementRequired, int Audience, int Delivered, int Viewed, int Clicked, int Completed);
+
+/// <summary>Raw counts of the people a campaign reached in one unit or location (<see cref="Dimension"/> is <c>unit</c> or <c>location</c>).</summary>
+public sealed record AnalyticsCampaignGroup(string Dimension, string Key, int Audience, int Viewed, int Completed);
+
+/// <summary>A campaign's funnel: its steps and, per distinct person over all steps, reached, opened, clicked and completed.</summary>
+public sealed record AnalyticsCampaignFunnel(AnalyticsCampaign Campaign, IReadOnlyList<AnalyticsCampaignStep> Steps, int People, int Viewed, int Clicked, int Completed,
+    IReadOnlyList<AnalyticsCampaignGroup> Groups);
+
+/// <summary>
+/// The owner of campaigns (Content, spec 009 US8). It decides who may see a campaign's analytics, the people who may run
+/// it, and answers a campaign they may not see as not found. Counts are raw: Analytics applies the minimum group size.
+/// </summary>
+public interface IAnalyticsCampaignSource
+{
+    Task<IReadOnlyList<AnalyticsCampaign>> ListAsync(CancellationToken ct = default);
+
+    Task<AnalyticsCampaignFunnel> FunnelAsync(Guid campaignId, CancellationToken ct = default);
+}
+
 /// <summary>
 /// The person's pseudonymous key in this tenant (spec 021 FR-003), for a module that keeps its own pseudonymous records,
 /// such as the search query log (spec 012 FR-013). The same key as analytics events carry.
