@@ -37,6 +37,8 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
     test("a footer button on a linked card takes a pointer click, and the rest of the card opens its link", async ({ page }) => {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.goto(`${hostOrigin(tenant.key)}/ui-gallery`);
+      // Added nodes before hydration make React regenerate the tree and drop them, so wait for it first.
+      await expect(page.locator('.gallery[data-hydrated="true"]').first()).toBeAttached();
       const card = page.locator(".ui-card[data-linked]").first();
       await expect(card).toBeVisible();
       // A footer with an action and a badge, as Card renders it, so the test checks the stylesheet and not one page.
