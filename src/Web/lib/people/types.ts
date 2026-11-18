@@ -14,6 +14,8 @@ export type PersonCard = {
   location: LocationRef | null;
   fields?: FieldView[] | null;
   level?: number | null;
+  /** The link to the person's photo (spec 010 FR-013), or null for initials. */
+  photo?: string | null;
 };
 
 export type PersonView = {
@@ -31,6 +33,7 @@ export type PersonView = {
   canEditAdminFields: boolean;
   /** Approved leave covering today (spec 022 FR-005): dates only. */
   away?: { from: string; to: string } | null;
+  photo?: string | null;
 };
 
 export type SearchPage = { items: PersonCard[]; next: number | null };
@@ -68,6 +71,11 @@ export function localName(names: Names | null | undefined, locale: string, fallb
 /** The person's name in the viewer's language where one is set, else the directory name. */
 export function personName(p: { displayName: string; names: Names }, locale: string): string {
   return p.names[locale] ?? p.displayName;
+}
+
+/** The photo link at the size shown, in CSS pixels; the API picks the nearest size it keeps. */
+export function photoAt(photo: string | null | undefined, size: number): string | null {
+  return photo ? `${photo}&size=${Math.round(size * 2)}` : null;
 }
 
 export function initials(name: string): string {

@@ -2346,6 +2346,14 @@
         "directory": "Managed by the directory",
         "admin": "Managed by your administrator",
         "hr": "Managed by your HR system"
+      },
+      "photo": {
+        "add": "Add a photo",
+        "change": "Change photo",
+        "remove": "Remove photo",
+        "hint": "PNG or JPEG, up to 2 MB.",
+        "saved": "Your photo is saved.",
+        "removed": "Your photo is removed."
       }
     },
     "field": {
