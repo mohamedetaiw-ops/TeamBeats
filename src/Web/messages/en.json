@@ -833,7 +833,8 @@
         "ai_agents_custom": "Custom agents in Agent Studio",
         "ai_agents_department": "Department agent templates",
         "ai_agents_marketplace": "Agent marketplace",
-        "ai_agents_advanced": "Advanced agent templates"
+        "ai_agents_advanced": "Advanced agent templates",
+        "ai_governance_security_center": "Agent Security Center"
       },
       "searchLabel": "Search capabilities",
       "searchPlaceholder": "Search by name",

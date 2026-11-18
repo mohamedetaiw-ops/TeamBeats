@@ -46,7 +46,8 @@ public sealed record AgentReview(AgentSummary Agent, AgentVersionView Version, A
 /// </summary>
 public sealed class AgentLifecycle(IDbSession session, ITenantContext context, IEntitlementService entitlements, IAuthorizationService authz,
     IAuditWriter audit, IClock clock, ToolRegistry tools, AgentRegistry registry, IAgentReleaseGate gate,
-    ITenantSettingsReader tenant, INotificationSender notifications, UnitAgentPolicyService unitPolicies, IOrganizationHierarchy hierarchy)
+    ITenantSettingsReader tenant, INotificationSender notifications, UnitAgentPolicyService unitPolicies, IOrganizationHierarchy hierarchy,
+    AgentSecurityCenter security)
 {
     public const int MaxReason = 500;
 
@@ -204,6 +205,11 @@ public sealed class AgentLifecycle(IDbSession session, ITenantContext context, I
             Changes: new { version = number, riskClass = risk, gate = result.Status }), ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.AgentVersionPublished, "agent", id.ToString(), TargetOrgUnitId: agent.Agent.OrgUnitId,
             Changes: new { version = number, from = agent.Agent.CurrentVersion, riskClass = risk }), ct);
+        if (risk == AgentRiskClasses.High)
+        {
+            // A High risk agent is watched for 30 days after each publication (027 US9 scenario 3).
+            await security.WatchPublishedAsync(id, agent.Agent.OrgUnitId, number, ct);
+        }
         return await registry.GetAsync(id, ct);
     }
 

@@ -516,6 +516,14 @@ public static class AuditActions
     public const string AgentResumed = "agent.resumed";
     public const string AgentRetired = "agent.retired";
     public const string AgentKillSwitch = "agent.kill_switch";
+
+    // Spec 027 R2 Agent Security Center (FR-023).
+    public const string AgentAlertRaised = "agent.alert_raised";
+    public const string AgentAlertDismissed = "agent.alert_dismissed";
+    public const string AgentIncidentOpened = "agent.incident_opened";
+    public const string AgentIncidentUpdated = "agent.incident_updated";
+    public const string AgentIncidentClosed = "agent.incident_closed";
+    public const string AgentEvidenceExported = "agent.evidence_exported";
     public const string EvalSuiteCreated = "eval.suite_created";
     public const string EvalSuiteChanged = "eval.suite_changed";
     public const string EvalDatasetVersionCreated = "eval.dataset_version_created";
@@ -646,7 +654,7 @@ public static class AuditActions
         SearchRetrievalChangeCancelled, SearchFederatedChanged, SearchAiSummaryChanged, SearchQueryTextChanged,
         AssistantHistoryDeleted, AssistantRetentionChanged, AssistantGuestsChanged, AssistantFileAdded, AssistantFileRefused,
         AgentInstalledFromTemplate, AgentCreated, AgentCloned, AgentAccessRequested, AgentAccessGranted, AgentAccessDenied, AgentMemoryAccepted, AgentMemoryDeleted, AgentTemplateUpdateApplied, AgentAudienceChanged, AgentOwnerChanged, AgentPolicyChanged, AgentToolCalled, AgentExternalCallRefused, AgentToolDenied, AgentInjectionDetected, AgentActionConfirmed, AgentActionRejected, AgentActionApproved, AgentActionExpired,
-        AgentVersionSubmitted, AgentVersionApproved, AgentVersionRejected, AgentVersionPublished, AgentRolledBack, AgentSuspended, AgentResumed,
+        AgentVersionSubmitted, AgentVersionApproved, AgentVersionRejected, AgentVersionPublished, AgentRolledBack, AgentSuspended, AgentResumed, AgentAlertRaised, AgentAlertDismissed, AgentIncidentOpened, AgentIncidentUpdated, AgentIncidentClosed, AgentEvidenceExported,
         AgentRetired, AgentKillSwitch,
         EvalSuiteCreated, EvalSuiteChanged, EvalDatasetVersionCreated, EvalDatasetImported, EvalPolicyChanged, EvalPersonaCreated, EvalGateDecided, EvalGateOverridden,
         EvalRubricCalibrated, EvalRubricDemoted,

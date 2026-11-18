@@ -836,6 +836,16 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
     {
         await audit.WriteAsync(new AuditEntry(AuditActions.AgentInjectionDetected, "agent_run", runId.ToString(), TargetOrgUnitId: agent.OrgUnitId,
             Changes: new { agent = agent.Id, version = agent.Version, mode = agent.Mode, tool, rule = finding.Rule, source = finding.Source, itemId = finding.ItemId }), ct);
+        if (agent.Mode == "eval")
+        {
+            return;
+        }
+        // Kept for the Security Center injection rule (027 T017), which raises an alert on its next pass.
+        await session.ExecAsync(
+            """
+            insert into agents.injection_finding (tenant_id, id, run_id, agent_id, rule, source, at)
+            values (platform.current_tenant_id(), @id, @runId, @agent, @rule, @source, @now)
+            """, new { id = Ids.New(), runId, agent = agent.Id, rule = finding.Rule, source = tool ?? finding.Source, now = clock.UtcNow }, ct);
     }
 
     /// <summary>A tool result for the model, always inside the untrusted envelope; failures are a short key, never internal detail.</summary>

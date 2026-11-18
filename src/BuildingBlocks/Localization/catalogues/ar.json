@@ -2558,5 +2558,20 @@
   "validation.people.photo_type": "اختر صورة بصيغة PNG أو JPEG.",
   "conflict.people.photo_processing": "تعذرت معالجة صورتك الآن. لم يتغير ملفك الشخصي؛ حاول مرة أخرى لاحقا.",
   "validation.agent_policy.tenant_limit": "هذه القيمة أقل تقييدا مما تسمح به سياسة الوكلاء على مستوى الجهة. اختر قيمة الجهة أو قيمة أكثر تقييدا.",
-  "validation.agent_policy.unit_limit": "هذه القيمة أقل تقييدا مما تسمح به سياسة الوكلاء في وحدة أعلى. اختر قيمة الوحدة الأعلى أو قيمة أكثر تقييدا."
+  "validation.agent_policy.unit_limit": "هذه القيمة أقل تقييدا مما تسمح به سياسة الوكلاء في وحدة أعلى. اختر قيمة الوحدة الأعلى أو قيمة أكثر تقييدا.",
+  "notifications.template.agents.security_alert.denied_burst.title": "رفض عدد كبير من استدعاءات الأدوات لوكيل",
+  "notifications.template.agents.security_alert.denied_burst.body": "رُفض عدد كبير من استدعاءات الأدوات خلال وقت قصير لوكيل تملكه أو تشرف عليه. افتح التنبيه في مركز أمان الوكلاء لمراجعة عمليات تشغيله.",
+  "notifications.template.agents.security_alert.injection.title": "احتمال حقن تعليمات في تشغيل وكيل",
+  "notifications.template.agents.security_alert.injection.body": "بدا محتوى قرأه وكيل تملكه أو تشرف عليه كأنه تعليمات، ولم يتبعها الوكيل. افتح التنبيه لمراجعة عمليات التشغيل.",
+  "notifications.template.agents.security_alert.cost_spike.title": "وكيل يستهلك أكثر بكثير من المعتاد",
+  "notifications.template.agents.security_alert.cost_spike.body": "استخدم وكيل تملكه أو تشرف عليه رموزًا أكثر بكثير من المعتاد خلال الساعة الأخيرة. افتح التنبيه لمراجعة عمليات تشغيله.",
+  "notifications.template.agents.high_risk_published.title": "نُشر وكيل عالي المخاطر",
+  "notifications.template.agents.high_risk_published.body": "نُشر وكيل عالي المخاطر في نطاقك، وهو في قائمة المراقبة بمركز الأمان لمدة 30 يومًا.",
+  "validation.agent_security.severity": "اختر درجة الخطورة: منخفضة أو متوسطة أو عالية أو حرجة.",
+  "validation.agent_security.agent": "اختر وكيلًا من هذه المؤسسة.",
+  "validation.agent_security.run": "أحد عمليات التشغيل ليس لهذا الوكيل أو لا يمكنك رؤيته.",
+  "validation.agent_security.runs": "يمكن ربط 50 عملية تشغيل على الأكثر بالحادثة.",
+  "validation.agent_security.text": "هذا النص طويل جدًا.",
+  "conflict.agent_security.alert_closed": "تم تجاهل هذا التنبيه أو تحويله إلى حادثة بالفعل.",
+  "conflict.agent_security.incident_closed": "هذه الحادثة مغلقة."
 }

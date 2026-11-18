@@ -833,7 +833,8 @@
         "ai_agents_custom": "وكلاء مخصصون في استوديو الوكلاء",
         "ai_agents_department": "قوالب وكلاء الإدارات",
         "ai_agents_marketplace": "سوق الوكلاء",
-        "ai_agents_advanced": "قوالب الوكلاء المتقدمة"
+        "ai_agents_advanced": "قوالب الوكلاء المتقدمة",
+        "ai_governance_security_center": "مركز أمان الوكلاء"
       },
       "searchLabel": "البحث في الإمكانات",
       "searchPlaceholder": "ابحث بالاسم",
