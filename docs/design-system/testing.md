@@ -70,6 +70,8 @@ Developers validate that the site is technically sound: smooth navigation, quick
 | Navigation | Links, menus, breadcrumbs, redirects, keyboard | `shell.spec.ts`, `shell-reachability.spec.ts` |
 | Accessibility | WCAG 2.2 AA | axe on every primary page in both languages (`expectAccessible`); design suite with zero serious and critical violations in all four designs |
 | Responsive | No horizontal scroll, layouts reflow | Design suite at 375, 768 and 1440 px; shell tests at mobile width |
+| Density | Every main page fits and keeps the 12 px type floor in both densities | Design suite runs the main pages again in the density the design does not default to |
+| Content budget | A summary widget stays inside its row budget with heavy data | `home-v2.spec.ts` with 30 tasks and 20 meetings: budgeted rows, a View all link with the total, bounded page height |
 | Target size | Controls at least 24 by 24 px | Design suite on the component gallery |
 | Visual regression | Components look as designed in every design and direction | `toHaveScreenshot` baselines in the design suite |
 | Consistency | Tokens, icons, images, type, messages | `npm run verify` gates ([consistency](technical/consistency.md)) |

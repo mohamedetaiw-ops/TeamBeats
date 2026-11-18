@@ -9,6 +9,7 @@ import { FormField } from "@/components/ui/FormField";
 import { problemMessages } from "@/lib/notifications/types";
 import type { ScreenView, ScreenWithAddress, SiteView } from "@/lib/content/types";
 import "./content.css";
+import { Widget } from "@/components/ui/Widget";
 
 /**
  * Digital signage screens of a site (spec 009 section 4): each screen has a read-only address that shows the site's
@@ -57,8 +58,7 @@ export function ScreenSettings({ site, screens }: { site: SiteView; screens: Scr
   }
 
   return (
-    <section className="content-card" aria-labelledby="site-screens">
-      <h2 id="site-screens">{t("title")}</h2>
+    <Widget title={t("title")}>
       <p className="field-hint">{t("intro")}</p>
       {messages.length > 0 ? (
         <div className="notice notice-error" role="alert">
@@ -106,6 +106,6 @@ export function ScreenSettings({ site, screens }: { site: SiteView; screens: Scr
           </p>
         </form>
       ) : null}
-    </section>
+    </Widget>
   );
 }

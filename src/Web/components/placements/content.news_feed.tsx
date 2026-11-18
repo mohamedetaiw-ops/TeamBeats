@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Icon } from "@/components/ui/Icon";
 import { StateView } from "@/components/ui/StateView";
-import { Widget } from "@/components/ui/Widget";
+import { useWidgetBudget, Widget } from "@/components/ui/Widget";
 import "@/features/content/content.css";
 
 type Answer = "loading" | "failed" | FeedItem[];
@@ -22,7 +22,7 @@ export default function NewsFeed({ props }: PlacementProps) {
   const t = useTranslations("content.component.feed");
   const locale = useLocale();
   const format = useFormatter();
-  const top = typeof props.top === "number" && props.top >= 1 && props.top <= 20 ? Math.floor(props.top) : 5;
+  const top = useWidgetBudget(typeof props.top === "number" && props.top >= 1 && props.top <= 20 ? Math.floor(props.top) : 5);
   const type = typeof props.type === "string" && props.type !== "all" ? props.type : null;
   const site = typeof props.site === "string" && props.site ? props.site : null;
   const title = localized(props.title, locale) || t("title");
@@ -104,7 +104,7 @@ function Featured({ items, title }: { items: FeedItem[]; title: string }) {
   return (
     <section className="content-featured" aria-label={title}>
       <h2 className="visually-hidden">{title}</h2>
-      <article className="content-lead" lang={lead.locale}>
+      <article className="content-lead" data-media="none" lang={lead.locale}>
         {/* Stories carry no photo yet (spec 009), so the lead is a typographic card in its type's tone (DLS-088). */}
         <div className="content-lead-media content-lead-type" data-tone={lead.type === "announcement" ? "highlight" : "accent"} aria-hidden="true">
           <Icon name={lead.type === "announcement" ? "megaphone" : "news"} size={40} />

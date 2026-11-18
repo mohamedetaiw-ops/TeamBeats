@@ -23,6 +23,21 @@ public static class SearchKinds
 }
 
 /// <summary>
+/// Sources that never reach a model (spec 014 AST-020): payslips (019) and anonymous engagement content (023). Their
+/// owners do not index them, and Search refuses to index or retrieve them for AI even if a future source names one by
+/// mistake, so the assistant, agents and search summaries can never cite them.
+/// </summary>
+public static class AiExcludedSources
+{
+    public const string Payslip = "payslip";
+    public const string AnonymousEngagement = "engagement_anonymous";
+
+    public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal) { Payslip, AnonymousEngagement };
+
+    public static bool Contains(string source) => All.Contains(source);
+}
+
+/// <summary>
 /// One searchable unit of an item as its owner gives it: a section of an article, one FAQ pair, one policy clause, a
 /// document's text, a service or a person's card. <paramref name="Key"/> tells units of one item apart and stays the same
 /// across versions where it can (an anchor); <paramref name="Link"/> is the path that opens the item at the unit, which is

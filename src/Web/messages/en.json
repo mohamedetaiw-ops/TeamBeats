@@ -827,7 +827,13 @@
         "workflow_connector_fulfilment": "Connector and webhook steps in services",
         "ai_budgets": "AI budget",
         "ai_budgets_scoped": "AI budgets for units, agents and people",
-        "ai_models_private_endpoint": "Private model endpoints"
+        "ai_models_private_endpoint": "Private model endpoints",
+        "ai_assistant_file_upload": "Files in assistant conversations",
+        "ai_assistant_voice": "Assistant voice input and read aloud",
+        "ai_agents_custom": "Custom agents in Agent Studio",
+        "ai_agents_department": "Department agent templates",
+        "ai_agents_marketplace": "Agent marketplace",
+        "ai_agents_advanced": "Advanced agent templates"
       },
       "searchLabel": "Search capabilities",
       "searchPlaceholder": "Search by name",
@@ -1834,6 +1840,9 @@
       "moveTo": "Move to",
       "moved": "{title} moved to {column}",
       "empty": "No cards here yet"
+    },
+    "widget": {
+      "viewAll": "View all ({count})"
     }
   },
   "gallery": {
@@ -2459,7 +2468,8 @@
       "space_activity": "Activity in your spaces",
       "bookings": "Your bookings",
       "search_alerts": "Alerts for your saved searches",
-      "ai_budgets": "AI budget alerts"
+      "ai_budgets": "AI budget alerts",
+      "agent_briefings": "Daily briefings from agents"
     },
     "filter": {
       "label": "Show",
@@ -3483,6 +3493,7 @@
       "myTasksFailed": "Your tasks could not be loaded.",
       "bookingRequest": "Booking request",
       "aiAction": "AI app action",
+      "agentAccess": "Agent access request",
       "assetAccess": "Brand asset access"
     },
     "delegation": {
@@ -5377,7 +5388,10 @@
         "maxTokens": "Maximum answer length in tokens",
         "maxTokensHint": "Leave empty to use each model's own limit.",
         "minTemperature": "Lowest temperature",
-        "maxTemperature": "Highest temperature"
+        "maxTemperature": "Highest temperature",
+        "displayCurrency": "Show costs in",
+        "displayCurrencyHint": "A three letter code such as SAR. Leave empty for US dollars. Records and budgets stay in US dollars.",
+        "displayRate": "Rate per US dollar"
       },
       "sovereign": {
         "title": "Keep on private endpoints",
@@ -5403,7 +5417,9 @@
         "draft": "Drafting",
         "embed": "Search embeddings",
         "agent": "Agents",
-        "evaluation": "Evaluation"
+        "evaluation": "Evaluation",
+        "transcribe": "Voice input",
+        "speak": "Read aloud"
       },
       "empty": "No model. Requests for this use case are refused.",
       "default": "Default",
@@ -5447,7 +5463,8 @@
         "provider": "Provider",
         "unit": "Org unit",
         "agent": "Agent",
-        "user": "Person"
+        "user": "Person",
+        "classification": "Classification"
       },
       "invalid": "Choose a grouping and a period of up to 400 days with the start before the end.",
       "scoped": "You see AI use in your units only. Groups of fewer than {size} people are hidden.",
@@ -5464,7 +5481,19 @@
       "hidden": "{count, plural, one {# group} other {# groups}} with fewer than {size} people not shown.",
       "denied": "Refused requests",
       "noDenied": "No requests were refused in this period.",
-      "reason": "Reason"
+      "reason": "Reason",
+      "export": "Download CSV",
+      "displayCurrency": "Shown in {currency} at {rate} per US dollar. Exports also keep US dollars.",
+      "forecast": {
+        "title": "This month",
+        "summary": "{spent} spent in the first {days} days, about {rate} a day. At this rate the month ends near {projected}.",
+        "budgets": "Monthly budgets at the current rate",
+        "budget": "Budget",
+        "amount": "Limit",
+        "used": "Used so far",
+        "projected": "Expected by month end",
+        "over": "over the limit"
+      }
     },
     "debug": {
       "title": "Debug windows",
@@ -5667,7 +5696,8 @@
         "connection": "Connection",
         "model": "Model listed",
         "chat": "Chat answer",
-        "embeddings": "Embeddings answer"
+        "embeddings": "Embeddings answer",
+        "speech": "Speech answer"
       },
       "checks": {
         "secret_missing": "The secret manager has no key under this reference.",
@@ -5689,7 +5719,9 @@
         "tools": "Tool calls",
         "structured_output": "Structured output",
         "vision": "Images",
-        "embeddings": "Embeddings"
+        "embeddings": "Embeddings",
+        "transcription": "Speech to text",
+        "speech": "Text to speech"
       },
       "addModel": "Add a model",
       "removeModel": "Remove model {number}",
@@ -6051,13 +6083,15 @@
     },
     "admin": {
       "title": "Assistant",
-      "intro": "Choose how long the assistant keeps conversations. People can delete their own at any time.",
+      "intro": "Choose how long the assistant keeps conversations and whether guests may use it. People can delete their own conversations at any time.",
       "retention": "Keep conversations for (days)",
       "retentionHint": "From 1 to 365 days. The default is 30.",
       "save": "Save",
       "busy": "Saving",
       "saved": "Saved.",
-      "failed": "That did not work. Try again in a moment."
+      "failed": "That did not work. Try again in a moment.",
+      "guests": "Let guests use the assistant",
+      "guestsHint": "Guests see answers only from the spaces they were invited to. Off by default."
     },
     "marker": "[{n}]",
     "tools": {
@@ -6091,6 +6125,36 @@
       "remove": "Ask about everything instead",
       "policy": "Answers come only from <name></name>.",
       "notFound": "This policy is not available to ask about. You can ask about anything you can open instead."
+    },
+    "files": {
+      "list": "Files in this conversation",
+      "attach": "Attach a file",
+      "uploading": "Reading the file",
+      "classification": "File classification",
+      "hint": "PDF, Office, text or image, up to 20 MB. Used only in this conversation.",
+      "remove": "Remove {name}",
+      "failed": "That did not work. Try again in a moment.",
+      "classifications": {
+        "public": "Public",
+        "internal": "Internal",
+        "confidential": "Confidential",
+        "restricted": "Restricted"
+      }
+    },
+    "voice": {
+      "start": "Ask by voice",
+      "stop": "Stop recording",
+      "recording": "Recording. Press stop when you are done, or it stops after {seconds} seconds.",
+      "transcribing": "Turning your speech into text",
+      "ready": "Your words are in the question box. Edit them, then send.",
+      "failed": "Voice did not work. Try again or type your question.",
+      "unsupported": "This browser cannot record audio. Type your question instead.",
+      "permission": "Allow the microphone in your browser to ask by voice.",
+      "empty": "Nothing was recorded. Try again.",
+      "read": "Read aloud",
+      "stopReading": "Stop reading",
+      "preparing": "Preparing the audio",
+      "playFailed": "The audio could not play in this browser."
     }
   },
   "agents": {
@@ -6279,6 +6343,40 @@
         "afterReview": "Version {version} of this agent's template is available. You can apply it once the version in review is decided.",
         "apply": "Apply template update",
         "applied": "The template update is in a new draft. Check it, then send it for review."
+      },
+      "clone": {
+        "title": "Clone this agent",
+        "intro": "A clone is a new draft with its own identity and no published history. Its audience and tools are copied only if you tick them.",
+        "unit": "Org unit that owns the clone",
+        "name": "Name of the clone",
+        "copyAudience": "Copy the audience",
+        "copyTools": "Copy the tools",
+        "action": "Clone",
+        "copyMemory": "Copy the memory setting (notes kept for people are never copied)"
+      },
+      "json": "Definition as JSON (read only)",
+      "outside": "Outside this audience",
+      "outsideHint": "Hidden agents never appear to other people. Offered agents show in the marketplace, and people can ask the owners for access.",
+      "outsideModes": {
+        "hidden": "Hidden",
+        "request_access": "Shown in the marketplace on request"
+      },
+      "memory": {
+        "title": "Memory",
+        "intro": "Session memory keeps nothing after a conversation. Persistent memory lets the agent keep short notes for people who accept, if your organization's agent policy allows it.",
+        "mode": "Memory",
+        "modes": {
+          "session": "Session only",
+          "persistent": "Persistent, for people who accept"
+        },
+        "retentionDays": "Delete unused notes after (days)",
+        "retentionHint": "A note is deleted when the agent has not used it for this many days. Restricted content is never kept."
+      },
+      "briefing": {
+        "title": "Daily briefing",
+        "intro": "Offer people a briefing they can subscribe to. It runs as each person with their permissions, reads only, and arrives as a notification. Your organization's agent policy must allow scheduled agents.",
+        "enabled": "Offer a daily briefing",
+        "prompt": "What the briefing asks"
       }
     },
     "review": {
@@ -6404,6 +6502,18 @@
         "verifiedHint": "Apps on this list were reviewed by TeamBeats. Employees can connect one as soon as you allow it.",
         "noVerified": "No verified AI app is available yet.",
         "addVerified": "Add verified app"
+      },
+      "memory": "Agent memory",
+      "persistentMemory": "Allow agents to keep notes for people who accept",
+      "persistentMemoryHint": "Each agent's designer chooses whether it keeps notes, and each person accepts per agent. Turning this off deletes every note in the organization.",
+      "scheduled": "Scheduled agents",
+      "scheduledAgents": "Allow agents to send daily briefings people subscribe to",
+      "scheduledRisk": "Agents of {risk} risk",
+      "scheduledHint": "A briefing runs as the person who subscribed, with their permissions, and only reads. Low risk agents only, unless you add more.",
+      "risk": {
+        "low": "low",
+        "medium": "medium",
+        "high": "high"
       }
     },
     "killSwitch": {
@@ -6475,7 +6585,14 @@
       "failed": "Something went wrong. Try again.",
       "ask": "Ask an agent about this",
       "chooseForItem": "Choose an agent to work with the page or document you came from.",
-      "linksAsText": "This answer mentions web addresses. They are shown as text and never opened, because they came from the AI. Check a link before you visit it."
+      "linksAsText": "This answer mentions web addresses. They are shown as text and never opened, because they came from the AI. Check a link before you visit it.",
+      "memoryTitle": "What your agents remember",
+      "memoryIntro": "Agents you allowed to keep notes about you. Open one to read, edit or delete its notes.",
+      "memoryCount": "{count, plural, =0 {No notes yet} one {# note} other {# notes}}",
+      "step": "Using {tool}…",
+      "interrupted": "The connection dropped while the agent was working. It carries on and keeps the answer for you.",
+      "checkResult": "Check for the answer",
+      "stillWorking": "The agent is still working on this. Check again in a moment."
     },
     "card": {
       "title": "Confirm this action",
@@ -6503,6 +6620,114 @@
       "cost": "Estimated cost",
       "quality": "Release gate",
       "none": "None"
+    },
+    "studio": {
+      "title": "Build a new agent",
+      "intro": "Start from a blank agent. Give it a name and instructions here, then set its knowledge, tools, audience and autonomy in the editor.",
+      "used": "{count} of {limit} custom agents in use.",
+      "usedNoLimit": "{count} custom agents in use.",
+      "full": "The custom agent limit of your plan is reached. Your tenant administrator can raise it with your plan.",
+      "unit": "Org unit that owns it",
+      "languages": "Languages it answers in",
+      "languageNames": {
+        "en": "English",
+        "ar": "Arabic"
+      },
+      "name": "Name in {language}",
+      "instructions": "Instructions in {language}",
+      "category": "Category",
+      "create": "Create the agent",
+      "creating": "Creating",
+      "failed": "The agent could not be created. Try again."
+    },
+    "categories": {
+      "knowledge": "Knowledge",
+      "hr": "HR",
+      "it": "IT",
+      "content": "Content",
+      "requests": "Requests",
+      "productivity": "Productivity",
+      "people": "People",
+      "learning": "Learning",
+      "procurement": "Procurement",
+      "finance": "Finance",
+      "communications": "Communications",
+      "other": "Other"
+    },
+    "marketplace": {
+      "title": "Agent marketplace",
+      "intro": "Find agents for your work, keep your favourites close and ask for the ones made for other teams.",
+      "mine": "My agents",
+      "paused": "Agents are paused in your organization for now. They will be listed here again when they are back.",
+      "search": "Search agents",
+      "searchHint": "Search by name or description",
+      "apply": "Apply",
+      "category": "Category",
+      "anyCategory": "Any category",
+      "noMatch": "No agents match",
+      "noMatchHint": "Try other words or another category.",
+      "clear": "Clear filters",
+      "empty": "No agents to show yet",
+      "emptyHint": "Agents your organization publishes for you appear here.",
+      "noRatings": "No ratings yet",
+      "rating": "{rating} out of 5, {count, plural, one {# rating} other {# ratings}}",
+      "favourited": "Favourite",
+      "favourite": "Add {name} to favourites",
+      "unfavourite": "Remove {name} from favourites",
+      "requestAccess": "Ask for access",
+      "requested": "Access requested",
+      "denied": "Access not granted",
+      "rate": "Rate this agent",
+      "yourRating": "Your rating: {score} of 5",
+      "score": "Rating",
+      "chooseScore": "Choose a rating",
+      "scoreValue": "{score, plural, one {# star} other {# stars}}",
+      "comment": "Comment (optional)",
+      "commentHint": "Only the agent's owners and AI policy administrators read comments.",
+      "saveRating": "Save rating",
+      "failed": "Something went wrong. Try again.",
+      "browse": "Browse the marketplace",
+      "pausedTitle": "Agents are paused"
+    },
+    "access": {
+      "title": "Access requests",
+      "intro": "People outside this agent's audience who asked to use it. A grant lets that person use the published agent; they are told either way.",
+      "none": "No requests are waiting.",
+      "unknown": "Unknown person",
+      "grant": "Grant",
+      "deny": "Deny",
+      "failed": "Something went wrong. Try again."
+    },
+    "memory": {
+      "title": "What this agent remembers about you",
+      "offer": "This agent can keep short notes about you, such as your preferences, to help in later conversations. Only you see them, and you can edit or delete each one. A note is deleted after {days} days without use.",
+      "accept": "Allow this agent to remember",
+      "notOffered": "This agent no longer keeps memory. You can still delete what it kept.",
+      "accepted": "You allowed this agent to keep notes about you. A note is deleted after {days} days without use.",
+      "none": "Nothing kept yet",
+      "noneHint": "The agent adds a note when you tell it something worth remembering.",
+      "note": "Note",
+      "lastUsed": "Last used {date}",
+      "edit": "Edit",
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "withdraw": "Stop remembering and delete all",
+      "withdrawQuestion": "Delete every note this agent keeps about you and stop it remembering?",
+      "withdrawConfirm": "Delete all",
+      "failed": "Something went wrong. Try again."
+    },
+    "briefing": {
+      "title": "Daily briefing",
+      "offer": "Get a briefing from this agent as a notification at a time you choose, built from what you can see at that moment.",
+      "subscribed": "You get this briefing. The next one is due {next}.",
+      "notOffered": "This agent no longer sends briefings. You can stop your subscription.",
+      "time": "Time",
+      "days": "Days",
+      "subscribe": "Subscribe",
+      "change": "Save changes",
+      "unsubscribe": "Stop the briefing",
+      "failed": "Something went wrong. Try again."
     }
   },
   "evaluation": {
@@ -8693,6 +8918,24 @@
       "requestsShort": "Requests",
       "pipelineSummary": "Of 245 requests, 120 are done and 65 in progress."
     },
+    "chartRules": {
+      "title": "Chart rules",
+      "intro": "A chart helps a decision or it is left out. Counts use whole number ticks, and one data point is shown as a number.",
+      "teamIt": "IT",
+      "teamPeople": "People",
+      "teamFinance": "Finance",
+      "team": "Team",
+      "waiting": "Requests waiting",
+      "active": "Active people",
+      "countsTitle": "Requests waiting by team",
+      "countsHint": "4 waiting in total, 1 more than last week",
+      "countsSummary": "Requests waiting by team: IT 1, People 2, Finance 1.",
+      "singleTitle": "Weekly active people",
+      "singleHint": "The first week of data, so there is no trend to draw yet",
+      "singleSummary": "Weekly active people in the first week: 128.",
+      "week": "Week",
+      "weekOne": "Week of 9 November"
+    },
     "calendar": {
       "title": "Calendar",
       "intro": "Calendar parts of DLS-069 to DLS-074: header, layers, week strip, agenda rows, month with ranges and team availability.",
@@ -8753,6 +8996,19 @@
       "auditRead": "Read the audit log",
       "contentPublish": "Publish content",
       "scopeTenant": "Whole workspace"
+    },
+    "widgetBudget": {
+      "title": "Content budgets",
+      "intro": "A summary shows at most the budget of its region and then a link to the full view with the total: 3 rows up to a third of the width, 5 up to two thirds, 8 wider. A loading, failed or unavailable part keeps the same frame.",
+      "requests": "Requests waiting",
+      "rowLeave": "Annual leave, 3 days",
+      "rowTravel": "Business travel to Riyadh",
+      "rowExpense": "Expense claim for a client lunch",
+      "rowLaptop": "Laptop replacement",
+      "rowLetter": "Salary letter",
+      "rowAccess": "Access to the finance workspace",
+      "rowTraining": "Safety training booking",
+      "failed": "This part of the page could not be shown"
     }
   },
   "patterns_gallery": {

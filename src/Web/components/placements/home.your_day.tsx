@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/Badge";
 import { StatCards } from "@/components/ui/Blocks";
 import { ButtonLink } from "@/components/ui/Button";
 import { AgendaRow } from "@/components/ui/CalendarParts";
-import { Widget } from "@/components/ui/Widget";
+import { useWidgetBudget, Widget } from "@/components/ui/Widget";
 import { LAYER_LOOK } from "@/lib/calendar";
 import "@/features/services/home.css";
 
@@ -48,6 +48,9 @@ export default function YourDay({ props }: PlacementProps) {
   const format = useFormatter();
   const now = useNow();
   const title = localized(props.title, locale) || t("title");
+  const agenda = useWidgetBudget(AGENDA);
+  // A view that already shows these counts (the briefing, the task summary) turns them off here (spec 036 DLS-102).
+  const counts = props.counts !== false;
   const [sources, setSources] = useState<Sources | "loading">("loading");
 
   useEffect(() => {
@@ -60,8 +63,9 @@ export default function YourDay({ props }: PlacementProps) {
     };
   }, []);
 
-  const shell = (body: ReactNode, busy = false) => (
-    <Widget title={title} busy={busy} testId="home-your-day" action={<Link href="/tasks">{t("inbox")}</Link>}>
+  const shell = (body: ReactNode, busy = false, meetingsToday = 0) => (
+    <Widget title={title} busy={busy} testId="home-your-day" action={<Link href="/tasks">{t("inbox")}</Link>}
+      more={{ href: "/calendar", total: meetingsToday, shown: agenda }}>
       {body}
     </Widget>
   );
@@ -81,7 +85,7 @@ export default function YourDay({ props }: PlacementProps) {
 
   return shell(
     <>
-      <StatCards
+      {counts ? <StatCards
         label={t("counts")}
         dense
         stats={[
@@ -95,7 +99,7 @@ export default function YourDay({ props }: PlacementProps) {
             ? [{ key: "meetings", label: t("meetings", { count: meetings.length }), value: format.number(meetings.length), icon: "calendar" as const, tone: "fresh" as const, href: "/calendar" }]
             : []),
         ]}
-      />
+      /> : null}
       {!connected ? (
         sources.calendar?.state === "not_connected" || sources.calendar?.state === "reconnect" ? (
           <div className="home-connect">
@@ -114,7 +118,7 @@ export default function YourDay({ props }: PlacementProps) {
         <p className="home-meta">{t("noMeetings")}</p>
       ) : (
         <ul className="ui-cal-agenda" aria-label={t("agenda")}>
-          {meetings.slice(0, AGENDA).map((m) => {
+          {meetings.slice(0, agenda).map((m) => {
             const starts = Date.parse(m.start);
             const soon = starts > now && starts - now <= SOON;
             const subject = m.isPrivate || !m.subject ? t("privateMeeting") : m.subject;
@@ -149,5 +153,7 @@ export default function YourDay({ props }: PlacementProps) {
         </ul>
       )}
     </>,
+    false,
+    meetings.length,
   );
 }

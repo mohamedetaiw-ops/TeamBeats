@@ -122,7 +122,7 @@ public sealed class DebugWindows(IDbSession session, ITenantContext context, IAu
     {
         await authz.DemandAsync(Permissions.AiPolicyManage, AuthzTarget.Tenant, ct);
         var errors = new ValidationErrors();
-        if (request.UseCase is not { } useCase || !AiUseCases.All.Contains(useCase) || useCase == AiUseCases.Embed)
+        if (request.UseCase is not { } useCase || !AiUseCases.All.Contains(useCase) || AiUseCases.NotChat.Contains(useCase))
         {
             errors.Add("useCase", "validation.ai.use_case");
         }

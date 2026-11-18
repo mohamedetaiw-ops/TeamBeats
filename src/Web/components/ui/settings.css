@@ -61,7 +61,8 @@
   inline-size: 100%;
 }
 
-.ui-control-row > :is(button, a, .ui-choice, label) {
+/* Only beside a labelled field does an action drop to the field's control line; a row of actions alone stays level. */
+.ui-control-row:has(> .field) > :is(button, a, .ui-choice, label) {
   margin-block-start: calc(var(--tb-font-size-sm) * var(--tb-font-line-height-body) + var(--tb-space-xs));
 }
 

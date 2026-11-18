@@ -185,6 +185,31 @@ for (const design of designs) {
             expect.soft(facts.font, `font family on ${where}`).toContain(locale === "ar" ? design.arabicFont : design.font);
           }
         }
+
+        // The other density (DLS-117): the person chooses it, and every main page still fits and keeps the type floor.
+        // The design's own density is set back afterwards (a save merges, so an empty one would keep the choice), because
+        // the tests that follow expect it.
+        const other = design.density === "compact" ? "comfortable" : "compact";
+        const api = await tenantApi(tenant);
+        try {
+          expect((await api.put("/api/v1/me/preference-profile", { data: { values: { density: other } } })).ok()).toBe(true);
+          for (const path of mainPages) {
+            await page.setViewportSize({ width: 1440, height: 900 });
+            await page.goto(`${hostOrigin(tenant.key)}${path}`);
+            await expect(page.locator("main h1").first()).toBeVisible();
+            await expect(page.locator("html")).toHaveAttribute("data-density", other);
+            for (const viewport of [viewports[2], { name: "phone", width: 390, height: 844 }]) {
+              await page.setViewportSize({ width: viewport.width, height: viewport.height });
+              const facts = await frameFacts(page);
+              const where = `${path} at ${viewport.name} width in the ${other} density`;
+              expect.soft(facts.overflow, `horizontal scrolling on ${where}`).toBeLessThanOrEqual(1);
+              expect.soft(facts.small, `text under 12 px on ${where}`).toEqual([]);
+            }
+          }
+        } finally {
+          await api.put("/api/v1/me/preference-profile", { data: { values: { density: design.density } } });
+          await api.dispose();
+        }
       });
 
       test("the component gallery is accessible, has large enough targets and matches its baseline", async ({ page }, testInfo) => {
@@ -219,6 +244,42 @@ for (const design of designs) {
         await page.evaluate(() => document.fonts.ready);
         await expectNoSeriousViolations(page, testInfo, `components-${design.key}-${locale}`);
         expect(await smallTargets(gallery), "controls smaller than 24 by 24 pixels").toEqual([]);
+
+        // DLS-111: counts keep whole number ticks, and one data point is a number, not a chart.
+        const ticks = await page.getByTestId("cg-chart-counts").locator(".ui-chart-axes g text").allTextContents();
+        expect(ticks.length, "value ticks on the counts chart").toBeGreaterThan(1);
+        expect(ticks.filter((tick) => /[.,٫]/.test(tick)), "fractional ticks on a chart of counts").toEqual([]);
+        const single = page.getByTestId("cg-chart-single");
+        await expect(single.locator('[data-chart="single"]')).toBeVisible();
+        await expect(single.locator(".ui-chart")).toHaveCount(0);
+
+        // DLS-101: the same summary shows 3 rows in a third width region and 5 in a half width one, then View all.
+        for (const [id, rows] of [["cg-budget-third", 3], ["cg-budget-half", 5]] as const) {
+          const widget = page.getByTestId(id).locator(".ui-widget");
+          await expect(widget).toHaveAttribute("data-budget", String(rows));
+          await expect(widget.getByRole("listitem")).toHaveCount(rows);
+          await expect(widget.locator("[data-widget-more]")).toContainText(/7|٧/);
+        }
+        // DLS-110 page cards: outlined draws the hairline on the frame, flat draws neither line nor shadow, in any design.
+        const cards = await page.evaluate(() => {
+          const root = document.documentElement;
+          const before = root.getAttribute("data-v-cards");
+          const frame = document.querySelector('[data-testid="cg-budget-third"] .ui-widget')!;
+          const read = (variant: string) => {
+            root.setAttribute("data-v-cards", variant);
+            const style = getComputedStyle(frame);
+            return { line: style.borderTopWidth !== "0px" && style.borderTopColor !== "rgba(0, 0, 0, 0)", shadow: style.boxShadow !== "none" };
+          };
+          const seen = { outlined: read("outlined"), flat: read("flat") };
+          if (before === null) root.removeAttribute("data-v-cards");
+          else root.setAttribute("data-v-cards", before);
+          return seen;
+        });
+        expect(cards.outlined.line, "outlined page cards draw a hairline").toBe(true);
+        expect(cards.flat, "flat page cards draw no line and no shadow").toEqual({ line: false, shadow: false });
+
+        // DLS-103: a placement state sits inside the widget frame.
+        await expect(page.getByTestId("cg-budget-state").locator(".ui-widget .ui-state")).toBeVisible();
 
         for (const id of ["cg-actions", "cg-selection", "cg-status", "cg-structure", "cg-overlays", "cg-menus", "cg-inputs", "cg-dates", "cg-data", "cg-schedule", "cg-panels", "cg-assistant", "cg-agents", "cg-charts", "cg-charts-more", "cg-calendar"]) {
           await expect.soft(page.locator(`section:has(> h2#${id})`)).toHaveScreenshot(`${id}-${design.key}-${locale}.png`, {

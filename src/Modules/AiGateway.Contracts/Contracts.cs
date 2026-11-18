@@ -14,7 +14,16 @@ public static class AiUseCases
     public const string Agent = "agent";
     public const string Evaluation = "evaluation";
 
-    public static readonly IReadOnlyList<string> All = [Assistant, Summarize, Translate, Draft, Embed, Agent, Evaluation];
+    /// <summary>Speech to text for a spoken question (spec 014 FR-026). The audio is sent and never kept.</summary>
+    public const string Transcribe = "transcribe";
+
+    /// <summary>Text to speech for reading an answer aloud (spec 014 FR-026).</summary>
+    public const string Speak = "speak";
+
+    public static readonly IReadOnlyList<string> All = [Assistant, Summarize, Translate, Draft, Embed, Agent, Evaluation, Transcribe, Speak];
+
+    /// <summary>Use cases that are not chat: they take no messages and never stream.</summary>
+    public static readonly IReadOnlySet<string> NotChat = new HashSet<string>(StringComparer.Ordinal) { Embed, Transcribe, Speak };
 
     /// <summary>Use cases whose route change runs the release gate (US1 scenario 6): the assistant and published agents.</summary>
     public static readonly IReadOnlySet<string> Gated = new HashSet<string>(StringComparer.Ordinal) { Assistant, Agent };
@@ -155,6 +164,26 @@ public sealed record EmbeddingResult(IReadOnlyList<float[]>? Vectors, AiUsage Us
     public static EmbeddingResult Denied(string reason, DateTimeOffset? resetsAt = null) => new(null, AiUsage.None, null, null, reason, resetsAt);
 }
 
+/// <summary>A speech to text request (use case <c>transcribe</c>). The audio is held in memory for the call only.</summary>
+public sealed record TranscriptionRequest(byte[] Audio, string MediaType, string? Language, DataClassification? Classification, Guid? ActingUnitId = null);
+
+public sealed record TranscriptionResult(string? Text, AiUsage Usage, string? Model, string? Provider, string? Denial, DateTimeOffset? ResetsAt = null)
+{
+    public bool IsOk => Text is not null;
+
+    public static TranscriptionResult Denied(string reason, DateTimeOffset? resetsAt = null) => new(null, AiUsage.None, null, null, reason, resetsAt);
+}
+
+/// <summary>A text to speech request (use case <c>speak</c>).</summary>
+public sealed record SpeechRequest(string Text, string? Language, DataClassification? Classification, Guid? ActingUnitId = null);
+
+public sealed record SpeechResult(byte[]? Audio, string? MediaType, AiUsage Usage, string? Model, string? Provider, string? Denial, DateTimeOffset? ResetsAt = null)
+{
+    public bool IsOk => Audio is not null;
+
+    public static SpeechResult Denied(string reason, DateTimeOffset? resetsAt = null) => new(null, null, AiUsage.None, null, null, reason, resetsAt);
+}
+
 /// <summary>
 /// The single way to call a model in the product (spec 013 FR-001, constitution VIII). The gateway applies the
 /// pipeline of FR-002 in order and refuses before anything leaves the product when a step fails.
@@ -166,6 +195,10 @@ public interface IAiGateway
     IAsyncEnumerable<AiStreamChunk> StreamChatAsync(AiRequest request, CancellationToken ct = default);
 
     Task<EmbeddingResult> EmbedAsync(EmbeddingRequest request, CancellationToken ct = default);
+
+    Task<TranscriptionResult> TranscribeAsync(TranscriptionRequest request, CancellationToken ct = default);
+
+    Task<SpeechResult> SpeakAsync(SpeechRequest request, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -207,3 +240,13 @@ public sealed record AiBudgetThresholdReached(Guid BudgetId, string Scope, Guid?
 
 public sealed record AiModelRouteChangeProposed(Guid RouteChangeId, IReadOnlyList<string> UseCases, IReadOnlyDictionary<string, IReadOnlyList<string>> Before,
     IReadOnlyDictionary<string, IReadOnlyList<string>> After, Guid? ProposedBy = null) : IIntegrationEvent;
+
+/// <summary>
+/// Tokens for the internal OpenAI-compatible facade of evaluator workers (spec 013 FR-018, ADR-0015). A token is for the
+/// current tenant, one evaluation run and the <c>evaluation</c> use case only, carries the run's classification and the
+/// model under test, and is valid for 15 minutes. Null when the installation has not turned the facade on.
+/// </summary>
+public interface IAiEvaluatorTokens
+{
+    string? Mint(Guid runId, DataClassification classification, string? modelUnderTest);
+}

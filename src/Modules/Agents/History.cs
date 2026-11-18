@@ -17,9 +17,11 @@ public sealed record ConversationView(Guid Id, string Title, DateTimeOffset Crea
 
 public sealed record FeedbackRequest(bool? Helpful, string? Reason);
 
-public sealed record AssistantSettingsView(int RetentionDays, DateTimeOffset? UpdatedAt);
+/// <summary>The tenant's assistant settings. <paramref name="GuestsAllowed"/> lets guests use the assistant (AST-022), off by default.</summary>
+public sealed record AssistantSettingsView(int RetentionDays, DateTimeOffset? UpdatedAt, bool GuestsAllowed = false);
 
-public sealed record AssistantSettingsRequest(int? RetentionDays);
+/// <summary>A settings change; a field left out keeps its value.</summary>
+public sealed record AssistantSettingsRequest(int? RetentionDays, bool? GuestsAllowed = null);
 
 /// <summary>
 /// Conversation history, feedback and retention (spec 014 T006, US4, FR-008, FR-009). A person sees and deletes only
@@ -27,7 +29,7 @@ public sealed record AssistantSettingsRequest(int? RetentionDays);
 /// for 25 months with the turn ID as its reference, and holds no conversation text (section 8).
 /// </summary>
 public sealed class AssistantHistory(IDbSession session, ITenantContext context, IEntitlementService entitlements, IAuthorizationService authz,
-    IAuditWriter audit, IClock clock)
+    IAuditWriter audit, IClock clock, AssistantGuests guests)
 {
     public const int DefaultRetentionDays = 30;
     public const int MaxRetentionDays = 365;
@@ -35,10 +37,15 @@ public sealed class AssistantHistory(IDbSession session, ITenantContext context,
     public const int MaxConversations = 100;
     public static readonly IReadOnlyList<string> FeedbackReasons = ["incorrect", "not_relevant", "incomplete", "unclear", "other"];
 
-    private async Task<Guid> UserAsync(CancellationToken ct)
+    private async Task<Guid> UserAsync(CancellationToken ct, bool deleting = false)
     {
         await entitlements.DemandAsync(Capabilities.AiAssistant, ct);
-        return context.RequireUser();
+        var user = context.RequireUser();
+        if (!deleting)
+        {
+            await guests.DemandAsync(ct);
+        }
+        return user;
     }
 
     public async Task<IReadOnlyList<ConversationSummary>> ListAsync(CancellationToken ct)
@@ -77,7 +84,7 @@ public sealed class AssistantHistory(IDbSession session, ITenantContext context,
 
     public async Task DeleteAsync(Guid id, CancellationToken ct)
     {
-        var user = await UserAsync(ct);
+        var user = await UserAsync(ct, deleting: true);
         var removed = await session.ExecAsync("delete from agents.conversation where id = @id and user_id = @user", new { id, user }, ct);
         if (removed == 0)
         {
@@ -89,8 +96,9 @@ public sealed class AssistantHistory(IDbSession session, ITenantContext context,
 
     public async Task<int> DeleteAllAsync(CancellationToken ct)
     {
-        var user = await UserAsync(ct);
+        var user = await UserAsync(ct, deleting: true);
         var removed = await session.ExecAsync("delete from agents.conversation where user_id = @user", new { user }, ct);
+        await session.ExecAsync("delete from agents.conversation_file where user_id = @user", new { user }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.AssistantHistoryDeleted, "assistant_history", user.ToString(),
             Changes: new { scope = "all", conversations = removed }), ct);
         return removed;
@@ -132,8 +140,13 @@ public sealed class AssistantHistory(IDbSession session, ITenantContext context,
         {
             throw AppException.Denied();
         }
-        var row = await session.QueryAsync("select retention_days, updated_at from agents.assistant_settings", null,
-            r => new AssistantSettingsView(r.GetInt32(0), r.GetFieldValue<DateTimeOffset>(1)), ct);
+        return await CurrentAsync(ct);
+    }
+
+    private async Task<AssistantSettingsView> CurrentAsync(CancellationToken ct)
+    {
+        var row = await session.QueryAsync("select retention_days, updated_at, guests_allowed from agents.assistant_settings", null,
+            r => new AssistantSettingsView(r.GetInt32(0), r.GetFieldValue<DateTimeOffset>(1), r.GetBoolean(2)), ct);
         return row.Count == 0 ? new AssistantSettingsView(DefaultRetentionDays, null) : row[0];
     }
 
@@ -141,23 +154,32 @@ public sealed class AssistantHistory(IDbSession session, ITenantContext context,
     {
         await authz.DemandAsync(Permissions.AiPolicyManage, AuthzTarget.Tenant, ct);
         var by = context.RequireUser();
-        if (request.RetentionDays is not { } days || days < 1 || days > MaxRetentionDays)
+        var current = await CurrentAsync(ct);
+        var days = request.RetentionDays ?? current.RetentionDays;
+        if (request.RetentionDays is null && request.GuestsAllowed is null || days < 1 || days > MaxRetentionDays)
         {
             throw AppException.Validation("retentionDays", "validation.assistant.retention");
         }
-        var old = await RetentionAsync(ct);
+        var guests = request.GuestsAllowed ?? current.GuestsAllowed;
         var now = clock.UtcNow;
         await session.ExecAsync(
             """
-            insert into agents.assistant_settings (tenant_id, retention_days, updated_at, updated_by) values (platform.current_tenant_id(), @days, @now, @by)
-            on conflict (tenant_id) do update set retention_days = excluded.retention_days, updated_at = excluded.updated_at, updated_by = excluded.updated_by
-            """, new { days, now, by }, ct);
-        if (old != days)
+            insert into agents.assistant_settings (tenant_id, retention_days, guests_allowed, updated_at, updated_by)
+            values (platform.current_tenant_id(), @days, @guests, @now, @by)
+            on conflict (tenant_id) do update set retention_days = excluded.retention_days, guests_allowed = excluded.guests_allowed,
+              updated_at = excluded.updated_at, updated_by = excluded.updated_by
+            """, new { days, guests, now, by }, ct);
+        if (current.RetentionDays != days)
         {
             await audit.WriteAsync(new AuditEntry(AuditActions.AssistantRetentionChanged, "assistant_settings", "retention",
-                Changes: new { old, @new = days }), ct);
+                Changes: new { old = current.RetentionDays, @new = days }), ct);
         }
-        return new AssistantSettingsView(days, now);
+        if (current.GuestsAllowed != guests)
+        {
+            await audit.WriteAsync(new AuditEntry(AuditActions.AssistantGuestsChanged, "assistant_settings", "guests",
+                Changes: new { old = current.GuestsAllowed, @new = guests }), ct);
+        }
+        return new AssistantSettingsView(days, now, guests);
     }
 
     /// <summary>
@@ -172,6 +194,9 @@ public sealed class AssistantHistory(IDbSession session, ITenantContext context,
             new { cutoff = now.AddDays(-days) }, ct);
         var feedback = await session.ExecAsync("delete from agents.feedback where created_at < @cutoff",
             new { cutoff = now.AddMonths(-FeedbackRetentionMonths) }, ct);
+        // Files of a conversation go with it; a file no turn ever used goes after a day (spec 014 US5).
+        await session.ExecAsync("delete from agents.conversation_file where conversation_id is null and created_at < @cutoff",
+            new { cutoff = now - AssistantFiles.PendingFor }, ct);
         return (conversations, feedback);
     }
 }

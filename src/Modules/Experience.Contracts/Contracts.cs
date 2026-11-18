@@ -46,8 +46,54 @@ public sealed record PropertySchema(
     PropertySchema? Items = null,
     int? MaxItems = null);
 
-/// <summary>Placement capabilities: column spans the component supports and whether it may appear once per page only.</summary>
-public sealed record PlacementRules(int MinSpan = 1, int MaxSpan = 12, bool Singleton = false);
+/// <summary>
+/// Placement capabilities: column spans the component supports and whether it may appear once per page only.
+/// </summary>
+/// <param name="Source">
+/// The data source key for the one instance rule (spec 032 FR-071, FR-072): two placements with the same source and the
+/// same view show the same data twice. Null for components that hold their own content or whose properties pick the data.
+/// </param>
+/// <param name="View">The view of the source this component offers; different views of one source may share a page.</param>
+/// <param name="Budget">The content budget per region width when the component lowers the platform budget; null keeps it.</param>
+/// <param name="Views">Every view of the source this component can offer; null means only <paramref name="View"/>.</param>
+/// <param name="States">The placement states the component builds (spec 036 DLS-103); required when it declares a source.</param>
+public sealed record PlacementRules(int MinSpan = 1, int MaxSpan = 12, bool Singleton = false, string? Source = null, string View = "summary",
+    ContentBudget? Budget = null, IReadOnlyList<string>? Views = null, IReadOnlyList<string>? States = null)
+{
+    /// <summary>The key the one instance rule compares, or null when the component declares no source.</summary>
+    public string? SourceView => Source is null ? null : $"{Source}:{View}";
+}
+
+/// <summary>
+/// How many items a summary shows by the width of its region on the 12 column grid (spec 036 DLS-101, spec 032 FR-071):
+/// up to a third width, up to two thirds, and wider. A component may lower the platform budget and never raise it.
+/// </summary>
+public sealed record ContentBudget(int Narrow = 3, int Medium = 5, int Wide = 8)
+{
+    public static readonly ContentBudget Platform = new();
+
+    public int ForSpan(int span) => span <= 4 ? Narrow : span <= 8 ? Medium : Wide;
+
+    public bool WithinPlatform => Narrow >= 1 && Medium >= 1 && Wide >= 1
+        && Narrow <= Platform.Narrow && Medium <= Platform.Medium && Wide <= Platform.Wide;
+}
+
+/// <summary>The placement states of spec 036 DLS-103 a manifest names (spec 032 FR-071).</summary>
+public static class PlacementStates
+{
+    public const string Loading = "loading";
+    public const string Empty = "empty";
+    public const string Error = "error";
+    public const string Denied = "denied";
+    public const string Partial = "partial";
+    public const string Stale = "stale";
+    public const string Success = "success";
+
+    public static readonly IReadOnlyList<string> All = [Loading, Empty, Error, Denied, Partial, Stale, Success];
+
+    /// <summary>The states every component that reads a data source must build.</summary>
+    public static readonly IReadOnlyList<string> Required = [Loading, Empty, Error, Denied];
+}
 
 /// <summary>Capabilities and permissions a component needs, and the connection feature it reads (spec 032 FR-069).</summary>
 public sealed record ComponentRequirements(IReadOnlyList<string> Capabilities, IReadOnlyList<string> Permissions, string? ConnectionFeature = null)

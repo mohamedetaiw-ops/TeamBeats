@@ -103,6 +103,8 @@ public static partial class PageValidator
         }
 
         var singletons = new HashSet<string>(StringComparer.Ordinal);
+        // FR-072: the first placement of each data source and view, and whether it has been named in a warning yet.
+        var sources = new Dictionary<string, (string Region, string Placement, bool Warned)>(StringComparer.Ordinal);
         foreach (var region in regions.Where(r => policies.ContainsKey(r.Id)))
         {
             var policy = policies[region.Id];
@@ -165,6 +167,23 @@ public static partial class PageValidator
                 if (manifest.Placement.Singleton && !singletons.Add(manifest.Id))
                 {
                     Block("singleton_duplicate", region.Id, p.Id);
+                }
+                if (manifest.Placement.SourceView is { } source)
+                {
+                    if (sources.TryGetValue(source, out var first))
+                    {
+                        // Both placements are named, so the editor sees which one stays and which one is not shown.
+                        if (!first.Warned)
+                        {
+                            Warn("source_duplicate", first.Region, first.Placement);
+                            sources[source] = first with { Warned = true };
+                        }
+                        Warn("source_duplicate", region.Id, p.Id);
+                    }
+                    else
+                    {
+                        sources[source] = (region.Id, p.Id, false);
+                    }
                 }
                 foreach (var (property, reason) in PropertyValidator.Validate(manifest.Properties, p.Props))
                 {

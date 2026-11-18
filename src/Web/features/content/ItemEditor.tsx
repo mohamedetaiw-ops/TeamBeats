@@ -23,6 +23,7 @@ import { readSensitive, type SensitiveProblem } from "@/lib/security/sensitive";
 import { BlockEditor } from "./editor/BlockEditor";
 import { BodyView } from "./BodyView";
 import "./content.css";
+import { Widget } from "@/components/ui/Widget";
 
 type Draft = { title: string; summary: string; body: BodyDocument };
 type Result = { ok: boolean; messages: string[] } | null;
@@ -238,8 +239,7 @@ export function ItemEditor({ initial, site, units, locales }: { initial: ItemVie
       </nav>
       <Notice result={result} />
 
-      <section className="content-card" aria-labelledby={`${ids}-text`}>
-        <h2 id={`${ids}-text`}>{t("text")}</h2>
+      <Widget title={t("text")}>
         <div role="tablist" aria-label={t("languages")} className="ui-tablist">
           {order.map((l) => (
             <button
@@ -289,10 +289,9 @@ export function ItemEditor({ initial, site, units, locales }: { initial: ItemVie
             </p>
           ) : null}
         </div>
-      </section>
+      </Widget>
 
-      <section className="content-card" aria-labelledby={`${ids}-settings`}>
-        <h2 id={`${ids}-settings`}>{t("settings")}</h2>
+      <Widget title={t("settings")}>
         <PersonPicker label={t("owner")} value={owner} onChange={setOwner} readOnly={locked} />
         <PersonPicker label={t("backupOwner")} value={backup} onChange={setBackup} readOnly={locked} />
         <FormField label={t("reviewOn")} name="reviewOn" type="date" value={reviewOn} disabled={locked} onChange={(e) => setReviewOn(e.target.value)} />
@@ -314,7 +313,7 @@ export function ItemEditor({ initial, site, units, locales }: { initial: ItemVie
           <input type="checkbox" checked={featured} disabled={locked} onChange={(e) => setFeatured(e.target.checked)} />
           {t("featured")}
         </label>
-      </section>
+      </Widget>
 
       <fieldset className="content-card" disabled={locked}>
         <legend>{t("audience")}</legend>
@@ -398,8 +397,7 @@ export function ItemEditor({ initial, site, units, locales }: { initial: ItemVie
         </fieldset>
       ) : null}
 
-      <section className="content-card" aria-labelledby={`${ids}-save`}>
-        <h2 id={`${ids}-save`}>{t("saveAndPublish")}</h2>
+      <Widget title={t("saveAndPublish")}>
         <FormField label={t("changeNote")} name="changeNote" value={note} disabled={locked} maxLength={500} onChange={(e) => setNote(e.target.value)} />
         <FormField label={t("publishAt")} name="publishAt" type="datetime-local" hint={t("publishAtHint", { zone: site.timeZone })} value={publishAt} onChange={(e) => setPublishAt(e.target.value)} />
         <FormField label={t("expiresAt")} name="expiresAt" type="datetime-local" hint={t("siteTime", { zone: site.timeZone })} value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
@@ -436,10 +434,9 @@ export function ItemEditor({ initial, site, units, locales }: { initial: ItemVie
             </Button>
           ) : null}
         </div>
-      </section>
+      </Widget>
 
-      <section className="content-card" aria-labelledby={`${ids}-preview`}>
-        <h2 id={`${ids}-preview`}>{t("preview")}</h2>
+      <Widget title={t("preview")}>
         <div role="group" aria-label={t("device")} className="content-actions">
           {(["desktop", "phone"] as const).map((d) => (
             <Button key={d} variant="quiet" aria-pressed={device === d} onClick={() => setDevice(d)}>
@@ -459,7 +456,7 @@ export function ItemEditor({ initial, site, units, locales }: { initial: ItemVie
           ) : null}
           <BodyView body={preview.body} embedTitle={t("embed")} />
         </article>
-      </section>
+      </Widget>
     </div>
   );
 }

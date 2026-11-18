@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { SelectField, TextAreaField } from "@/components/ui/FormField";
 import { problemMessages } from "@/lib/notifications/types";
+import { Widget } from "@/components/ui/Widget";
 
 export type SlackChannelOption = { id: string; name: string; member: boolean };
 
@@ -42,8 +43,7 @@ export function SlackShare({ itemId, channels }: { itemId: string; channels: Sla
   }
 
   return (
-    <section className="content-card" aria-labelledby="slack-share-heading">
-      <h2 id="slack-share-heading">{t("title")}</h2>
+    <Widget title={t("title")}>
       <p>{t("intro")}</p>
       <form
         onSubmit={(e) => {
@@ -70,6 +70,6 @@ export function SlackShare({ itemId, channels }: { itemId: string; channels: Sla
           {t("share")}
         </Button>
       </form>
-    </section>
+    </Widget>
   );
 }

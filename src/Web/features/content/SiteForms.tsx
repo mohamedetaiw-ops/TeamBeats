@@ -12,6 +12,7 @@ import { problemMessages } from "@/lib/notifications/types";
 import { pickName, siteTemplates, type ContentAudience, type SiteView } from "@/lib/content/types";
 import type { OrgUnit } from "@/lib/experience/builder-types";
 import "./content.css";
+import { Widget } from "@/components/ui/Widget";
 
 const sortedUnits = (units: OrgUnit[], locale: string) =>
   [...units].filter((u) => u.status === "active").sort((a, b) => a.level - b.level || pickName(a.names, locale).localeCompare(pickName(b.names, locale), locale));
@@ -69,8 +70,7 @@ export function SiteCreateForm({ units }: { units: OrgUnit[] }) {
   }
 
   return (
-    <section className="content-card" aria-labelledby="site-create">
-      <h2 id="site-create">{t("create")}</h2>
+    <Widget title={t("create")}>
       <p className="field-hint">{t("createIntro")}</p>
       <Problems messages={messages} />
       <form className="content-site-form" onSubmit={(e) => void create(e)}>
@@ -99,7 +99,7 @@ export function SiteCreateForm({ units }: { units: OrgUnit[] }) {
           </Button>
         </p>
       </form>
-    </section>
+    </Widget>
   );
 }
 
@@ -176,8 +176,7 @@ export function SiteSettings({ site, units, locales }: { site: SiteView; units: 
           {t("saved")}
         </p>
       ) : null}
-      <section className="content-card" aria-labelledby="site-home">
-        <h2 id="site-home">{t("home")}</h2>
+      <Widget title={t("home")}>
         {site.homePageId ? (
           <p>
             <Link href={`/admin/pages/${encodeURIComponent(site.homePageId)}`}>{t("editHome")}</Link>
@@ -197,9 +196,8 @@ export function SiteSettings({ site, units, locales }: { site: SiteView; units: 
           <Link href="/admin/branding">{t("openBranding")}</Link>
           <Link href={`/content/items?site=${encodeURIComponent(site.id)}`}>{t("items")}</Link>
         </p>
-      </section>
-      <section className="content-card" aria-labelledby="site-settings">
-        <h2 id="site-settings">{t("settings")}</h2>
+      </Widget>
+      <Widget title={t("settings")}>
         <form className="content-site-form" onSubmit={save}>
           {locales.map((l) => (
             <FormField
@@ -249,7 +247,7 @@ export function SiteSettings({ site, units, locales }: { site: SiteView; units: 
             </p>
           )}
         </form>
-      </section>
+      </Widget>
       {site.isDefault ? null : (
         <section className="content-card" aria-label={archived ? t("restore") : t("archive")}>
           {archived ? (

@@ -101,6 +101,43 @@ public sealed class ExperienceValidationTests
     }
 
     [Fact]
+    public void A_manifest_declares_its_budget_views_and_states_or_is_refused()
+    {
+        // Spec 032 FR-071. A component may lower the platform budget and never raise it.
+        Assert.Null(ComponentRegistry.Validate(Valid() with { Placement = new PlacementRules(Budget: new ContentBudget(2, 4, 6)) }, Localizer));
+        Assert.Equal("budget", ComponentRegistry.Validate(Valid() with { Placement = new PlacementRules(Budget: new ContentBudget(Narrow: 4)) }, Localizer));
+        Assert.Equal("budget", ComponentRegistry.Validate(Valid() with { Placement = new PlacementRules(Budget: new ContentBudget(Wide: 9)) }, Localizer));
+        Assert.Equal("budget", ComponentRegistry.Validate(Valid() with { Placement = new PlacementRules(Budget: new ContentBudget(Medium: 0)) }, Localizer));
+
+        // The views it offers include the one it shows.
+        Assert.Null(ComponentRegistry.Validate(Valid() with { Placement = new PlacementRules(Views: ["summary", "month"]) }, Localizer));
+        Assert.Equal("views", ComponentRegistry.Validate(Valid() with { Placement = new PlacementRules(View: "month", Views: ["summary"]) }, Localizer));
+        Assert.Equal("views", ComponentRegistry.Validate(Valid() with { Placement = new PlacementRules(Views: ["summary", "Month View"]) }, Localizer));
+
+        // A component that reads a source builds every required state; a missing one refuses the manifest.
+        Assert.Null(ComponentRegistry.Validate(Valid() with { Placement = new PlacementRules(Source: "tasks", States: PlacementStates.All) }, Localizer));
+        Assert.Equal("states", ComponentRegistry.Validate(Valid() with { Placement = new PlacementRules(Source: "tasks") }, Localizer));
+        Assert.Equal("states", ComponentRegistry.Validate(Valid() with
+        {
+            Placement = new PlacementRules(Source: "tasks", States: [PlacementStates.Loading, PlacementStates.Empty, PlacementStates.Error]),
+        }, Localizer));
+        Assert.Equal("states", ComponentRegistry.Validate(Valid() with { Placement = new PlacementRules(States: ["sparkly"]) }, Localizer));
+    }
+
+    [Theory]
+    [InlineData(3, 3, null)]
+    [InlineData(6, 5, 4)]
+    [InlineData(12, 8, 6)]
+    public void The_budget_follows_the_region_width_and_a_component_can_only_lower_it(int span, int platform, int? lowered)
+    {
+        // Quarter, half and full width regions (spec 036 DLS-101, spec 032 FR-071).
+        Assert.Equal(platform, ContentBudget.Platform.ForSpan(span));
+        var manifest = Valid() with { Placement = new PlacementRules(Budget: new ContentBudget(3, 4, 6)) };
+        Assert.Equal(lowered, TeamBeats.Modules.Experience.Pages.RenderedPlacement.BudgetFor(manifest, span));
+        Assert.Null(TeamBeats.Modules.Experience.Pages.RenderedPlacement.BudgetFor(Valid(), span));
+    }
+
+    [Fact]
     public void Upgrades_replace_the_same_major_and_never_downgrade()
     {
         var v11 = Valid() with { Version = "1.1.0" };
@@ -175,6 +212,20 @@ public sealed class ExperienceValidationTests
         Assert.Equal(["/api/v1/me", "/api/v1/tasks", "/api/v1/me/policies", "/api/v1/me/calendar", "/api/v1/weather"], briefing.Data);
         Assert.Empty(PropertyValidator.Validate(briefing.Properties, null));
         Assert.NotEmpty(PropertyValidator.Validate(briefing.Properties, JsonSerializer.SerializeToElement(new { location = new string('x', 101) })));
+    }
+
+    [Fact]
+    public void Components_that_show_the_same_data_declare_the_same_source_and_view()
+    {
+        // Spec 032 FR-071: My calendar and the calendar card are one source, so a page shows only one of them (FR-072).
+        var outlook = new TeamBeats.Modules.Integrations.Microsoft365.OutlookComponents().Manifests().ToDictionary(m => m.Id);
+        var calendar = new TeamBeats.Modules.Calendar.CalendarComponents().Manifests().Single();
+        Assert.Equal("calendar:summary", calendar.Placement.SourceView);
+        Assert.Equal(calendar.Placement.SourceView, outlook["outlook.my_calendar"].Placement.SourceView);
+        Assert.Equal("mail:summary", outlook["outlook.my_mail"].Placement.SourceView);
+        // A component that holds its own content declares no source, and a second view of a source is a different key.
+        Assert.Null(new PlacementRules().SourceView);
+        Assert.Equal("calendar:month", new PlacementRules(Source: "calendar", View: "month").SourceView);
     }
 
     [Fact]

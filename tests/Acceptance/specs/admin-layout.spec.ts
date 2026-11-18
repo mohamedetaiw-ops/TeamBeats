@@ -112,5 +112,33 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       }
       expect(problems, problems.join("\n")).toEqual([]);
     });
+
+    test("on a phone the admin menu closes when a link is followed, also the current one, and Back keeps it closed", async ({ page }) => {
+      const tenant = await createTenant(`adminmenu-${locale}`, locale, "workplace_plus");
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.setViewportSize({ width: 390, height: 900 });
+      const origin = hostOrigin(tenant.key);
+      await page.goto(`${origin}/admin/audit`);
+      const toggle = page.locator(".admin-nav-toggle");
+      const list = page.locator("#admin-nav-list");
+      await expect(toggle).toHaveAttribute("aria-expanded", "false");
+      await expect(list).toBeHidden();
+
+      // The current section's own link closes the menu even though the page does not change.
+      await toggle.click();
+      await expect(list).toBeVisible();
+      await list.getByRole("link", { name: msg(locale, "admin.nav.audit") }).click();
+      await expect(toggle).toHaveAttribute("aria-expanded", "false");
+
+      // Open it again, go to another section, then come Back: the earlier page shows with its menu closed.
+      await toggle.click();
+      await list.getByRole("link", { name: msg(locale, "admin.nav.roles") }).click();
+      await expect(page).toHaveURL(/\/admin\/roles/);
+      await expect(toggle).toHaveAttribute("aria-expanded", "false");
+      await page.goBack();
+      await expect(page).toHaveURL(/\/admin\/audit/);
+      await expect(toggle).toHaveAttribute("aria-expanded", "false");
+      await expect(list).toBeHidden();
+    });
   });
 }

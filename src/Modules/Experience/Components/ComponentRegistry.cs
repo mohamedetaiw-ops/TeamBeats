@@ -108,6 +108,23 @@ public sealed partial class ComponentRegistry
         {
             return "placement";
         }
+        if (m.Placement.Budget is { WithinPlatform: false })
+        {
+            return "budget";
+        }
+        if (!SourceKey().IsMatch(m.Placement.View)
+            || (m.Placement.Views is { } views
+                && (!views.Contains(m.Placement.View) || views.Any(v => !SourceKey().IsMatch(v)) || views.Distinct(StringComparer.Ordinal).Count() != views.Count)))
+        {
+            return "views";
+        }
+        // A component that reads a data source builds every required state; one that holds its own content may leave the list out.
+        var states = m.Placement.States;
+        if ((states is not null && states.Any(s => !PlacementStates.All.Contains(s)))
+            || (m.Placement.Source is not null && (states is null || PlacementStates.Required.Any(s => !states.Contains(s)))))
+        {
+            return "states";
+        }
         if (m.Context.Any(c => !ComponentContext.Approved.Contains(c)))
         {
             return "context";
@@ -143,6 +160,9 @@ public sealed partial class ComponentRegistry
 
     [GeneratedRegex(@"^[a-z][a-z0-9]*(\.[a-z][a-z0-9_]*)+$")]
     private static partial Regex ComponentId();
+
+    [GeneratedRegex("^[a-z][a-z0-9_]{0,39}$")]
+    private static partial Regex SourceKey();
 
     [GeneratedRegex(@"^\d+\.\d+\.\d+$")]
     private static partial Regex SemVer();

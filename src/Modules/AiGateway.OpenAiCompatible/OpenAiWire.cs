@@ -142,6 +142,8 @@ public static class OpenAiWire
     {
         await using var stream = await response.Content.ReadAsStreamAsync(token);
         using var reader = new StreamReader(stream, Encoding.UTF8);
+        // Tool calls arrive in pieces keyed by index: the id and name first, then the arguments a few characters at a time.
+        var calls = new SortedDictionary<int, (string Id, string Name, StringBuilder Arguments)>();
         while (true)
         {
             string? line;
@@ -181,9 +183,24 @@ public static class OpenAiWire
             {
                 yield return new ProviderStreamPart(delta, null);
             }
+            if (choice?["delta"]?["tool_calls"] is JsonArray pieces)
+            {
+                foreach (var piece in pieces)
+                {
+                    var index = piece?["index"]?.GetValue<int>() ?? 0;
+                    var call = calls.TryGetValue(index, out var known) ? known : (string.Empty, string.Empty, new StringBuilder());
+                    var id = piece?["id"]?.GetValue<string>();
+                    var name = piece?["function"]?["name"]?.GetValue<string>();
+                    call = (string.IsNullOrEmpty(id) ? call.Item1 : id, string.IsNullOrEmpty(name) ? call.Item2 : name, call.Item3);
+                    call.Item3.Append(piece?["function"]?["arguments"]?.GetValue<string>());
+                    calls[index] = call;
+                }
+            }
             if (choice?["finish_reason"]?.GetValue<string>() is { } finish)
             {
-                yield return new ProviderStreamPart(null, new ProviderReply(string.Empty, [], Usage(chunk?["usage"]), finish));
+                var toolCalls = calls.Values.Where(c => c.Name.Length > 0)
+                    .Select(c => new AiToolCall(c.Id, c.Name, c.Arguments.Length == 0 ? "{}" : c.Arguments.ToString())).ToList();
+                yield return new ProviderStreamPart(null, new ProviderReply(string.Empty, toolCalls, Usage(chunk?["usage"]), finish));
                 yield break;
             }
         }
@@ -202,6 +219,56 @@ public static class OpenAiWire
         var vectors = data.OrderBy(d => d?["index"]?.GetValue<int>() ?? 0)
             .Select(d => d!["embedding"]!.AsArray().Select(v => v!.GetValue<float>()).ToArray()).ToList();
         return new ProviderEmbedding(vectors, Usage(json["usage"]));
+    }
+
+    /// <summary>The audio formats a transcription accepts, by media type, and the file extension the endpoint expects.</summary>
+    public static readonly IReadOnlyDictionary<string, string> AudioFormats = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["audio/webm"] = "webm",
+        ["audio/ogg"] = "ogg",
+        ["audio/mpeg"] = "mp3",
+        ["audio/mp4"] = "m4a",
+        ["audio/wav"] = "wav",
+        ["audio/x-wav"] = "wav",
+    };
+
+    /// <summary>An OpenAI-compatible transcription request: the audio as a multipart file, which OpenRouter and self-hosted servers both take.</summary>
+    public static HttpRequestMessage TranscriptionRequest(string baseUrl, string model, byte[] audio, string mediaType, string? language, string apiKey)
+    {
+        var form = new MultipartFormDataContent();
+        var file = new ByteArrayContent(audio);
+        file.Headers.ContentType = new MediaTypeHeaderValue(mediaType);
+        form.Add(file, "file", $"speech.{AudioFormats.GetValueOrDefault(mediaType, "webm")}");
+        form.Add(new StringContent(model), "model");
+        if (language is not null)
+        {
+            form.Add(new StringContent(language), "language");
+        }
+        var message = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl.TrimEnd('/')}/audio/transcriptions") { Content = form };
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+        return message;
+    }
+
+    public static async Task<string> ReadTranscriptionAsync(HttpResponseMessage response, CancellationToken ct, string label)
+    {
+        try
+        {
+            return JsonNode.Parse(await response.Content.ReadAsStringAsync(ct))?["text"]?.GetValue<string>()
+                ?? throw new ProviderException($"{label} returned no transcription", retryable: true);
+        }
+        catch (System.Text.Json.JsonException ex)
+        {
+            throw new ProviderException($"{label} returned a body that is not JSON", retryable: true, ex);
+        }
+    }
+
+    public static JsonObject SpeechBody(string model, string text, string voice) =>
+        new() { ["model"] = model, ["input"] = text, ["voice"] = voice, ["response_format"] = "mp3" };
+
+    public static async Task<byte[]> ReadSpeechAsync(HttpResponseMessage response, CancellationToken ct, string label)
+    {
+        var audio = await response.Content.ReadAsByteArrayAsync(ct);
+        return audio.Length > 0 ? audio : throw new ProviderException($"{label} returned no audio", retryable: true);
     }
 
     public static AiUsage Usage(JsonNode? usage) => usage is null

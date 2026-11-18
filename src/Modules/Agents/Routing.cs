@@ -13,7 +13,8 @@ namespace TeamBeats.Modules.Agents;
 public sealed record RouteRequest(string? Message);
 
 /// <summary>An agent the person may use, as the assistant's agent list and switcher show it.</summary>
-public sealed record AgentChoice(Guid Id, Dictionary<string, string>? Name, Dictionary<string, string>? Description, string? Icon, string? Category);
+public sealed record AgentChoice(Guid Id, Dictionary<string, string>? Name, Dictionary<string, string>? Description, string? Icon, string? Category,
+    bool Favourite = false);
 
 /// <summary>
 /// A routing decision (020 US7, 014 US2): the agent that answers, or none for the knowledge agent, and the agents the
@@ -80,9 +81,13 @@ public sealed partial class AgentRouter(IDbSession session, ITenantContext conte
         var memberships = await org.GetActiveMembershipsAsync(user, ct);
         var paths = await org.GetPathsAsync(memberships.Select(m => m.OrgUnitId).Distinct(), ct);
         var within = paths.Values.SelectMany(p => p).ToHashSet();
+        var granted = (await session.QueryAsync("select agent_id from agents.agent_access_grant where user_id = @user", new { user }, r => r.GetGuid(0), ct)).ToHashSet();
+        // Favourites come first in the assistant's agent list (spec 020 US6 scenario 4).
+        var favourites = (await session.QueryAsync("select agent_id from agents.agent_favourite where user_id = @user", new { user }, r => r.GetGuid(0), ct)).ToHashSet();
         return rows
-            .Where(r => r.Definition.Audience?.Scope == AgentAudience.Tenant || (r.Definition.Audience?.OrgUnits ?? []).Any(within.Contains))
-            .Select(r => new AgentChoice(r.Id, r.Definition.Name, r.Definition.Description, r.Definition.Icon, r.Definition.Category))
+            .Where(r => r.Definition.Audience?.Scope == AgentAudience.Tenant || (r.Definition.Audience?.OrgUnits ?? []).Any(within.Contains) || granted.Contains(r.Id))
+            .OrderBy(r => favourites.Contains(r.Id) ? 0 : 1)
+            .Select(r => new AgentChoice(r.Id, r.Definition.Name, r.Definition.Description, r.Definition.Icon, r.Definition.Category, favourites.Contains(r.Id)))
             .ToList();
     }
 

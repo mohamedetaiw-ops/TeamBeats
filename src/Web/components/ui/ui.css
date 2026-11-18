@@ -1174,6 +1174,21 @@
   border-block-end: 0;
 }
 
+/*
+ * Content budget (DLS-101): the page runtime sets the budget of the region on the frame, and rows past it are not
+ * shown, whatever a feature passes. Tile strips and clocks are budgeted as one row by their own grid.
+ */
+.ui-widget[data-budget="3"] :is(.ui-widget-list, .home-list, .outlook-list, .people-list, .documents-list, .content-list, .ui-cal-agenda) > li:nth-child(n + 4),
+.ui-widget[data-budget="5"] :is(.ui-widget-list, .home-list, .outlook-list, .people-list, .documents-list, .content-list, .ui-cal-agenda) > li:nth-child(n + 6),
+.ui-widget[data-budget="8"] :is(.ui-widget-list, .home-list, .outlook-list, .people-list, .documents-list, .content-list, .ui-cal-agenda) > li:nth-child(n + 9) {
+  display: none;
+}
+
+/* A placement state inside the frame keeps the frame's normal size and never holds a tall blank area. */
+.ui-widget > .ui-state:only-child {
+  min-block-size: 6rem;
+}
+
 .ui-widget-row-main {
   display: grid;
   flex: 1 1 12rem;

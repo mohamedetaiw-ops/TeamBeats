@@ -459,6 +459,7 @@ public static class AuditActions
     public const string AiEndpointTested = "ai.endpoint_tested";
     public const string AiEndpointEnabled = "ai.endpoint_enabled";
     public const string AiEndpointDisabled = "ai.endpoint_disabled";
+    public const string AiUsageExported = "ai.usage_exported";
 
     // 012
     public const string SearchBestBetChanged = "search.best_bet_changed";
@@ -474,9 +475,19 @@ public static class AuditActions
     // 014
     public const string AssistantHistoryDeleted = "assistant.history_deleted";
     public const string AssistantRetentionChanged = "assistant.retention_changed";
+    public const string AssistantGuestsChanged = "assistant.guests_changed";
+    public const string AssistantFileAdded = "assistant.file_added";
+    public const string AssistantFileRefused = "assistant.file_refused";
 
     // Specs 020 and 027 (R1): agents and the tenant agent policy.
     public const string AgentInstalledFromTemplate = "agent.installed_from_template";
+    public const string AgentCreated = "agent.created";
+    public const string AgentCloned = "agent.cloned";
+    public const string AgentAccessRequested = "agent.access_requested";
+    public const string AgentAccessGranted = "agent.access_granted";
+    public const string AgentAccessDenied = "agent.access_denied";
+    public const string AgentMemoryAccepted = "agent.memory_accepted";
+    public const string AgentMemoryDeleted = "agent.memory_deleted";
     public const string AgentTemplateUpdateApplied = "agent.template_update_applied";
     public const string AgentAudienceChanged = "agent.audience_changed";
     public const string AgentOwnerChanged = "agent.owner_changed";
@@ -626,8 +637,8 @@ public static class AuditActions
         AiPolicyChanged, AiRouteChangeProposed, AiRouteChangeOverridden, AiRouteChangeApplied, AiRouteChangeRejected, AiCatalogueChanged, AiLoggingWindowOpened, AiLoggingWindowClosed,
         SearchBestBetChanged, SearchSynonymsChanged, SearchRetrievalChangeProposed, SearchRetrievalChangeDecided, SearchRetrievalChangeOverridden,
         SearchRetrievalChangeCancelled, SearchFederatedChanged, SearchAiSummaryChanged, SearchQueryTextChanged,
-        AssistantHistoryDeleted, AssistantRetentionChanged,
-        AgentInstalledFromTemplate, AgentTemplateUpdateApplied, AgentAudienceChanged, AgentOwnerChanged, AgentPolicyChanged, AgentToolCalled, AgentExternalCallRefused, AgentToolDenied, AgentInjectionDetected, AgentActionConfirmed, AgentActionRejected,
+        AssistantHistoryDeleted, AssistantRetentionChanged, AssistantGuestsChanged, AssistantFileAdded, AssistantFileRefused,
+        AgentInstalledFromTemplate, AgentCreated, AgentCloned, AgentAccessRequested, AgentAccessGranted, AgentAccessDenied, AgentMemoryAccepted, AgentMemoryDeleted, AgentTemplateUpdateApplied, AgentAudienceChanged, AgentOwnerChanged, AgentPolicyChanged, AgentToolCalled, AgentExternalCallRefused, AgentToolDenied, AgentInjectionDetected, AgentActionConfirmed, AgentActionRejected,
         AgentVersionSubmitted, AgentVersionApproved, AgentVersionRejected, AgentVersionPublished, AgentRolledBack, AgentSuspended, AgentResumed,
         AgentRetired, AgentKillSwitch,
         EvalSuiteCreated, EvalSuiteChanged, EvalDatasetVersionCreated, EvalDatasetImported, EvalPolicyChanged, EvalPersonaCreated, EvalGateDecided, EvalGateOverridden,

@@ -85,6 +85,31 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* One data point: the number with its series and category, no axes (DLS-111). */
+.ui-chart-single dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-lg);
+  margin: 0;
+}
+
+.ui-chart-single dt {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs);
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.ui-chart-single-category::before {
+  content: "·";
+  margin-inline-end: var(--tb-space-xs);
+}
+
+.ui-chart-single dd {
+  margin: 0;
+}
+
 .ui-chart {
   min-inline-size: 0;
   overflow: hidden;
@@ -522,28 +547,4 @@
   flex-basis: 0;
   min-inline-size: 0.25rem;
   background-color: var(--xp-series);
-}
-
-/* A one point series reads as a stat with its date (DLS-098). */
-.ui-chart-single {
-  display: grid;
-  gap: var(--tb-space-sm);
-  padding-block: var(--tb-space-md);
-}
-
-.ui-chart-single p {
-  display: grid;
-  gap: var(--tb-space-xs);
-  margin: 0;
-}
-
-.ui-chart-single strong {
-  font-size: var(--tb-font-size-xxl);
-  font-variant-numeric: tabular-nums;
-  line-height: var(--tb-font-line-height-heading);
-}
-
-.ui-chart-single span {
-  color: var(--tb-color-text-secondary);
-  font-size: var(--tb-font-size-sm);
 }

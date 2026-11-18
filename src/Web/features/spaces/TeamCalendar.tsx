@@ -12,6 +12,7 @@ import { MonthView, type CalendarEvent } from "@/components/ui/CalendarViews";
 import { addDays } from "@/components/ui/dates";
 import { call, send, spaceCalendarHref, spacesApi, taskHref, type SpaceAvailability, type SpaceCalendarData, type SpaceEvent } from "@/lib/spaces";
 import "./spaces.css";
+import { Widget } from "@/components/ui/Widget";
 
 /** The day and "HH:MM" of an instant in a time zone. */
 function local(instant: string, timeZone: string) {
@@ -126,8 +127,7 @@ export function TeamCalendar({ spaceId, initial, today }: { spaceId: string; ini
       </section>
 
       <div className="spaces-grid">
-        <section className="spaces-section" aria-labelledby="calendar-events">
-          <h2 id="calendar-events">{t("eventsTitle")}</h2>
+        <Widget title={t("eventsTitle")}>
           {data.events.length === 0 ? <p className="spaces-meta">{t("noEvents")}</p> : null}
           <ul className="spaces-list" aria-label={t("eventsTitle")}>
             {data.events.map((e) => (
@@ -170,10 +170,9 @@ export function TeamCalendar({ spaceId, initial, today }: { spaceId: string; ini
               </div>
             </form>
           ) : null}
-        </section>
+        </Widget>
 
-        <section className="spaces-section" aria-labelledby="calendar-busy">
-          <h2 id="calendar-busy">{t("busyTitle")}</h2>
+        <Widget title={t("busyTitle")}>
           <p className="spaces-meta">{t("busyIntro")}</p>
           <form
             className="spaces-toolbar"
@@ -210,7 +209,7 @@ export function TeamCalendar({ spaceId, initial, today }: { spaceId: string; ini
               ))}
             </ul>
           )}
-        </section>
+        </Widget>
       </div>
     </div>
   );

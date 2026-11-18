@@ -83,8 +83,11 @@ public sealed class AgentRegistryTests(TenantWorld world)
         var t = await FreshAsync();
         var library = await OkAsync(t["sara"].Client.GetAsync($"{Agents}/templates"));
         var templates = library.GetProperty("templates").EnumerateArray().ToList();
-        Assert.Equal(6, templates.Count);
-        Assert.All(templates, x => Assert.True(x.GetProperty("ready").GetBoolean(), x.GetProperty("id").GetString()));
+        // Workplace Plus has the six launch templates, My HR helper and the six department templates (spec 020 section 12).
+        Assert.Equal(13, templates.Count);
+        // Procurement is L3, above what is built, so it shows as not ready until spec 027 builds L3.
+        Assert.All(templates, x => Assert.Equal(x.GetProperty("id").GetString() != "procurement", x.GetProperty("ready").GetBoolean()));
+        Assert.True(templates.Single(x => x.GetProperty("id").GetString() == "procurement").GetProperty("autonomyAbovePolicy").GetBoolean());
         var hr = templates.Single(x => x.GetProperty("id").GetString() == "hr_assistant");
         Assert.Equal("مساعد الموارد البشرية", hr.GetProperty("name").GetProperty("ar").GetString());
         Assert.Equal("L2", hr.GetProperty("autonomy").GetString());
@@ -137,7 +140,7 @@ public sealed class AgentRegistryTests(TenantWorld world)
             HttpStatusCode.Forbidden));
         Assert.Equal("validation.agent.org_unit", await ProblemAsync(t["sara"].Client.PostAsJsonAsync(Agents, new { templateId = "hr_assistant", orgUnitId = Guid.NewGuid() }),
             HttpStatusCode.BadRequest));
-        Assert.Equal("validation.agent.template", await ProblemAsync(t["sara"].Client.PostAsJsonAsync(Agents, new { templateId = "procurement", orgUnitId = t.Unit("Hr") }),
+        Assert.Equal("validation.agent.template", await ProblemAsync(t["sara"].Client.PostAsJsonAsync(Agents, new { templateId = "no_such_template", orgUnitId = t.Unit("Hr") }),
             HttpStatusCode.BadRequest));
         Assert.Equal("authz.denied", await ProblemAsync(t["emp"].Client.PostAsJsonAsync(Agents, new { templateId = "hr_assistant", orgUnitId = t.Unit("Hr") }),
             HttpStatusCode.Forbidden));
@@ -266,13 +269,39 @@ public sealed class AgentRegistryTests(TenantWorld world)
 
         Assert.Equal("validation.agent_policy.autonomy", await RefusedAsync(AgentPolicy.Default with { MaxAutonomy = "L4" }));
         Assert.Equal("validation.agent_policy.tools", await RefusedAsync(AgentPolicy.Default with { AllowedTools = ["mail.send"] }));
-        Assert.Equal("validation.agent_policy.not_built", await RefusedAsync(AgentPolicy.Default with { ScheduledAgents = true }));
+        Assert.Equal("validation.agent_policy.risk_classes", await RefusedAsync(AgentPolicy.Default with { ScheduledAgents = true, ScheduledRiskClasses = ["critical"] }));
         Assert.Equal("validation.agent_policy.max_tool_calls", await RefusedAsync(AgentPolicy.Default with { MaxToolCalls = 0 }));
         Assert.Equal("validation.agent_policy.max_steps", await RefusedAsync(AgentPolicy.Default with { MaxSteps = 5 }));
 
         // Another tenant keeps the platform default.
         var other = await FreshAsync();
         Assert.Equal(0, (await OkAsync(other["aip"].Client.GetAsync($"{Agents}/policy"))).GetProperty("version").GetInt32());
+    }
+
+    [Fact]
+    public async Task Department_templates_need_the_department_capability_and_install_as_drafts()
+    {
+        var t = await FreshAsync();
+        var onboarding = await InstallAsync(t["sara"].Client, "employee_onboarding", t.Unit("Hr"));
+        Assert.Equal("employee_onboarding", onboarding.GetProperty("agent").GetProperty("templateId").GetString());
+        Assert.Equal(AgentRiskClasses.Medium, onboarding.GetProperty("agent").GetProperty("riskClass").GetString());
+        var directory = await InstallAsync(t["fadi"].Client, "people_directory", t.Unit("Finance"));
+        Assert.Equal(AgentRiskClasses.Low, directory.GetProperty("agent").GetProperty("riskClass").GetString());
+        Assert.Equal("validation.agent.template_not_ready",
+            await ProblemAsync(t["sara"].Client.PostAsJsonAsync(Agents, new { templateId = "procurement", orgUnitId = t.Unit("Hr") }), HttpStatusCode.BadRequest));
+
+        // A Workplace tenant has the launch templates but not the department ones: they are not listed and cannot be installed.
+        var basic = await FreshAsync("workplace");
+        var library = await OkAsync(basic["sara"].Client.GetAsync($"{Agents}/templates"));
+        var ids = library.GetProperty("templates").EnumerateArray().Select(x => x.GetProperty("id").GetString()).ToList();
+        Assert.Contains("enterprise_knowledge", ids);
+        Assert.DoesNotContain("employee_onboarding", ids);
+        Assert.DoesNotContain("procurement", ids);
+        Assert.Equal("validation.agent.template",
+            await ProblemAsync(basic["sara"].Client.PostAsJsonAsync(Agents, new { templateId = "employee_onboarding", orgUnitId = basic.Unit("Hr") }), HttpStatusCode.BadRequest));
+
+        // Another tenant cannot see the agent installed here.
+        Assert.Equal(HttpStatusCode.NotFound, (await basic["sara"].Client.GetAsync($"{Agents}/{onboarding.GetProperty("agent").GetProperty("id").GetGuid()}")).StatusCode);
     }
 
     [Fact]

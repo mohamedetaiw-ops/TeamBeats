@@ -223,7 +223,7 @@ public sealed class EvaluationRunTests(TenantWorld world)
         var t = await FreshAsync();
         var agent = await AgentAsync(t);
         // The tenant routes evaluation only to the model the agent itself uses, so no judge is eligible (FR-022).
-        var routes = AiUseCases.All.ToDictionary(u => u, u => u == AiUseCases.Embed ? new[] { "openai/text-embedding-3-small" } : u == AiUseCases.Evaluation ? [Small] : new[] { Small, Large });
+        var routes = AiUseCases.All.Where(u => u is not (AiUseCases.Transcribe or AiUseCases.Speak)).ToDictionary(u => u, u => u == AiUseCases.Embed ? new[] { "openai/text-embedding-3-small" } : u == AiUseCases.Evaluation ? [Small] : new[] { Small, Large });
         var current = await t["aip"].Client.GetAsync("/api/v1/ai/policy");
         using (var put = new HttpRequestMessage(HttpMethod.Put, "/api/v1/ai/policy")
         {

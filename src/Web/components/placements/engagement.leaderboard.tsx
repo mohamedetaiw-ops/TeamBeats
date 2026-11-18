@@ -8,7 +8,7 @@ import { useHomeAnswer } from "@/lib/engagementHome";
 import { BarList } from "@/components/ui/Charts";
 import { Button } from "@/components/ui/Button";
 import { StateView } from "@/components/ui/StateView";
-import { Widget } from "@/components/ui/Widget";
+import { useWidgetBudget, Widget } from "@/components/ui/Widget";
 import "@/features/services/home.css";
 
 /**
@@ -19,7 +19,7 @@ export default function LeaderboardCard({ props }: PlacementProps) {
   const t = useTranslations("engagement.home");
   const locale = useLocale();
   const format = useFormatter();
-  const top = typeof props.top === "number" && props.top >= 1 && props.top <= 10 ? Math.floor(props.top) : 5;
+  const top = useWidgetBudget(typeof props.top === "number" && props.top >= 1 && props.top <= 10 ? Math.floor(props.top) : 5);
   const title = localized(props.title, locale) || t("leaderboardTitle");
   const { answer, retry } = useHomeAnswer<LeaderboardView>(`${engagementApi}/leaderboard?period=month`);
 

@@ -25,9 +25,15 @@ public sealed class AgentDefinitionTests
         new FakeTool("knowledge.search", ToolSideEffects.Read),
         new FakeTool("requests.status", ToolSideEffects.Read),
         new FakeTool("tasks.inbox", ToolSideEffects.Read),
+        new FakeTool("leave.balance", ToolSideEffects.Read),
+        new FakeTool("leave.my_requests", ToolSideEffects.Read),
         new FakeTool("requests.prepare", ToolSideEffects.Draft, ToolApprovalRules.DraftOnly),
         new FakeTool("requests.submit", ToolSideEffects.WriteSelf, ToolApprovalRules.Confirm),
         new FakeTool("erp.order", ToolSideEffects.WriteExternal, ToolApprovalRules.Approval),
+        new FakeTool("find_person", ToolSideEffects.Read),
+        new FakeTool("get_person", ToolSideEffects.Read),
+        new FakeTool("submit_service_request", ToolSideEffects.WriteSelf, ToolApprovalRules.Confirm),
+        new FakeTool("draft_news", ToolSideEffects.Draft, ToolApprovalRules.Confirm),
     ]);
 
     private static AgentDefinition Valid() => new(
@@ -129,17 +135,30 @@ public sealed class AgentDefinitionTests
     }
 
     [Fact]
-    public void The_six_launch_templates_are_valid_in_arabic_and_english_under_the_default_policy()
+    public void The_platform_templates_are_valid_in_arabic_and_english_under_the_default_policy()
     {
-        Assert.Equal(["content_writing", "enterprise_knowledge", "hr_assistant", "it_service_desk", "personal_productivity", "workflow_requests"],
+        Assert.Equal(["content_writing", "employee_onboarding", "enterprise_knowledge", "finance_expenses", "hr_assistant", "internal_communications",
+            "it_service_desk", "learning_development", "my_hr_helper", "people_directory", "personal_productivity", "procurement", "workflow_requests"],
             AgentTemplates.All.Select(t => t.Id).Order());
         foreach (var template in AgentTemplates.All)
         {
             var d = template.Definition with { Audience = new AgentAudience(AgentAudience.Units, [Guid.NewGuid()]) };
-            Assert.True(Errors(d).Length == 0, $"{template.Id}: {string.Join(", ", Errors(d))}");
+            // Procurement is an L3 template (spec 020 section 12): it stays above what is built until spec 027 builds L3.
+            var expected = template.Id == "procurement" ? ["validation.agent.autonomy_above_policy"] : Array.Empty<string>();
+            Assert.True(Errors(d).SequenceEqual(expected), $"{template.Id}: {string.Join(", ", Errors(d))}");
             Assert.Equal(["ar", "en"], d.Languages!.Order());
-            Assert.Equal("ai.agents.basic", template.Capability);
+            Assert.Contains(template.Capability, new[] { "ai.agents.basic", "ai.agents.department" });
             Assert.All(new[] { "ar", "en" }, l => Assert.False(string.IsNullOrWhiteSpace(d.Description![l])));
         }
+    }
+
+    [Fact]
+    public void Department_templates_seven_to_twelve_need_the_department_capability()
+    {
+        string[] department = ["employee_onboarding", "people_directory", "learning_development", "procurement", "finance_expenses", "internal_communications"];
+        Assert.All(department, id => Assert.Equal("ai.agents.department", AgentTemplates.Find(id)!.Capability));
+        Assert.Equal("L3", AgentTemplates.Find("procurement")!.Definition.Autonomy);
+        Assert.Equal(AgentRiskClasses.High, AgentDefinitions.RiskClass(AgentTemplates.Find("procurement")!.Definition, Tools));
+        Assert.Equal("L0", AgentTemplates.Find("people_directory")!.Definition.Autonomy);
     }
 }

@@ -14,6 +14,7 @@ import { Icon } from "@/components/ui/Icon";
 import { StateView } from "@/components/ui/StateView";
 import { dateLong, joinMeta } from "@/lib/format";
 import { ArticleFeedback } from "@/features/documents/ArticleFeedback";
+import { Widget } from "@/components/ui/Widget";
 
 /**
  * A knowledge article (spec 011 US4; spec 036 DLS-064): a reading column with the template, date, version and read time
@@ -131,8 +132,7 @@ export default async function ArticlePage({
             ) : null}
 
             {a.relatedArticles.length > 0 || a.relatedDocuments.length > 0 ? (
-              <section className="documents-card kb-side-card" aria-label={t("related")}>
-                <h2>{t("related")}</h2>
+              <Widget title={t("related")}>
                 <ul className="kb-related">
                   {a.relatedArticles.map((r) => (
                     <li key={r.id}>
@@ -151,12 +151,11 @@ export default async function ArticlePage({
                     </li>
                   ))}
                 </ul>
-              </section>
+              </Widget>
             ) : null}
 
             {a.score ? (
-              <section className="documents-card kb-side-card" aria-label={t("score")} data-testid="article-score">
-                <h2>{t("score")}</h2>
+              <Widget title={t("score")} testId="article-score">
                 <p className="kb-side-text">
                   {a.score.percent === null
                     ? t("noScore")
@@ -178,7 +177,7 @@ export default async function ArticlePage({
                     ))}
                   </ul>
                 ) : null}
-              </section>
+              </Widget>
             ) : null}
           </aside>
         </div>

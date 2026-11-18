@@ -35,7 +35,7 @@ export function AdoptionCharts({
         <div data-testid="adoption-weeks-chart">
           <ChartCard
             title={t("weeks")}
-            figure={last !== undefined ? <strong className="analytics-figure">{number(last)}</strong> : undefined}
+            figure={last !== undefined && trend.length > 1 ? <strong className="analytics-figure">{number(last)}</strong> : undefined}
             table={seriesTable(t("column.week"), trend.map((w) => w.label), weekSeries, number)}
           >
             <LineChart

@@ -1,6 +1,6 @@
-# Spec 014 evidence (R1)
+# Spec 014 evidence (R1 and R2)
 
-The spec stays Approved, not Implemented, until the assistant panel in the shell (T007) is built and the R2 stories (US5 to US8, FR-015 to FR-018, FR-022) are done. Defaults, deviations and gaps are in the spec 014 section of `docs/architecture/r1-implementation-notes.md`.
+The spec stays Approved, not Implemented, until the assistant panel in the shell (T007) and the Teams app (US8, FR-018, built with spec 015 US5) are done, and R3 proactive suggestions follow. R2 covers US5 to US7, FR-015 to FR-017, FR-020 and FR-022. Defaults, deviations and gaps are in the spec 014 sections of `docs/architecture/r1-implementation-notes.md` and `docs/architecture/r2-implementation-notes.md`.
 
 | Requirement | Status | Evidence |
 |---|---|---|
@@ -19,6 +19,10 @@ The spec stays Approved, not Implemented, until the assistant panel in the shell
 | FR-013 routing and RAG changes pass the spec 034 gate | Met for model routes | `EvaluationRouteGateTests.A_change_to_the_assistant_route_runs_the_assistant_suites_on_the_proposed_model_and_applies_when_they_pass`, `AiGatewayTests.A_change_to_the_assistant_route_is_held_for_the_gate_...`; routing and retrieval settings ship in code in R1, so they change only with a release, see the notes |
 | FR-014 no external images, outside links as text | Met | Answers render as plain text with citation links (`assistant.spec.ts`) |
 | FR-019 search summaries only from 012's passages | Not here | Search summaries belong to spec 012 |
-| FR-020 payslips and anonymous engagement never in context | Met by absence | Specs 019 and 023 are not built, so nothing of theirs is indexed for retrieval |
+| FR-020 payslips and anonymous engagement never in context | Met | `AssistantGuestTests.Payslips_and_anonymous_engagement_are_never_a_search_source`; the `AiExcludedSources` deny list is enforced by the indexer and by retrieval for every AI use case |
 | FR-021 model, prompt version and retrieval settings recorded | Met | `AssistantTests.Answers_cite_only_passages_...` (prompt version `knowledge.v1`) |
-| FR-015 to FR-018, FR-022 | R2 | |
+| FR-015 files scanned, classified, kept to their conversation, refused above the ceiling, deleted with it | Met | `AssistantFileTests.A_file_is_scanned_classified_and_cited_only_in_its_conversation`, `Infected_unreadable_unknown_and_above_policy_files_are_refused_with_the_reason`, `A_file_no_turn_used_goes_after_a_day_and_delete_all_takes_every_file`; `assistant.spec.ts` (en and ar, axe) |
+| FR-016 voice through the gateway, confirmed before sending, audio not stored | Met | `AssistantVoiceTests.A_spoken_question_comes_back_as_text_to_edit_and_nothing_is_kept`, `An_answer_is_read_aloud_for_its_owner_only_without_citation_markers`, `Workplace_has_no_voice`; `assistant.spec.ts` (en and ar, axe) |
+| FR-017 personal answers only from tools over the person's records, with source and time | Met | `AssistantPersonalToolsTests.My_HR_helper_reads_only_the_persons_own_leave_and_cites_it`; template suite `template.my_hr_helper` |
+| FR-018 Teams assistant on the same contracts | Not yet | Built with spec 015 US5 (the Teams app), T016 |
+| FR-022 guests refused unless allowed, then only their spaces | Met | `AssistantGuestTests.Guests_are_refused_unless_allowed_and_then_cite_only_their_spaces` |

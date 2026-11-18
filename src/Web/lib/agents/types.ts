@@ -2,7 +2,7 @@
 
 export type Localized = Record<string, string>;
 
-export type AgentAudience = { scope: "tenant" | "org_units" | null; orgUnits: string[] | null };
+export type AgentAudience = { scope: "tenant" | "org_units" | null; orgUnits: string[] | null; outside?: string | null };
 
 export type AgentDefinition = {
   name: Localized | null;
@@ -21,7 +21,32 @@ export type AgentDefinition = {
   maxClassification: string | null;
   maxToolCalls: number | null;
   purpose?: Localized | null;
+  memory?: { mode: string | null; retentionDays?: number | null } | null;
+  briefing?: { enabled: boolean; prompt: Localized | null } | null;
 };
+
+/** A daily briefing offer and the person's subscription (spec 020 US8). Days are ISO weekdays, 1 for Monday. */
+export type BriefingView = {
+  agentId: string;
+  offered: boolean;
+  defaultTimeZone: string;
+  subscription: { time: string; days: number[]; timeZone: string; nextRunAt: string; lastRunAt: string | null } | null;
+};
+
+export const MEMORY_MODES = ["session", "persistent"] as const;
+
+export type MemoryItem = { id: string; agentId: string; text: string; classification: string; createdAt: string; updatedAt: string; lastUsedAt: string };
+
+/** One agent's memory as the signed-in person sees it (spec 020 US9). The API decides whether it is offered. */
+export type MyMemoryView = { agents: { agentId: string; name: Localized | null; accepted: boolean; items: MemoryItem[] }[] };
+
+export type AgentMemoryView = { agentId: string; offered: boolean; accepted: boolean; retentionDays: number; items: MemoryItem[] };
+
+/** Agent categories of the definition schema (spec 020 section 12, Identity). */
+export const AGENT_CATEGORIES = ["knowledge", "hr", "it", "content", "requests", "productivity", "people", "learning", "procurement", "finance", "communications", "other"] as const;
+
+/** What Agent Studio offers the designer (spec 020 US4): blank agents, the custom agent count and limit, and the JSON view. */
+export type StudioOffer = { custom: boolean; customCount: number; customLimit: number | null; jsonView: boolean };
 
 export type AgentStatus = "draft" | "in_review" | "published" | "suspended" | "retired";
 
@@ -130,6 +155,7 @@ export type AgentPolicy = {
   allowedTools: string[] | null;
   toolRules: Record<string, string> | null;
   scheduledAgents: boolean;
+  scheduledRiskClasses?: string[] | null;
   persistentMemory: boolean;
   maxToolCalls: number;
   maxSteps: number;
@@ -185,6 +211,43 @@ export type RunView = {
   linksAsText: boolean;
 };
 
+/** What a streamed run sends (spec 020 T021): its ID, each tool step, answer text as it arrives, then the checked answer. */
+export type RunStreamHandlers = {
+  onRun: (id: string) => void;
+  onStep: (step: { kind: string; tool: string | null; decision: string }) => void;
+  onDelta: (text: string) => void;
+};
+
+/** Reads a streamed run. Returns the finished run, or null when the stream ended without one (the run carries on). */
+export async function readRunStream(response: Response, handlers: RunStreamHandlers): Promise<RunView | null> {
+  const reader = response.body?.getReader();
+  if (!reader) return null;
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let done: RunView | null = null;
+  for (;;) {
+    const { value, done: end } = await reader.read();
+    if (value) buffer += decoder.decode(value, { stream: true });
+    let cut = buffer.indexOf("\n\n");
+    while (cut >= 0) {
+      const block = buffer.slice(0, cut);
+      buffer = buffer.slice(cut + 2);
+      const event = /^event: (.+)$/m.exec(block)?.[1];
+      const data = /^data: (.+)$/m.exec(block)?.[1];
+      if (event && data) {
+        const payload = JSON.parse(data) as Record<string, unknown>;
+        if (event === "run") handlers.onRun(String(payload.id));
+        if (event === "step") handlers.onStep(payload as { kind: string; tool: string | null; decision: string });
+        if (event === "delta" && typeof payload.text === "string") handlers.onDelta(payload.text);
+        if (event === "done") done = payload as unknown as RunView;
+      }
+      cut = buffer.indexOf("\n\n");
+    }
+    if (end) break;
+  }
+  return done;
+}
+
 export type RunSummary = {
   id: string;
   agentId: string;
@@ -224,7 +287,31 @@ export type RunRecord = {
   itemId: string | null;
 };
 
-export type AgentChoice = { id: string; name: Localized | null; description: Localized | null; icon: string | null; category: string | null };
+export type AgentChoice = { id: string; name: Localized | null; description: Localized | null; icon: string | null; category: string | null; favourite?: boolean };
+
+/** An agent in the marketplace as the signed-in person sees it (spec 020 US6). The API decides every flag. */
+export type MarketplaceAgent = {
+  id: string;
+  name: Localized | null;
+  description: Localized | null;
+  icon: string | null;
+  category: string | null;
+  departmentId: string;
+  department: Localized | null;
+  canUse: boolean;
+  request: "pending" | "granted" | "denied" | null;
+  favourite: boolean;
+  rating: number | null;
+  ratings: number;
+  myScore: number | null;
+};
+
+export type MarketplaceView = { paused: boolean; agents: MarketplaceAgent[] };
+
+export type AccessRequestView = { id: string; agentId: string; userId: string; status: "pending" | "granted" | "denied"; createdAt: string; userName: string | null };
+
+/** Who outside an agent's audience sees it in the marketplace (spec 020 FR-010). */
+export const AUDIENCE_OUTSIDE = ["hidden", "request_access"] as const;
 
 export const AUTONOMY_BUILT = ["L0", "L1", "L2"] as const;
 export const TONES = ["neutral", "friendly", "formal"] as const;

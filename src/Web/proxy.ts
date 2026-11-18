@@ -13,6 +13,8 @@ export function contentSecurityPolicy(nonce: string, dev: boolean): string {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' blob: data:",
     "font-src 'self'",
+    // An answer read aloud (spec 014 US6) plays from memory as a blob of this page; no media comes from elsewhere.
+    "media-src 'self' blob:",
     "connect-src 'self'",
     "frame-src 'self'",
     // The app's service worker (spec 030 FR-002) is a script of this host.

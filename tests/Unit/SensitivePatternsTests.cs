@@ -2,6 +2,7 @@ using System.IO.Compression;
 using System.Text;
 using TeamBeats.Modules.Documents;
 using TeamBeats.Modules.Security;
+using TeamBeats.Persistence;
 using Xunit;
 
 namespace TeamBeats.Unit.Tests;

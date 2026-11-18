@@ -315,11 +315,13 @@ public sealed class AgentLifecycle(IDbSession session, ITenantContext context, I
     }
 
     /// <summary>Waiting runs stop and their pending actions are cancelled.</summary>
+    /// <summary>Stops waiting and running runs. Raising the attempt makes a request still running one roll back at its next checkpoint (020 T021).</summary>
     private async Task StopWaitingAsync(string where, object args, CancellationToken ct) =>
         await session.ExecAsync(
             $"""
             delete from agents.run_checkpoint c using agents.run r where r.id = c.run_id and r.status = 'waiting' and r.{where};
-            update agents.run set status = 'stopped', outcome = 'suspended', reason = 'agent.suspended', finished_at = @now, updated_at = @now
+            update agents.run set status = 'stopped', outcome = 'suspended', reason = 'agent.suspended', finished_at = @now, updated_at = @now,
+              attempt = attempt + 1
             where status in ('waiting', 'running') and {where};
             """, args, ct);
 

@@ -283,7 +283,7 @@ public sealed class ExpenseTests(TenantWorld world)
             model = "fake/teambeats-large", provider = "openrouter", capabilities = new[] { "chat", "tools", "structured_output", "vision" }, contextTokens = 32000,
             regions = new[] { "eu" }, zeroRetention = true, noTraining = true, maxClassification = "confidential", inputPrice = 1.0, outputPrice = 2.0,
         }));
-        var routes = AiUseCases.All.ToDictionary(u => u, u => u switch
+        var routes = AiUseCases.All.Where(u => u is not (AiUseCases.Transcribe or AiUseCases.Speak)).ToDictionary(u => u, u => u switch
         {
             AiUseCases.Embed => new[] { "openai/text-embedding-3-small" },
             AiUseCases.Assistant or AiUseCases.Agent => ["openai/gpt-4o-mini", "openai/gpt-4o"],

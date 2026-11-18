@@ -59,7 +59,7 @@ public sealed class AiGatewayTests(TenantWorld world)
         new { allowlist, routes, confidential = confidential ?? [] };
 
     private static Dictionary<string, string[]> Routes(string[] chat, string[]? assistant = null) =>
-        AiUseCases.All.ToDictionary(u => u, u => u == AiUseCases.Embed ? new[] { Embedding } : u == AiUseCases.Assistant && assistant is not null ? assistant : chat);
+        AiUseCases.All.Where(u => u is not (AiUseCases.Transcribe or AiUseCases.Speak)).ToDictionary(u => u, u => u == AiUseCases.Embed ? new[] { Embedding } : u == AiUseCases.Assistant && assistant is not null ? assistant : chat);
 
     /// <summary>Saves a policy that leaves the assistant and agent routes as the platform has them, so it applies at once.</summary>
     private async Task<JsonElement> SaveAsync(TestTenant t, object policy, HttpStatusCode expected = HttpStatusCode.OK, string user = "layla")

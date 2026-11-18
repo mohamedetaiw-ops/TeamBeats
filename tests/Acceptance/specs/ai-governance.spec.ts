@@ -30,7 +30,8 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.goto(`${hostOrigin(tenant.key)}/admin`);
       await page.getByRole("navigation", { name: m("admin.navLabel") }).getByRole("link", { name: m("admin.nav.ai") }).click();
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("admin.nav.ai"));
-      await expect(page.getByTestId("ai-catalogue").locator("tbody tr")).toHaveCount(3);
+      // Two chat models, the embedding model, and the speech to text and text to speech models of spec 014 voice.
+      await expect(page.getByTestId("ai-catalogue").locator("tbody tr")).toHaveCount(5);
       await expect(page.getByTestId("ai-read-only")).toHaveCount(0);
       await expectAccessible(page, testInfo, `ai-policy-${locale}`);
       await page.getByLabel(m("ai.policy.limits.maxTokens")).fill("2000");
@@ -64,6 +65,10 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.waitForURL(/groupBy=model/);
       await expect(page.getByRole("heading", { name: m("ai.usage.byGroup", { group: m("ai.usage.groups.model") }) })).toBeVisible();
       await expect(page.getByText(m("ai.usage.noDenied"))).toBeVisible();
+      await expect(page.getByRole("heading", { name: m("ai.usage.forecast.title") })).toBeVisible();
+      // The CSV export downloads a file for the chosen period (US4 scenario 4).
+      const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("link", { name: m("ai.usage.export") }).click()]);
+      expect(download.suggestedFilename()).toMatch(/^ai-usage-.*\.csv$/);
       await expectAccessible(page, testInfo, `ai-usage-${locale}`);
 
       await page.getByRole("link", { name: m("ai.tabs.debug") }).click();

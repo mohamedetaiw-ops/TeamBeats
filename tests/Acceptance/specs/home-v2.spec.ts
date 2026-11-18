@@ -27,8 +27,30 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.goto(`${hostOrigin(tenant.key)}/`);
       const day = page.getByTestId("home-your-day");
       await expect(day.getByRole("heading", { name: msg(locale, "home.day.title") })).toBeVisible();
-      await expect(day.getByText(msg(locale, "home.day.toApprove"))).toBeVisible();
+      // The briefing beside it already says how many things wait, so Your day shows no counts here (DLS-102).
+      await expect(day.getByText(msg(locale, "home.day.toApprove"))).toHaveCount(0);
+      // DLS-100: the briefing and the top of Your day are in the first viewport on a desktop and on a phone.
+      for (const size of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+        await page.setViewportSize(size);
+        await page.evaluate(() => window.scrollTo(0, 0));
+        const briefingBox = await page.getByTestId("home-briefing").boundingBox();
+        const dayBox = await day.boundingBox();
+        expect(briefingBox!.y, `briefing top at ${size.width}px`).toBeLessThan(size.height / 2);
+        // 64 px is kept for the tab bar a phone shows at the bottom.
+        expect(dayBox!.y, `Your day top at ${size.width}px`).toBeLessThan(size.height - 64);
+      }
+      await page.setViewportSize({ width: 1280, height: 720 });
       await expect(day.getByRole("link", { name: msg(locale, "home.day.inbox") })).toHaveAttribute("href", "/tasks");
+      // DLS-101: every home widget carries the content budget of its region, and no list shows more rows than it.
+      await expect(day).toHaveAttribute("data-budget", /^[358]$/);
+      const over = await page.evaluate(() =>
+        [...document.querySelectorAll<HTMLElement>(".ui-widget[data-budget]")].filter((w) =>
+          [...w.querySelectorAll(":is(.ui-widget-list, .home-list, .outlook-list, .people-list, .documents-list, .content-list, .ui-cal-agenda)")].some(
+            (list) => [...list.children].filter((li) => getComputedStyle(li).display !== "none").length > Number(w.dataset.budget),
+          ),
+        ).length,
+      );
+      expect(over, "widgets showing more rows than their budget").toBe(0);
       // This tenant has no Microsoft 365, so the agenda says so in one line instead of guessing meetings.
       await expect(day.getByText(msg(locale, "home.day.calendarUnavailable"))).toBeVisible();
       await expect(page.getByRole("link", { name: msg(locale, "shell.ask") })).toHaveAttribute("href", "/assistant");
@@ -46,6 +68,39 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       expect(bandTop).toBeGreaterThan((await services.boundingBox())!.y);
       await expectAccessible(page, testInfo, `home-v2-${locale}`);
       await page.screenshot({ path: testInfo.outputPath(`home-v2-${locale}.png`), fullPage: true });
+    });
+
+    test("with 30 tasks and 20 meetings the home stays inside its content budget", async ({ page }) => {
+      // Spec 036 DLS-101 and DLS-118: the high-volume scenario. The viewer's own sources answer with a busy day; the
+      // home must not grow with them.
+      const at = (minutes: number) => new Date(Date.now() + minutes * 60_000).toISOString();
+      const tasks = Array.from({ length: 30 }, (_, i) => ({
+        taskId: `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`, source: "service_request", name: `Request ${i + 1}`, step: null,
+        requestId: null, number: null, serviceId: null, serviceNames: null, requester: null, requestedFor: null, onBehalfOf: null,
+        createdAt: at(-60 * (i + 1)), dueAt: at(i % 2 === 0 ? -30 : 600), title: { en: `Request ${i + 1}`, ar: `طلب ${i + 1}` }, link: "/tasks",
+      }));
+      const meetings = Array.from({ length: 20 }, (_, i) => ({
+        id: `m${i}`, subject: `Meeting ${i + 1}`, start: at(10 + i * 20), end: at(25 + i * 20), isAllDay: false, isPrivate: false,
+        location: null, webLink: "https://outlook.office.com/calendar/fake", source: "outlook",
+      }));
+      await page.route("**/api/v1/tasks", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(tasks) }));
+      await page.route("**/api/v1/me/calendar?*", (route) => route.fulfill({
+        status: 200, contentType: "application/json",
+        body: JSON.stringify({ state: "ok", asOf: at(0), timeZone: "Asia/Dubai", from: at(-60), to: at(1440), items: meetings }),
+      }));
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/`);
+      const day = page.getByTestId("home-your-day");
+      const budget = Number(await day.getAttribute("data-budget"));
+      // The agenda shows at most the budget of its region and ends in View all with the total.
+      await expect(day.locator(".ui-cal-agenda > li")).toHaveCount(Math.min(budget, 4));
+      await expect(day.locator("[data-widget-more]")).toContainText(/20|٢٠/);
+      await expect(page.getByTestId("home-briefing").locator(".home-briefing-row")).toHaveCount(3);
+      for (const [size, viewports] of [[{ width: 1440, height: 900 }, 2.5], [{ width: 390, height: 844 }, 6]] as const) {
+        await page.setViewportSize(size);
+        const height = await page.evaluate(() => document.documentElement.scrollHeight);
+        expect(height, `home height at ${size.width}px`).toBeLessThanOrEqual(size.height * viewports);
+      }
     });
   });
 }

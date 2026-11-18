@@ -68,7 +68,7 @@ export function DebugWindows({ initial, canManage }: { initial: DebugWindow[]; c
             <div className="field">
               <label htmlFor="ai-debug-use-case">{t("useCase")}</label>
               <select id="ai-debug-use-case" value={useCase} onChange={(e) => setUseCase(e.target.value)}>
-                {USE_CASES.filter((u) => u !== "embed").map((u) => (
+                {USE_CASES.filter((u) => u !== "embed" && u !== "transcribe" && u !== "speak").map((u) => (
                   <option key={u} value={u}>
                     {tc(u)}
                   </option>

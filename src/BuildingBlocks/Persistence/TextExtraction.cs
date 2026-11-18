@@ -2,7 +2,7 @@ using System.IO.Compression;
 using System.Text;
 using System.Xml;
 
-namespace TeamBeats.Modules.Documents;
+namespace TeamBeats.Persistence;
 
 /// <summary>
 /// Text of an uploaded file for sensitive data detection (spec 026 US6) and search: plain text formats as they are, and

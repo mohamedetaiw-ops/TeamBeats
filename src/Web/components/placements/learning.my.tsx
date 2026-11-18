@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Progress } from "@/components/ui/Status";
 import { StateView } from "@/components/ui/StateView";
-import { Widget } from "@/components/ui/Widget";
+import { useWidgetBudget, Widget } from "@/components/ui/Widget";
 import "@/features/services/home.css";
 
 /**
@@ -20,12 +20,12 @@ export default function MyLearningCard({ props }: PlacementProps) {
   const t = useTranslations("learning.home");
   const locale = useLocale();
   const format = useFormatter();
-  const top = typeof props.top === "number" && props.top >= 1 && props.top <= 10 ? Math.floor(props.top) : 3;
+  const top = useWidgetBudget(typeof props.top === "number" && props.top >= 1 && props.top <= 10 ? Math.floor(props.top) : 3);
   const title = localized(props.title, locale) || t("title");
   const { answer, retry } = useHomeAnswer<MyLearning>(`${learningApi}/me`);
 
-  const shell = (body: React.ReactNode, busy = false) => (
-    <Widget title={title} busy={busy} action={<Link href={learningHref}>{t("all")}</Link>}>
+  const shell = (body: React.ReactNode, busy = false, total = 0) => (
+    <Widget title={title} busy={busy} action={<Link href={learningHref}>{t("all")}</Link>} more={{ href: learningHref, total, shown: top }}>
       {body}
     </Widget>
   );
@@ -58,5 +58,7 @@ export default function MyLearningCard({ props }: PlacementProps) {
         );
       })}
     </ul>,
+    false,
+    open.length,
   );
 }

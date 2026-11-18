@@ -161,9 +161,34 @@
   display: none;
 }
 
+/* No picture: the compact lead drops the thumbnail, so no placeholder stands in for a photo (DLS-088, DLS-100). */
+:root[data-v-news="compact"] .content-lead[data-media="none"] {
+  grid-template-columns: minmax(0, 1fr);
+  border-inline-start: var(--tb-space-xs) solid var(--tb-color-accent-base);
+}
+
+:root[data-v-news="compact"] .content-lead[data-media="none"] .content-lead-media {
+  display: none;
+}
+
 :root:is([data-v-news="compact"], [data-v-news="typographic"]) .content-lead-body {
   margin: 0;
   border-radius: 0;
+}
+
+/*
+ * Page cards (DLS-110): how the widget frame and cards stand off the page. Raised is the base look, the design's own
+ * shadow. Outlined adds the hairline to the frame. Flat has neither line nor shadow, for a design that separates
+ * sections by space alone.
+ */
+:root[data-v-cards="outlined"] .ui-widget {
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+/* The root is named twice so this wins over a design's own surface finish, whatever the design (designs.css). */
+:root:root[data-v-cards="flat"] :is(.ui-widget, .ui-card) {
+  border-color: transparent;
+  box-shadow: none;
 }
 
 /* Briefing, light: a light card with the accent mark, rows between hairlines and filled actions. */
@@ -219,6 +244,10 @@
   color: var(--tb-color-tint-warm-text);
   font-size: var(--tb-font-size-xs);
   font-weight: var(--tb-font-weight-medium);
+}
+
+:root[data-v-briefing="light"] .home-briefing-more {
+  color: var(--tb-color-link);
 }
 
 :root[data-v-briefing="light"] .home-briefing-text span {

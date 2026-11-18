@@ -11,6 +11,7 @@ import { StateView } from "@/components/ui/StateView";
 import { call, send, spacesApi, statusValues, taskHref, type MilestoneView, type SpaceOverview, type SpaceView } from "@/lib/spaces";
 import { DueBadge, StatusBadge } from "./parts";
 import "./spaces.css";
+import { Widget } from "@/components/ui/Widget";
 
 /**
  * The space overview (spec 029 US3): the owner's status with its note and history, progress per milestone and the
@@ -64,8 +65,7 @@ export function Overview({ space, initial }: { space: SpaceView; initial: SpaceO
           </p>
         ) : null}
 
-        <section className="spaces-section" aria-labelledby="space-status">
-          <h2 id="space-status">{t("statusTitle")}</h2>
+        <Widget title={t("statusTitle")}>
           {overview.status ? (
             <>
               <div className="spaces-row">
@@ -115,10 +115,9 @@ export function Overview({ space, initial }: { space: SpaceView; initial: SpaceO
               </ul>
             </details>
           ) : null}
-        </section>
+        </Widget>
 
-        <section className="spaces-section" aria-labelledby="space-milestones">
-          <h2 id="space-milestones">{t("milestonesTitle")}</h2>
+        <Widget title={t("milestonesTitle")}>
           {overview.milestones.length === 0 ? (
             <p className="spaces-meta">{t("noMilestones")}</p>
           ) : (
@@ -153,11 +152,10 @@ export function Overview({ space, initial }: { space: SpaceView; initial: SpaceO
               </Button>
             </form>
           ) : null}
-        </section>
+        </Widget>
       </div>
 
-      <aside className="spaces-section" aria-labelledby="space-overdue">
-        <h2 id="space-overdue">{t("tasksTitle")}</h2>
+      <Widget title={t("tasksTitle")}>
         <p className="spaces-meta">{t("counts", { open: overview.openTasks, done: overview.doneTasks })}</p>
         {overview.overdue.length === 0 ? (
           <StateView kind="empty" title={t("noOverdueTitle")} message={t("noOverdue")} icon="check" />
@@ -177,7 +175,7 @@ export function Overview({ space, initial }: { space: SpaceView; initial: SpaceO
           </>
         )}
         <p className="spaces-meta">{t("owners", { names: space.owners.map((o) => o.displayName).join(", ") })}</p>
-      </aside>
+      </Widget>
     </div>
   );
 }

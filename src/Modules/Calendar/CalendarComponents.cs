@@ -21,7 +21,7 @@ public sealed class CalendarComponents : IComponentRegistration
             {
                 ["items"] = new("integer", Default: JsonSerializer.SerializeToElement(3), Minimum: 1, Maximum: 5),
             },
-            new PlacementRules(MinSpan: 4), ["locale", "direction"], ComponentRequirements.None, ComponentEvents.None,
+            new PlacementRules(MinSpan: 4, Source: "calendar", States: PlacementStates.Required), ["locale", "direction"], ComponentRequirements.None, ComponentEvents.None,
             ["/api/v1/calendar/summary", "/api/v1/calendar/events"]),
     ];
 

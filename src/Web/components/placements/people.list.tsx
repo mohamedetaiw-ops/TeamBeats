@@ -7,7 +7,7 @@ import type { PlacementProps } from "@/lib/experience/contract";
 import { initials, localName, personName, type PersonCard, type SearchPage } from "@/lib/people/types";
 import { Button } from "@/components/ui/Button";
 import { StateView } from "@/components/ui/StateView";
-import { Widget } from "@/components/ui/Widget";
+import { useWidgetBudget, Widget } from "@/components/ui/Widget";
 import "@/features/people/people.css";
 
 type Answer = "loading" | "failed" | PersonCard[];
@@ -31,7 +31,7 @@ function sourceUrl(props: PlacementProps["props"], top: number): string | null {
 export default function PeopleList({ props }: PlacementProps) {
   const t = useTranslations("people.component");
   const locale = useLocale();
-  const top = typeof props.top === "number" && props.top >= 1 && props.top <= 20 ? Math.floor(props.top) : 6;
+  const top = useWidgetBudget(typeof props.top === "number" && props.top >= 1 && props.top <= 20 ? Math.floor(props.top) : 6);
   const url = sourceUrl(props, top);
   const [answer, setAnswer] = useState<Answer>("loading");
   const [attempt, setAttempt] = useState(0);

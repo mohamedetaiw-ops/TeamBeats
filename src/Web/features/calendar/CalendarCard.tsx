@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { CalendarHeader, LayerChips, WeekStrip } from "@/components/ui/CalendarParts";
 import { Icon } from "@/components/ui/Icon";
 import { StateView } from "@/components/ui/StateView";
-import { Widget } from "@/components/ui/Widget";
+import { useWidgetBudget, Widget } from "@/components/ui/Widget";
 import { addDays, firstWeekday, fromIso } from "@/components/ui/dates";
 import { useHydrated, useNow } from "@/lib/clock";
 import { LAYER_LOOK, LAYERS, daysFrom, weekOf, type EventsAnswer, type SummaryAnswer } from "@/lib/calendar";
@@ -20,6 +20,7 @@ const VIEW_LINKS = ["agenda", "week", "month"] as const;
  */
 export function CalendarCard({ limit = 3 }: { limit?: number }) {
   const t = useTranslations("calendar");
+  const budget = useWidgetBudget(limit);
   const locale = useLocale();
   const hydrated = useHydrated();
   const now = useNow();
@@ -69,7 +70,7 @@ export function CalendarCard({ limit = 3 }: { limit?: number }) {
 
   const list = events.state === "ok" ? itemsOn(events.data.items, selected, zone) : [];
   const upcoming = selected === data.today ? list.filter((i) => i.allDay || i.status === "cancelled" || Date.parse(i.end!) > now) : list;
-  const shown = upcoming.slice(0, limit);
+  const shown = upcoming.slice(0, budget);
   const more = upcoming.length - shown.length;
 
   const head = (

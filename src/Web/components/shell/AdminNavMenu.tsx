@@ -8,7 +8,8 @@ import { currentSection } from "./AdminNavLink";
 /**
  * On a phone the admin menu folds behind one button that names the section shown, so the page starts with its own
  * content instead of 36 menu items (spec 036 DLS-092). Wider screens always show the full menu; the button is hidden
- * there by CSS. The menu closes again after a link is followed, because it is open only for the path it was opened on.
+ * there by CSS. Following a link closes the menu, also when the link is the section already shown, so Back never
+ * brings an earlier page back with its menu open.
  */
 export function AdminNavMenu({
   label,
@@ -44,6 +45,9 @@ export function AdminNavMenu({
         id="admin-nav-list"
         className="admin-nav-list"
         data-open={open ? "" : undefined}
+        onClick={(e) => {
+          if ((e.target as HTMLElement).closest("a")) setOpenOn(null);
+        }}
       >
         {children}
       </div>

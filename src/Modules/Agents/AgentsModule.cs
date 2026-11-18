@@ -23,6 +23,16 @@ public static class AgentsModule
     public static IServiceCollection AddAgentsModule(this IServiceCollection services)
     {
         services.AddScoped<AssistantService>();
+        services.AddScoped<AssistantGuests>();
+        services.AddScoped<AssistantFiles>();
+        services.AddScoped<AssistantVoice>();
+        services.AddScoped<AgentMarketplace>();
+        services.AddScoped<AgentMemory>();
+        services.AddScoped<MemoryRememberTool>();
+        services.AddScoped<AgentBriefings>();
+        services.AddScoped<AgentBriefingRunner>();
+        services.AddScoped<AgentRunResumer>();
+        services.AddScoped<Workflow.Contracts.IPersonalTaskSource, AgentAccessTasks>();
         services.AddScoped<TeamBeats.Modules.Agents.Contracts.ISearchSummaries, SearchSummaries>();
         services.AddScoped<AssistantHistory>();
         services.AddScoped<AssistantTextActions>();
@@ -38,6 +48,8 @@ public static class AgentsModule
         services.AddScoped<AgentOwnerHandover>();
         services.AddScoped<AgentAnalytics>();
         services.AddMessageHandler<Identity.Contracts.UserDeprovisioned, AgentOwnerHandler>("agents.owner_left");
+        services.AddMessageHandler<Identity.Contracts.UserDeprovisioned, AgentMemoryLeavers>("agents.memory_leaver");
+        services.AddMessageHandler<Identity.Contracts.UserDeprovisioned, AgentBriefingLeavers>("agents.briefing_leaver");
         services.AddScoped<Contracts.IAgentCatalog, AgentCatalog>();
         services.AddScoped<Contracts.IAgentEvaluationRuntime, AgentEvaluationRuntime>();
         services.AddScoped<Contracts.IAssistantEvaluationRuntime, AssistantEvaluationRuntime>();
@@ -58,7 +70,24 @@ public static class AgentsModule
         await response.Body.FlushAsync(ct);
     }
 
-    public static IEndpointRouteBuilder MapAgentsEndpoints(this IEndpointRouteBuilder app)
+    /// <summary>Reads a request body up to <paramref name="max"/> bytes; one byte more is kept so the caller sees it was too large.</summary>
+    private static async Task<byte[]> ReadCappedAsync(Stream body, long max, CancellationToken ct)
+    {
+        using var buffer = new MemoryStream();
+        var chunk = new byte[81920];
+        int read;
+        while ((read = await body.ReadAsync(chunk, ct)) > 0)
+        {
+            buffer.Write(chunk, 0, read);
+            if (buffer.Length > max)
+            {
+                break;
+            }
+        }
+        return buffer.ToArray();
+    }
+
+        public static IEndpointRouteBuilder MapAgentsEndpoints(this IEndpointRouteBuilder app)
     {
         var root = app.MapGroup("/api/v1/assistant").RequireTenantUser().WithTags("Assistant");
 
@@ -138,6 +167,42 @@ public static class AgentsModule
             return Results.Ok(new { removed });
         });
 
+        // Files the person brings to a conversation (US5, AST-015). The raw file is the body; only its text is kept.
+        root.MapPost("/files", async (HttpRequest http, string? name, string? classification, Guid? conversationId, AssistantFiles files, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var data = await ReadCappedAsync(http.Body, AssistantFiles.MaxBytes, ct);
+            var view = await files.UploadAsync(conversationId, name, classification, data, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/assistant/files/{view.Id}", view);
+        }).DisableAntiforgery();
+
+        root.MapGet("/files", async (Guid? conversationId, AssistantFiles files, CancellationToken ct) =>
+            Results.Ok(new { files = await files.ListAsync(conversationId, ct) }));
+
+        root.MapDelete("/files/{id:guid}", async (Guid id, AssistantFiles files, IDbSession session, CancellationToken ct) =>
+        {
+            await files.DeleteAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        // Voice (spec 014 US6): the audio of a request is read into memory, sent through the gateway and dropped.
+        root.MapGet("/voice", async (AssistantVoice voice, CancellationToken ct) => Results.Ok(await voice.OfferAsync(ct)));
+
+        root.MapPost("/transcribe", async (HttpRequest http, string? language, AssistantVoice voice, CancellationToken ct) =>
+        {
+            var audio = await ReadCappedAsync(http.Body, AssistantVoice.MaxAudioBytes, ct);
+            return Results.Ok(await voice.TranscribeAsync(audio, http.ContentType, language, ct));
+        }).DisableAntiforgery();
+
+        root.MapPost("/speak", async (SpeakRequest request, AssistantVoice voice, HttpContext http, CancellationToken ct) =>
+        {
+            var spoken = await voice.SpeakAsync(request, ct);
+            http.Response.Headers.CacheControl = "no-store";
+            return Results.File(spoken.Audio, spoken.MediaType);
+        });
+
         root.MapGet("/settings", async (AssistantHistory history, CancellationToken ct) => Results.Ok(await history.SettingsAsync(ct)));
 
         root.MapPut("/settings", async (AssistantSettingsRequest request, AssistantHistory history, IDbSession session, CancellationToken ct) =>
@@ -168,6 +233,94 @@ public static class AgentsModule
         agents.MapPost("", async (InstallRequest request, AgentRegistry registry, IDbSession session, CancellationToken ct) =>
         {
             var detail = await registry.InstallAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/agents/{detail.Agent.Id}", detail);
+        });
+
+        // The marketplace (020 US6): listing, favourites, ratings and access requests.
+        // Persistent memory (020 US9): the person's own notes, acceptance per agent, edit and delete.
+        agents.MapGet("/memory", async (AgentMemory memory, CancellationToken ct) => Results.Ok(await memory.MineAsync(ct)));
+        agents.MapGet("/{id:guid}/memory", async (Guid id, AgentMemory memory, CancellationToken ct) => Results.Ok(await memory.ViewAsync(id, ct)));
+        agents.MapPut("/{id:guid}/memory/consent", async (Guid id, AgentMemory memory, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await memory.AcceptAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+        agents.MapDelete("/{id:guid}/memory/consent", async (Guid id, AgentMemory memory, IDbSession session, CancellationToken ct) =>
+        {
+            await memory.WithdrawAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+        agents.MapPut("/memory/{itemId:guid}", async (Guid itemId, MemoryItemRequest request, AgentMemory memory, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await memory.UpdateAsync(itemId, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+        agents.MapDelete("/memory/{itemId:guid}", async (Guid itemId, AgentMemory memory, IDbSession session, CancellationToken ct) =>
+        {
+            await memory.DeleteAsync(itemId, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        // Daily briefings (020 US8): opt in at a time on chosen days, opt out.
+        agents.MapGet("/{id:guid}/briefing", async (Guid id, AgentBriefings briefings, CancellationToken ct) => Results.Ok(await briefings.GetAsync(id, ct)));
+        agents.MapPut("/{id:guid}/briefing", async (Guid id, BriefingRequest request, AgentBriefings briefings, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await briefings.SubscribeAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+        agents.MapDelete("/{id:guid}/briefing", async (Guid id, AgentBriefings briefings, IDbSession session, CancellationToken ct) =>
+        {
+            await briefings.UnsubscribeAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        agents.MapGet("/marketplace", async (string? q, string? category, AgentMarketplace market, CancellationToken ct) => Results.Ok(await market.ListAsync(q, category, ct)));
+        agents.MapPut("/{id:guid}/favourite", async (Guid id, AgentMarketplace market, IDbSession session, CancellationToken ct) =>
+        {
+            await market.SetFavouriteAsync(id, true, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+        agents.MapDelete("/{id:guid}/favourite", async (Guid id, AgentMarketplace market, IDbSession session, CancellationToken ct) =>
+        {
+            await market.SetFavouriteAsync(id, false, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+        agents.MapPut("/{id:guid}/rating", async (Guid id, RatingRequest request, AgentMarketplace market, IDbSession session, CancellationToken ct) =>
+        {
+            await market.RateAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+        agents.MapGet("/{id:guid}/ratings", async (Guid id, AgentMarketplace market, CancellationToken ct) => Results.Ok(await market.RatingsAsync(id, ct)));
+        agents.MapPost("/{id:guid}/access-requests", async (Guid id, AgentMarketplace market, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await market.RequestAccessAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+        agents.MapGet("/{id:guid}/access-requests", async (Guid id, AgentMarketplace market, CancellationToken ct) =>
+            Results.Ok(new { requests = await market.PendingAsync(id, ct) }));
+        agents.MapPost("/access-requests/{id:guid}/decision", async (Guid id, AccessDecision decision, AgentMarketplace market, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await market.DecideAsync(id, decision, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        agents.MapGet("/studio", async (AgentRegistry registry, CancellationToken ct) => Results.Ok(await registry.StudioAsync(ct)));
+
+        agents.MapPost("/{id:guid}/clone", async (Guid id, CloneRequest request, AgentRegistry registry, IDbSession session, CancellationToken ct) =>
+        {
+            var detail = await registry.CloneAsync(id, request, ct);
             await session.CommitAsync(ct);
             return Results.Created($"/api/v1/agents/{detail.Agent.Id}", detail);
         });
@@ -212,12 +365,57 @@ public static class AgentsModule
 
         // Runs (020 T005, 027 T005, T006, T010): a turn with a published agent, the designer's test panel, confirmation
         // cards, stopping a run, and the execution records.
-        agents.MapPost("/{id:guid}/runs", async (Guid id, RunRequest request, AgentRuns runs, IDbSession session, CancellationToken ct) =>
+        // With Accept: text/event-stream the turn streams (020 T021): "run" with its ID, "step" for each tool decision,
+        // "delta" with answer text as it arrives, then "done" with the checked answer. The run goes on when the person
+        // leaves the page; they read it later from its result.
+        agents.MapPost("/{id:guid}/runs", async (Guid id, RunRequest request, HttpContext http, AgentRuns runs, IDbSession session, ILoggerFactory logs,
+            CancellationToken ct) =>
         {
-            var view = await runs.RunAsync(id, request, ct);
-            await session.CommitAsync(ct);
-            return Results.Ok(view);
+            if (!WantsStream(http.Request))
+            {
+                var view = await runs.RunAsync(id, request, ct);
+                await session.CommitAsync(ct);
+                return Results.Ok(view);
+            }
+
+            var turn = await runs.StreamAsync(id, request, ct);
+            var response = http.Response;
+            response.ContentType = "text/event-stream";
+            response.Headers.CacheControl = "no-cache, no-transform";
+            response.Headers["X-Accel-Buffering"] = "no";
+            http.Features.Get<IHttpResponseBodyFeature>()?.DisableBuffering();
+            var connected = true;
+            async Task SendAsync(string name, object data)
+            {
+                if (!connected)
+                {
+                    return;
+                }
+                try
+                {
+                    await WriteEventAsync(response, name, data, ct);
+                }
+                catch (Exception ex) when (ex is OperationCanceledException or IOException or InvalidOperationException)
+                {
+                    connected = false;
+                }
+            }
+            try
+            {
+                var done = await turn(SendAsync, CancellationToken.None);
+                await session.CommitAsync(CancellationToken.None);
+                await SendAsync("done", done);
+            }
+            catch (Exception ex)
+            {
+                // Headers are sent, so a problem response is no longer possible; what was checkpointed stays and resumes.
+                logs.CreateLogger("TeamBeats.Agents").LogError(ex, "Agent run failed while streaming");
+                await SendAsync("error", new { code = ex is TeamBeats.Primitives.AppException app ? app.DetailKey ?? app.Code : "failed" });
+            }
+            return Results.Empty;
         });
+
+        agents.MapGet("/runs/{id:guid}/result", async (Guid id, AgentRuns runs, CancellationToken ct) => Results.Ok(await runs.ResultAsync(id, ct)));
 
         agents.MapPost("/{id:guid}/test", async (Guid id, RunRequest request, AgentRuns runs, IDbSession session, CancellationToken ct) =>
         {

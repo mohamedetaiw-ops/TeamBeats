@@ -24,6 +24,7 @@ import {
 } from "@/lib/spaces";
 import { DueBadge, PriorityBadge } from "./parts";
 import "./spaces.css";
+import { Widget } from "@/components/ui/Widget";
 
 /**
  * One task (spec 029 US2, FR-004): what it is, who holds it, when it is due, its checklist and its comments. Members
@@ -166,8 +167,7 @@ export function TaskView({
           </>
         )}
 
-        <section className="spaces-section" aria-labelledby="task-comments">
-          <h2 id="task-comments">{t("commentsTitle")}</h2>
+        <Widget title={t("commentsTitle")}>
           {detail.comments.length === 0 ? <p className="spaces-meta">{t("noComments")}</p> : null}
           <ul className="spaces-list" aria-label={t("commentsTitle")}>
             {detail.comments.map((c) => (
@@ -195,11 +195,10 @@ export function TaskView({
               </div>
             </form>
           ) : null}
-        </section>
+        </Widget>
       </div>
 
-      <aside className="spaces-section" aria-labelledby="task-checklist">
-        <h2 id="task-checklist">{t("checklistTitle")}</h2>
+      <Widget title={t("checklistTitle")}>
         {checklist.length > 0 ? (
           <Progress label={t("checklistTitle")} value={Math.round((detail.task.checklist.done * 100) / Math.max(1, detail.task.checklist.total))}
             valueText={t("checked", { done: detail.task.checklist.done, total: detail.task.checklist.total })} />
@@ -231,8 +230,7 @@ export function TaskView({
             </Button>
           </form>
         ) : null}
-        <section className="spaces-section" aria-labelledby="task-files">
-          <h2 id="task-files">{t("filesTitle")}</h2>
+        <Widget title={t("filesTitle")}>
           {detail.files.length === 0 ? <p className="spaces-meta">{t("noFiles")}</p> : null}
           <ul className="spaces-list" aria-label={t("filesTitle")}>
             {detail.files.map((f) => (
@@ -265,11 +263,11 @@ export function TaskView({
               </Button>
             </form>
           ) : null}
-        </section>
+        </Widget>
         <p className="spaces-meta">
           {t("createdBy", { name: detail.createdBy.displayName, date: format.dateTime(new Date(detail.createdAt), { dateStyle: "medium" }) })}
         </p>
-      </aside>
+      </Widget>
     </div>
   );
 }

@@ -10,6 +10,7 @@ import { OrgChartView } from "@/features/people/OrgChartView";
 import { PeopleNav } from "@/features/people/PeopleNav";
 import { PersonItem } from "@/features/people/PersonItem";
 import "@/features/people/people.css";
+import { Widget } from "@/components/ui/Widget";
 
 /**
  * A person's profile (spec 010 US1 and US3): the fields the viewer may see, contact actions built only from those
@@ -87,8 +88,7 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
         <PeopleNav current={null} />
 
         {email || phones.length > 0 ? (
-          <section aria-labelledby="person-contact" className="people-section">
-            <h2 id="person-contact">{t("profile.contact")}</h2>
+          <Widget title={t("profile.contact")}>
             <div className="people-actions">
               {email ? (
                 <a className="button button-secondary" href={`mailto:${email}`} aria-label={t("profile.email", { name })}>
@@ -101,11 +101,10 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
                 </a>
               ))}
             </div>
-          </section>
+          </Widget>
         ) : null}
 
-        <section aria-labelledby="person-details" className="people-section">
-          <h2 id="person-details">{t("profile.details")}</h2>
+        <Widget title={t("profile.details")}>
           <dl className="people-details" data-testid="person-fields">
             {p.fields
               .filter((f) => f.key !== "email")
@@ -126,11 +125,10 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
             <dt>{t("org.reports")}</dt>
             <dd>{t("profile.reports", { count: p.directReports })}</dd>
           </dl>
-        </section>
+        </Widget>
 
         {recognitions.ok && recognitions.data.length > 0 ? (
-          <section aria-labelledby="person-recognition" className="people-section">
-            <h2 id="person-recognition">{t("profile.recognition")}</h2>
+          <Widget title={t("profile.recognition")}>
             <ul className="engagement-feed">
               {recognitions.data.map((r) => (
                 <li key={r.id}>
@@ -138,7 +136,7 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
                 </li>
               ))}
             </ul>
-          </section>
+          </Widget>
         ) : null}
 
         {chart.ok ? <OrgChartView chart={chart.data} reportsHref={p.isSelf ? "/people/team" : null} /> : null}

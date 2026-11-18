@@ -110,9 +110,25 @@ internal sealed class RunState
     public List<string> Executed { get; set; } = [];
     public PendingCall? Pending { get; set; }
 
+    /// <summary>Persistent memory is on for this person and agent (020 US9): the run reads their notes and is offered <c>memory.remember</c>.</summary>
+    public bool Memory { get; set; }
+
     /// <summary>Seconds the run has worked so far, carried across a confirmation wait, which does not count (027 FR-015).</summary>
     public double ActiveSeconds { get; set; }
+
+    /// <summary>
+    /// A person's own run (020 T021): its progress is committed after every model turn and its tool calls, so a worker
+    /// resumes it from the last checkpoint after a restart. Test, evaluation, briefing and assistant-routed runs stay in
+    /// their caller's transaction.
+    /// </summary>
+    public bool Durable { get; set; }
+
+    /// <summary>Which takeover of the run this is; a worker that resumes the run raises it, and an older holder rolls back.</summary>
+    public int Attempt { get; set; }
 }
+
+/// <summary>What a streamed run sends as it goes (020 T021): its ID first, each step, and the answer text as it arrives.</summary>
+public delegate Task RunEventSink(string name, object data);
 
 /// <summary>The definition, version and limits a run uses.</summary>
 /// <param name="RouteChangeId">Set by a release gate run of a proposed model route change: model calls follow the proposed routes.</param>
@@ -142,12 +158,18 @@ internal sealed record RunAgent(Guid Id, int Version, Guid OrgUnitId, AgentDefin
 /// </summary>
 public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntitlementService entitlements, IAuthorizationService authz,
     IOrganizationHierarchy org, IAuditWriter audit, IClock clock, IAiGateway gateway, ToolRegistry tools, AgentPolicyService policies,
-    ISearchRetrieval retrieval)
+    ISearchRetrieval retrieval, AgentMemory memory, MemoryRememberTool remember)
 {
     public const int MaxMessage = 2000;
     public const string PromptVersion = "agent.v1";
     public static readonly TimeSpan ConfirmationTimeout = TimeSpan.FromMinutes(15);
     public const int RecordRetentionDays = 365;
+
+    /// <summary>A person's run that has not moved for this long was cut off by a restart; a worker resumes it from its checkpoint.</summary>
+    public static readonly TimeSpan ResumeAfter = TimeSpan.FromMinutes(3);
+
+    /// <summary>How many times a worker resumes one run before it is closed as interrupted.</summary>
+    public const int MaxResumes = 2;
 
     /// <summary>A run still marked running this long after its last change was cut off by a restart or crash.</summary>
     public static readonly TimeSpan InterruptedAfter = TimeSpan.FromSeconds(AgentPolicy.PlatformMaxRunSeconds) + TimeSpan.FromMinutes(5);
@@ -155,6 +177,9 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
     private static readonly JsonSerializerOptions Json = AgentPolicyService.Json;
 
     private static AgentDefinition Definition(string json) => JsonSerializer.Deserialize<AgentDefinition>(json, Json)!;
+
+    /// <summary>Set while a streamed run is going; null otherwise.</summary>
+    private RunEventSink? _events;
 
     private async Task<Guid> UserAsync(CancellationToken ct)
     {
@@ -173,26 +198,43 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         Definition((await session.ScalarAsync<string>("select definition::text from agents.agent_version where agent_id = @id and number = @number",
             new { id, number }, ct))!);
 
-    /// <summary>Whether the person is in the agent's audience: the whole tenant, or a member of one of its org units or their subtrees.</summary>
-    private async Task<bool> InAudienceAsync(AgentAudience? audience, Guid user, CancellationToken ct)
-    {
-        if (audience?.Scope == AgentAudience.Tenant)
-        {
-            return true;
-        }
-        if (audience?.OrgUnits is not { Count: > 0 } units)
-        {
-            return false;
-        }
-        var members = await org.GetMemberUserIdsAsync(await org.GetSubtreesAsync(units, ct), ct);
-        return members.Contains(user);
-    }
+    /// <summary>Whether the person is in the agent's audience: the whole tenant, a member of one of its org units or their subtrees, or granted access.</summary>
+    private Task<bool> InAudienceAsync(Guid agentId, AgentAudience? audience, Guid user, CancellationToken ct) =>
+        AgentAccess.InAudienceAsync(session, org, agentId, audience, user, ct);
 
     /// <summary>A turn with a published agent the person may use (020 US7). Agents the person may not use are not found.</summary>
     public Task<RunView> RunAsync(Guid agentId, RunRequest request, CancellationToken ct) => RunAsync(agentId, request, null, ct);
 
     /// <summary>A turn the assistant routed to the agent; the run keeps the routing decision (020 US7 scenario 3).</summary>
     internal async Task<RunView> RunAsync(Guid agentId, RunRequest request, Guid? routeId, CancellationToken ct)
+    {
+        var (run, user, message) = await PrepareAsync(agentId, request, ct);
+        return await StartAsync(run, user, message, request, routeId, ct);
+    }
+
+    /// <summary>
+    /// A streamed turn (020 T021): every check of <see cref="RunAsync(Guid, RunRequest, CancellationToken)"/> runs first, so a
+    /// refusal is still a normal problem response; the returned call then runs the turn, sending its events to the sink.
+    /// </summary>
+    public async Task<Func<RunEventSink, CancellationToken, Task<RunView>>> StreamAsync(Guid agentId, RunRequest request, CancellationToken ct)
+    {
+        var (run, user, message) = await PrepareAsync(agentId, request, ct);
+        await DemandDailyLimitAsync(run, ct);
+        return async (sink, token) =>
+        {
+            _events = sink;
+            try
+            {
+                return await StartAsync(run, user, message, request, null, token, limitChecked: true);
+            }
+            finally
+            {
+                _events = null;
+            }
+        };
+    }
+
+    private async Task<(RunAgent Run, Guid User, string Message)> PrepareAsync(Guid agentId, RunRequest request, CancellationToken ct)
     {
         var user = await UserAsync(ct);
         var message = Message(request);
@@ -202,7 +244,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
             throw AppException.NotFound();
         }
         var definition = await VersionAsync(agentId, version, ct);
-        if (!await InAudienceAsync(definition.Audience, user, ct))
+        if (!await InAudienceAsync(agentId, definition.Audience, user, ct))
         {
             throw AppException.NotFound();
         }
@@ -211,8 +253,40 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
             throw AppException.Conflict(agent.Status == AgentStatuses.Suspended ? "conflict.agent.suspended" : "conflict.agent.unavailable");
         }
         await DemandNoKillSwitchAsync(ct);
-        var run = new RunAgent(agentId, version, agent.Unit, definition, "run", (await policies.CurrentAsync(ct)).Policy);
-        return await StartAsync(run, user, message, request, routeId, ct);
+        return (new RunAgent(agentId, version, agent.Unit, definition, "run", (await policies.CurrentAsync(ct)).Policy), user, message);
+    }
+
+    /// <summary>
+    /// A daily briefing (020 US8 scenario 2, 027 AGV-003): the agent's briefing question, run now as the signed-in
+    /// subscriber with their current permissions, read only. Null when it must not run: the agent is not published or
+    /// no longer offers briefings, the person left its audience, the tenant policy does not allow scheduled agents of its
+    /// risk class, or agents are switched off.
+    /// </summary>
+    internal async Task<RunView?> BriefingAsync(Guid agentId, string language, CancellationToken ct)
+    {
+        var user = context.RequireUser();
+        if (!await entitlements.IsEnabledAsync(Capabilities.AiAgentsBasic, ct))
+        {
+            return null;
+        }
+        var row = await AgentRowAsync(agentId, ct);
+        if (row is not { } agent || agent.Current is not { } version || agent.Status != AgentStatuses.Published ||
+            await session.ScalarAsync<bool?>("select active from agents.kill_switch", null, ct) == true)
+        {
+            return null;
+        }
+        var definition = await VersionAsync(agentId, version, ct);
+        var policy = (await policies.CurrentAsync(ct)).Policy;
+        var risk = await session.ScalarAsync<string>("select risk_class from agents.agent_version where agent_id = @agentId and number = @version", new { agentId, version }, ct);
+        if (!AgentBriefings.Allowed(definition, policy, risk) || !await InAudienceAsync(agentId, definition.Audience, user, ct))
+        {
+            return null;
+        }
+        var languages = definition.Languages ?? ["en"];
+        language = languages.Contains(language) ? language : languages[0];
+        var prompt = definition.Briefing!.Prompt?.GetValueOrDefault(language) ?? definition.Briefing.Prompt?.Values.FirstOrDefault() ?? string.Empty;
+        var run = new RunAgent(agentId, version, agent.Unit, definition, "briefing", policy);
+        return await StartAsync(run, user, prompt, new RunRequest(prompt, language), null, ct);
     }
 
     /// <summary>The test panel (020 US1 scenario 4): the latest version, as the designer, with no write action executed.</summary>
@@ -291,19 +365,36 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         return message;
     }
 
-    private async Task<RunView> StartAsync(RunAgent agent, Guid user, string message, RunRequest request, Guid? routeId, CancellationToken ct)
+    private async Task<RunView> StartAsync(RunAgent agent, Guid user, string message, RunRequest request, Guid? routeId, CancellationToken ct,
+        bool limitChecked = false)
     {
         var languages = agent.Definition.Languages ?? ["en"];
         var language = request.Language ?? AssistantPrompt.Language(message);
         language = languages.Contains(language) ? language : languages[0];
-        if (agent.Mode == "run")
+        if (agent.Mode == "run" && !limitChecked)
         {
             await DemandDailyLimitAsync(agent, ct);
         }
         var id = Guid.NewGuid();
         var now = clock.UtcNow;
-        var state = new RunState { Classification = "internal" };
+        var state = new RunState { Classification = "internal", Durable = agent.Mode == "run" && routeId is null };
         state.Messages.Add(new AiMessage(AiRoles.System, SystemPrompt(agent.Definition, language)));
+        // Persistent memory (020 US9): only real runs read and keep notes, never the test panel or evaluation.
+        if (agent.Mode == "run" && await memory.RecallAsync(agent.Id, user, agent.Definition, agent.Policy, ct) is { } notes)
+        {
+            state.Memory = true;
+            if (notes.Count > 0)
+            {
+                var envelope = AgentMemory.Envelope(notes);
+                state.Messages.Add(new AiMessage(AiRoles.User, envelope));
+                state.Untrusted += envelope;
+                var highest = notes.Select(n => n.Classification).MaxBy(Classifications.Rank)!;
+                if (Classifications.Rank(highest) > Classifications.Rank(state.Classification))
+                {
+                    state.Classification = highest;
+                }
+            }
+        }
         if (request.ItemSource is { } source && request.ItemId is { } item)
         {
             await ItemContextAsync(id, agent, source, item, language, state, ct);
@@ -312,11 +403,20 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         await session.ExecAsync(
             """
             insert into agents.run (tenant_id, id, agent_id, agent_version, user_id, org_unit_id, mode, status, language, classification, route_id,
-              item_source, item_id, created_at, updated_at)
+              item_source, item_id, durable, created_at, updated_at)
             values (platform.current_tenant_id(), @id, @agent, @version, @user, @unit, @mode, 'running', @language, @classification, @routeId, @source, @item,
-              @now, @now)
+              @durable, @now, @now)
             """, new { id, agent = agent.Id, version = agent.Version, user, unit = agent.OrgUnitId, mode = agent.Mode, language, classification = state.Classification,
-                routeId, source = request.ItemSource, item = request.ItemId, now }, ct);
+                routeId, source = request.ItemSource, item = request.ItemId, durable = state.Durable, now }, ct);
+        if (state.Durable)
+        {
+            await SaveCheckpointAsync(id, state, ct);
+            await session.CheckpointAsync(ct);
+        }
+        if (_events is { } events)
+        {
+            await events("run", new { id });
+        }
         return await LoopAsync(id, agent, user, language, state, ct);
     }
 
@@ -398,6 +498,10 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
     {
         var offered = (agent.Definition.Tools ?? []).Select(tools.Find).Where(t => t is not null)
             .Select(t => new AiTool(RunAgent.ModelName(t!.Definition.Name), t.Definition.Description, t.Definition.Parameters)).ToList();
+        if (state.Memory)
+        {
+            offered.Add(new AiTool(RunAgent.ModelName(MemoryRememberTool.Name), remember.Definition.Description, remember.Definition.Parameters));
+        }
         var maxSteps = agent.Policy.MaxSteps;
         string? model = null, provider = null;
         int input = 0, output = 0;
@@ -421,8 +525,9 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
             state.Steps++;
             var watch = Stopwatch.StartNew();
             var level = AssistantPrompt.Highest([state.Classification], DataClassification.Internal);
-            var result = await gateway.ChatAsync(new AiRequest(AiUseCases.Agent, state.Messages, level, offered.Count > 0 ? offered : null, MaxTokens: 1500,
-                Temperature: 0.2, AgentId: agent.Id, AgentVersion: agent.Version, ActingUnitId: agent.OrgUnitId, RouteChangeId: agent.RouteChangeId), ct);
+            var ask = new AiRequest(AiUseCases.Agent, state.Messages, level, offered.Count > 0 ? offered : null, MaxTokens: 1500,
+                Temperature: 0.2, AgentId: agent.Id, AgentVersion: agent.Version, ActingUnitId: agent.OrgUnitId, RouteChangeId: agent.RouteChangeId);
+            var result = _events is { } events ? await StreamTurnAsync(ask, events, ct) : await gateway.ChatAsync(ask, ct);
             await StepAsync(runId, state, "model", null, result.IsOk ? ToolDecisions.Executed : ToolDecisions.Refused, result.Denial, null, null,
                 state.Classification, watch, ct);
             if (result.Completion is not { } completion)
@@ -501,7 +606,35 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
                 state.ActiveSeconds = worked + (clock.UtcNow - resumed).TotalSeconds;
                 return await WaitAsync(runId, agent, state, language, (model, provider, input, output), ct);
             }
+            if (state.Durable)
+            {
+                // The turn and its tool calls are kept: a restart from here on resumes at the next model turn (020 T021).
+                state.ActiveSeconds = worked + (clock.UtcNow - resumed).TotalSeconds;
+                await UpdateRunAsync(runId, state, RunStatuses.Running, null, null, (model, provider, input, output), false, ct);
+                await SaveCheckpointAsync(runId, state, ct);
+                await session.CheckpointAsync(ct);
+                input = 0;
+                output = 0;
+            }
         }
+    }
+
+    /// <summary>A model turn streamed to the sink: text as it arrives, then the same result a plain call returns.</summary>
+    private async Task<AiResult> StreamTurnAsync(AiRequest ask, RunEventSink events, CancellationToken ct)
+    {
+        AiResult? result = null;
+        await foreach (var chunk in gateway.StreamChatAsync(ask, ct))
+        {
+            if (chunk.Delta is { Length: > 0 } delta)
+            {
+                await events("delta", new { text = delta });
+            }
+            if (chunk.Result is { } final)
+            {
+                result = final;
+            }
+        }
+        return result ?? AiResult.Denied(AiDenials.ProviderUnavailable);
     }
 
     private sealed record Gate(string? Tool, JsonElement? Arguments, string? Hash, string? Refusal = null, string? Stop = null, bool Confirm = false, bool Sandbox = false);
@@ -517,29 +650,34 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         {
             return new Gate(null, null, null, Stop: "agent.suspended");
         }
-        var granted = (agent.Definition.Tools ?? []).FirstOrDefault(t => RunAgent.ModelName(t) == modelName);
+        // The memory tool is granted by the agent's memory area and the person's acceptance, not by the tool list (020 US9).
+        var memoryCall = state.Memory && modelName == RunAgent.ModelName(MemoryRememberTool.Name);
+        var granted = memoryCall ? MemoryRememberTool.Name : (agent.Definition.Tools ?? []).FirstOrDefault(t => RunAgent.ModelName(t) == modelName);
         if (granted is null)
         {
             return new Gate(null, null, null, Refusal: "tool.not_granted");
         }
-        if (tools.Find(granted) is not { } tool)
+        if ((memoryCall ? remember : tools.Find(granted)) is not { } tool)
         {
             return new Gate(granted, null, null, Refusal: "tool.unknown");
         }
         var definition = tool.Definition;
-        var rule = agent.Policy.RuleFor(definition);
-        if (!agent.Policy.Allows(granted) || rule == ToolApprovalRules.Block)
+        var rule = memoryCall ? ToolApprovalRules.Execute : agent.Policy.RuleFor(definition);
+        if (!memoryCall)
         {
-            return new Gate(granted, null, null, Refusal: "tool.not_allowed");
-        }
-        if (definition.RequiredCapability is { } capability && !await entitlements.IsEnabledAsync(capability, ct))
-        {
-            return new Gate(granted, null, null, Refusal: "tool.not_in_package");
-        }
-        var needed = definition.SideEffect switch { ToolSideEffects.Read => 0, ToolSideEffects.Draft => 1, ToolSideEffects.WriteSelf => 2, _ => 3 };
-        if (needed > agent.Autonomy || needed > AgentAutonomy.Rank(AgentAutonomy.HighestBuilt))
-        {
-            return new Gate(granted, null, null, Refusal: "tool.above_autonomy");
+            if (!agent.Policy.Allows(granted) || rule == ToolApprovalRules.Block)
+            {
+                return new Gate(granted, null, null, Refusal: "tool.not_allowed");
+            }
+            if (definition.RequiredCapability is { } capability && !await entitlements.IsEnabledAsync(capability, ct))
+            {
+                return new Gate(granted, null, null, Refusal: "tool.not_in_package");
+            }
+            var needed = definition.SideEffect switch { ToolSideEffects.Read => 0, ToolSideEffects.Draft => 1, ToolSideEffects.WriteSelf => 2, _ => 3 };
+            if (needed > agent.Autonomy || needed > AgentAutonomy.Rank(AgentAutonomy.HighestBuilt))
+            {
+                return new Gate(granted, null, null, Refusal: "tool.above_autonomy");
+            }
         }
         JsonElement arguments;
         try
@@ -565,6 +703,11 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
             // Approver tasks come with L3 in R2 (027 US4); until then such a call is refused.
             return new Gate(granted, arguments, hash, Refusal: "tool.approval_not_available");
         }
+        if (agent.Mode == "briefing" && ToolSideEffects.IsWrite(definition.SideEffect))
+        {
+            // A briefing reads and reports; nobody is there to confirm an action (020 US8).
+            return new Gate(granted, arguments, hash, Refusal: "tool.not_in_briefing");
+        }
         if (ToolSideEffects.IsWrite(definition.SideEffect) && state.Executed.Contains(hash))
         {
             return new Gate(granted, arguments, hash, Refusal: "tool.already_done");
@@ -573,13 +716,14 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         {
             return agent.Sandbox ? new Gate(granted, arguments, hash, Confirm: true, Sandbox: true) : new Gate(granted, arguments, hash, Refusal: "tool.test_mode");
         }
-        return new Gate(granted, arguments, hash, Confirm: rule == ToolApprovalRules.Confirm || ToolSideEffects.IsWrite(definition.SideEffect));
+        // A note for the person themselves, which they accepted and can delete, needs no confirmation card.
+        return new Gate(granted, arguments, hash, Confirm: !memoryCall && (rule == ToolApprovalRules.Confirm || ToolSideEffects.IsWrite(definition.SideEffect)));
     }
 
     private async Task<ToolResult> ExecuteAsync(Guid runId, RunAgent agent, Guid user, RunState state, string name, JsonElement arguments, string hash,
         Stopwatch watch, CancellationToken ct, string decision = ToolDecisions.Executed)
     {
-        var tool = tools.Find(name)!;
+        var tool = name == MemoryRememberTool.Name ? remember : tools.Find(name)!;
         state.ToolCalls++;
         ToolResult result;
         using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct))
@@ -773,7 +917,18 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
                 ms = (int)Math.Min(int.MaxValue, watch.ElapsedMilliseconds), at = clock.UtcNow,
             }, ct);
         watch.Restart();
+        if (_events is { } events && kind != "model")
+        {
+            await events("step", new { kind, tool, decision });
+        }
     }
+
+    private Task SaveCheckpointAsync(Guid runId, RunState state, CancellationToken ct) =>
+        session.ExecAsync(
+            """
+            insert into agents.run_checkpoint (tenant_id, run_id, state, updated_at) values (platform.current_tenant_id(), @runId, @state::jsonb, @now)
+            on conflict (tenant_id, run_id) do update set state = excluded.state, updated_at = excluded.updated_at
+            """, new { runId, state = JsonSerializer.Serialize(state, Json), now = clock.UtcNow }, ct);
 
     /// <summary>Parameters for the record: values are masked when the run carries Confidential or Restricted data (027 US6).</summary>
     private static string Mask(JsonElement parameters, string classification)
@@ -787,11 +942,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
 
     private async Task<RunView> WaitAsync(Guid runId, RunAgent agent, RunState state, string language, (string?, string?, int, int) usage, CancellationToken ct)
     {
-        await session.ExecAsync(
-            """
-            insert into agents.run_checkpoint (tenant_id, run_id, state, updated_at) values (platform.current_tenant_id(), @runId, @state::jsonb, @now)
-            on conflict (tenant_id, run_id) do update set state = excluded.state, updated_at = excluded.updated_at
-            """, new { runId, state = JsonSerializer.Serialize(state, Json), now = clock.UtcNow }, ct);
+        await SaveCheckpointAsync(runId, state, ct);
         await UpdateRunAsync(runId, state, RunStatuses.Waiting, null, null, usage, false, ct);
         return new RunView(runId, agent.Id, agent.Version, agent.Mode, RunStatuses.Waiting, null, null, null, language, [], Card(state.Pending!), false);
     }
@@ -807,27 +958,34 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         (string?, string?, int, int) usage, CancellationToken ct, IReadOnlyList<RunCitation>? cited = null)
     {
         await session.ExecAsync("delete from agents.run_checkpoint where run_id = @runId", new { runId }, ct);
-        await UpdateRunAsync(runId, state, status, outcome, reason, usage, true, ct);
+        await UpdateRunAsync(runId, state, status, outcome, reason, usage, true, ct, answer, cited);
         return new RunView(runId, agent.Id, agent.Version, agent.Mode, status, outcome, reason, answer, language, cited ?? [], null, answer is not null,
             InjectionDetector.HasLinks(answer));
     }
 
     private async Task UpdateRunAsync(Guid runId, RunState state, string status, string? outcome, string? reason, (string? Model, string? Provider, int In, int Out) usage,
-        bool finished, CancellationToken ct)
+        bool finished, CancellationToken ct, string? answer = null, IReadOnlyList<RunCitation>? cited = null)
     {
         var now = clock.UtcNow;
         var sources = JsonSerializer.Serialize(state.Citations, Json);
-        await session.ExecAsync(
+        var changed = await session.ExecAsync(
             """
             update agents.run set status = @status, outcome = @outcome, reason = @reason, steps = @steps, tool_calls = @calls, denials = @denials,
               model = coalesce(@model, model), provider = coalesce(@provider, provider), input_tokens = input_tokens + @in, output_tokens = output_tokens + @out,
-              classification = @classification, sources = @sources::jsonb, updated_at = @now, finished_at = case when @finished then @now else null end
-            where id = @runId
+              classification = @classification, sources = @sources::jsonb, answer = coalesce(@answer, answer), cited = @cited::jsonb, updated_at = @now,
+              finished_at = case when @finished then @now else null end
+            where id = @runId and attempt = @attempt
             """, new
             {
                 runId, status, outcome, reason, steps = state.Steps, calls = state.ToolCalls, denials = state.Denials, model = usage.Model, provider = usage.Provider,
-                @in = usage.In, @out = usage.Out, classification = state.Classification, sources, now, finished,
+                @in = usage.In, @out = usage.Out, classification = state.Classification, sources, answer, cited = JsonSerializer.Serialize(cited ?? [], Json), now,
+                finished, attempt = state.Attempt,
             }, ct);
+        if (changed == 0)
+        {
+            // A worker resumed this run after it stopped moving (020 T021): this holder's work since the last checkpoint is rolled back.
+            throw AppException.Conflict("conflict.agent_run.resumed_elsewhere");
+        }
     }
 
     private async Task<(RunAgent Agent, string Language, RunState State)> WaitingAsync(Guid runId, Guid user, CancellationToken ct)
@@ -985,8 +1143,90 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
     }
 
     /// <summary>
+    /// The result of one of the person's own runs (020 T021): for a person who lost the connection while it ran, or whose
+    /// run a worker finished after a restart. A waiting run shows its confirmation card again. Others do not learn it exists.
+    /// </summary>
+    public async Task<RunView> ResultAsync(Guid runId, CancellationToken ct)
+    {
+        var user = await UserAsync(ct);
+        var rows = await session.QueryAsync(
+            """
+            select r.agent_id, r.agent_version, r.mode, r.status, r.outcome, r.reason, r.answer, r.cited::text, r.language, c.state::text
+            from agents.run r left join agents.run_checkpoint c on c.run_id = r.id
+            where r.id = @runId and r.user_id = @user and r.mode <> 'eval'
+            """, new { runId, user },
+            r => (Agent: r.GetGuid(0), Version: r.GetInt32(1), Mode: r.GetString(2), Status: r.GetString(3), Outcome: r.Get<string?>("outcome"),
+                Reason: r.Get<string?>("reason"), Answer: r.Get<string?>("answer"), Cited: r.GetString(7), Language: r.GetString(8), State: r.Get<string?>("state")), ct);
+        if (rows.Count == 0)
+        {
+            throw AppException.NotFound();
+        }
+        var row = rows[0];
+        var card = row.Status == RunStatuses.Waiting && row.State is { } text && JsonSerializer.Deserialize<RunState>(text, Json)?.Pending is { } pending
+            ? Card(pending)
+            : null;
+        return new RunView(runId, row.Agent, row.Version, row.Mode, row.Status, row.Outcome, row.Reason, row.Answer, row.Language,
+            JsonSerializer.Deserialize<List<RunCitation>>(row.Cited, Json) ?? [], card, row.Answer is not null, InjectionDetector.HasLinks(row.Answer));
+    }
+
+    /// <summary>
+    /// Takes over people's runs that stopped moving (020 T021): running, committed as durable, idle for
+    /// <see cref="ResumeAfter"/> and not yet resumed <see cref="MaxResumes"/> times. The takeover raises the attempt, so
+    /// the request that held the run, if it is somehow still going, rolls back at its next checkpoint.
+    /// </summary>
+    internal async Task<IReadOnlyList<(Guid RunId, Guid UserId, int Attempt)>> ClaimStalledAsync(DateTimeOffset now, int limit, CancellationToken ct) =>
+        await session.QueryAsync(
+            """
+            update agents.run r set attempt = r.attempt + 1, updated_at = @now
+            where r.id in (
+              select x.id from agents.run x
+              where x.status = 'running' and x.durable and x.attempt < @max and x.updated_at < @cutoff
+                and exists (select 1 from agents.run_checkpoint c where c.run_id = x.id)
+              order by x.updated_at limit @limit for update skip locked)
+            returning r.id, r.user_id, r.attempt
+            """, new { now, cutoff = now - ResumeAfter, max = MaxResumes, limit },
+            r => (r.GetGuid(0), r.GetGuid(1), r.GetInt32(2)), ct);
+
+    /// <summary>
+    /// Goes on with a run a restart cut off (020 T021), as its person, from its last checkpoint: the next model turn
+    /// after the last kept one. The checks of a new turn run again: agents switched off, the agent suspended or the person
+    /// out of its audience stop the run. Null when the run is no longer this attempt's.
+    /// </summary>
+    public async Task<RunView?> ResumeAsync(Guid runId, int attempt, CancellationToken ct)
+    {
+        var user = context.RequireUser();
+        var rows = await session.QueryAsync(
+            """
+            select r.agent_id, r.agent_version, r.org_unit_id, r.language, c.state::text
+            from agents.run r join agents.run_checkpoint c on c.run_id = r.id
+            where r.id = @runId and r.user_id = @user and r.status = 'running' and r.durable and r.attempt = @attempt
+            """, new { runId, user, attempt },
+            r => (Agent: r.GetGuid(0), Version: r.GetInt32(1), Unit: r.GetGuid(2), Language: r.GetString(3), State: r.GetString(4)), ct);
+        if (rows.Count == 0)
+        {
+            return null;
+        }
+        var row = rows[0];
+        var definition = await VersionAsync(row.Agent, row.Version, ct);
+        var agent = new RunAgent(row.Agent, row.Version, row.Unit, definition, "run", (await policies.CurrentAsync(ct)).Policy);
+        var state = JsonSerializer.Deserialize<RunState>(row.State, Json)!;
+        state.Attempt = attempt;
+        state.Durable = true;
+        if (!await entitlements.IsEnabledAsync(Capabilities.AiAgentsBasic, ct) || await KillSwitchOnAsync(ct))
+        {
+            return await FinishAsync(runId, agent, state, RunStatuses.Stopped, RunOutcomes.Suspended, "agents.switched_off", null, row.Language, (null, null, 0, 0), ct);
+        }
+        if (!await InAudienceAsync(row.Agent, definition.Audience, user, ct))
+        {
+            return await FinishAsync(runId, agent, state, RunStatuses.Stopped, RunOutcomes.PolicyBlocked, "agent.not_in_audience", null, row.Language, (null, null, 0, 0), ct);
+        }
+        return await LoopAsync(runId, agent, user, row.Language, state, ct);
+    }
+
+    /// <summary>
     /// Execution records older than the retention period go (027 section 8, default 365 days); waiting runs past their card
-    /// expire; runs a restart cut off mid-turn are closed as interrupted, so the person sees them ended and can ask again.
+    /// expire; runs a restart cut off mid-turn that no worker could resume are closed as interrupted, so the person sees them
+    /// ended and can ask again.
     /// Waiting runs keep their checkpoint and resume on confirmation after a restart.
     /// </summary>
     public async Task<int> PurgeAsync(DateTimeOffset now, CancellationToken ct)
@@ -1001,7 +1241,8 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
             update agents.run set status = 'stopped', outcome = 'expired', reason = 'confirmation_expired', finished_at = @now, updated_at = @now
             where status = 'waiting' and updated_at < @cutoff
             """, new { now, cutoff = now - ConfirmationTimeout - TimeSpan.FromMinutes(5) }, ct);
-        await session.ExecAsync("delete from agents.run_checkpoint c using agents.run r where r.id = c.run_id and r.status <> 'waiting'", null, ct);
+        // Waiting runs keep their card; running ones keep the checkpoint a worker resumes them from.
+        await session.ExecAsync("delete from agents.run_checkpoint c using agents.run r where r.id = c.run_id and r.status not in ('waiting', 'running')", null, ct);
         await session.ExecAsync("delete from agents.route_decision where created_at < @cutoff", new { cutoff = now.AddDays(-RecordRetentionDays) }, ct);
         await session.ExecAsync("delete from agents.external_call where at < @cutoff", new { cutoff = now.AddDays(-RecordRetentionDays) }, ct);
         // Pending external actions past their time expire; a result is kept a day for the client to fetch, then only the record stays.

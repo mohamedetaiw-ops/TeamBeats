@@ -18,6 +18,12 @@ public interface IDbSession : IAsyncDisposable
 
     Task CommitAsync(CancellationToken ct = default);
 
+    /// <summary>
+    /// Commits what was done so far and goes on in a new transaction on the same connection, for long work that must
+    /// survive a restart part way (an agent run's checkpoints). Callbacks registered so far run after this commit.
+    /// </summary>
+    Task CheckpointAsync(CancellationToken ct = default);
+
     /// <summary>Runs a callback after a successful commit (for example cache eviction).</summary>
     void OnCommitted(Action callback);
 
@@ -81,6 +87,29 @@ public sealed class DbSession : IDbSession
 
         IsCompleted = true;
         foreach (var callback in _afterCommit)
+        {
+            callback();
+        }
+    }
+
+    public async Task CheckpointAsync(CancellationToken ct = default)
+    {
+        if (IsCompleted)
+        {
+            throw new InvalidOperationException("The database session has already completed.");
+        }
+        if (_transaction is null)
+        {
+            return;
+        }
+        await _transaction.CommitAsync(ct);
+        await _transaction.DisposeAsync();
+        _transaction = await _connection!.BeginTransactionAsync(IsolationLevel.ReadCommitted, ct);
+        // The tenant setting is local to a transaction, so the next command applies it again.
+        _applied = false;
+        var callbacks = _afterCommit.ToList();
+        _afterCommit.Clear();
+        foreach (var callback in callbacks)
         {
             callback();
         }
