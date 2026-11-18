@@ -27,6 +27,15 @@ public static class AssistantOutcomes
 public sealed record AssistantAnswered(Guid TurnId, Guid ConversationId, Guid UserId, string? Agent, string Outcome, int Citations) : IIntegrationEvent;
 
 /// <summary>What a tool changes (spec 027 FR-005). Read tools change nothing; drafts stay with the person until they act.</summary>
+/// <summary>
+/// Why a registered tool cannot be called now (spec 027 US7 scenario 3): the gateway refuses it, it is not offered to the
+/// model, and agents that hold it show a degraded notice.
+/// </summary>
+public static class ToolUnavailable
+{
+    public const string ConnectorDisabled = "connector_disabled";
+}
+
 public static class ToolSideEffects
 {
     public const string Read = "read";
@@ -72,7 +81,9 @@ public static class ToolApprovalRules
 /// is the JSON schema of the arguments the model may pass; <paramref name="OutputClassification"/> is the highest
 /// classification of what the tool can return. <paramref name="Description"/> tells the model what the tool does; people
 /// see the tool's title and description from the web message catalogue, keyed by the tool name, or, for a tenant tool,
-/// the <paramref name="Title"/> per language its administrator entered.
+/// the <paramref name="Title"/> per language its administrator entered. <paramref name="ApproverPermission"/> names who
+/// approves a call when its rule is "approval" (spec 027 US4): holders of that permission at the agent's unit, unless
+/// the tenant policy names other approvers for the tool.
 /// </summary>
 public sealed record ToolDefinition(
     string Name,
@@ -87,7 +98,9 @@ public sealed record ToolDefinition(
     string Description,
     string? RequiredCapability = null,
     IReadOnlyDictionary<string, string>? Title = null,
-    bool Exposable = false);
+    bool Exposable = false,
+    string? ApproverPermission = null,
+    string? Unavailable = null);
 
 /// <summary>
 /// Who a tool call runs for: the person, through an agent, in a run. Authorization is the person's at the time of the

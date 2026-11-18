@@ -373,6 +373,7 @@ export function PageEditor({
                         else cards.current.delete(p.id);
                       }}
                       className="builder-placement"
+                      // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a placement takes focus so it can be moved and opened with the keyboard
                       tabIndex={0}
                       aria-label={t("placementLabel", { name, ...position(draft, p.id) })}
                       aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown Alt+D Delete"
@@ -535,7 +536,14 @@ export function PageEditor({
             </select>
           </div>
         </div>
-        <div className="builder-preview-frame" data-device={device}>
+        {/* The frame scrolls sideways on a narrow screen, so it takes focus to scroll by keyboard (WCAG 2.1.1). */}
+        <div
+          className="builder-preview-frame"
+          data-device={device}
+          tabIndex={0}
+          role="region"
+          aria-label={t("preview.frame", { device: t(`preview.devices.${device}`), language: language(previewLocale) })}
+        >
           <iframe
             key={`${previewLocale}-${savedCount}`}
             title={t("preview.frame", { device: t(`preview.devices.${device}`), language: language(previewLocale) })}

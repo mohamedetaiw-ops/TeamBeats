@@ -36,5 +36,5 @@ Depends on 004, 005, 006, 013, 016, 027 (same module), 034; 012 (search source),
 - [x] T019 [US8] Briefings: policy switch with risk classes, subscription, worker running as the user, notification delivery; tests
 - [x] T020 Department templates 7 to 12 with suites, L3 ones "not ready" until spec 027 L3
 - [x] T021 Runtime: streamed agent answers and resumption after restart (closes T004, T005)
-- [ ] T022 Detailed agent analytics through spec 021 under `analytics.advanced`
-- [ ] T023 OpenAPI; R2 implementation notes; spec evidence
+- [x] T022 Detailed agent analytics through spec 021 under `analytics.advanced`
+- [x] T023 OpenAPI; R2 implementation notes; spec evidence

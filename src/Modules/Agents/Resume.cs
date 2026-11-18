@@ -54,4 +54,37 @@ public sealed class AgentRunResumer(IServiceScopeFactory scopes, ITenantContext 
         }
         return resumed;
     }
+
+    /// <summary>
+    /// Carries out approvers' decisions on agent actions and cancels those nobody decided in time (spec 027 US4), each as
+    /// the person who asked. A person who is no longer active gets nothing run: the approval is cancelled and the purge
+    /// closes the run. Returns how many were carried out.
+    /// </summary>
+    public async Task<int> ApplyApprovalsAsync(CancellationToken ct)
+    {
+        var tenant = context.RequireTenant();
+        var due = await InScopeAsync(tenant, null, sp => sp.GetRequiredService<AgentApprovals>().ClaimDueAsync(clock.UtcNow, BatchSize, ct));
+        var applied = 0;
+        foreach (var (approvalId, userId) in due)
+        {
+            try
+            {
+                applied += await InScopeAsync(tenant, userId, async sp =>
+                {
+                    var person = await sp.GetRequiredService<IUserDirectory>().GetAsync(userId, ct);
+                    if (person is not { Status: "active" })
+                    {
+                        await sp.GetRequiredService<AgentApprovals>().CancelAsync(approvalId, ct);
+                        return 0;
+                    }
+                    return await sp.GetRequiredService<AgentRuns>().ApprovalAsync(approvalId, ct) is null ? 0 : 1;
+                });
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                logger.LogWarning(ex, "Applying agent approval {ApprovalId} failed", approvalId);
+            }
+        }
+        return applied;
+    }
 }

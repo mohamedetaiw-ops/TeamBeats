@@ -53,7 +53,8 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       expect(over, "widgets showing more rows than their budget").toBe(0);
       // This tenant has no Microsoft 365, so the agenda says so in one line instead of guessing meetings.
       await expect(day.getByText(msg(locale, "home.day.calendarUnavailable"))).toBeVisible();
-      await expect(page.getByRole("link", { name: msg(locale, "shell.ask") })).toHaveAttribute("href", "/assistant");
+      // Ask TeamBeats opens the assistant panel beside the page (spec 014 FR-001).
+      await expect(page.locator(".shell-bar").getByRole("button", { name: msg(locale, "shell.ask") })).toHaveAttribute("aria-haspopup", "dialog");
       const services = page.getByTestId("home-my-services");
       await expect(services.getByRole("heading", { name: msg(locale, "services.home.services.title") })).toBeVisible();
       await expect(services.getByRole("link").first()).toBeVisible();

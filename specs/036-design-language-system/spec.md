@@ -230,7 +230,7 @@ All four designs are in every package (smallest safe default: the design is part
 ## 10. UX, localization and accessibility
 - The guidelines in `docs/design-system` are the UX rules for every screen.
 - Design names, descriptions and picker text are localized in Arabic and English.
-- All four designs meet WCAG 2.2 AA in both directions and modes.
+- All four designs meet WCAG 2.2 AA in both directions and modes, proven on every route by the accessibility gate of spec 038.
 
 ## 11. AI behavior and data policy
 Not applicable. The AI mark (four point star) is reserved for AI features in every design.

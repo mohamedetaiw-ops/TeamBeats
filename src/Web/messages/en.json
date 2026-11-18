@@ -93,7 +93,8 @@
     "testNotice": "Staging only. Skip single sign-on and sign in as the test administrator or as a test employee. These options never exist in production.",
     "testSubmit": "Sign in as test admin",
     "testEmployee": "Sign in as test employee",
-    "testFailed": "Test sign-in was refused. The staging test account is not set up."
+    "testFailed": "Test sign-in was refused. The staging test account is not set up.",
+    "accessibility": "Accessibility statement"
   },
   "admin": {
     "title": "Administration",
@@ -833,7 +834,8 @@
         "ai_agents_custom": "Custom agents in Agent Studio",
         "ai_agents_department": "Department agent templates",
         "ai_agents_marketplace": "Agent marketplace",
-        "ai_agents_advanced": "Advanced agent templates"
+        "ai_agents_advanced": "Advanced agent templates",
+        "ai_governance_security_center": "Agent Security Center"
       },
       "searchLabel": "Search capabilities",
       "searchPlaceholder": "Search by name",
@@ -1792,6 +1794,7 @@
       "sections": "Settings sections",
       "more": "{count} more",
       "allDay": "All day",
+      "weekOf": "Week of {date}",
       "timeRange": "{start} to {end}",
       "dayCount": "{date}, {count}",
       "none": "None",
@@ -1972,7 +1975,8 @@
     "payslips": "My payslips",
     "footer": {
       "label": "Footer",
-      "classification": "Classification: {value}"
+      "classification": "Classification: {value}",
+      "accessibility": "Accessibility"
     },
     "guest": "Guest"
   },
@@ -2753,6 +2757,14 @@
         "directory": "Managed by the directory",
         "admin": "Managed by your administrator",
         "hr": "Managed by your HR system"
+      },
+      "photo": {
+        "add": "Add a photo",
+        "change": "Change photo",
+        "remove": "Remove photo",
+        "hint": "PNG or JPEG, up to 2 MB.",
+        "saved": "Your photo is saved.",
+        "removed": "Your photo is removed."
       }
     },
     "field": {
@@ -3203,7 +3215,7 @@
       "noneHint": "Add a pattern for data only your organization uses, such as employee numbers.",
       "name": "Name",
       "pattern": "Pattern",
-      "patternHint": "A regular expression, such as \\bEMP-\\d{6}\\b.",
+      "patternHint": "A regular expression, such as \\bEMP-\\d'{6}'\\b.",
       "state": "State",
       "actions": "Actions",
       "on": "On",
@@ -4418,7 +4430,7 @@
         "active": "Active",
         "archived": "Archived"
       },
-      "manage": "Manage {name}",
+      "manage": "Site settings: {name}",
       "create": "Create a site",
       "createIntro": "A template sets the home page layout, comments, moderation and whether news needs approval. You can change all of it later.",
       "nameEn": "Name in English",
@@ -6155,6 +6167,11 @@
       "stopReading": "Stop reading",
       "preparing": "Preparing the audio",
       "playFailed": "The audio could not play in this browser."
+    },
+    "panel": {
+      "close": "Close the assistant",
+      "fullPage": "Open the full page",
+      "intro": "Ask about anything you can open in TeamBeats. Answers cite their sources. Press <key>Ctrl /</key>, or <key>⌘ /</key> on a Mac, to open this panel from any page."
     }
   },
   "agents": {
@@ -6162,7 +6179,9 @@
     "tabs": {
       "agents": "Agents",
       "policy": "Policy and kill switch",
-      "runs": "Runs"
+      "runs": "Runs",
+      "units": "Unit policies",
+      "security": "Security Center"
     },
     "status": {
       "draft": "Draft",
@@ -6249,7 +6268,7 @@
       "notReadyPolicy": "Its autonomy is above what your agent policy allows.",
       "notReadyTools": "A tool it needs is missing or not allowed by your agent policy.",
       "install": "Use template",
-      "installNamed": "Use the {name} template",
+      "installNamed": "Use template: {name}",
       "installing": "Creating…",
       "failed": "Something went wrong. Try again."
     },
@@ -6285,7 +6304,8 @@
       "autonomyLevels": {
         "L0": "L0: answers only",
         "L1": "L1: drafts for the person",
-        "L2": "L2: acts for the person after they confirm"
+        "L2": "L2: acts for the person after they confirm",
+        "L3": "L3: acts after an approver approves"
       },
       "maxToolCalls": "Tool calls per run",
       "tools": "Tools",
@@ -6327,7 +6347,9 @@
         "choose": "Choose a version",
         "version": "Version {number}",
         "rollback": "Roll back",
-        "rolledBack": "The earlier version is in use again."
+        "rolledBack": "The earlier version is in use again.",
+        "revokeTokens": "Revoke tokens",
+        "tokensRevoked": "Tokens revoked. Waiting actions were stopped, and briefing subscriptions and memory permissions must be given again."
       },
       "purpose": "Business purpose",
       "owners": {
@@ -6592,7 +6614,10 @@
       "step": "Using {tool}…",
       "interrupted": "The connection dropped while the agent was working. It carries on and keeps the answer for you.",
       "checkResult": "Check for the answer",
-      "stillWorking": "The agent is still working on this. Check again in a moment."
+      "stillWorking": "The agent is still working on this. Check again in a moment.",
+      "stillWaiting": "The approver has not decided yet.",
+      "degradedTitle": "This agent works with fewer tools for now",
+      "degraded": "A connection it uses is turned off, so some of its actions are not available. It still answers what it can."
     },
     "card": {
       "title": "Confirm this action",
@@ -6600,7 +6625,10 @@
       "fromContent": "Came from content the agent read",
       "confirm": "Confirm",
       "cancel": "Cancel",
-      "working": "Working…"
+      "working": "Working…",
+      "approvalTitle": "Waiting for approval",
+      "approvalIntro": "Running {tool} needs an approver. You will be told when it is decided. Nothing happens until then.",
+      "stop": "Stop"
     },
     "analytics": {
       "title": "Usage and quality",
@@ -6619,7 +6647,54 @@
       "tokens": "Tokens",
       "cost": "Estimated cost",
       "quality": "Release gate",
-      "none": "None"
+      "none": "None",
+      "detailTitle": "Detail",
+      "conversations": "Assistant conversations",
+      "escalations": "Escalations",
+      "resolved": "Resolved without escalation",
+      "scores": "Evaluation scores",
+      "score": "{metric} ({locale}): {value}",
+      "outcomesTitle": "How runs ended",
+      "outcome": "Ended as",
+      "toolsTitle": "Tools",
+      "tool": "Tool",
+      "succeeded": "Succeeded",
+      "toolFailed": "Failed",
+      "toolSuccess": "Success rate",
+      "averageTime": "Average time",
+      "milliseconds": "{ms} ms",
+      "failures": "Most common failures",
+      "failureCount": "{reason}: {calls}",
+      "noTools": "No tool calls in this period.",
+      "trendTitle": "Day by day",
+      "day": "Day",
+      "answered": "Answered",
+      "noRuns": "No runs in this period.",
+      "reasons": {
+        "above_autonomy": "Above the agent's autonomy",
+        "already_done": "Already done in this run",
+        "approval_not_available": "Needs an approver",
+        "cancelled_by_person": "Cancelled by the person",
+        "classification_blocked": "Data above the agent's limit",
+        "denied": "The person may not do this",
+        "invalid_arguments": "Parameters did not fit",
+        "memory_full": "Memory is full",
+        "memory_off": "Memory is off",
+        "memory_restricted": "Memory not allowed here",
+        "not_allowed": "Not allowed by policy",
+        "not_granted": "Not given to the agent",
+        "not_in_briefing": "Not allowed in a briefing",
+        "not_in_package": "Not in the package",
+        "one_action_at_a_time": "One action at a time",
+        "parameters_changed": "Parameters changed",
+        "test_mode": "Test mode",
+        "timeout": "Timed out",
+        "unknown": "Unknown tool",
+        "approval_rejected": "Not approved",
+        "no_approver": "No approver named",
+        "rule_changed": "The approval rule changed",
+        "connector_disabled": "The connection is turned off"
+      }
     },
     "studio": {
       "title": "Build a new agent",
@@ -6728,6 +6803,136 @@
       "change": "Save changes",
       "unsubscribe": "Stop the briefing",
       "failed": "Something went wrong. Try again."
+    },
+    "approval": {
+      "title": "Agent action to approve",
+      "inbox": "Task inbox",
+      "summaryTitle": "What the agent asks",
+      "agent": "Agent",
+      "byAgent": "Requested by an AI agent",
+      "requester": "On behalf of",
+      "unknownPerson": "Unknown person",
+      "tool": "Action",
+      "reasoning": "The agent's reasoning",
+      "noReasoning": "The agent gave no summary.",
+      "due": "Decide by",
+      "parametersTitle": "Exact values",
+      "parametersHint": "Your approval applies to these values only. If anything changes, the action needs a new approval.",
+      "decisionTitle": "Your decision",
+      "decided": "Your decision is saved. The action runs as the person, or is cancelled, within a minute.",
+      "status": {
+        "pending": "This action is waiting for another approver.",
+        "approved": "This action was approved.",
+        "rejected": "This action was not approved.",
+        "expired": "This action was cancelled because nobody decided in time.",
+        "cancelled": "This action was cancelled."
+      }
+    },
+    "degraded": {
+      "title": "Some tools are turned off",
+      "body": "These tools are off because their connection is turned off: {tools}. The agent works without them until the connection is turned on again."
+    },
+    "unitPolicy": {
+      "title": "Unit agent policies",
+      "pickHeading": "Choose a unit",
+      "intro": "A unit can make the agent rules stricter for its own agents and the units below it, never looser than the rules above it.",
+      "unit": "Unit",
+      "open": "Open unit policy",
+      "unknownUnit": "Unknown unit",
+      "notYours": "You can't change the agent policy of this unit.",
+      "heading": "Agent rules for {unit}",
+      "inheritHint": "Leave a field empty to keep the rule from above.",
+      "inherit": "From above: {value}",
+      "switches": "Turn off for this unit",
+      "noScheduled": "No scheduled agents in this unit",
+      "noMemory": "No agent memory in this unit",
+      "allInherited": "Every tool allowed above",
+      "save": "Save unit policy",
+      "remove": "Remove unit rules",
+      "saved": "Agent rules saved for {unit}.",
+      "removed": "{unit} now follows the rules above it."
+    },
+    "security": {
+      "title": "Agent Security Center",
+      "unavailable": "The Agent Security Center is not part of your organization's plan.",
+      "failed": "Something went wrong. Try again.",
+      "notYours": "This record is outside your area.",
+      "working": "Working…",
+      "alerts": "Alerts",
+      "incidents": "Incidents",
+      "watch": "Watch list",
+      "watchIntro": "High risk agents stay on this list for 30 days after each publication.",
+      "status": "Status",
+      "apply": "Show",
+      "when": "Last seen",
+      "agent": "Agent",
+      "rule": "Rule",
+      "severity": "Severity",
+      "matches": "Matches",
+      "opened": "Opened",
+      "version": "Version",
+      "watchedUntil": "Watched until",
+      "firstSeen": "First seen",
+      "lastSeen": "Last seen",
+      "runs": "Runs",
+      "noRuns": "No runs are linked.",
+      "runN": "Run {n}",
+      "alertN": "Alert {n}",
+      "unknownAgent": "Unknown agent",
+      "noAlerts": "No alerts with this status.",
+      "noIncidents": "No incidents yet.",
+      "noWatch": "No agent is being watched.",
+      "alertStatus": {
+        "open": "Open",
+        "dismissed": "Dismissed",
+        "incident": "Incident opened"
+      },
+      "incidentStatus": {
+        "open": "Open",
+        "closed": "Closed"
+      },
+      "severities": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "critical": "Critical"
+      },
+      "rules": {
+        "denied_burst": "Many refused tool calls",
+        "injection": "Possible prompt injection",
+        "cost_spike": "Unusual usage"
+      },
+      "ruleHelp": {
+        "denied_burst": "At least 10 tool calls of this agent were refused within 10 minutes.",
+        "injection": "Content the agent read looked like instructions. The agent treats such content as data and did not follow it.",
+        "cost_spike": "The agent used at least five times its usual hourly model tokens in the last hour."
+      },
+      "alert": {
+        "facts": "What happened",
+        "work": "Act on this alert",
+        "toIncident": "Open incident",
+        "dismiss": "Dismiss",
+        "dismissed": "Alert dismissed.",
+        "openIncident": "Open the incident"
+      },
+      "incident": {
+        "title": "Title",
+        "facts": "Incident",
+        "actions": "Actions taken",
+        "noActions": "No action recorded yet.",
+        "record": "Record an action",
+        "actionTaken": "Action taken",
+        "save": "Save",
+        "saved": "Incident updated.",
+        "stale": "Someone changed this incident. Reload to see the latest version.",
+        "closeHeading": "Close the incident",
+        "closureNote": "Closure note",
+        "close": "Close incident",
+        "closed": "Incident closed.",
+        "closedAt": "Closed on",
+        "evidence": "Export evidence",
+        "openAgent": "Open the agent"
+      }
     }
   },
   "evaluation": {
@@ -7164,7 +7369,7 @@
         "newReaders": "New readers"
       },
       "remind": "Remind this group",
-      "remindGroup": "Remind {group}",
+      "remindGroup": "Remind this group: {group}",
       "busy": "Sending",
       "reminded": "{count, plural, =0 {Everyone has already been reminded in the last hour.} one {Reminder sent to # person.} other {Reminder sent to # people.}}",
       "remindFailed": "The reminder could not be sent. Please try again.",
@@ -13873,5 +14078,41 @@
     "people": "People",
     "busy": "Saving",
     "failed": "That did not work. Try again."
+  },
+  "accessibility_statement": {
+    "title": "Accessibility statement",
+    "intro": "TeamBeats is built so that everyone in your organization can use it, including people who use a screen reader, magnification, voice control, switch access or only a keyboard.",
+    "standard": {
+      "title": "The standard we work to",
+      "body": "TeamBeats aims to meet the Web Content Accessibility Guidelines (WCAG) 2.2 at level AA on every page, in Arabic and English, in every design, in light and dark mode, on desktop and phone."
+    },
+    "checks": {
+      "title": "How we check",
+      "automated": "Every change to TeamBeats is checked automatically on every page in all four designs, light and dark mode, Arabic and English, and desktop and phone widths, and a change that adds a serious accessibility problem cannot be released.",
+      "pages": "Our main pages are also checked for keyboard access, visible focus, target size, text at 200 percent, text spacing, reflow at small widths and reduced motion.",
+      "manual": "Our team reviews the main journeys with a keyboard and screen readers. An independent audit with assistive technologies is planned.",
+      "reviewed": "This statement was last reviewed on {date}."
+    },
+    "limitations": {
+      "title": "Known limitations",
+      "captions": "Videos that people upload have no captions unless the uploader adds them.",
+      "pdf": "Letters and reports downloaded as PDF are not yet tagged for screen readers.",
+      "audit": "No independent assistive technology audit has been completed yet.",
+      "timeout": "An idle session ends without a warning first. Your work in progress in forms is kept where the page allows.",
+      "content": "Your organization writes its own news, pages and documents. TeamBeats checks images for alternative text and pages for accessibility problems before they are published, but the content itself is your organization's responsibility."
+    },
+    "settings": {
+      "title": "Settings that can help",
+      "text": "Text size up to 200 percent.",
+      "motion": "Reduced motion, which stops animations.",
+      "mode": "Light, dark or your device's mode.",
+      "density": "Comfortable or compact spacing.",
+      "open": "Open your preferences"
+    },
+    "report": {
+      "title": "Report a problem",
+      "own": "If something in TeamBeats is hard to use, tell your organization:",
+      "admin": "If something in TeamBeats is hard to use, contact your organization's TeamBeats administrator, who can report it to us."
+    }
   }
 }

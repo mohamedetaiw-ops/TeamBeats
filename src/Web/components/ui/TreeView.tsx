@@ -92,7 +92,7 @@ export function TreeView({
           tabIndex={node.key === tabbable ? 0 : -1}
           className="ui-tree-item"
         >
-          {/* The row is the pointer target; the keys are handled on the tree, where the item itself has focus. */}
+          {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- the row is the pointer target; the tree handles the keys while the item has focus */}
           <span
             className="ui-tree-row"
             onClick={() => {

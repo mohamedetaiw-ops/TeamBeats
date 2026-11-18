@@ -35,6 +35,10 @@ Every name, email address and number is invented. People are addressed by person
 - Items are found again by English title or name (requests by idempotency key), so a restart adds nothing. A person who does not exist is reported as `<persona> not found` and the rest carries on. Documents whose stored file was lost (staging keeps files in temporary storage) are uploaded again.
 - The log line `Demo data for <tenant>: added ...; skipped ...` lists what the run did.
 
+## On request
+
+The development host also seeds the caller's own tenant on request: `POST /api/v1/dev/demo-data`, for a tenant administrator, with an optional `people` map from persona key to the email of a user of that tenant. The tenant comes from the session. A persona who is not a user of the tenant is played by the caller, so a tenant with one administrator still gets every area. The accessibility suite (`tests/Acceptance/a11y/details.spec.ts`, spec 038 T008) uses it to open every detail page on a real record. It uses `Dev:SeedDemo:Folder` when set, and the package the host ships (`seeds/demo`) otherwise, so it works while startup seeding is off.
+
 ## Changing it
 
 Edit the JSON and restart the host. Keep content fictional, keep both languages for anything a person reads, and make synonyms single words. Run `DemoDataSeedTests` after a change: it checks that every item goes in, that a second run adds nothing and that another tenant sees none of it.

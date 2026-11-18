@@ -75,8 +75,8 @@ public static class AgentAutonomy
 {
     public static readonly IReadOnlyList<string> Levels = ["L0", "L1", "L2", "L3", "L4"];
 
-    /// <summary>What R1 builds (spec 027 US1): L3 and L4 come in later releases with their packages.</summary>
-    public const string HighestBuilt = "L2";
+    /// <summary>What is built (spec 027 US1): L3 governed execution in R2; L4 comes in R3 with its package.</summary>
+    public const string HighestBuilt = "L3";
 
     public static int Rank(string? level) => level is null ? -1 : Levels.ToList().IndexOf(level);
 }
@@ -251,6 +251,10 @@ public static class AgentDefinitions
         }
         errors.ThrowIfAny();
     }
+
+    /// <summary>The agent's tools that cannot be called now, such as those of a disabled connector (027 US7 scenario 3).</summary>
+    public static IReadOnlyList<string> UnavailableTools(AgentDefinition d, ToolRegistry tools) =>
+        (d.Tools ?? []).Where(t => tools.Find(t)?.Definition.Unavailable is not null).ToList();
 
     /// <summary>Spec 027 US9: computed from the definition, never lowered by hand.</summary>
     public static string RiskClass(AgentDefinition d, ToolRegistry tools)

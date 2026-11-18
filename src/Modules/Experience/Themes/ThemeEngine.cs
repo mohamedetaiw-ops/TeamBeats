@@ -57,6 +57,26 @@ public static class ThemeEngine
             provenance[name] = new TokenSource("design", null, null, null, null, false);
         }
 
+        // A lock keeps the value the locking scope saw, design included: when a deeper scope picks another design, a locked
+        // token takes the design value effective at the scope that locked it, not the deeper design's value.
+        foreach (var (name, lockAt) in locks)
+        {
+            if (name == DesignPresets.PresetToken || !TokenSchema.ByName.TryGetValue(name, out var token))
+            {
+                continue;
+            }
+            var lockedPreset = EffectivePreset(layers.Where(l => l.Depth <= lockAt.Depth).ToList(), locks);
+            if (lockedPreset == preset)
+            {
+                continue;
+            }
+            var presetTokens = DesignPresets.Tokens(lockedPreset);
+            var fromDesign = presetTokens.TryGetValue(name, out var presetValue);
+            raw[name] = VariantKeys().ToDictionary(v => v.Key,
+                v => (fromDesign ? Pick(presetValue!, v.Mode, v.Density) : null) ?? PlatformValue(token, v.Mode, v.Density));
+            provenance[name] = new TokenSource(fromDesign ? "design" : "platform", null, null, null, lockAt.Scope, true);
+        }
+
         foreach (var layer in layers.OrderBy(l => l.Depth).ThenBy(l => l.Kind == "brand" ? 0 : 1))
         {
             foreach (var (name, value) in layer.Tokens)
@@ -101,6 +121,11 @@ public static class ThemeEngine
             foreach (var token in TokenSchema.All)
             {
                 var value = Dealias(token.Name, key, raw, []);
+                if (value is not null && token.Type == TokenTypes.Choice && !token.Choices!.Contains(value))
+                {
+                    // An alias from older data that lands on a value this choice does not allow.
+                    value = null;
+                }
                 if (value is null)
                 {
                     // A cycle from older data: the platform value keeps the page usable.
@@ -189,15 +214,18 @@ public static class ThemeEngine
         new("color.text.primary", "color.surface.base", 4.5, true, "validation.theme.contrast_text"),
         new("color.text.primary", "color.surface.raised", 4.5, true, "validation.theme.contrast_text"),
         new("color.text.secondary", "color.surface.base", 4.5, true, "validation.theme.contrast_text"),
+        new("color.text.secondary", "color.surface.raised", 4.5, true, "validation.theme.contrast_text"),
         new("color.shell.text", "color.shell.background", 4.5, true, "validation.theme.contrast_text"),
         new("color.nav.text", "color.nav.background", 4.5, true, "validation.theme.contrast_text"),
         new("color.nav.active", "color.nav.background", 3, true, "validation.theme.contrast_ui"),
         new("color.border.strong", "color.surface.base", 3, true, "validation.theme.contrast_ui"),
         new("color.focus.ring", "color.surface.base", 3, true, "validation.theme.contrast_focus"),
+        new("color.focus.ring", "color.surface.raised", 3, true, "validation.theme.contrast_focus"),
         new("color.focus.ring_inverse", "color.shell.background", 3, true, "validation.theme.contrast_focus"),
         new("color.focus.ring", "color.nav.background", 3, true, "validation.theme.contrast_focus"),
         new("color.accent.text", "color.accent.base", 4.5, false, "validation.theme.contrast_text"),
         new("color.link", "color.surface.base", 4.5, false, "validation.theme.contrast_text"),
+        new("color.link", "color.surface.raised", 4.5, false, "validation.theme.contrast_text"),
         new("color.text.inverse", "color.accent.base", 3, false, "validation.theme.contrast_large_text"),
         new("color.accent.base", "color.surface.base", 3, false, "validation.theme.contrast_ui"),
         new("color.state.danger", "color.surface.base", 3, false, "validation.theme.contrast_ui"),

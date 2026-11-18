@@ -114,7 +114,7 @@ public sealed partial class ConnectorTools(IDbSession session, ITenantContext co
     internal sealed record Row(Guid Id, Guid ConnectionId, string Action, string Name, string Description, IReadOnlyDictionary<string, string> Title,
         DateTimeOffset CreatedAt);
 
-    internal sealed record ConnectionRow(Guid Id, string Kind, int PackVersion, string? ExternalId, string Settings);
+    internal sealed record ConnectionRow(Guid Id, string Kind, int PackVersion, string? ExternalId, string Settings, bool Enabled = true);
 
     internal async Task<List<Row>> RowsAsync(Guid? connectionId, CancellationToken ct) =>
         await session.QueryAsync(
@@ -127,9 +127,9 @@ public sealed partial class ConnectorTools(IDbSession session, ITenantContext co
 
     internal Task<ConnectionRow?> ConnectionAsync(Guid id, CancellationToken ct) =>
         session.QuerySingleOrDefaultAsync(
-            "select id, kind, pack_version, external_tenant_id, settings::text from integrations.connection where id = @id and kind <> all(@hidden)",
+            "select id, kind, pack_version, external_tenant_id, settings::text, enabled from integrations.connection where id = @id and kind <> all(@hidden)",
             new { id, hidden = Webhooks.HiddenKinds.All },
-            r => new ConnectionRow(r.GetGuid(0), r.GetString(1), r.GetInt32(2), r.Get<string>("external_tenant_id"), r.GetString(4)), ct);
+            r => new ConnectionRow(r.GetGuid(0), r.GetString(1), r.GetInt32(2), r.Get<string>("external_tenant_id"), r.GetString(4), r.GetBoolean(5)), ct);
 
     internal async Task<IReadOnlyList<ConnectorActionDefinition>> ActionsAsync(ConnectionRow c, CancellationToken ct) =>
         packs.FirstOrDefault(p => p.Kind == c.Kind) is { } pack
@@ -180,10 +180,13 @@ public sealed class ConnectorToolSource(ConnectorTools tools, IConnectorRuntime 
         foreach (var group in rows.GroupBy(r => r.ConnectionId))
         {
             var connection = await tools.ConnectionAsync(group.Key, ct);
+            // A disabled connection keeps its tools in the registry, marked unavailable, so every agent holding one is
+            // refused the call and shows a degraded notice (spec 027 US7 scenario 3) until it is enabled again.
+            var unavailable = connection is null || !connection.Enabled ? ToolUnavailable.ConnectorDisabled : null;
             var actions = connection is null ? [] : await tools.ActionsAsync(connection, ct);
             foreach (var row in group)
             {
-                list.Add(new ConnectorActionTool(row, actions.FirstOrDefault(a => a.Name == row.Action), runtime, entitlements));
+                list.Add(new ConnectorActionTool(row, actions.FirstOrDefault(a => a.Name == row.Action), runtime, entitlements, unavailable));
             }
         }
         return list;
@@ -204,7 +207,8 @@ public sealed class ConnectorActionTool : IAgentTool
     private readonly IConnectorRuntime _runtime;
     private readonly IEntitlementService _entitlements;
 
-    internal ConnectorActionTool(ConnectorTools.Row row, ConnectorActionDefinition? action, IConnectorRuntime runtime, IEntitlementService entitlements)
+    internal ConnectorActionTool(ConnectorTools.Row row, ConnectorActionDefinition? action, IConnectorRuntime runtime, IEntitlementService entitlements,
+        string? unavailable = null)
     {
         _connectionId = row.ConnectionId;
         _action = row.Action;
@@ -215,7 +219,7 @@ public sealed class ConnectorActionTool : IAgentTool
         Definition = new ToolDefinition(
             ConnectorTools.Prefix + row.Name, "integrations", 1, effect, ConnectorTools.DefaultRule(effect), ConnectorTools.Schema(_inputs), "internal",
             action?.Idempotent ?? false, TimeoutSeconds: 15, row.Description,
-            effect == ToolSideEffects.Read ? Capabilities.IntegrationConnectors : Capabilities.AiAgentsWriteTools, row.Title);
+            effect == ToolSideEffects.Read ? Capabilities.IntegrationConnectors : Capabilities.AiAgentsWriteTools, row.Title, Unavailable: unavailable);
     }
 
     public ToolDefinition Definition { get; }

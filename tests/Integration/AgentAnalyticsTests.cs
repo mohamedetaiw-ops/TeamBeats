@@ -18,9 +18,9 @@ public sealed class AgentAnalyticsTests(TenantWorld world)
 {
     private const string Agents = "/api/v1/agents";
 
-    private async Task<TestTenant> FreshAsync()
+    private async Task<TestTenant> FreshAsync(string package = "workplace_plus")
     {
-        var t = await world.CreateTenantAsync("aa-" + Guid.NewGuid().ToString("N")[..8], "workplace_plus", "en", ["en", "ar"]);
+        var t = await world.CreateTenantAsync("aa-" + Guid.NewGuid().ToString("N")[..8], package, "en", ["en", "ar"]);
         foreach (var name in new[] { "sara", "emp", "emp2", "out", "aip" })
         {
             await world.SeedUserAsync(t, name, MembershipTypes.Employee);
@@ -102,4 +102,67 @@ public sealed class AgentAnalyticsTests(TenantWorld world)
         Assert.Equal(0, total.GetProperty("runs").GetInt64());
         Assert.Equal(JsonValueKind.Null, total.GetProperty("successRate").ValueKind);
     }
+
+    [Fact]
+    public async Task Advanced_analytics_add_escalations_tool_success_outcomes_conversations_and_a_trend()
+    {
+        var t = await FreshAsync();
+        var id = await PublishedAsync(t);
+        await OkAsync(t["emp"].Client.PostAsJsonAsync($"{Agents}/{id}/runs", new { message = "Search " + Search("""{"query":"leave policy"}""") }));
+        await OkAsync(t["emp"].Client.PostAsJsonAsync($"{Agents}/{id}/runs", new { message = "Search " + Search("""{"query":5,"extra":true}""") }));
+        await OkAsync(t["emp2"].Client.PostAsJsonAsync($"{Agents}/{id}/runs", new { message = "Hello [fake:500]" }));
+        var turn = await OkAsync(t["emp"].Client.PostAsJsonAsync("/api/v1/assistant/turns", new { question = "Anything new? [fake:route:1]" }));
+        await OkAsync(t["emp"].Client.PostAsJsonAsync($"/api/v1/assistant/turns/{turn.GetProperty("id").GetGuid()}/feedback", new { helpful = false }), HttpStatusCode.NoContent);
+
+        var detail = (await OkAsync(t["sara"].Client.GetAsync($"{Agents}/{id}/analytics"))).GetProperty("detail");
+        var versions = detail.GetProperty("versions").EnumerateArray().ToList();
+        Assert.Equal(2, versions.Count);
+        var v1 = versions[0];
+        Assert.Equal(1, v1.GetProperty("version").GetInt32());
+        Assert.Equal(1, v1.GetProperty("conversations").GetInt64());
+        Assert.Equal(1, v1.GetProperty("escalations").GetInt64());
+        Assert.Equal(0.75, v1.GetProperty("resolvedRate").GetDouble());
+        var all = versions[1];
+        Assert.Equal(JsonValueKind.Null, all.GetProperty("version").ValueKind);
+        Assert.Equal(1, all.GetProperty("escalations").GetInt64());
+
+        var outcomes = detail.GetProperty("outcomes").EnumerateArray().ToDictionary(o => o.GetProperty("outcome").GetString()!, o => o.GetProperty("runs").GetInt64());
+        Assert.Equal(3, outcomes["answered"]);
+        Assert.Equal(1, outcomes["unavailable"]);
+
+        var search = Assert.Single(detail.GetProperty("tools").EnumerateArray());
+        Assert.Equal("knowledge.search", search.GetProperty("tool").GetString());
+        Assert.Equal(2, search.GetProperty("calls").GetInt64());
+        Assert.Equal(1, search.GetProperty("succeeded").GetInt64());
+        Assert.Equal(1, search.GetProperty("failed").GetInt64());
+        Assert.Equal(0.5, search.GetProperty("successRate").GetDouble());
+        var failure = Assert.Single(search.GetProperty("failures").EnumerateArray());
+        Assert.Equal("tool.invalid_arguments", failure.GetProperty("reason").GetString());
+
+        var day = Assert.Single(detail.GetProperty("trend").EnumerateArray());
+        Assert.Equal(4, day.GetProperty("runs").GetInt64());
+        Assert.Equal(1, day.GetProperty("escalations").GetInt64());
+        Assert.Equal(1, day.GetProperty("ratings").GetInt64());
+        Assert.Equal(0, day.GetProperty("helpful").GetInt64());
+
+        // Another tenant's runs never show up in a look at its own agent.
+        var other = await FreshAsync();
+        var theirs = await PublishedAsync(other);
+        var empty = (await OkAsync(other["sara"].Client.GetAsync($"{Agents}/{theirs}/analytics"))).GetProperty("detail");
+        Assert.Empty(empty.GetProperty("tools").EnumerateArray());
+        Assert.Empty(empty.GetProperty("trend").EnumerateArray());
+    }
+
+    [Fact]
+    public async Task Without_advanced_analytics_the_basic_view_has_no_detail()
+    {
+        var t = await FreshAsync("workplace");
+        var id = await PublishedAsync(t);
+        await OkAsync(t["emp"].Client.PostAsJsonAsync($"{Agents}/{id}/runs", new { message = "Hello" }));
+        var view = await OkAsync(t["sara"].Client.GetAsync($"{Agents}/{id}/analytics"));
+        Assert.Equal(1, view.GetProperty("total").GetProperty("runs").GetInt64());
+        Assert.Equal(JsonValueKind.Null, view.GetProperty("detail").ValueKind);
+    }
+
+    private static string Search(string args) => $"[fake:tool:knowledge__search] [fake:args:{args}]";
 }

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { apiGet, type SignInOptions } from "@/lib/api";
@@ -56,6 +57,10 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
       ) : null}
       {mode ? <DevSignInForm mode={mode} testAccount={process.env.TEAMBEATS_TEST_ACCOUNT || "admin"} returnTo={returnTo} /> : null}
       {!sso && !mode ? <p>{t("ssoPending")}</p> : null}
+      {/* The accessibility statement is reachable before sign-in (spec 038 A11Y-023). */}
+      <p>
+        <Link href="/accessibility">{t("accessibility")}</Link>
+      </p>
     </main>
   );
 }

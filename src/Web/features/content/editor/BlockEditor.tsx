@@ -86,6 +86,7 @@ function ImagePicker({ onPick, onCancel }: { onPick: (id: string, alt: string) =
   return (
     <div className="content-editor-ask" role="group" aria-label={t("imageTitle")}>
       <label htmlFor={searchId}>{t("imageSearch")}</label>
+      {/* eslint-disable-next-line jsx-a11y/no-autofocus -- the image search opens on request, so focus moves into it */}
       <input id={searchId} type="search" dir="auto" value={query} autoFocus onChange={(e) => setQuery(e.target.value)} />
       {failed ? (
         <p className="field-error" role="alert">
@@ -285,6 +286,7 @@ function Toolbar({ label }: { label: string }) {
             type="url"
             dir="ltr"
             value={url}
+            // eslint-disable-next-line jsx-a11y/no-autofocus -- the link panel opens on request, so focus moves into it
             autoFocus
             aria-invalid={urlError || undefined}
             aria-describedby={urlError ? `${urlId}-error` : undefined}

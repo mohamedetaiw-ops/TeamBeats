@@ -93,7 +93,7 @@
 
 .journeys-reasons {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr));
   gap: var(--tb-space-xs) var(--tb-space-md);
 }
 

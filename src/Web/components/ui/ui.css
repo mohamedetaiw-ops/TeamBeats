@@ -261,8 +261,11 @@
   border-block-start: var(--tb-border-width-thin) solid var(--tb-color-border-default);
 }
 
-/* Footer actions of a linked card stay their own targets, above the covering link. */
-.ui-card[data-linked] .ui-card-footer {
+/*
+ * Footer controls of a linked card stay their own targets, above the covering link, for a pointer as well as the keyboard.
+ * Only the controls are lifted, so the rest of the footer, such as badges, still opens the card.
+ */
+.ui-card[data-linked] .ui-card-footer :is(a, button, input, select, textarea, summary, [tabindex]) {
   position: relative;
   z-index: 1;
 }
@@ -492,7 +495,7 @@
 
 .gallery-icons {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 6.5rem), 1fr));
   gap: var(--tb-space-sm);
   margin: 0;
   padding: 0;
@@ -515,7 +518,7 @@
 
 .gallery-swatches {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 9rem), 1fr));
   gap: var(--tb-space-sm);
   margin: 0;
   padding: 0;
@@ -925,7 +928,7 @@
 /* Tile card: icon tile or avatar, a covering title link, meta line, optional footer action above the cover. */
 .ui-tiles {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
   gap: var(--tb-space-md);
   margin: 0;
   padding: 0;
@@ -998,7 +1001,7 @@
 }
 
 .ui-tile:has(.ui-tile-link:focus-visible) {
-  outline: var(--tb-border-width-focus) solid var(--tb-color-accent-base);
+  outline: var(--tb-border-width-focus) solid var(--tb-color-focus-ring);
   outline-offset: var(--tb-border-width-focus);
 }
 

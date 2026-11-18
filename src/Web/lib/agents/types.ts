@@ -87,6 +87,8 @@ export type AgentDetail = {
   versions: AgentVersion[];
   canEdit: boolean;
   templateUpdate: number | null;
+  /** Tools the agent holds that cannot be called now, such as those of a disabled connection (spec 027 US7 scenario 3). */
+  unavailableTools?: string[] | null;
 };
 
 export type TemplateView = {
@@ -192,6 +194,7 @@ export type ConfirmationCard = {
   hash: string;
   expiresAt: string;
   fromContent: string[];
+  awaitingApproval: boolean;
 };
 
 export type RunView = {
@@ -287,7 +290,7 @@ export type RunRecord = {
   itemId: string | null;
 };
 
-export type AgentChoice = { id: string; name: Localized | null; description: Localized | null; icon: string | null; category: string | null; favourite?: boolean };
+export type AgentChoice = { id: string; name: Localized | null; description: Localized | null; icon: string | null; category: string | null; favourite?: boolean; degraded?: boolean };
 
 /** An agent in the marketplace as the signed-in person sees it (spec 020 US6). The API decides every flag. */
 export type MarketplaceAgent = {
@@ -313,7 +316,7 @@ export type AccessRequestView = { id: string; agentId: string; userId: string; s
 /** Who outside an agent's audience sees it in the marketplace (spec 020 FR-010). */
 export const AUDIENCE_OUTSIDE = ["hidden", "request_access"] as const;
 
-export const AUTONOMY_BUILT = ["L0", "L1", "L2"] as const;
+export const AUTONOMY_BUILT = ["L0", "L1", "L2", "L3"] as const;
 export const TONES = ["neutral", "friendly", "formal"] as const;
 export const OUTPUT_FORMATS = ["text", "bullets", "steps"] as const;
 export const CLASSIFICATIONS = ["public", "internal", "confidential", "restricted"] as const;
@@ -341,4 +344,113 @@ export type AgentVersionStats = {
   quality: string | null;
 };
 
-export type AgentAnalyticsView = { agentId: string; days: number; from: string; to: string; total: AgentVersionStats; versions: AgentVersionStats[] };
+export type AgentQualityScore = { metric: string; locale: string; value: number | null };
+export type AgentVersionDetail = { version: number | null; conversations: number; escalations: number; resolvedRate: number | null; quality: AgentQualityScore[] };
+export type AgentToolStats = {
+  tool: string;
+  calls: number;
+  succeeded: number;
+  failed: number;
+  successRate: number | null;
+  averageMs: number;
+  failures: { reason: string; calls: number }[];
+};
+export type AgentDayStats = { day: string; runs: number; answered: number; escalations: number; ratings: number; helpful: number };
+export type AgentAnalyticsDetail = {
+  versions: AgentVersionDetail[];
+  outcomes: { outcome: string; runs: number }[];
+  tools: AgentToolStats[];
+  trend: AgentDayStats[];
+};
+
+export type AgentAnalyticsView = {
+  agentId: string;
+  days: number;
+  from: string;
+  to: string;
+  total: AgentVersionStats;
+  versions: AgentVersionStats[];
+  detail: AgentAnalyticsDetail | null;
+};
+
+/** An agent action waiting for its approver (spec 027 US4); the API shows it only to someone who holds its task. */
+export type AgentApprovalView = {
+  id: string;
+  runId: string;
+  agentId: string;
+  agentVersion: number;
+  agentNames: Localized;
+  requestedBy: string;
+  requesterName: string | null;
+  tool: string;
+  parameters: Record<string, unknown>;
+  hash: string;
+  summary: string | null;
+  status: "pending" | "approved" | "rejected" | "expired" | "cancelled";
+  dueAt: string;
+  createdAt: string;
+  taskId: string | null;
+};
+
+/** An org unit's own agent rules (spec 027 US8 scenario 3); a null value inherits from the policy above. */
+export type UnitAgentPolicy = {
+  maxAutonomy: string | null;
+  maxClassification: string | null;
+  allowedTools: string[] | null;
+  toolRules: Record<string, string> | null;
+  scheduledAgents: boolean | null;
+  persistentMemory: boolean | null;
+  maxToolCalls: number | null;
+  maxSteps: number | null;
+  maxRunSeconds: number | null;
+  maxDailyRunsPerAgent: number | null;
+};
+
+export type UnitAgentPolicyView = {
+  unitId: string;
+  version: number;
+  policy: UnitAgentPolicy;
+  inherited: AgentPolicy;
+  effective: AgentPolicy;
+  updatedAt: string | null;
+};
+
+/** Agent Security Center records (spec 027 FR-023). */
+export const ALERT_RULES = ["denied_burst", "injection", "cost_spike"] as const;
+export const SEVERITIES = ["low", "medium", "high", "critical"] as const;
+
+export type AgentAlert = {
+  id: string;
+  agentId: string;
+  agentNames: Localized;
+  orgUnitId: string;
+  rule: string;
+  severity: string;
+  status: "open" | "dismissed" | "incident" | string;
+  matches: number;
+  runIds: string[];
+  details: Record<string, unknown>;
+  incidentId: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AgentIncident = {
+  id: string;
+  title: string;
+  severity: string;
+  status: "open" | "closed" | string;
+  agentId: string | null;
+  orgUnitId: string;
+  runIds: string[];
+  actions: { at: string; by: string; text: string }[];
+  closureNote: string | null;
+  openedBy: string;
+  openedAt: string;
+  closedBy: string | null;
+  closedAt: string | null;
+  version: number;
+  alertIds: string[];
+};
+
+export type AgentWatch = { agentId: string; agentNames: Localized; orgUnitId: string; version: number; reason: string; since: string; until: string };

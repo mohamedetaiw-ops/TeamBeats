@@ -45,8 +45,9 @@ public sealed record AgentReview(AgentSummary Agent, AgentVersionView Version, A
 /// new agent policy.
 /// </summary>
 public sealed class AgentLifecycle(IDbSession session, ITenantContext context, IEntitlementService entitlements, IAuthorizationService authz,
-    IAuditWriter audit, IClock clock, ToolRegistry tools, AgentPolicyService policies, AgentRegistry registry, IAgentReleaseGate gate,
-    ITenantSettingsReader tenant, INotificationSender notifications)
+    IAuditWriter audit, IClock clock, ToolRegistry tools, AgentRegistry registry, IAgentReleaseGate gate,
+    ITenantSettingsReader tenant, INotificationSender notifications, UnitAgentPolicyService unitPolicies, IOrganizationHierarchy hierarchy,
+    AgentSecurityCenter security)
 {
     public const int MaxReason = 500;
 
@@ -92,7 +93,7 @@ public sealed class AgentLifecycle(IDbSession session, ITenantContext context, I
         {
             throw AppException.Conflict("conflict.agent.revision");
         }
-        AgentDefinitions.Validate(agent.Definition, tools, (await policies.CurrentAsync(ct)).Policy);
+        AgentDefinitions.Validate(agent.Definition, tools, await unitPolicies.ForUnitAsync(agent.Agent.OrgUnitId, ct));
         var now = clock.UtcNow;
         await session.ExecAsync(
             """
@@ -186,7 +187,7 @@ public sealed class AgentLifecycle(IDbSession session, ITenantContext context, I
             });
         }
         var definition = Definition((await VersionDefinitionAsync(id, number, ct))!);
-        AgentDefinitions.Validate(definition, tools, (await policies.CurrentAsync(ct)).Policy);
+        AgentDefinitions.Validate(definition, tools, await unitPolicies.ForUnitAsync(agent.Agent.OrgUnitId, ct));
         var risk = AgentDefinitions.RiskClass(definition, tools);
         if (agent.Agent.CurrentVersion is null)
         {
@@ -204,6 +205,11 @@ public sealed class AgentLifecycle(IDbSession session, ITenantContext context, I
             Changes: new { version = number, riskClass = risk, gate = result.Status }), ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.AgentVersionPublished, "agent", id.ToString(), TargetOrgUnitId: agent.Agent.OrgUnitId,
             Changes: new { version = number, from = agent.Agent.CurrentVersion, riskClass = risk }), ct);
+        if (risk == AgentRiskClasses.High)
+        {
+            // A High risk agent is watched for 30 days after each publication (027 US9 scenario 3).
+            await security.WatchPublishedAsync(id, agent.Agent.OrgUnitId, number, ct);
+        }
         return await registry.GetAsync(id, ct);
     }
 
@@ -265,7 +271,7 @@ public sealed class AgentLifecycle(IDbSession session, ITenantContext context, I
         var definition = Definition((await VersionDefinitionAsync(id, number, ct))!);
         try
         {
-            AgentDefinitions.Validate(definition, tools, (await policies.CurrentAsync(ct)).Policy);
+            AgentDefinitions.Validate(definition, tools, await unitPolicies.ForUnitAsync(agent.Agent.OrgUnitId, ct));
         }
         catch (AppException e) when (e.Errors is not null)
         {
@@ -314,16 +320,53 @@ public sealed class AgentLifecycle(IDbSession session, ITenantContext context, I
         await audit.WriteAsync(new AuditEntry(AuditActions.AgentSuspended, "agent", id.ToString(), TargetOrgUnitId: unit, Changes: new { reason }), ct);
     }
 
-    /// <summary>Waiting runs stop and their pending actions are cancelled.</summary>
-    /// <summary>Stops waiting and running runs. Raising the attempt makes a request still running one roll back at its next checkpoint (020 T021).</summary>
-    private async Task StopWaitingAsync(string where, object args, CancellationToken ct) =>
+    /// <summary>
+    /// Stops waiting and running runs; their pending actions are cancelled and approvals they wait on leave the approvers'
+    /// inbox (027 US7 scenario 1). Raising the attempt makes a request still running one roll back at its next checkpoint (020 T021).
+    /// </summary>
+    private async Task StopWaitingAsync(string where, object args, CancellationToken ct, string outcome = "suspended") =>
         await session.ExecAsync(
             $"""
+            update agents.run_approval a set status = 'cancelled', decided_at = @now
+            from agents.run r where r.id = a.run_id and r.status = 'waiting' and a.status = 'pending' and r.{where};
             delete from agents.run_checkpoint c using agents.run r where r.id = c.run_id and r.status = 'waiting' and r.{where};
-            update agents.run set status = 'stopped', outcome = 'suspended', reason = 'agent.suspended', finished_at = @now, updated_at = @now,
+            update agents.run set status = 'stopped', outcome = '{outcome}', reason = 'agent.{outcome}', finished_at = @now, updated_at = @now,
               attempt = attempt + 1
             where status in ('waiting', 'running') and {where};
             """, args, ct);
+
+    /// <summary>The notice people get when an agent's delegated grants were revoked (027 US7 scenario 4).</summary>
+    public const string TokensRevokedTemplate = "agents.tokens_revoked";
+
+    /// <summary>
+    /// Revokes everything the agent holds to act for people later (027 US7 scenario 4, FR-020): waiting runs stop and
+    /// their confirmations, approvals and checkpoints are cancelled; scheduled briefing subscriptions, which run as the
+    /// subscribing person, are removed; and the people's acceptances that the agent may remember are withdrawn. Each must
+    /// be given again, and the people concerned are told. Agents hold no connector credentials of their own: connector
+    /// calls use the connection, which the integration administrator disables or reconnects (spec 006). The agent itself
+    /// stays as it is; suspending it is a separate control.
+    /// </summary>
+    public async Task<AgentDetail> RevokeTokensAsync(Guid id, ReasonRequest request, CancellationToken ct)
+    {
+        await UserAsync(ct);
+        var agent = await registry.GetAsync(id, ct);
+        await DemandOnAgentAsync(Permissions.AgentSuspend, agent, ct);
+        var reason = Reason(request.Reason, required: true);
+        var now = clock.UtcNow;
+        var waiting = await session.ScalarAsync<long>("select count(*) from agents.run where agent_id = @id and status in ('waiting', 'running')", new { id }, ct);
+        await StopWaitingAsync("agent_id = @id", new { id, now }, ct, "tokens_revoked");
+        var briefings = await session.QueryAsync("delete from agents.agent_briefing where agent_id = @id returning user_id", new { id }, r => r.GetGuid(0), ct);
+        var consents = await session.QueryAsync("delete from agents.agent_memory_consent where agent_id = @id returning user_id", new { id }, r => r.GetGuid(0), ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.AgentTokensRevoked, "agent", id.ToString(), TargetOrgUnitId: agent.Agent.OrgUnitId,
+            Changes: new { reason, runs = waiting, briefings = briefings.Count, memoryConsents = consents.Count }), ct);
+        var people = briefings.Concat(consents).Distinct().ToList();
+        if (people.Count > 0)
+        {
+            await notifications.SendAsync(new NotificationRequest(people, NotificationCategories.SecurityNotice, TokensRevokedTemplate, $"/agents/{id}",
+                DedupeKey: $"agents.tokens_revoked:{id:N}:{now.ToUnixTimeSeconds()}"), ct);
+        }
+        return await registry.GetAsync(id, ct);
+    }
 
     public async Task<AgentDetail> ResumeAsync(Guid id, CancellationToken ct)
     {
@@ -337,7 +380,7 @@ public sealed class AgentLifecycle(IDbSession session, ITenantContext context, I
         if (agent.Agent.CurrentVersion is { } current)
         {
             // A version that breaks today's policy cannot come back.
-            AgentDefinitions.Validate(Definition((await VersionDefinitionAsync(id, current, ct))!), tools, (await policies.CurrentAsync(ct)).Policy);
+            AgentDefinitions.Validate(Definition((await VersionDefinitionAsync(id, current, ct))!), tools, await unitPolicies.ForUnitAsync(agent.Agent.OrgUnitId, ct));
         }
         var now = clock.UtcNow;
         await session.ExecAsync(
@@ -427,7 +470,7 @@ public sealed class AgentLifecycle(IDbSession session, ITenantContext context, I
     /// After a policy change (027 FR-018): published agents whose version in use breaks the new policy are suspended,
     /// with the policy as the reason. Returns the agents suspended.
     /// </summary>
-    public async Task<IReadOnlyList<Guid>> SuspendBreakingAsync(AgentPolicy policy, CancellationToken ct)
+    public async Task<IReadOnlyList<Guid>> SuspendBreakingAsync(Guid? changedUnit, CancellationToken ct)
     {
         var rows = await session.QueryAsync(
             """
@@ -435,12 +478,14 @@ public sealed class AgentLifecycle(IDbSession session, ITenantContext context, I
             join agents.agent_version v on v.agent_id = a.id and v.number = a.current_version
             where a.status = 'published'
             """, null, r => (Id: r.GetGuid(0), Unit: r.GetGuid(1), Definition: r.GetString(2), Owner: r.GetGuid(3)), ct);
+        // A unit policy change reaches the agents of that unit and the units below it; a tenant change reaches every agent.
+        var reached = changedUnit is { } unit ? await hierarchy.GetSubtreesAsync([unit], ct) : null;
         var suspended = new List<Guid>();
-        foreach (var row in rows)
+        foreach (var row in rows.Where(r => reached is null || reached.Contains(r.Unit)))
         {
             try
             {
-                AgentDefinitions.Validate(Definition(row.Definition), tools, policy);
+                AgentDefinitions.Validate(Definition(row.Definition), tools, await unitPolicies.ForUnitAsync(row.Unit, ct));
             }
             catch (AppException)
             {

@@ -145,6 +145,7 @@ export function Combobox({
           </span>
           <div ref={list} id={listId} popover="manual" role="listbox" aria-label={label} className="ui-menu-popover ui-combobox-list">
             {shown.map((option, index) => (
+              // eslint-disable-next-line jsx-a11y/click-events-have-key-events -- options take the keyboard on the input through aria-activedescendant (WAI-ARIA combobox)
               <div
                 key={option.value}
                 id={optionId(index)}

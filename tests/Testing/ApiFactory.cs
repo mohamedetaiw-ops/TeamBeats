@@ -106,6 +106,7 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
             services.AddScoped<TeamBeats.Modules.Agents.Contracts.IAgentTool, TestNoteTool>();
             services.AddScoped<TeamBeats.Modules.Agents.Contracts.IAgentTool, TestDraftTool>();
             services.AddScoped<TeamBeats.Modules.Agents.Contracts.IAgentTool, TestSecretTool>();
+            services.AddScoped<TeamBeats.Modules.Agents.Contracts.IAgentTool, TestOrderTool>();
             services.AddHttpClient(HttpOidcProvider.ClientName).ConfigurePrimaryHttpMessageHandler(() => Idp);
             services.AddHttpClient(TeamBeats.Modules.Integrations.Microsoft365.HttpMicrosoftGraph.ClientName).ConfigurePrimaryHttpMessageHandler(() => Graph);
             services.AddHttpClient(TeamBeats.Modules.Integrations.Weather.OpenMeteoWeather.ClientName).ConfigurePrimaryHttpMessageHandler(() => Weather);

@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
+import { Alert } from "@/components/ui/Alert";
 import { pickText, type AgentChoice, type AgentMemoryView, type BriefingView } from "@/lib/agents/types";
 import { Header } from "@/components/shell/Header";
 import { AgentConversation } from "@/features/agents/AgentConversation";
@@ -52,6 +53,11 @@ export default async function AgentConversationPage({
           <bdi>{name}</bdi>
         </h1>
         <p>{pickText(agent.description, locale)}</p>
+        {agent.degraded ? (
+          <Alert tone="warning" title={t("degradedTitle")}>
+            {t("degraded")}
+          </Alert>
+        ) : null}
         <AgentConversation agentId={id} item={item} />
         {briefing.ok && (briefing.data.offered || briefing.data.subscription) ? <AgentBriefingPanel view={briefing.data} /> : null}
         {memory.ok && (memory.data.offered || memory.data.accepted || memory.data.items.length > 0) ? <AgentMemoryPanel view={memory.data} /> : null}

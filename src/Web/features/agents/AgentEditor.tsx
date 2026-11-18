@@ -70,7 +70,7 @@ function Bilingual({
 
 /**
  * The agent editor (spec 020 US1, T014): the definition fields of section 12 in Arabic and English, the tools of the
- * registry the policy allows, autonomy up to L2, the audience, the test panel, and the lifecycle: submit for review,
+ * registry the policy allows, autonomy up to L3, the audience, the test panel, and the lifecycle: submit for review,
  * suspend, resume, retire and rollback. The API checks every change against the schema, the tool registry, the
  * policy and the person's permissions; the page shows what it answers.
  */
@@ -479,6 +479,13 @@ export function AgentEditor({
                 {t("lifecycle.resume")}
               </Button>
             )}
+            <Button
+              busy={busy === "revoke"}
+              busyLabel={t("saving")}
+              onClick={() => void send("revoke", `${base}/revoke-tokens`, "POST", { reason }, t("lifecycle.tokensRevoked"))}
+            >
+              {t("lifecycle.revokeTokens")}
+            </Button>
             <Button
               variant="destructive"
               busy={busy === "retire"}
