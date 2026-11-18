@@ -218,7 +218,10 @@ public static partial class TokenSchema
         }
         if (AliasPattern().Match(value) is { Success: true } alias)
         {
+            // A choice token may only point at a choice token whose every value it also allows, so the alias can never
+            // resolve to a value the receiving token refuses (for example design.preset pointing at layout.navigation).
             return ByName.TryGetValue(alias.Groups[1].Value, out var target) && target.Type == token.Type
+                && (token.Type != TokenTypes.Choice || target.Choices!.All(token.Choices!.Contains))
                 ? null
                 : "validation.theme.alias_invalid";
         }

@@ -57,6 +57,26 @@ public static class ThemeEngine
             provenance[name] = new TokenSource("design", null, null, null, null, false);
         }
 
+        // A lock keeps the value the locking scope saw, design included: when a deeper scope picks another design, a locked
+        // token takes the design value effective at the scope that locked it, not the deeper design's value.
+        foreach (var (name, lockAt) in locks)
+        {
+            if (name == DesignPresets.PresetToken || !TokenSchema.ByName.TryGetValue(name, out var token))
+            {
+                continue;
+            }
+            var lockedPreset = EffectivePreset(layers.Where(l => l.Depth <= lockAt.Depth).ToList(), locks);
+            if (lockedPreset == preset)
+            {
+                continue;
+            }
+            var presetTokens = DesignPresets.Tokens(lockedPreset);
+            var fromDesign = presetTokens.TryGetValue(name, out var presetValue);
+            raw[name] = VariantKeys().ToDictionary(v => v.Key,
+                v => (fromDesign ? Pick(presetValue!, v.Mode, v.Density) : null) ?? PlatformValue(token, v.Mode, v.Density));
+            provenance[name] = new TokenSource(fromDesign ? "design" : "platform", null, null, null, lockAt.Scope, true);
+        }
+
         foreach (var layer in layers.OrderBy(l => l.Depth).ThenBy(l => l.Kind == "brand" ? 0 : 1))
         {
             foreach (var (name, value) in layer.Tokens)
@@ -101,6 +121,11 @@ public static class ThemeEngine
             foreach (var token in TokenSchema.All)
             {
                 var value = Dealias(token.Name, key, raw, []);
+                if (value is not null && token.Type == TokenTypes.Choice && !token.Choices!.Contains(value))
+                {
+                    // An alias from older data that lands on a value this choice does not allow.
+                    value = null;
+                }
                 if (value is null)
                 {
                     // A cycle from older data: the platform value keeps the page usable.
