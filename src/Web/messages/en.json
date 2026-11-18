@@ -1388,6 +1388,7 @@
       "sections": "Settings sections",
       "more": "{count} more",
       "allDay": "All day",
+      "weekOf": "Week of {date}",
       "timeRange": "{start} to {end}",
       "dayCount": "{date}, {count}"
     },

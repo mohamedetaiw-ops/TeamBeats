@@ -100,7 +100,8 @@ export function MonthView({
           </div>
         ) : null}
       </div>
-      <div className="ui-table-scroll">
+      {/* Scrolls on its own at narrow widths, so it takes focus for the keyboard (WCAG 2.1.1, 1.4.10). */}
+      <div className="ui-table-scroll" role="region" aria-labelledby={`${id}-title`} tabIndex={0}>
         <table aria-labelledby={`${id}-title`}>
           <thead>
             <tr>
@@ -212,7 +213,14 @@ export function WeekView({
   const row = (time: string) => Math.max(1, Math.min(slots + 1, Math.round((minutes(time) - startHour * 60) / 30) + 1));
 
   return (
-    <div className="ui-week" style={{ "--xp-days": days, "--xp-slots": slots } as CSSProperties}>
+    <div
+      className="ui-week"
+      role="region"
+      aria-label={t("data.weekOf", { date: new Intl.DateTimeFormat(locale, { day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${start}T00:00:00Z`)) })}
+      // Scrolls sideways on its own at narrow widths, so it takes focus for the keyboard (WCAG 2.1.1, 1.4.10).
+      tabIndex={0}
+      style={{ "--xp-days": days, "--xp-slots": slots } as CSSProperties}
+    >
       <div className="ui-week-hours" aria-hidden="true">
         {Array.from({ length: endHour - startHour - 1 }, (_, i) => (
           <span key={i} style={{ gridRow: i * 2 + 5 }}>

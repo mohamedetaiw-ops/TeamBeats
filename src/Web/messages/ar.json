@@ -1388,6 +1388,7 @@
       "sections": "أقسام الإعدادات",
       "more": "{count} أخرى",
       "allDay": "طوال اليوم",
+      "weekOf": "أسبوع {date}",
       "timeRange": "{start} إلى {end}",
       "dayCount": "{date}، {count}"
     },
