@@ -41,11 +41,13 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.goto(`${hostOrigin(tenant.key)}/admin/agents/policy/units`);
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("agents.unitPolicy.title"));
-      await page.getByLabel(m("agents.unitPolicy.unit")).selectOption({ label: unitName });
+      await page.getByLabel(m("agents.unitPolicy.unit"), { exact: true }).selectOption({ label: unitName });
       await page.getByRole("button", { name: m("agents.unitPolicy.open"), exact: true }).click();
       await expect(page.getByRole("heading", { name: m("agents.unitPolicy.heading", { unit: unitName }) })).toBeVisible();
       await page.getByLabel(m("agents.policy.maxToolCalls")).fill("5");
-      await page.getByLabel(m("agents.unitPolicy.noMemory")).check();
+      await page.getByLabel(m("agents.policy.maxSteps")).fill("10");
+      // Memory is off in the tenant policy, so the unit cannot turn it off again: the switch shows that and stays disabled.
+      await expect(page.getByLabel(m("agents.unitPolicy.noMemory"))).toBeDisabled();
       await expectAccessible(page, testInfo, `agents-unit-policy-${locale}`);
       await page.getByRole("button", { name: m("agents.unitPolicy.save") }).click();
       await expect(page.getByRole("status").filter({ hasText: m("agents.unitPolicy.saved", { unit: unitName }) })).toBeVisible();
