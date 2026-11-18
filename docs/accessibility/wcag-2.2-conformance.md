@@ -30,7 +30,7 @@ Last updated: 2026-11-18. Scope: the TeamBeats web app and installable web app (
 | 1.3.2 Meaningful sequence | A | DOM order follows the visual order in both directions; layouts use logical properties | Page check (RTL matrix); Lint (`lint:css` logical properties) | Supports |
 | 1.3.3 Sensory characteristics | A | Instructions name controls by their label, never by shape or position (content guidelines) | Manual | Manual only |
 | 1.3.4 Orientation | AA | No page locks orientation; the web app manifest leaves orientation free | Manual | Manual only |
-| 1.3.5 Identify input purpose | AA | Sign-in and profile fields set `autocomplete` (A11Y-022) | Gate (`autocomplete-valid`) | Supports |
+| 1.3.5 Identify input purpose | AA | Sign-in and profile fields set `autocomplete` (A11Y-022) | Gate (`autocomplete-valid`); Page check (`authentication.spec.ts`) | Supports |
 | 1.4.1 Use of color | A | Status uses text and icon with the colour (spec 007 FR-024, Badge and status parts) | Gate (`link-in-text-block`); Manual | Supports |
 | 1.4.2 Audio control | A | Nothing plays on its own; read aloud starts only on request (spec 014) | Manual | Manual only |
 | 1.4.3 Contrast (minimum) | AA | Token contrast enforced for every design and mode; brand editor blocks failing brands | Gate (`color-contrast`, all designs and modes); Lint (`ThemeEngineTests`, `DesignPresetTests`) | Supports |
@@ -82,7 +82,7 @@ Last updated: 2026-11-18. Scope: the TeamBeats web app and installable web app (
 | 3.3.3 Error suggestion | AA | Validation messages say how to fix (content guidelines, spec 007 FR-029) | Manual | Manual only |
 | 3.3.4 Error prevention (legal, financial, data) | AA | Review step or reversal for leave, expenses, letters, data changes, acknowledgements | Manual | Manual only |
 | 3.3.7 Redundant entry | A | Forms prefill from the profile and HR record (spec 019); journeys carry answers forward | Manual | Manual only |
-| 3.3.8 Accessible authentication (minimum) | AA | Sign-in through the identity provider; no cognitive tests; paste allowed (A11Y-022) | Manual | Manual only |
+| 3.3.8 Accessible authentication (minimum) | AA | Sign-in through the identity provider; no cognitive tests; paste and autofill allowed, codes paste in one go (A11Y-022). The shared kiosk turns autofill off on purpose and offers a badge scan instead of typing | Page check (`authentication.spec.ts`); Manual | Supports |
 
 ## Robust
 

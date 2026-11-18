@@ -23,7 +23,8 @@ Depends on 007 (baseline), 008 (shell and preferences), 032 (page builder), 033 
 
 ## Phase 4: Interaction rules (US4, US5)
 - [ ] T014 Non-drag move controls with announcements: page builder, home arrange mode, process modeler, boards (A11Y-019)
-- [ ] T015 Sign-in fields: autocomplete and paste; redundant entry review of multi-step forms (A11Y-021, A11Y-022)
+- [x] T015 Sign-in fields: autocomplete and paste, checked by `a11y/authentication.spec.ts` (A11Y-022)
+- [ ] T021 Redundant entry review of multi-step forms (A11Y-021)
 
 ## Phase 5: Statement and report (US6)
 - [x] T016 `/accessibility` statement page, public, ar and en, footer fallback link (A11Y-023)
