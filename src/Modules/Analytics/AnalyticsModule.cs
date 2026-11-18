@@ -35,6 +35,7 @@ public static class AnalyticsModule
         services.AddScoped<ServiceAnalytics>();
         services.AddScoped<ComplianceAnalytics>();
         services.AddScoped<ScopeDashboards>();
+        services.AddScoped<ExperienceAnalytics>();
         services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IShellCommands, AnalyticsCommands>();
         services.AddScoped<IAnalyticsEvents, AnalyticsEventsEmitter>();
         services.AddMessageHandler<AnalyticsEventEmitted, AnalyticsEventHandler>("analytics.write_event");
@@ -89,6 +90,9 @@ public static class AnalyticsModule
             Results.Ok(await scopes.UnitAsync(id, from, to, ct)));
         analytics.MapGet("/scopes/location/{key}", async (string key, DateOnly? from, DateOnly? to, ScopeDashboards scopes, CancellationToken ct) =>
             Results.Ok(await scopes.LocationAsync(key, from, to, ct)));
+        // Experience dashboards (spec 021 US9, T015): analytics.view for the whole tenant.
+        analytics.MapGet("/experience", async (DateOnly? from, DateOnly? to, ExperienceAnalytics experience, CancellationToken ct) =>
+            Results.Ok(await experience.GetAsync(from, to, ct)));
         analytics.MapGet("/estimates", async (AnalyticsEstimates estimates, CancellationToken ct) => Results.Ok(await estimates.ViewAsync(ct)));
 
         var admin = analytics.MapGroup("").InAdminArea();

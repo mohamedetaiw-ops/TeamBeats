@@ -195,7 +195,13 @@ public sealed record TemplateUsage(string TemplateId, string TemplateVersion, in
 public interface ITemplateUsage
 {
     Task<IReadOnlyList<TemplateUsage>> UsageAsync(CancellationToken ct = default);
+
+    /// <summary>The page inventory (spec 032) for the experience dashboards (spec 021 FR-019, FR-020): one row per page, no content.</summary>
+    Task<IReadOnlyList<PageInventoryItem>> PagesAsync(CancellationToken ct = default);
 }
+
+/// <summary>A page of the spec 032 inventory: its template and version, the layout in force (published, else the draft), owning unit and release.</summary>
+public sealed record PageInventoryItem(Guid PageId, string TemplateId, string TemplateVersion, string? Layout, Guid? OrgUnitId, int? Release);
 
 /// <summary>
 /// Whether the caller may open at least one administration section (spec 006 US4, spec 008 FR-062), so the shell offers an

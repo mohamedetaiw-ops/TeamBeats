@@ -222,3 +222,24 @@ export type ScopeDashboardView = {
 
 export const scopeHref = (scope: Pick<ScopeRef, "kind" | "key">) =>
   scope.kind === "unit" ? `/analytics/scopes/unit/${encodeURIComponent(scope.key)}` : `/analytics/scopes/location?key=${encodeURIComponent(scope.key)}`;
+
+/** Experience dashboards (spec 021 T015). Counts and rates under the minimum group size arrive as null. */
+export type ExperienceCount = { key: string; pages: number };
+export type PersonalizationCounts = { people: number; customized: number | null; reset: number | null };
+export type VitalsRow = { dimension: "device" | "theme" | "unit" | "template" | "release"; group: string; samples: number; lcp: number | null; inp: number | null; cls: number | null };
+
+export type ExperienceAnalyticsView = {
+  from: string;
+  to: string;
+  minGroupSize: number;
+  templates: { template: string; version: string; pages: number; published: number }[];
+  layouts: ExperienceCount[];
+  scopes: { unit: string; names: Record<string, string>; templates: ExperienceCount[] }[];
+  personalization: { enabled: boolean; total: PersonalizationCounts; units: { group: string; names: Record<string, string>; counts: PersonalizationCounts }[] };
+  performance: {
+    samples: number;
+    rows: VitalsRow[];
+    flags: { pageId: string; template: string; release: number | null; deviceClass: string; samples: number; lcp: number | null; inp: number | null; cls: number | null; missed: string[] }[];
+  };
+  outcomes: { flow: string; started: number; completed: number; abandoned: number; completionRate: number | null; dropOffStep: string | null }[];
+};

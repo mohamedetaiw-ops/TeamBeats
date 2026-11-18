@@ -7575,7 +7575,8 @@
       "campaignsLink": "Campaigns",
       "servicesLink": "Services",
       "complianceLink": "Policy compliance",
-      "scopesLink": "Locations and units"
+      "scopesLink": "Locations and units",
+      "experienceLink": "Experience"
     },
     "campaigns": {
       "workspace": "Analytics",
@@ -7783,6 +7784,82 @@
         "value": "This scope",
         "rate": "Rate",
         "group": "Whole organization"
+      }
+    },
+    "experience": {
+      "title": "Experience",
+      "workspace": "Analytics",
+      "intro": "How pages are built, whether people personalize them, how fast they load and whether tasks get done.",
+      "denied": "Experience analytics are not available to you",
+      "deniedHint": "They are for analytics viewers of the whole organization.",
+      "hidden": "Fewer than {size}",
+      "other": "Other (groups under {size})",
+      "noUnit": "Whole organization",
+      "notRecorded": "Not recorded",
+      "allUnits": "All units",
+      "templates": "Templates in use",
+      "noPages": "No pages yet",
+      "noPagesHint": "Pages built from templates show here.",
+      "layouts": "Layouts",
+      "scopes": "Templates by owning unit",
+      "templateCount": "{template}: {pages}",
+      "personalization": "Personalization",
+      "enabled": "Enabled",
+      "disabled": "Not in the package",
+      "personalizationNote": "People who used the intranet in the period, and of them who changed or reset a personal layout. Groups under {size} people are combined.",
+      "performance": "Page speed",
+      "performanceNote": "75th percentile over {samples} visits. Targets: LCP 2.5 s, INP 200 ms, CLS 0.1.",
+      "flags": "Published pages that miss a target",
+      "missed": "Misses target",
+      "ms": "{value} ms",
+      "noSample": "No sample",
+      "release": "Release {release}",
+      "outcomes": "Task flows",
+      "noOutcomes": "No task flows reported in this period.",
+      "noDropOff": "None stands out",
+      "device": {
+        "mobile": "Phone",
+        "tablet": "Tablet",
+        "desktop": "Desktop"
+      },
+      "dimension": {
+        "device": "Device",
+        "theme": "Design",
+        "unit": "Owning unit",
+        "template": "Page type",
+        "release": "Release"
+      },
+      "by": {
+        "device": "By device",
+        "theme": "By design",
+        "unit": "By owning unit",
+        "template": "By page type",
+        "release": "By release"
+      },
+      "column": {
+        "template": "Template",
+        "version": "Version",
+        "pages": "Pages",
+        "published": "Published",
+        "layout": "Layout",
+        "unit": "Unit",
+        "templates": "Templates",
+        "people": "People",
+        "customized": "Changed a layout",
+        "reset": "Reset a layout",
+        "device": "Device",
+        "samples": "Visits",
+        "flow": "Flow",
+        "started": "Started",
+        "completed": "Completed",
+        "abandoned": "Abandoned",
+        "rate": "Completion rate",
+        "dropOff": "Most abandoned step"
+      },
+      "vital": {
+        "lcp": "LCP",
+        "inp": "INP",
+        "cls": "CLS"
       }
     }
   },
