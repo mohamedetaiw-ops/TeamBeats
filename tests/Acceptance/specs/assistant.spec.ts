@@ -99,7 +99,12 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(panel.getByLabel(msg(locale, "assistant.label"), { exact: true })).toBeFocused();
       await page.keyboard.press("Escape");
       await expect(panel).toBeHidden();
+      // Opened from the button, closing gives focus back to it.
       const opener = page.locator(".shell-bar").getByRole("button", { name: msg(locale, "shell.ask") });
+      await opener.click();
+      await expect(panel).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(panel).toBeHidden();
       await expect(opener).toBeFocused();
 
       await opener.click();

@@ -139,79 +139,84 @@ export function AssistantPanel() {
         title={t("title")}
         closeLabel={t("panel.close")}
         footer={
-          <>
-            {conversationId ? (
-              <Button variant="quiet" icon="plus" onClick={startOver}>
-                {t("history.new")}
-              </Button>
-            ) : null}
-            <ButtonLink variant="secondary" icon="arrow-forward" href={fullPage}>
-              {t("panel.fullPage")}
-            </ButtonLink>
-          </>
+          open ? (
+            <>
+              {conversationId ? (
+                <Button variant="quiet" icon="plus" onClick={startOver}>
+                  {t("history.new")}
+                </Button>
+              ) : null}
+              <ButtonLink variant="secondary" icon="arrow-forward" href={fullPage}>
+                {t("panel.fullPage")}
+              </ButtonLink>
+            </>
+          ) : null
         }
       >
-        <div className="assistant-panel" data-testid="assistant-panel">
-          {turns.length === 0 && !pending ? (
-            <p className="assistant-intro">
-              {t.rich("panel.intro", { key: (chunks) => <Kbd>{chunks}</Kbd> })}
-            </p>
-          ) : null}
-          <ol className="assistant-turns" aria-busy={pending ? true : undefined}>
-            {turns.map((turn) => (
-              <TurnItem key={turn.id} turn={turn} voice={false} />
-            ))}
-            {pending ? (
-              <li className="assistant-turn">
-                <div className="assistant-question" dir="auto">
-                  <span className="visually-hidden">{t("you")}</span>
-                  <p>{pending.question}</p>
-                </div>
-                <div className="assistant-answer" dir="auto">
-                  <p className="assistant-label">{t("thinking")}</p>
-                  {pending.text ? <p className="assistant-text">{pending.text}</p> : null}
-                </div>
-              </li>
-            ) : null}
-          </ol>
-          <div ref={end} />
-          <p className="visually-hidden" role="status">
-            {status}
-          </p>
-          {error ? (
-            <p className="field-error" role="alert">
-              {error}
-            </p>
-          ) : null}
-          <form className="assistant-composer" onSubmit={(e) => void ask(e)}>
-            <label htmlFor={inputId}>{t("label")}</label>
-            <textarea
-              id={inputId}
-              ref={input}
-              value={question}
-              rows={2}
-              maxLength={MAX_QUESTION}
-              required
-              dir="auto"
-              aria-describedby={hintId}
-              onChange={(e) => setQuestion(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-                  e.preventDefault();
-                  e.currentTarget.form?.requestSubmit();
-                }
-              }}
-            />
-            <div className="assistant-composer-bar">
-              <p id={hintId} className="field-hint">
-                {t("hint")}
+        {/* The dialog stays in the page while closed, so its content is drawn only while it is open. */}
+        {open ? (
+          <div className="assistant-panel" data-testid="assistant-panel">
+            {turns.length === 0 && !pending ? (
+              <p className="assistant-intro">
+                {t.rich("panel.intro", { key: (chunks) => <Kbd>{chunks}</Kbd> })}
               </p>
-              <Button type="submit" variant="primary" busy={pending !== null} busyLabel={t("thinking")}>
-                {t("ask")}
-              </Button>
-            </div>
-          </form>
-        </div>
+            ) : null}
+            <ol className="assistant-turns" aria-busy={pending ? true : undefined}>
+              {turns.map((turn) => (
+                <TurnItem key={turn.id} turn={turn} voice={false} />
+              ))}
+              {pending ? (
+                <li className="assistant-turn">
+                  <div className="assistant-question" dir="auto">
+                    <span className="visually-hidden">{t("you")}</span>
+                    <p>{pending.question}</p>
+                  </div>
+                  <div className="assistant-answer" dir="auto">
+                    <p className="assistant-label">{t("thinking")}</p>
+                    {pending.text ? <p className="assistant-text">{pending.text}</p> : null}
+                  </div>
+                </li>
+              ) : null}
+            </ol>
+            <div ref={end} />
+            <p className="visually-hidden" role="status">
+              {status}
+            </p>
+            {error ? (
+              <p className="field-error" role="alert">
+                {error}
+              </p>
+            ) : null}
+            <form className="assistant-composer" onSubmit={(e) => void ask(e)}>
+              <label htmlFor={inputId}>{t("label")}</label>
+              <textarea
+                id={inputId}
+                ref={input}
+                value={question}
+                rows={2}
+                maxLength={MAX_QUESTION}
+                required
+                dir="auto"
+                aria-describedby={hintId}
+                onChange={(e) => setQuestion(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                    e.preventDefault();
+                    e.currentTarget.form?.requestSubmit();
+                  }
+                }}
+              />
+              <div className="assistant-composer-bar">
+                <p id={hintId} className="field-hint">
+                  {t("hint")}
+                </p>
+                <Button type="submit" variant="primary" busy={pending !== null} busyLabel={t("thinking")}>
+                  {t("ask")}
+                </Button>
+              </div>
+            </form>
+          </div>
+        ) : null}
       </Drawer>
     </>
   );
