@@ -7166,7 +7166,8 @@
       },
       "campaignsLink": "Campaigns",
       "servicesLink": "Services",
-      "complianceLink": "Policy compliance"
+      "complianceLink": "Policy compliance",
+      "scopesLink": "Locations and units"
     },
     "campaigns": {
       "workspace": "Analytics",
@@ -7335,6 +7336,45 @@
         "day": "Day",
         "unit": "Unit",
         "location": "Location"
+      }
+    },
+    "scopes": {
+      "title": "Locations and units",
+      "workspace": "Analytics",
+      "intro": "One page per unit or location with adoption, reach, compliance, requests and attendance, beside the whole organization.",
+      "detailIntro": "The last 30 days for the people in this scope, beside the whole organization. Figures for fewer people than the minimum group size are not shown.",
+      "denied": "These dashboards are not available to you",
+      "deniedHint": "Unit dashboards need analytics access at the unit; location dashboards need it for the whole organization, in packages with advanced analytics.",
+      "empty": "Nothing to open yet",
+      "emptyHint": "Units and locations appear here once people are placed in them.",
+      "units": "Units",
+      "locations": "Locations",
+      "pickTitle": "Pick a location",
+      "pickHint": "Open a location from the list of locations and units.",
+      "people": "Active people",
+      "period": "Period",
+      "figures": "Figures for this scope",
+      "smallTitle": "Not enough data",
+      "small": "Fewer than {size} active people are in this scope, so no figure about them is shown.",
+      "groupHidden": "The organization figure is left out: it would show the number of one other unit or location.",
+      "notEnough": "Not enough data",
+      "noGroup": "Not shown",
+      "outOf": "{value} of {of}",
+      "perPerson": "{rate} per person",
+      "tile": {
+        "adoption": "Active people",
+        "reach": "People who read news and pages",
+        "compliance": "Policy attestations",
+        "open_requests": "Open service requests",
+        "breaches": "Requests past their service level",
+        "attendance_exceptions": "Working days with an attendance exception"
+      },
+      "column": {
+        "scope": "Unit or location",
+        "figure": "Figure",
+        "value": "This scope",
+        "rate": "Rate",
+        "group": "Whole organization"
       }
     }
   },

@@ -258,6 +258,8 @@ async function seedExtras(api: APIRequestContext, found: Found): Promise<void> {
   found.set("/content/campaigns/[id]", `/content/campaigns/${campaign.id as string}`);
   // Campaign analytics (spec 021 T011) open on a campaign before it is sent.
   found.set("/analytics/campaigns/[id]", `/analytics/campaigns/${campaign.id as string}`);
+  // A unit dashboard (spec 021 T014) for the seeded unit.
+  found.set("/analytics/scopes/unit/[id]", `/analytics/scopes/unit/${unitId}`);
 }
 
 const detailRoutes = routes.filter((r) => r.tier === "detail" && !r.reason).map((r) => r.path);

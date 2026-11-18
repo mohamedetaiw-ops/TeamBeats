@@ -23,6 +23,7 @@ public static class ServicesModule
         services.AddSingleton<Experience.Contracts.IComponentRegistration, ServicesComponents>();
         services.AddScoped<ServiceAdmin>();
         services.AddScoped<TeamBeats.Modules.Analytics.Contracts.IAnalyticsServiceSource, ServiceAnalyticsSource>();
+        services.AddScoped<TeamBeats.Modules.Analytics.Contracts.IAnalyticsScopeSource, ServiceScopeSource>();
         services.AddScoped<RouteTests>();
         services.AddScoped<ServiceTemplates>();
         services.AddScoped<RequestSummaries>();

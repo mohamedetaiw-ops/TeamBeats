@@ -45,6 +45,7 @@ public static class HrModule
         services.AddScoped<JourneyService>();
         services.AddScoped<Preboarding>();
         services.AddScoped<Attendance.AttendanceService>();
+        services.AddScoped<TeamBeats.Modules.Analytics.Contracts.IAnalyticsScopeSource, Attendance.AttendanceScopeSource>();
         services.AddMessageHandler<Integrations.Contracts.ClockDataImported, Attendance.ClockDataHandler>("hr.attendance_clock_import");
         services.AddScoped<Attendance.AttendanceRequests>();
         services.AddScoped<Attendance.AttendanceTaskSource>();
