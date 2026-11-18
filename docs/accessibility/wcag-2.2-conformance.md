@@ -5,7 +5,7 @@ Spec 038 A11Y-001. Every WCAG 2.2 level A and AA success criterion, how TeamBeat
 Last updated: 2026-11-18. Scope: the TeamBeats web app and installable web app (spec 030), every route in `tests/Acceptance/a11y/routes.ts`, in the four platform designs, light and dark, Arabic and English, desktop and phone.
 
 **Verification keys**
-- **Gate**: axe in the accessibility CI job (`tests/Acceptance/a11y/matrix.spec.ts`), zero critical and serious.
+- **Gate**: axe in the accessibility CI job, zero critical and serious: `tests/Acceptance/a11y/matrix.spec.ts` for every listed route, and `tests/Acceptance/a11y/details.spec.ts` for the detail routes, each opened on a seeded record.
 - **Page check**: a real-page check in the accessibility or design suite (named in the row).
 - **Lint**: a build-time check in `npm run verify` or the theme engine tests.
 - **Manual**: keyboard and screen reader review; external audit planned for R3 (A11Y-024).
@@ -30,7 +30,7 @@ Last updated: 2026-11-18. Scope: the TeamBeats web app and installable web app (
 | 1.3.2 Meaningful sequence | A | DOM order follows the visual order in both directions; layouts use logical properties | Page check (RTL matrix); Lint (`lint:css` logical properties) | Supports |
 | 1.3.3 Sensory characteristics | A | Instructions name controls by their label, never by shape or position (content guidelines) | Manual | Manual only |
 | 1.3.4 Orientation | AA | No page locks orientation; the web app manifest leaves orientation free | Manual | Manual only |
-| 1.3.5 Identify input purpose | AA | Sign-in and profile fields set `autocomplete` (A11Y-022) | Gate (`autocomplete-valid`) | Supports |
+| 1.3.5 Identify input purpose | AA | Sign-in and profile fields set `autocomplete` (A11Y-022) | Gate (`autocomplete-valid`); Page check (`authentication.spec.ts`) | Supports |
 | 1.4.1 Use of color | A | Status uses text and icon with the colour (spec 007 FR-024, Badge and status parts) | Gate (`link-in-text-block`); Manual | Supports |
 | 1.4.2 Audio control | A | Nothing plays on its own; read aloud starts only on request (spec 014) | Manual | Manual only |
 | 1.4.3 Contrast (minimum) | AA | Token contrast enforced for every design and mode; brand editor blocks failing brands | Gate (`color-contrast`, all designs and modes); Lint (`ThemeEngineTests`, `DesignPresetTests`) | Supports |
@@ -39,21 +39,21 @@ Last updated: 2026-11-18. Scope: the TeamBeats web app and installable web app (
 | 1.4.10 Reflow | AA | Single column layouts on phones; tables and charts scroll inside their region | Page check (`interaction.spec.ts` at 320 px; design suite at 390 px) | Supports |
 | 1.4.11 Non-text contrast | AA | Focus ring, borders of fields and state indicators meet 3:1 in the tokens | Lint (theme contrast tests); Manual | Supports |
 | 1.4.12 Text spacing | AA | Containers grow with text; no fixed heights on text | Page check (`interaction.spec.ts`, WCAG spacing values) | Supports |
-| 1.4.13 Content on hover or focus | AA | Tooltips open on hover and focus, close on Escape, stay while hovered (`Tooltip`) | Manual; Page check in T011 | Partial until T011 is built |
+| 1.4.13 Content on hover or focus | AA | Tooltips open on hover and focus, close on Escape, stay while hovered (`Tooltip`) | Page check (`specs/components.spec.ts`: shows on focus, Escape hides it without moving focus); Manual (stays while hovered) | Supports |
 
 ## Operable
 
 | SC | Level | How TeamBeats meets it | Verification | Status |
 |---|---|---|---|---|
-| 2.1.1 Keyboard | A | Native controls first; composite widgets (tabs, menus, tree, grid, calendar) have arrow key support | Page check (`interaction.spec.ts`, keyboard journeys in feature suites); Manual | Partial: drag-only moves remain in some editors until T014 |
-| 2.1.2 No keyboard trap | A | Overlays trap focus only while open and release on Escape | Page check (T011) | Partial until T011 is built |
+| 2.1.1 Keyboard | A | Native controls first; composite widgets (tabs, menus, tree, grid, calendar) have arrow key support | Page check (`interaction.spec.ts`, keyboard journeys in feature suites, `dragging.spec.ts`); Manual | Supports |
+| 2.1.2 No keyboard trap | A | Overlays trap focus only while open and release on Escape | Page check (`overlays.spec.ts`: Tab stays inside while open, Escape closes and returns focus) | Supports |
 | 2.1.4 Character key shortcuts | A | No single character shortcuts; the command palette opens with a modifier | Manual | Manual only |
 | 2.2.1 Timing adjustable | A | No time limits on tasks; an idle session ends on the server per the tenant session policy (spec 003), and the shared kiosk signs out after inactivity (spec 030), which is a security exception | Manual | Partial: no warning before an idle session ends |
 | 2.2.2 Pause, stop, hide | A | Carousels do not auto-advance; reduced motion stops animation | Page check (A11Y-015, T010) | Supports |
 | 2.3.1 Three flashes or below threshold | A | No flashing content | Manual | Manual only |
 | 2.4.1 Bypass blocks | A | Skip link to `main` on every page; landmarks | Gate (`bypass`, `region`); Page check (A11Y-009, T009) | Supports |
 | 2.4.2 Page titled | A | Every page sets a title from its header | Gate (`document-title`) | Supports |
-| 2.4.3 Focus order | A | DOM order; focus moves into dialogs and back to the trigger | Page check (`interaction.spec.ts` Tab walk; overlays in T011); Manual | Partial until T011 is built |
+| 2.4.3 Focus order | A | DOM order; focus moves into dialogs and back to the trigger | Page check (`interaction.spec.ts` Tab walk; `overlays.spec.ts` dialog, drawer and assistant panel); Manual | Supports |
 | 2.4.4 Link purpose (in context) | A | Link text names its target; repeated links carry the record name (`aria-label` starting with the visible text) | Gate (`link-name`, `label-content-name-mismatch`) | Supports |
 | 2.4.5 Multiple ways | AA | Navigation, search, command palette and quick navigation (spec 008) | Manual | Manual only |
 | 2.4.6 Headings and labels | AA | One `h1` per page, ordered headings, visible labels | Gate (`heading-order`, `empty-heading`); Page check (design suite) | Supports |
@@ -63,7 +63,7 @@ Last updated: 2026-11-18. Scope: the TeamBeats web app and installable web app (
 | 2.5.2 Pointer cancellation | A | Actions run on click (up event), native buttons | Manual | Manual only |
 | 2.5.3 Label in name | A | Accessible names start with the visible text | Gate (`label-content-name-mismatch`) | Supports |
 | 2.5.4 Motion actuation | A | No device motion input | | Not applicable |
-| 2.5.7 Dragging movements | AA | Move menus and buttons beside every drag (A11Y-019) | Page check (T014) | Partial until T014 is built |
+| 2.5.7 Dragging movements | AA | Move menus and buttons beside every drag (A11Y-019) | Page check (`dragging.spec.ts` lists every drag with its alternative and the feature test that checks it) | Supports |
 | 2.5.8 Target size (minimum) | AA | Buttons 44 px, compact 28 px, nothing under 24 px (DLS-033, DLS-085) | Page check (`interaction.spec.ts` on primary pages; design suite galleries) | Supports |
 
 ## Understandable
@@ -81,8 +81,8 @@ Last updated: 2026-11-18. Scope: the TeamBeats web app and installable web app (
 | 3.3.2 Labels or instructions | A | Visible labels and hints on every field (FormField) | Gate (`label`, `select-name`) | Supports |
 | 3.3.3 Error suggestion | AA | Validation messages say how to fix (content guidelines, spec 007 FR-029) | Manual | Manual only |
 | 3.3.4 Error prevention (legal, financial, data) | AA | Review step or reversal for leave, expenses, letters, data changes, acknowledgements | Manual | Manual only |
-| 3.3.7 Redundant entry | A | Forms prefill from the profile and HR record (spec 019); journeys carry answers forward | Manual | Manual only |
-| 3.3.8 Accessible authentication (minimum) | AA | Sign-in through the identity provider; no cognitive tests; paste allowed (A11Y-022) | Manual | Manual only |
+| 3.3.7 Redundant entry | A | Forms prefill from the profile and HR record (spec 019); a returned request opens with its answers; confirm steps keep what was entered | Manual (flow by flow review in `redundant-entry-review.md`); Page check (`a11y/authentication.spec.ts`, paste and autofill) | Supports |
+| 3.3.8 Accessible authentication (minimum) | AA | Sign-in through the identity provider; no cognitive tests; paste and autofill allowed, codes paste in one go (A11Y-022). The shared kiosk turns autofill off on purpose and offers a badge scan instead of typing | Page check (`authentication.spec.ts`); Manual | Supports |
 
 ## Robust
 
@@ -98,9 +98,7 @@ Moderate and minor findings from the gate, and gaps from manual review, with the
 
 | Issue | Criterion | Task |
 |---|---|---|
-| Drag-only moves in some editors | 2.1.1, 2.5.7 | T014 |
-| Overlay focus trap, Escape and return not yet checked on real pages | 2.4.3 | T011 |
 | Uploaded video previews have no caption track unless the uploader provides captions | 1.2.2 | Listed as a limitation in the statement |
-| Detail routes checked only by their feature suites, not yet in the matrix | all | T008 |
+| 31 detail routes whose record needs the workers, a connected system, HR setup or a device are opened by their feature suites, which fail on critical findings only (the reason for each is in `routes.ts`) | all | T022 |
 | Generated PDFs are not tagged | 1.3.1, 4.1.2 for documents | T019 (R3) |
 | No external assistive technology audit yet | all | T018 (R3) |

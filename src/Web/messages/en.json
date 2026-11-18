@@ -7037,7 +7037,7 @@
         "newReaders": "New readers"
       },
       "remind": "Remind this group",
-      "remindGroup": "Remind {group}",
+      "remindGroup": "Remind this group: {group}",
       "busy": "Sending",
       "reminded": "{count, plural, =0 {Everyone has already been reminded in the last hour.} one {Reminder sent to # person.} other {Reminder sent to # people.}}",
       "remindFailed": "The reminder could not be sent. Please try again.",
@@ -13763,7 +13763,6 @@
     },
     "limitations": {
       "title": "Known limitations",
-      "drag": "Some editors still need dragging to move items; keyboard and single click alternatives are being added.",
       "captions": "Videos that people upload have no captions unless the uploader adds them.",
       "pdf": "Letters and reports downloaded as PDF are not yet tagged for screen readers.",
       "audit": "No independent assistive technology audit has been completed yet.",

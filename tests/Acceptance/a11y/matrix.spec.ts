@@ -1,8 +1,7 @@
 import { expect, signInWithDevForm, test } from "../support/fixtures";
-import { expectConformant, settle } from "../support/a11y";
+import { chooseDesign, chooseMode, expectConformant, settle } from "../support/a11y";
 import { seedHome } from "../support/home";
 import type { LaunchLocale } from "../support/messages";
-import { tenantApi } from "../support/pages";
 import { createTenant, type TestTenant } from "../support/platform";
 import { hostOrigin } from "../support/stack";
 import { routes } from "./routes";
@@ -36,29 +35,6 @@ const rotation = others.map((path, i) => ({
   width: widths[Math.floor(i / (designs.length * modes.length)) % widths.length]!,
 }));
 
-async function prepare(tenant: TestTenant, design: string) {
-  const api = await tenantApi(tenant);
-  try {
-    const brands = (await (await api.get("/api/v1/experience/brands")).json()) as { id: string; name: string }[];
-    const saved = await api.put(`/api/v1/experience/brands/${brands[0]!.id}`, {
-      data: { name: brands[0]!.name, tokens: { "design.preset": { $value: design } } },
-    });
-    expect(saved.ok(), await saved.text()).toBe(true);
-  } finally {
-    await api.dispose();
-  }
-}
-
-async function chooseMode(tenant: TestTenant, mode: string) {
-  const api = await tenantApi(tenant);
-  try {
-    const saved = await api.put("/api/v1/me/preference-profile", { data: { values: { mode } } });
-    expect(saved.ok(), await saved.text()).toBe(true);
-  } finally {
-    await api.dispose();
-  }
-}
-
 for (const design of designs) {
   for (const locale of locales) {
     test.describe(`${design} design in ${locale}`, () => {
@@ -70,7 +46,7 @@ for (const design of designs) {
       test.beforeAll(async () => {
         tenant = await createTenant(`a11y-${design}-${locale}`, locale, "enterprise_gov");
         await seedHome(tenant);
-        await prepare(tenant, design);
+        await chooseDesign(tenant, design);
       });
 
       for (const mode of modes) {

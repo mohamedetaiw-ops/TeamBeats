@@ -255,6 +255,9 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--tb-space-xs);
+
+  /* Stacked checks keep 24px per row, so each box has its target space (WCAG 2.5.8, spec 038). */
+  min-block-size: 1.5rem;
 }
 
 .builder-required {

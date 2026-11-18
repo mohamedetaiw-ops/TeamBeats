@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -121,5 +122,42 @@ public sealed class DemoDataSeedTests(TenantWorld world)
         }).Build(), NullLogger<DemoDataSeeder>.Instance);
         Assert.Null(await unknownAdmin.SeedAsync(t.Key, CancellationToken.None));
         Assert.Equal(0, await world.Database.CountInTenantAsync(t.Id, "select count(*) from content.content_item"));
+    }
+
+    [Fact]
+    public async Task On_request_the_caller_fills_their_own_tenant_and_stands_in_for_missing_people()
+    {
+        // Spec 038 T008: the accessibility suite fills its own tenant, which has the administrator and one approver only.
+        var t = await world.CreateTenantAsync("demo-r-" + Guid.NewGuid().ToString("N")[..6], "enterprise_gov");
+        var approver = await world.SeedUserAsync(t, "youssef", MembershipTypes.Employee);
+        var employee = await world.SeedUserAsync(t, "omar", MembershipTypes.Employee);
+        var other = await world.CreateTenantAsync("demo-ro-" + Guid.NewGuid().ToString("N")[..6], "enterprise_gov");
+        var outsider = await world.SeedUserAsync(other, "salma", MembershipTypes.Employee);
+        await using var dev = new DevHostFactory(world.Database);
+        var pack = DemoDataSeeder.Load("seeds/demo");
+
+        // Only an administrator of the tenant may ask.
+        var refused = await dev.Tenant(t.Key, employee.Token).PostAsJsonAsync("/api/v1/dev/demo-data", new { });
+        Assert.Equal(HttpStatusCode.Forbidden, refused.StatusCode);
+
+        // A persona named by an address of another tenant is not found here, and the administrator stands in for them.
+        var response = await dev.Tenant(t.Key, t["admin"].Token).PostAsJsonAsync("/api/v1/dev/demo-data",
+            new { people = new Dictionary<string, string> { ["youssef"] = approver.Email, ["salma"] = outsider.Email } });
+        var text = await response.Content.ReadAsStringAsync();
+        Assert.True(response.StatusCode == HttpStatusCode.OK, $"{(int)response.StatusCode}: {text}");
+        var added = JsonDocument.Parse(text).RootElement.GetProperty("added");
+        Assert.Equal(pack.News.Count(n => n.Type == "news"), added.GetProperty("news").GetInt32());
+        Assert.Equal(pack.Knowledge.Count, added.GetProperty("knowledge").GetInt32());
+        Assert.Equal(pack.Services.Count, added.GetProperty("services").GetInt32());
+        Assert.Equal(pack.Spaces.Count, added.GetProperty("spaces").GetInt32());
+        // Policies Youssef approves go in force; nobody approves their own.
+        Assert.True(added.GetProperty("policies").GetInt32() >= 1, text);
+        // Every request was made by someone of this tenant: the administrator standing in, or Youssef.
+        Assert.Equal(pack.Requests.Count, await world.Database.CountInTenantAsync(t.Id, "select count(*) from services.request"));
+        Assert.Equal(0, await world.Database.CountInTenantAsync(t.Id, "select count(*) from services.request where requester_user_id not in (@a, @y)",
+            ("a", t["admin"].Id), ("y", approver.Id)));
+
+        Assert.Equal(0, await world.Database.CountInTenantAsync(other.Id, "select count(*) from content.content_item"));
+        Assert.Equal(0, await world.Database.CountInTenantAsync(other.Id, "select count(*) from policies.policy"));
     }
 }

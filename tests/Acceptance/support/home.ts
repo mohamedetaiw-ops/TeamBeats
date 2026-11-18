@@ -29,7 +29,7 @@ for (const placements of [...Object.values(seed.regions), ...seed.views.flatMap(
  * With `extras`, also the file's footer and its two extra home views (spec 008 FR-056, FR-058), each view a page of
  * its own published from the same template.
  */
-export async function seedHome(tenant: TestTenant, { extras = false }: { extras?: boolean } = {}) {
+export async function seedHome(tenant: TestTenant, { extras = false }: { extras?: boolean } = {}): Promise<{ slug: string }> {
   const api = await tenantApi(tenant);
   const page = await createPage(api, seed.template, `home-${Date.now().toString(36)}`);
   await saveAndPublish(api, page, page.draft.regions.map((r) => ({ ...r, placements: seed.regions[r.id] ?? [] })));
@@ -59,5 +59,6 @@ export async function seedHome(tenant: TestTenant, { extras = false }: { extras?
   });
   expect(shell.ok(), await shell.text()).toBe(true);
   await api.dispose();
+  return { slug: page.slug };
 }
 

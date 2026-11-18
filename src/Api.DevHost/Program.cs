@@ -2,6 +2,7 @@ using TeamBeats.Api;
 using TeamBeats.Modules.Identity.DevAuth;
 using TeamBeats.Modules.Tenancy;
 using TeamBeats.Persistence;
+using TeamBeats.TenantContext;
 
 namespace TeamBeats.Api.DevHost;
 
@@ -117,6 +118,16 @@ public sealed class DevHostProgram
         {
             endpoints.MapDevAuthEndpoints(app.Configuration);
             TeamBeats.Modules.Notifications.NotificationsModule.MapNotificationDevEndpoints(endpoints);
+            // Fills the caller's own tenant with the demo data package, for the accessibility suite's detail pages
+            // (spec 038 T008). Tenant from the session; tenant administrators only. People names personas by the email of a
+            // user of this tenant; a persona that is not a user is played by the caller.
+            endpoints.MapPost("/api/v1/dev/demo-data", async (Demo.DemoDataRequest? request, ITenantContext context,
+                TeamBeats.Authorization.Contracts.IAuthorizationService authz, Demo.DemoDataSeeder seeder, CancellationToken ct) =>
+            {
+                await authz.DemandAsync(TeamBeats.Authorization.Contracts.Permissions.TenantSettingsManage, TeamBeats.Authorization.Contracts.AuthzTarget.Tenant, ct);
+                var report = await seeder.SeedOnRequestAsync(context.RequireTenant(), context.RequireUser(), request?.People, ct);
+                return Results.Ok(new { report.Added, report.Skipped });
+            }).RequireTenantUser().ExcludeFromDescription();
         });
         app.UseFakeExternalSystems();
 
