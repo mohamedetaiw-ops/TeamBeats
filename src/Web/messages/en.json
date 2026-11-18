@@ -6961,7 +6961,7 @@
         "newReaders": "New readers"
       },
       "remind": "Remind this group",
-      "remindGroup": "Remind {group}",
+      "remindGroup": "Remind this group: {group}",
       "busy": "Sending",
       "reminded": "{count, plural, =0 {Everyone has already been reminded in the last hour.} one {Reminder sent to # person.} other {Reminder sent to # people.}}",
       "remindFailed": "The reminder could not be sent. Please try again.",

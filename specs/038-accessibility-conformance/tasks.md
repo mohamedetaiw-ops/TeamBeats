@@ -12,7 +12,7 @@ Depends on 007 (baseline), 008 (shell and preferences), 032 (page builder), 033 
 ## Phase 2: Fixes found by the gate (US1)
 - [x] T006 Shell and shared parts: every serious and critical finding fixed in `components/ui`, shell and global CSS
 - [x] T007 Primary pages: findings fixed in their feature code
-- [ ] T008 Other routes, grouped by module
+- [x] T008 Detail routes on seeded records in `a11y/details.spec.ts`, rotated over design, mode and width in both languages, and their findings fixed; the demo data package fills the test tenant on request
 
 ## Phase 3: Real-page checks (US2, US3)
 - [x] T009 Skip link, focus indicator, no positive tabindex, focus not obscured (A11Y-009, A11Y-010)
@@ -24,7 +24,8 @@ Depends on 007 (baseline), 008 (shell and preferences), 032 (page builder), 033 
 ## Phase 4: Interaction rules (US4, US5)
 - [x] T014 Non-drag move controls with announcements: page builder, home arrange mode, process modeler, boards (A11Y-019)
 - [x] T015 Sign-in fields: autocomplete and paste, checked by `a11y/authentication.spec.ts` (A11Y-022)
-- [ ] T021 Redundant entry review of multi-step forms (A11Y-021)
+- [x] T021 Redundant entry review of multi-step forms in `docs/accessibility/redundant-entry-review.md` (A11Y-021)
+- [ ] T022 Seed the 31 detail routes that need the workers, a connected system, HR setup or a device, and move them from their feature suites into `a11y/details.spec.ts`
 
 ## Phase 5: Statement and report (US6)
 - [x] T016 `/accessibility` statement page, public, ar and en, footer fallback link (A11Y-023)

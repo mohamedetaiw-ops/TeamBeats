@@ -44,7 +44,7 @@ Spec 038 A11Y-002. This report follows the layout of the ITI Accessibility Confo
 | 3.2.6 Consistent help | Supports | Met by design; verified by internal review only until the external audit. |
 | 3.3.1 Error identification | Supports |  |
 | 3.3.2 Labels or instructions | Supports |  |
-| 3.3.7 Redundant entry | Supports | Met by design; verified by internal review only until the external audit. |
+| 3.3.7 Redundant entry | Supports | Reviewed flow by flow (`redundant-entry-review.md`); internal review only until the external audit. |
 | 4.1.1 Parsing | Not applicable | Obsolete in WCAG 2.2 and always satisfied |
 | 4.1.2 Name, role, value | Supports |  |
 
