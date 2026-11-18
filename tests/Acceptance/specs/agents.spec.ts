@@ -151,7 +151,11 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       // The agent page shows its usage: the two real runs, not the test run (020 FR-018).
       await page.goto(agentPage);
       const analytics = page.getByTestId("agent-analytics");
-      await expect(analytics.locator("tbody tr").last().locator("td").first()).toHaveText(new Intl.NumberFormat(locale).format(2));
+      await expect(analytics.locator("table").first().locator("tbody tr").last().locator("td").first()).toHaveText(new Intl.NumberFormat(locale).format(2));
+      // Workplace Plus has detailed analytics: the day by day trend counts the same two runs.
+      const detail = page.getByTestId("agent-analytics-detail");
+      await expect(detail.getByRole("heading", { name: m("agents.analytics.trendTitle") })).toBeVisible();
+      await expect(detail.locator("table").last().locator("tbody tr").last().locator("td").first()).toHaveText(new Intl.NumberFormat(locale).format(2));
       await expectAccessible(page, testInfo, `agents-analytics-${locale}`);
 
       // The kill switch stops every agent until it is switched back on.

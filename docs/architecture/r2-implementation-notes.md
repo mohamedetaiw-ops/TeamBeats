@@ -1914,3 +1914,11 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - Every run update checks `attempt`: a request that lost its run to the worker fails with `conflict.agent_run.resumed_elsewhere` and rolls back its work since the last checkpoint, so a tool call is not kept twice. Default kept: a tool with effects outside TeamBeats (L3, not built) would need its own idempotency key before it can be made durable.
 - Runs now keep their answer and cited sources (`agents.run.answer`, `cited`) for the result endpoint; they are deleted with the run after the record retention.
 - Web: the agent conversation streams the answer and shows the tool in use; when the connection drops after the run started, the turn offers "Check for the answer".
+
+## Spec 020 R2 slice 7: detailed agent analytics (T022, FR-018 R2 part)
+
+- `GET /agents/{id}/analytics` keeps the basic view for everyone who may see the agent and adds `detail` when the package has `analytics.advanced` (Workplace Plus and above); without it `detail` is null, not a refusal, so the basic numbers stay where `analytics.core` puts them.
+- Detail per version and in total: assistant conversations the agent answered in, escalations and the share resolved without escalation, and the metric scores of the version's release gate run (spec 034). Then how runs ended (by outcome), each tool's calls, successes, failures, success rate, average time and its three most common failure reasons, and a day by day trend (UTC days) of runs, answers, escalations and ratings.
+- Default (the spec does not define escalation): a run escalates when it ended without an answer the person could use, that is limit reached, policy blocked, unavailable, suspended, expired or interrupted. A run the person stopped is not counted. "Resolved without escalation" is the rest of the finished runs.
+- Tool success counts executed and confirmed calls; failure counts refused ones (by the gateway or at execution). Calls in test mode or waiting for confirmation count as calls only.
+- Everything stays in the Agents module and the AI Gateway cost contract; the counts name no person. Test panel and evaluation runs are left out as before.
