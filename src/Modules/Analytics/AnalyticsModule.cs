@@ -29,6 +29,8 @@ public static class AnalyticsModule
         services.AddScoped<ItemAnalytics>();
         services.AddScoped<Adoption>();
         services.AddScoped<FrontendErrors>();
+        services.AddScoped<Workspace>();
+        services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IShellCommands, AnalyticsCommands>();
         services.AddScoped<IAnalyticsEvents, AnalyticsEventsEmitter>();
         services.AddMessageHandler<AnalyticsEventEmitted, AnalyticsEventHandler>("analytics.write_event");
         return services;
@@ -60,6 +62,10 @@ public static class AnalyticsModule
             await session.CommitAsync(ct);
             return Results.Ok(result);
         });
+
+        // The analytics workspace (spec 021 US2): dashboards and the metric query, scoped to the viewer's analytics coverage.
+        analytics.MapGet("/workspace", async (Workspace workspace, CancellationToken ct) => Results.Ok(await workspace.GetAsync(ct)));
+        analytics.MapPost("/query", async (MetricQuery query, Workspace workspace, CancellationToken ct) => Results.Ok(await workspace.QueryAsync(query, ct)));
 
         var admin = analytics.MapGroup("").InAdminArea();
         admin.MapGet("/adoption", async (Adoption adoption, CancellationToken ct) => Results.Ok(await adoption.GetAsync(ct)));

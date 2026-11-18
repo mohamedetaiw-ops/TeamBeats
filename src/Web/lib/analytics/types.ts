@@ -54,3 +54,33 @@ export type FrontendErrorsView = {
     correlationIds: string[];
   }[];
 };
+
+/** The analytics workspace (spec 021 T010): the dashboards the package opens, the units the viewer may pick and the metrics. */
+export type WorkspaceMetric = { key: string; measure: "people" | "views"; filters: string[]; groupBy: string[] };
+
+export type WorkspaceView = {
+  dashboards: { key: string; capability: string; metrics: string[] }[];
+  wholeTenant: boolean;
+  units: { id: string; names: Record<string, string> }[];
+  minGroupSize: number;
+  channels: string[];
+  membershipTypes: string[];
+  metrics: WorkspaceMetric[];
+};
+
+export type MetricFilters = { unitId?: string; channel?: string; membershipType?: string; from?: string; to?: string };
+
+/** A metric answer. Suppressed selections carry no figures; a week under the minimum group size is null. */
+export type MetricResult = {
+  metric: string;
+  groupBy: string | null;
+  from: string;
+  to: string;
+  minGroupSize: number;
+  suppressed: boolean;
+  total: number | null;
+  weeks: { week: string; value: number | null }[];
+  groups: { group: string; names: Record<string, string>; value: number }[];
+};
+
+export const analyticsQueryApi = "/api/v1/analytics/query";

@@ -2593,5 +2593,9 @@
   "validation.help.path": "استخدم عنوانًا يبدأ بشرطة مائلة ومن دون استعلام",
   "validation.help.hint_steps": "للتلميح نص وليس خطوات",
   "validation.help.steps": "للجولة من خطوة إلى ثماني خطوات",
-  "validation.personalization.suggestion": "لم يعد هذا الاقتراح متاحا"
+  "validation.personalization.suggestion": "لم يعد هذا الاقتراح متاحا",
+  "validation.analytics.filter": "راجع عوامل التصفية. أحدها غير معروف.",
+  "validation.analytics.range": "اختر نطاقا زمنيا لا يتجاوز 400 يوم، على أن تسبق البداية النهاية.",
+  "validation.analytics.metric": "اختر مقياسا من القائمة.",
+  "validation.analytics.group_by": "اختر تقسيما يدعمه هذا المقياس."
 }

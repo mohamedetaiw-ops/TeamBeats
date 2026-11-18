@@ -111,6 +111,9 @@ public static class AnalyticsEvents
         {
             ["source"] = new(AnalyticsFieldType.Key, true, ItemSources),
             ["itemId"] = new(AnalyticsFieldType.Id, true),
+            // Spec 021 R2 FR-006: the site and content type filters of the workspace, when the page that reports the view knows them.
+            ["contentType"] = new(AnalyticsFieldType.Key),
+            ["siteId"] = new(AnalyticsFieldType.Id),
         }),
         [PageViewed] = new(PageViewed, false, new Dictionary<string, AnalyticsField>
         {
@@ -118,6 +121,7 @@ public static class AnalyticsEvents
             ["pageId"] = new(AnalyticsFieldType.Id),
             ["template"] = new(AnalyticsFieldType.Key),
             ["templateVersion"] = new(AnalyticsFieldType.Count),
+            ["siteId"] = new(AnalyticsFieldType.Id),
         }),
         [SearchQueried] = new(SearchQueried, false, new Dictionary<string, AnalyticsField>
         {

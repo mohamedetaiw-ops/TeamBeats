@@ -296,6 +296,8 @@ public static class BuiltInRoles
     public const string SpacesAdministrator = "spaces_administrator";
     public const string FacilitiesAdministrator = "facilities_administrator";
     public const string FacilitiesAnalyst = "facilities_analyst";
+    /// <summary>Spec 021 R2: reads the analytics workspace for the units it is given (location and unit heads).</summary>
+    public const string AnalyticsViewer = "analytics_viewer";
     public const string DeviceAdministrator = "device_administrator";
     public const string KioskUser = "kiosk_user";
 

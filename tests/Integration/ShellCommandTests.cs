@@ -24,13 +24,14 @@ public sealed class ShellCommandTests(TenantWorld world)
         await world.SeedUserAsync(plus, "contractor", "contractor");
 
         var admin = await KeysAsync(plus["admin"].Client);
-        Assert.Equal(["ask_assistant", "book_room", "my_tasks", "new_request", "request_leave"], admin.Order(StringComparer.Ordinal));
+        Assert.Equal(["ask_assistant", "book_room", "my_tasks", "new_request", "open_analytics", "request_leave"], admin.Order(StringComparer.Ordinal));
         var first = (await plus["admin"].Client.GetFromJsonAsync<JsonElement>("/api/v1/experience/commands")).EnumerateArray().Single(c => c.GetProperty("key").GetString() == "book_room");
         Assert.Equal("/booking", first.GetProperty("href").GetString());
 
         // A contractor without booking.book never sees the booking command.
         var contractor = await KeysAsync(plus["contractor"].Client);
         Assert.DoesNotContain("book_room", contractor);
+        Assert.DoesNotContain("open_analytics", contractor); // Analytics needs analytics.view (spec 021 T010).
         Assert.Contains("ask_assistant", contractor);
 
         // Workplace has no booking, so even an administrator holding every permission does not see it.

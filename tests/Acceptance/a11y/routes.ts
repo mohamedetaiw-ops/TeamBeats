@@ -99,6 +99,7 @@ export const routes: readonly Route[] = [
   { path: "/agents/approvals/[id]", tier: "detail", reason: "needs agent or assistant runs through the AI gateway and workers; opened by its feature suite" },
   { path: "/agents/marketplace", tier: "other" },
   { path: "/ai-actions/[id]", tier: "detail", reason: "needs agent or assistant runs through the AI gateway and workers; opened by its feature suite" },
+  { path: "/analytics", tier: "other" },
   { path: "/app-consent", tier: "other" },
   { path: "/assets", tier: "other" },
   { path: "/assets/requests", tier: "other" },

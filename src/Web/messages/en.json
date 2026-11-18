@@ -1530,7 +1530,8 @@
         "ask_assistant": "Ask the assistant",
         "book_room": "Book a room",
         "request_leave": "Request leave",
-        "my_tasks": "Open my tasks"
+        "my_tasks": "Open my tasks",
+        "open_analytics": "Open analytics"
       }
     },
     "recovery": {
@@ -7097,6 +7098,69 @@
         "count": "Reports",
         "last": "Last seen",
         "correlation": "Correlation IDs"
+      }
+    },
+    "workspace": {
+      "title": "Analytics",
+      "intro": "Activity across the organization, by week, unit and channel. People are only ever counted in groups.",
+      "denied": "You do not have access to analytics",
+      "deniedHint": "Ask your administrator for the analytics viewer role.",
+      "noDashboards": "Your package does not include analytics dashboards.",
+      "filtersLabel": "Analytics filters",
+      "failed": "The figures could not be loaded. Try again.",
+      "minimumNote": "Groups of fewer than {size} people are never shown on their own.",
+      "suppressed": "Too few people to show",
+      "suppressedHint": "This selection covers fewer than {size} people. Widen the filters to see figures.",
+      "weeks": "{metric} by week",
+      "weeksHidden": "Weeks with fewer than {size} people are left out.",
+      "weeksSummary": "{weeks, plural, one {# week} other {# weeks}} shown, {total} in total.",
+      "groupsTitle": "By {groupBy}",
+      "groupsSummary": "{count, plural, one {# group} other {# groups}} shown.",
+      "otherNote": "Groups under {size} people are combined into Other. When Other would still be too small, it takes the next smallest group as well.",
+      "other": "Other (groups under {size})",
+      "none": "Not recorded",
+      "period": "Last {weeks} weeks",
+      "column": {
+        "week": "Week"
+      },
+      "filter": {
+        "metric": "Metric",
+        "groupBy": "Breakdown",
+        "unit": "Unit",
+        "allUnits": "All units",
+        "myUnits": "My units",
+        "unitValue": "Unit: {name}",
+        "membershipType": "People",
+        "anyone": "Everyone",
+        "membershipTypeValue": "People: {name}",
+        "period": "Period"
+      },
+      "metric": {
+        "active_people": "Active people",
+        "content_views": "Content views"
+      },
+      "measure": {
+        "people": "People",
+        "views": "Views"
+      },
+      "groupBy": {
+        "none": "No breakdown",
+        "unit": "Unit",
+        "channel": "Channel",
+        "locale": "Language",
+        "membership_type": "Membership",
+        "location": "Location",
+        "content_type": "Content type"
+      },
+      "channel": {
+        "web": "Web",
+        "mobile": "Mobile",
+        "teams": "Teams"
+      },
+      "membershipType": {
+        "employee": "Employees",
+        "contractor": "Contractors",
+        "guest": "Guests"
       }
     }
   },
