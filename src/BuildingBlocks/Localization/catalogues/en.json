@@ -2593,5 +2593,9 @@
   "validation.help.path": "Use an address that starts with a slash, without a query string",
   "validation.help.hint_steps": "A hint has a text, not steps",
   "validation.help.steps": "A tour has one to eight steps",
-  "validation.personalization.suggestion": "This suggestion is no longer offered"
+  "validation.personalization.suggestion": "This suggestion is no longer offered",
+  "validation.analytics.filter": "Check the filters. One of them is not recognised.",
+  "validation.analytics.range": "Choose a date range of up to 400 days, with the start before the end.",
+  "validation.analytics.metric": "Choose a metric from the list.",
+  "validation.analytics.group_by": "Choose a breakdown this metric supports."
 }

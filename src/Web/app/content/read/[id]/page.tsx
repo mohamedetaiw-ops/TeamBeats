@@ -86,7 +86,7 @@ export default async function ReadPage({ params }: { params: Promise<{ id: strin
             </ul>
           ) : null}
         </article>
-        <ViewBeacon source="content" itemId={v.id} />
+        <ViewBeacon source="content" itemId={v.id} contentType={v.type} siteId={v.siteId} />
         <ContentSocial itemId={v.id} />
       </main>
     </>

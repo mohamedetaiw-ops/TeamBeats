@@ -1530,7 +1530,8 @@
         "ask_assistant": "اسأل المساعد",
         "book_room": "احجز غرفة",
         "request_leave": "اطلب إجازة",
-        "my_tasks": "افتح مهامي"
+        "my_tasks": "افتح مهامي",
+        "open_analytics": "فتح التحليلات"
       }
     },
     "recovery": {
@@ -7097,6 +7098,69 @@
         "count": "التقارير",
         "last": "آخر ظهور",
         "correlation": "معرّفات التتبع"
+      }
+    },
+    "workspace": {
+      "title": "التحليلات",
+      "intro": "النشاط في المؤسسة حسب الأسبوع والوحدة والقناة. لا يُحسب الأشخاص إلا ضمن مجموعات.",
+      "denied": "ليس لديك وصول إلى التحليلات",
+      "deniedHint": "اطلب من المسؤول دور عارض التحليلات.",
+      "noDashboards": "باقتك لا تتضمن لوحات تحليلات.",
+      "filtersLabel": "عوامل تصفية التحليلات",
+      "failed": "تعذر تحميل الأرقام. حاول مرة أخرى.",
+      "minimumNote": "لا تُعرض أبدا مجموعة تضم أقل من {size} أشخاص بمفردها.",
+      "suppressed": "عدد الأشخاص أقل من أن يُعرض",
+      "suppressedHint": "يشمل هذا الاختيار أقل من {size} أشخاص. وسّع عوامل التصفية لرؤية الأرقام.",
+      "weeks": "{metric} حسب الأسبوع",
+      "weeksHidden": "استُبعدت الأسابيع التي تضم أقل من {size} أشخاص.",
+      "weeksSummary": "{weeks, plural, one {أسبوع واحد} two {أسبوعان} few {# أسابيع} many {# أسبوعا} other {# أسبوع}} معروضة، والإجمالي {total}.",
+      "groupsTitle": "حسب {groupBy}",
+      "groupsSummary": "{count, plural, one {مجموعة واحدة} two {مجموعتان} few {# مجموعات} many {# مجموعة} other {# مجموعة}} معروضة.",
+      "otherNote": "تُدمج المجموعات التي تضم أقل من {size} أشخاص في «أخرى». وإذا بقيت «أخرى» صغيرة جدا، تُضم إليها المجموعة الأصغر التالية.",
+      "other": "أخرى (مجموعات أقل من {size})",
+      "none": "غير مسجل",
+      "period": "آخر {weeks} أسبوعا",
+      "column": {
+        "week": "الأسبوع"
+      },
+      "filter": {
+        "metric": "المقياس",
+        "groupBy": "التقسيم",
+        "unit": "الوحدة",
+        "allUnits": "كل الوحدات",
+        "myUnits": "وحداتي",
+        "unitValue": "الوحدة: {name}",
+        "membershipType": "الأشخاص",
+        "anyone": "الجميع",
+        "membershipTypeValue": "الأشخاص: {name}",
+        "period": "الفترة"
+      },
+      "metric": {
+        "active_people": "الأشخاص النشطون",
+        "content_views": "مشاهدات المحتوى"
+      },
+      "measure": {
+        "people": "الأشخاص",
+        "views": "المشاهدات"
+      },
+      "groupBy": {
+        "none": "بدون تقسيم",
+        "unit": "الوحدة",
+        "channel": "القناة",
+        "locale": "اللغة",
+        "membership_type": "العضوية",
+        "location": "الموقع",
+        "content_type": "نوع المحتوى"
+      },
+      "channel": {
+        "web": "الويب",
+        "mobile": "الجوال",
+        "teams": "Teams"
+      },
+      "membershipType": {
+        "employee": "الموظفون",
+        "contractor": "المتعاقدون",
+        "guest": "الضيوف"
       }
     }
   },

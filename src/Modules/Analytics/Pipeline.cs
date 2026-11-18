@@ -171,7 +171,7 @@ public sealed class Pseudonyms(IDbSession session, IClock clock) : IAnalyticsPse
 /// (edge case: offline mobile) or more than 5 minutes ahead are dropped.
 /// </summary>
 public sealed class AnalyticsWriter(IDbSession session, IClock clock, AnalyticsPolicies policies, Pseudonyms pseudonyms,
-    IOrganizationHierarchy organization, IProfiles profiles)
+    IOrganizationHierarchy organization, IProfiles profiles, ITenantMemberships tenantMemberships)
 {
     public static readonly TimeSpan LateLimit = TimeSpan.FromDays(7);
     public static readonly TimeSpan AheadLimit = TimeSpan.FromMinutes(5);
@@ -202,8 +202,10 @@ public sealed class AnalyticsWriter(IDbSession session, IClock clock, AnalyticsP
         string? key = null;
         Guid? unit = null;
         string? location = null;
+        string? membershipType = null;
         if (userId is { } user && kept.Any(e => e.Schema.UserKeyed))
         {
+            membershipType = (await tenantMemberships.GetAsync(user, ct))?.MembershipType;
             key = await pseudonyms.KeyAsync(user, ct);
             var memberships = await organization.GetActiveMembershipsAsync(user, ct);
             unit = (memberships.FirstOrDefault(m => m.IsPrimary) ?? memberships.FirstOrDefault())?.OrgUnitId;
@@ -214,13 +216,14 @@ public sealed class AnalyticsWriter(IDbSession session, IClock clock, AnalyticsP
             var keyed = e.Schema.UserKeyed && key is not null;
             await session.ExecAsync(
                 """
-                insert into analytics.event (tenant_id, name, occurred_at, received_at, user_key, org_unit_id, location, channel, locale, fields)
-                values (platform.current_tenant_id(), @name, @occurred, @now, @key, @unit, @location, @channel, @locale, @fields)
+                insert into analytics.event (tenant_id, name, occurred_at, received_at, user_key, org_unit_id, location, membership_type, channel, locale, fields)
+                values (platform.current_tenant_id(), @name, @occurred, @now, @key, @unit, @location, @membershipType, @channel, @locale, @fields)
                 """,
                 new
                 {
                     name = e.Schema.Name, occurred = e.Schema.Unkeyed ? Day(e.OccurredAt) : e.OccurredAt, now = e.Schema.Unkeyed ? Day(now) : now,
-                    key = keyed ? key : null, unit = keyed ? unit : null, location = keyed ? location : null, channel = e.Channel,
+                    key = keyed ? key : null, unit = keyed ? unit : null, location = keyed ? location : null,
+                    membershipType = keyed ? membershipType : null, channel = e.Channel,
                     locale = e.Schema.Unkeyed ? null : locale, fields = new Jsonb(JsonSerializer.Serialize(e.Fields)),
                 }, ct);
         }
