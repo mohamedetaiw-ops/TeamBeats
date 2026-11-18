@@ -88,6 +88,39 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByText(msg(locale, "assistant.history.empty"))).toBeVisible();
     });
 
+    // Spec 014 FR-001 and T007: the panel in the shell opens from Ask TeamBeats or Ctrl+/ on any page, streams a cited
+    // answer, and hands the open conversation to the full page.
+    test("the assistant panel opens from the shell and its shortcut on any page", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/content/read/${shuttle}`);
+      const panel = page.getByRole("dialog", { name: msg(locale, "assistant.title") });
+      await page.keyboard.press("Control+Slash");
+      await expect(panel).toBeVisible();
+      await expect(panel.getByLabel(msg(locale, "assistant.label"), { exact: true })).toBeFocused();
+      await page.keyboard.press("Escape");
+      await expect(panel).toBeHidden();
+      const opener = page.locator(".shell-bar").getByRole("button", { name: msg(locale, "shell.ask") });
+      await expect(opener).toBeFocused();
+
+      await opener.click();
+      await expect(panel).toBeVisible();
+      await panel.getByLabel(msg(locale, "assistant.label"), { exact: true }).fill(questions[locale]);
+      await panel.getByRole("button", { name: msg(locale, "assistant.ask"), exact: true }).click();
+      const turn = panel.locator(".assistant-turn").first();
+      await expect(turn.getByText(msg(locale, "assistant.generated"))).toBeVisible();
+      await expect(turn.locator(".assistant-sources").getByRole("link", { name: /Evening shuttle timetable|مواعيد الحافلة المسائية/ })).toHaveAttribute(
+        "href",
+        `/content/read/${shuttle}`,
+      );
+      // The page behind keeps its place: the panel did not navigate.
+      await expect(page).toHaveURL(new RegExp(`/content/read/${shuttle}$`));
+      await expectAccessible(page, testInfo, `assistant-panel-${locale}`);
+
+      await panel.getByRole("link", { name: msg(locale, "assistant.panel.fullPage"), exact: true }).click();
+      await page.waitForURL(/\/assistant\?c=/);
+      await expect(page.locator(".assistant-main .assistant-turn")).toHaveCount(1);
+    });
+
     test("the page an item is on can be summarized, and pasted text rewritten", async ({ page }, testInfo) => {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.goto(`${hostOrigin(tenant.key)}/content/read/${shuttle}`);

@@ -292,3 +292,24 @@
   justify-content: space-between;
   gap: var(--tb-space-sm);
 }
+
+/* The assistant panel in the shell (spec 014 FR-001): the same transcript and composer in a drawer beside the page. */
+button.shell-ask {
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.assistant-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tb-space-md);
+  min-inline-size: 0;
+}
+
+.assistant-panel .assistant-composer {
+  position: sticky;
+  inset-block-end: 0;
+  padding-block: var(--tb-space-sm);
+  background: var(--tb-color-surface-raised);
+}

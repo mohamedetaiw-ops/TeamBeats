@@ -5747,6 +5747,11 @@
       "stopReading": "Stop reading",
       "preparing": "Preparing the audio",
       "playFailed": "The audio could not play in this browser."
+    },
+    "panel": {
+      "close": "Close the assistant",
+      "fullPage": "Open the full page",
+      "intro": "Ask about anything you can open in TeamBeats. Answers cite their sources. Press <key>Ctrl /</key>, or <key>⌘ /</key> on a Mac, to open this panel from any page."
     }
   },
   "agents": {

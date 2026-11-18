@@ -15,7 +15,7 @@ import { OfflineSync } from "@/features/app/OfflineSync";
 import { KioskSession } from "@/features/kiosk/KioskSession";
 import { QuickNav } from "./QuickNav";
 import { SettingsPanel } from "./SettingsPanel";
-import { Icon } from "@/components/ui/Icon";
+import { AssistantPanel } from "@/features/assistant/AssistantPanel";
 import { Badge } from "@/components/ui/Badge";
 import "./shell.css";
 
@@ -97,12 +97,9 @@ export async function Shell({ me, breadcrumbs = [] }: { me: Me; breadcrumbs?: Cr
           {layout.center.map(render)}
         </div>
         <div className="shell-slot" data-slot="end">
-          {/* Ask TeamBeats sits in the bar, so it never floats over a card, a field or the footer (spec 008 FR-066, DLS-078). */}
+          {/* Ask TeamBeats sits in the bar, so it never floats over a card, a field or the footer (spec 008 FR-066, DLS-078); it opens the assistant panel (spec 014 FR-001). */}
           {shell.ok && shell.data.assistant ? (
-            <Link className="shell-ask" href="/assistant">
-              <Icon name="spark" size={18} />
-              <span>{t("ask")}</span>
-            </Link>
+            <AssistantPanel />
           ) : null}
           {layout.end.map(render)}
           {regions.includes("identity") ? <AccountMenu name={me.displayName} administration={shell.ok && shell.data.administration} /> : null}
