@@ -30,6 +30,8 @@ public static class AnalyticsModule
         services.AddScoped<Adoption>();
         services.AddScoped<FrontendErrors>();
         services.AddScoped<Workspace>();
+        services.AddScoped<AnalyticsEstimates>();
+        services.AddScoped<CampaignAnalytics>();
         services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IShellCommands, AnalyticsCommands>();
         services.AddScoped<IAnalyticsEvents, AnalyticsEventsEmitter>();
         services.AddMessageHandler<AnalyticsEventEmitted, AnalyticsEventHandler>("analytics.write_event");
@@ -67,6 +69,13 @@ public static class AnalyticsModule
         analytics.MapGet("/workspace", async (Workspace workspace, CancellationToken ct) => Results.Ok(await workspace.GetAsync(ct)));
         analytics.MapPost("/query", async (MetricQuery query, Workspace workspace, CancellationToken ct) => Results.Ok(await workspace.QueryAsync(query, ct)));
 
+        // Campaign analytics (spec 021 US2, T011): Content decides who may see a campaign; the package needs analytics.advanced.
+        analytics.MapGet("/campaigns", async (CampaignAnalytics campaigns, CancellationToken ct) => Results.Ok(await campaigns.ListAsync(ct)));
+        analytics.MapGet("/campaigns/compare", async (Guid first, Guid second, CampaignAnalytics campaigns, CancellationToken ct) =>
+            Results.Ok(await campaigns.CompareAsync(first, second, ct)));
+        analytics.MapGet("/campaigns/{id:guid}", async (Guid id, CampaignAnalytics campaigns, CancellationToken ct) => Results.Ok(await campaigns.GetAsync(id, ct)));
+        analytics.MapGet("/estimates", async (AnalyticsEstimates estimates, CancellationToken ct) => Results.Ok(await estimates.ViewAsync(ct)));
+
         var admin = analytics.MapGroup("").InAdminArea();
         admin.MapGet("/adoption", async (Adoption adoption, CancellationToken ct) => Results.Ok(await adoption.GetAsync(ct)));
         admin.MapGet("/errors", async (string? release, FrontendErrors errors, CancellationToken ct) => Results.Ok(await errors.ListAsync(release, ct)));
@@ -74,6 +83,12 @@ public static class AnalyticsModule
         admin.MapPut("/policy", async (AnalyticsPolicyRequest request, AnalyticsPolicies policies, IDbSession session, CancellationToken ct) =>
         {
             var view = await policies.ChangeAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+        admin.MapPut("/estimates", async (EffortEstimatesRequest request, AnalyticsEstimates estimates, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await estimates.ChangeAsync(request, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });

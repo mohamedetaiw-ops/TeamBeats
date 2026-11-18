@@ -39,6 +39,16 @@ public interface INotificationSender
 }
 
 /// <summary>
+/// How many people a set of notification links reached, per channel (spec 021 FR-009: the campaign funnel by channel).
+/// Counts only, in the current tenant: the in-app count is the notifications created with the link, the others the
+/// deliveries that went out. The caller decides who may see the counts; a link with no notification is left out.
+/// </summary>
+public interface INotificationReach
+{
+    Task<IReadOnlyDictionary<string, IReadOnlyDictionary<string, int>>> DeliveredByChannelAsync(IReadOnlyCollection<string> links, CancellationToken ct = default);
+}
+
+/// <summary>
 /// One email to an address that is not a TeamBeats account (spec 022 FR-016: pre-boarding to the personal email HR
 /// holds). Text comes from the same template keys as <see cref="NotificationRequest"/>, in the tenant's default
 /// language unless <paramref name="Locale"/> names an enabled one. It is sent now, outside the queue and without an
@@ -135,6 +145,8 @@ public static class NotificationChannels
     public const string Email = "email";
     public const string Slack = "slack";
     public const string Push = "push";
+
+    public static readonly IReadOnlyList<string> All = [InApp, Email, Slack, Push];
 }
 
 /// <summary>A device allowed push notifications for this person (spec 030 section 12). Only the platform family is told, never the device.</summary>

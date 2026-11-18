@@ -4,6 +4,7 @@ import { apiGet, type Me } from "@/lib/api";
 import type { WorkspaceView } from "@/lib/analytics/types";
 import { Header } from "@/components/shell/Header";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { ButtonLink } from "@/components/ui/Button";
 import { StateView } from "@/components/ui/StateView";
 import { WorkspaceExplorer } from "@/features/analytics/WorkspaceExplorer";
 import "@/features/analytics/analytics.css";
@@ -23,7 +24,16 @@ export default async function AnalyticsWorkspacePage() {
     <>
       <Header me={me.data} breadcrumbs={[{ label: t("title"), href: "/analytics" }]} />
       <main id="main" className="page analytics-workspace">
-        <PageHeader title={t("title")} description={t("intro")} icon="trend-up" />
+        <PageHeader
+          title={t("title")}
+          description={t("intro")}
+          icon="trend-up"
+          actions={
+            <ButtonLink href="/analytics/campaigns" icon="megaphone" size="sm">
+              {t("campaignsLink")}
+            </ButtonLink>
+          }
+        />
         {!workspace.ok ? (
           <StateView kind="denied" title={t("denied")} message={t("deniedHint")} />
         ) : workspace.data.metrics.length === 0 ? (

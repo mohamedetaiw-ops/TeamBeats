@@ -35,6 +35,7 @@ public static class NotificationsModule
         services.AddScoped<NotificationTemplates>();
         services.AddScoped<NotificationCentre>();
         services.AddScoped<INotificationSender, NotificationSender>();
+        services.AddScoped<INotificationReach, NotificationReach>();
         services.AddScoped<EmailDelivery>();
         services.AddScoped<IExternalEmail, ExternalEmail>();
         services.AddScoped<SlackDelivery>();

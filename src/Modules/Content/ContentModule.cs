@@ -18,6 +18,7 @@ public static class ContentModule
         services.AddScoped<TeamBeats.Modules.PublicApi.Contracts.IPublicResourceVisibility, ContentVisibility>();
         services.AddScoped<TeamBeats.Modules.Search.Contracts.ISearchSource, ContentSearchSource>();
         services.AddScoped<TeamBeats.Modules.Analytics.Contracts.IAnalyticsItemSource, ContentAnalyticsSource>();
+        services.AddScoped<TeamBeats.Modules.Analytics.Contracts.IAnalyticsCampaignSource, ContentCampaignSource>();
         services.AddScoped<Sites>();
         services.AddScoped<Contracts.ISiteDirectory, SiteDirectory>();
         services.AddScoped<Contracts.IKnowledgeContent, KnowledgeContent>();

@@ -84,3 +84,62 @@ export type MetricResult = {
 };
 
 export const analyticsQueryApi = "/api/v1/analytics/query";
+
+/** Campaign analytics (spec 021 T011). What people did is null under the minimum group size. */
+export type AnalyticsCampaign = { id: string; name: string; siteId: string; status: string; createdAt: string; steps: number; firstSentAt: string | null };
+
+export type CampaignCounts = {
+  people: number;
+  delivered: number;
+  viewed: number | null;
+  clicked: number | null;
+  completed: number | null;
+  viewedShare: number | null;
+  completedShare: number | null;
+};
+
+export type CampaignStepAnalytics = {
+  stepId: string;
+  position: number;
+  itemId: string;
+  titles: Record<string, string>;
+  status: string;
+  at: string;
+  sentAt: string | null;
+  acknowledgementRequired: boolean;
+  counts: CampaignCounts;
+  channels: Record<string, number>;
+};
+
+export type CampaignEffort = {
+  currency: string;
+  authoringCost: number;
+  sendCost: number;
+  totalCost: number;
+  perReached: number | null;
+  perCompleted: number | null;
+  estimatesVersion: number;
+};
+
+export type CampaignAnalyticsView = {
+  campaign: AnalyticsCampaign;
+  minGroupSize: number;
+  total: CampaignCounts;
+  channels: Record<string, number>;
+  steps: CampaignStepAnalytics[];
+  groups: { dimension: "unit" | "location"; group: string; names: Record<string, string>; audience: number; viewed: number; completed: number }[];
+  effort: CampaignEffort | null;
+};
+
+export type CampaignComparison = { first: CampaignAnalyticsView; second: CampaignAnalyticsView };
+
+export type EffortEstimatesView = {
+  estimates: { authoringHoursPerItem: number; costPerHour: number; currency: string; costPerSend: Record<string, number> } | null;
+  version: number;
+  changedAt: string | null;
+  canChange: boolean;
+};
+
+export const notificationChannels = ["in_app", "email", "slack", "push"] as const;
+
+export const campaignAnalyticsHref = (id: string) => `/analytics/campaigns/${encodeURIComponent(id)}`;

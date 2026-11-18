@@ -2597,5 +2597,9 @@
   "validation.analytics.filter": "راجع عوامل التصفية. أحدها غير معروف.",
   "validation.analytics.range": "اختر نطاقا زمنيا لا يتجاوز 400 يوم، على أن تسبق البداية النهاية.",
   "validation.analytics.metric": "اختر مقياسا من القائمة.",
-  "validation.analytics.group_by": "اختر تقسيما يدعمه هذا المقياس."
+  "validation.analytics.group_by": "اختر تقسيما يدعمه هذا المقياس.",
+  "validation.analytics.estimate": "أدخل رقما من الصفر حتى الحد الأقصى المسموح.",
+  "validation.analytics.currency": "أدخل رمز عملة من ثلاثة أحرف، مثل SAR أو USD.",
+  "validation.analytics.compare": "اختر حملتين مختلفتين للمقارنة.",
+  "conflict.analytics.estimates_version": "غيّر شخص آخر التقديرات أثناء تحريرك. أعد التحميل وحاول مرة أخرى."
 }
