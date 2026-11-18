@@ -13,7 +13,7 @@
 | Approved | 2026-11-04 by Mohamed |
 | Requirement IDs | LOC-001, LOC-002, LOC-003, LOC-004, EXP-008, CX-ACC-001 to CX-ACC-014, CX-LOC-001 to CX-LOC-005, CX-LOC-007 to CX-LOC-010 |
 | Use cases | UC-04 (localization part) |
-| Depends on | 001 |
+| Depends on | 001; verified by 038 |
 
 ## 1. Problem and outcome
 
@@ -111,7 +111,7 @@ Employee (chooses language), tenant admin (enables locales, sets default), conte
 - **FR-015**: Regions and controls MUST absorb translated string expansion without clipping; pseudo-localized long strings MUST pass responsive tests on every reference template. *(CX-LOC-008)*
 - **FR-016**: Layouts, the layout engine and all components MUST use logical positioning only; switching direction MUST NOT break hierarchy or action placement. *(CX-LOC-010)*
 - **FR-017**: Admin tools SHOULD show translation status for pages, template labels, navigation and configurable text, and block publishing when the tenant requires a locale that is incomplete (spec 032 FR-047). *(CX-LOC-007)*
-- **FR-018**: User-facing pages and all administration and editor interfaces MUST meet WCAG 2.2 AA, verified by automated checks in CI and by manual audits of complete page variants and editor journeys. *(CX-ACC-001)*
+- **FR-018**: User-facing pages and all administration and editor interfaces MUST meet WCAG 2.2 AA, verified by automated checks in CI and by manual audits of complete page variants and editor journeys. Spec 038 owns the verification: the conformance map of every WCAG 2.2 A and AA criterion, the gate over every route and the conformance report. *(CX-ACC-001)*
 - **FR-019**: All essential interactions MUST work with keyboard alone, and every drag action MUST have a single-pointer non-drag alternative. *(CX-ACC-002, CX-ACC-003)*
 - **FR-020**: Focus MUST be visible, logical, not obscured, and restored after dialogs, panels and asynchronous updates. *(CX-ACC-004)*
 - **FR-021**: Contrast MUST be at least 4.5:1 for normal text and 3:1 for large text and essential graphical cues, except WCAG-defined exceptions, enforced on design tokens (spec 033 FR-009) and checked on sample pages. *(CX-ACC-005)*
@@ -145,7 +145,7 @@ Tenant-enabled locales and default are tenant settings (spec 001). An organizati
 All five locales and accessibility are available in every package. No capability key.
 
 ## 10. UX
-- Every screen follows the TeamBeats Design System (spec 036, `docs/design-system`), whose accessibility and content guidelines implement this spec; its design suite runs axe, reflow and target size checks in all three designs in Arabic and English.
+- Every screen follows the TeamBeats Design System (spec 036, `docs/design-system`), whose accessibility and content guidelines implement this spec; its design suite runs axe, reflow and target size checks in all four designs in Arabic and English, and the accessibility gate of spec 038 covers every route in every design, mode, language and width.
 - Language is chosen in one place: Quick preferences in the shell header and the same control on the personal Preferences page (spec 036 DLS-047).
 - Pseudo-localization locale for testing (long strings, accented characters, forced RTL).
 

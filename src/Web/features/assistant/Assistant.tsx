@@ -232,9 +232,12 @@ export function AssistantChat({
   const end = useRef<HTMLDivElement>(null);
   const conversationId = initial?.id ?? null;
 
+  // Scrolling moves the browser's Tab starting point, so an empty conversation stays put and Tab still starts at the
+  // skip link (WCAG 2.4.1, spec 038 A11Y-009).
   useEffect(() => {
+    if (turns.length === 0 && !pending && runs.length === 0) return;
     end.current?.scrollIntoView({ block: "end" });
-  }, [turns.length, pending?.text, runs.length]);
+  }, [turns.length, pending, runs.length]);
 
   // A text tool works on the text in the composer; its result joins the transcript, labelled as generated.
   async function runTool(action: TextAction) {

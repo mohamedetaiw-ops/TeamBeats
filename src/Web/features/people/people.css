@@ -111,7 +111,7 @@
 }
 
 .people-cards {
-  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
   gap: var(--tb-space-md);
 }
 
@@ -369,7 +369,7 @@ ol.people-chart {
 
 .people-edit-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
   gap: var(--tb-space-md);
 }
 

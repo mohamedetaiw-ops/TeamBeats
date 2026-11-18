@@ -38,7 +38,7 @@
 /* API and MCP access administration and connected apps (spec 035 US1, US6, FR-029). */
 .api-access-scopes {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
   gap: var(--tb-space-sm);
 }
 

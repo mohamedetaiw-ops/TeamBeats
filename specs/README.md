@@ -41,6 +41,7 @@ Status values: Proposed, Approved, In Progress, Implemented, Deprecated, Retired
 | [035 Public API, MCP server and app access](035-public-api-and-mcp-server/spec.md) | integrations | R2, R3 | Approved | API-001 to API-030 (new) |
 | [036 TeamBeats Design Language System](036-design-language-system/spec.md) | experience | R1, R2, R3 | Approved | DLS-001 to DLS-074 (new) |
 | [037 Unified employee and team calendar](037-unified-calendar/spec.md) | experience | R2, R3 | Approved | CAL-001 to CAL-032 (new), INT-002 (calendar part), UC-10 (calendar part), LVA-009 (calendar part) |
+| [038 WCAG 2.2 AA accessibility conformance](038-accessibility-conformance/spec.md) | experience | R2, R3 | Approved | A11Y-001 to A11Y-024 (new), EXP-008 and CX-ACC-001 to CX-ACC-014 (verification) |
 
 Open questions across these specs, with defaults: [open-questions.md](open-questions.md). Release plan: [roadmap](../docs/product/roadmap.md).
 

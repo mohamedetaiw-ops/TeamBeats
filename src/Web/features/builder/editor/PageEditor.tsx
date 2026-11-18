@@ -373,6 +373,7 @@ export function PageEditor({
                         else cards.current.delete(p.id);
                       }}
                       className="builder-placement"
+                      // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a placement takes focus so it can be moved and opened with the keyboard
                       tabIndex={0}
                       aria-label={t("placementLabel", { name, ...position(draft, p.id) })}
                       aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown Alt+D Delete"

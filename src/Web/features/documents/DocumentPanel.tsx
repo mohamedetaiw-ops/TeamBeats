@@ -441,6 +441,7 @@ export function DocumentPanel({
                 // eslint-disable-next-line @next/next/no-img-element -- previews are short-lived tokens the image optimizer cannot fetch
                 <img src={preview.view.url} alt={doc.name} draggable={false} />
               ) : preview.view.kind === "video" && preview.view.url ? (
+                // eslint-disable-next-line jsx-a11y/media-has-caption -- an uploaded file has no caption track; listed in the conformance map (1.2.2, spec 038)
                 <video
                   src={preview.view.url}
                   controls

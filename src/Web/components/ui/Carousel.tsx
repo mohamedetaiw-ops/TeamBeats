@@ -49,6 +49,7 @@ export function Carousel({ label, children }: { label: string; children: ReactNo
         </button>
       </div>
       {/* The scrolling list takes focus so the arrow keys can scroll it when its cards hold nothing focusable. */}
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- the scrolling list must take focus so the arrow keys can scroll it (WCAG 2.1.1) */}
       <ul ref={track} className="ui-carousel-track" tabIndex={0} aria-label={label} onScroll={measure}>
         {Children.map(children, (child) => (
           <li>{child}</li>

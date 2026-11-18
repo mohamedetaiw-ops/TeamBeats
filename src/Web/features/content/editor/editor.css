@@ -113,7 +113,7 @@
 
 .content-editor-picks {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 9rem), 1fr));
   gap: var(--tb-space-xs);
   max-block-size: 20rem;
   margin: 0;

@@ -37,7 +37,7 @@
 .booking-list,
 .booking-labels {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
   gap: var(--tb-space-md);
   margin: 0;
   padding: 0;

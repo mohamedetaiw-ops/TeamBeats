@@ -76,7 +76,9 @@
   margin-inline-start: auto;
 }
 
+/* Positioned, so visually hidden text inside the scroller is clipped by it and never widens the page. */
 .ui-table-scroll {
+  position: relative;
   min-inline-size: 0;
   overflow-x: auto;
   border-radius: var(--tb-radius-md);
@@ -524,6 +526,7 @@ a.ui-event:hover {
   display: grid;
   grid-template-columns: 3.5rem repeat(var(--xp-days), minmax(6.5rem, 1fr));
   grid-template-rows: auto auto repeat(var(--xp-slots), var(--xp-slot));
+  position: relative;
   overflow-x: auto;
   border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
   border-radius: var(--tb-radius-md);

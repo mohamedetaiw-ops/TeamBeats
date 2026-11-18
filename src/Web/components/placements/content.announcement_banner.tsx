@@ -57,7 +57,7 @@ export default function AnnouncementBanner(_: PlacementProps) {
   return (
     <div className="content-banners">
       {banners.map((notice) => (
-        <section key={notice.id} className="content-banner" role="region" aria-label={notice.title} lang={notice.locale}>
+        <section key={notice.id} className="content-banner" aria-label={notice.title} lang={notice.locale}>
           <h2>
             <Link href={readHref(notice.id)}>
               <bdi>{notice.title}</bdi>
