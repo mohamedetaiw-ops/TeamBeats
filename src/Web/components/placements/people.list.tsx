@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import type { PlacementProps } from "@/lib/experience/contract";
-import { initials, localName, personName, type PersonCard, type SearchPage } from "@/lib/people/types";
+import { initials, photoAt, localName, personName, type PersonCard, type SearchPage } from "@/lib/people/types";
 import { Button } from "@/components/ui/Button";
 import { StateView } from "@/components/ui/StateView";
 import { useWidgetBudget, Widget } from "@/components/ui/Widget";
@@ -81,7 +81,13 @@ export default function PeopleList({ props }: PlacementProps) {
         return (
           <li key={p.id} className="people-item">
             <span className="people-avatar" aria-hidden="true">
-              {initials(name)}
+              {p.photo ? (
+                // A small session-protected API file; the name is the link beside it.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={photoAt(p.photo, 40) ?? undefined} alt="" loading="lazy" decoding="async" />
+              ) : (
+                initials(name)
+              )}
             </span>
             <span className="people-item-text">
               <Link href={`/people/${p.id}`} className="people-item-name">

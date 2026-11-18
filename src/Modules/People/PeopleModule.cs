@@ -30,6 +30,7 @@ public static class PeopleModule
         services.AddScoped<Profiles>();
         services.AddScoped<IProfiles>(sp => sp.GetRequiredService<Profiles>());
         services.AddScoped<PeopleService>();
+        services.AddScoped<ProfilePhotos>();
         services.AddScoped<TeamBeats.Modules.Agents.Contracts.IAgentTool, FindPersonTool>();
         services.AddScoped<TeamBeats.Modules.Agents.Contracts.IAgentTool, GetPersonTool>();
         services.AddScoped<IEmployeeNumbers, EmployeeNumbers>();
@@ -125,6 +126,48 @@ public static class PeopleModule
             await session.CommitAsync(ct);
             return Results.Ok(view);
         }).InAdminArea();
+
+        // Profile photos (FR-013): the person's own upload and removal, the photo itself, and removal by a manager or HR.
+        people.MapGet("/{id:guid}/photo", async (Guid id, int? size, ProfilePhotos photos, IDbSession session, HttpResponse response, CancellationToken ct) =>
+        {
+            var content = await photos.OpenAsync(id, size, ct);
+            await session.CommitAsync(ct);
+            // The link carries the photo's version, so a changed photo has a new link; the file is private to the session.
+            response.Headers.CacheControl = "private, max-age=86400";
+            response.Headers["X-Content-Type-Options"] = "nosniff";
+            return Results.File(content, "image/png");
+        });
+
+        people.MapDelete("/{id:guid}/photo", async (Guid id, ProfilePhotos photos, IDbSession session, CancellationToken ct) =>
+        {
+            await photos.RemoveAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        }).InAdminArea();
+
+        me.MapPut("/photo", async (HttpRequest http, ProfilePhotos photos, IDbSession session, CancellationToken ct) =>
+        {
+            var buffer = new byte[ProfilePhotos.MaxBytes + 1];
+            int read, total = 0;
+            while ((read = await http.Body.ReadAsync(buffer.AsMemory(total, buffer.Length - total), ct)) > 0)
+            {
+                total += read;
+                if (total > ProfilePhotos.MaxBytes)
+                {
+                    throw Primitives.AppException.Validation("file", "validation.people.photo_size");
+                }
+            }
+            var view = await photos.UploadOwnAsync(http.ContentType, buffer[..total], ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        }).DisableAntiforgery();
+
+        me.MapDelete("/photo", async (ProfilePhotos photos, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await photos.RemoveOwnAsync(ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
 
         me.MapGet("/team", async (bool? indirect, int? offset, int? limit, PeopleService service, IDbSession session, CancellationToken ct) =>
         {

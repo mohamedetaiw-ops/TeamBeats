@@ -74,6 +74,7 @@
   background: var(--tb-color-surface-raised);
   color: var(--tb-color-text-primary);
   font-weight: 600;
+  overflow: hidden;
 }
 
 .people-avatar[data-tone] {
@@ -428,4 +429,33 @@ ol.people-chart {
 .people-rows > li {
   padding-block: var(--tb-space-sm);
   border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+/* A photo fills the avatar circle (spec 010 FR-013); the files are square, so cover only trims rounding. */
+.people-avatar img {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+.people-photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+  align-items: center;
+  margin-block-start: var(--tb-space-sm);
+}
+
+.people-photo-actions label.button {
+  cursor: pointer;
+}
+
+.people-photo-actions label.button:has(input:focus-visible) {
+  outline: var(--tb-border-width-focus) solid var(--tb-color-focus-ring);
+  outline-offset: var(--tb-border-width-focus);
+}
+
+.people-photo-result {
+  margin: 0;
 }

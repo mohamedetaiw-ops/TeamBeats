@@ -69,3 +69,23 @@ public sealed class TestSecretTool(TestAgentToolLog log, IAuthorizationService a
         return new ToolResult(true, "Security records.", "internal", []);
     }
 }
+
+/// <summary>
+/// An L3 tool for governed execution (spec 027 US4): an order in an external system, approved by a holder of
+/// <c>finance.process</c> at the agent's unit before it runs, as the person who asked.
+/// </summary>
+public sealed class TestOrderTool(TestAgentToolLog log) : IAgentTool
+{
+    public const string Name = "test.order";
+
+    public ToolDefinition Definition { get; } = new(Name, "test", 1, ToolSideEffects.WriteExternal, ToolApprovalRules.Approval,
+        JsonDocument.Parse("""{"type":"object","additionalProperties":false,"required":["item","amount"],"properties":{"item":{"type":"string","minLength":1,"maxLength":200},"amount":{"type":"number","minimum":1,"maximum":100000}}}""")
+            .RootElement.Clone(),
+        "internal", Idempotent: true, TimeoutSeconds: 5, "Order an item from the supplier.", ApproverPermission: Permissions.FinanceProcess);
+
+    public Task<ToolResult> ExecuteAsync(JsonElement arguments, ToolCallContext context, CancellationToken ct)
+    {
+        log.Calls.Enqueue((context.UserId, Name, arguments.GetRawText(), context.IdempotencyKey));
+        return Task.FromResult(new ToolResult(true, "Order placed.", "internal", []));
+    }
+}

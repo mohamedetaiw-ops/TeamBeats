@@ -2,7 +2,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { joinMeta } from "@/lib/format";
 import { Icon } from "@/components/ui/Icon";
-import { initials, localName, locationName, personName, type PersonCard } from "@/lib/people/types";
+import { initials, localName, locationName, personName, photoAt, type PersonCard } from "@/lib/people/types";
 
 const tones = ["accent", "highlight", "success", "info"] as const;
 
@@ -11,6 +11,22 @@ function avatarTone(id: string) {
   let sum = 0;
   for (const c of id) sum = (sum + c.charCodeAt(0)) % 997;
   return tones[sum % tones.length];
+}
+
+/** The avatar: the photo when the person has one, otherwise initials. The name beside it is what people read. */
+function PersonAvatar({ person, name, size }: { person: PersonCard; name: string; size: number }) {
+  const src = photoAt(person.photo, size);
+  return (
+    <span className="people-avatar" data-tone={src ? undefined : avatarTone(person.id)} aria-hidden="true">
+      {src ? (
+        // A small session-protected API file; the image optimizer cannot fetch it. The name is next to it, so alt is empty.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={src} alt="" loading="lazy" decoding="async" />
+      ) : (
+        initials(name)
+      )}
+    </span>
+  );
 }
 
 /** A channel value the API gave for this person; it sends only what the viewer may see. */
@@ -30,9 +46,7 @@ export function PersonItem({ person, locale, extra, form = "row" }: { person: Pe
   if (form === "chip") {
     return (
       <Link href={`/people/${person.id}`} className="people-chip">
-        <span className="people-avatar" data-tone={avatarTone(person.id)} aria-hidden="true">
-          {initials(name)}
-        </span>
+        <PersonAvatar person={person} name={name} size={24} />
         <bdi>{name}</bdi>
       </Link>
     );
@@ -42,9 +56,7 @@ export function PersonItem({ person, locale, extra, form = "row" }: { person: Pe
   const phone = form === "card" ? (field(person, "workPhone") ?? field(person, "mobilePhone")) : null;
   return (
     <div className="people-item" data-form={form}>
-      <span className="people-avatar" data-tone={avatarTone(person.id)} aria-hidden="true">
-        {initials(name)}
-      </span>
+      <PersonAvatar person={person} name={name} size={form === "card" ? 48 : 40} />
       <div className="people-item-text">
         <Link href={`/people/${person.id}`} className="people-item-name">
           <bdi>{name}</bdi>

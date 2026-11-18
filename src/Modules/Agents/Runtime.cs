@@ -7,6 +7,7 @@ using TeamBeats.Authorization.Contracts;
 using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Modules.Agents.Contracts;
 using TeamBeats.Modules.AiGateway.Contracts;
+using TeamBeats.Modules.Notifications.Contracts;
 using TeamBeats.Modules.Search.Contracts;
 using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Persistence;
@@ -49,6 +50,12 @@ public static class ToolDecisions
 
     /// <summary>A write tool in an evaluation run: recorded, answered by a sandbox double, nothing changed (spec 034 FR-007).</summary>
     public const string Sandboxed = EvalStepDecisions.Sandboxed;
+
+    /// <summary>An L3 call waits for an approver in the task inbox (027 US4, R2).</summary>
+    public const string ApprovalRequested = "approval_requested";
+
+    /// <summary>An approver approved the call and it ran as the person.</summary>
+    public const string Approved = "approved";
 }
 
 /// <summary>
@@ -67,7 +74,7 @@ public sealed record RunCitation(int N, string Source, Guid ItemId, string Title
 /// document and not from the person.
 /// </summary>
 public sealed record ConfirmationCard(Guid Id, string Tool, string SideEffect, JsonElement Parameters, string Hash, DateTimeOffset ExpiresAt,
-    IReadOnlyList<string> FromContent);
+    IReadOnlyList<string> FromContent, bool AwaitingApproval = false);
 
 public sealed record RunStepView(int N, string Kind, string? Tool, string Decision, string? Reason, string? ParameterHash, JsonElement? Parameters,
     string? Classification, int DurationMs, DateTimeOffset At);
@@ -94,7 +101,8 @@ public sealed record RunRecord(RunSummary Run, IReadOnlyList<RunStepView> Steps,
     string? ItemSource = null, Guid? ItemId = null);
 
 /// <summary>A pending L2 call, bound to a hash of its exact parameters (027 FR-010).</summary>
-internal sealed record PendingCall(Guid Id, string CallId, string Tool, string Arguments, string Hash, DateTimeOffset ExpiresAt, List<string> FromContent);
+internal sealed record PendingCall(Guid Id, string CallId, string Tool, string Arguments, string Hash, DateTimeOffset ExpiresAt, List<string> FromContent,
+    bool Approval = false);
 
 /// <summary>Where a run stands; saved as the checkpoint while it waits.</summary>
 internal sealed class RunState
@@ -158,7 +166,7 @@ internal sealed record RunAgent(Guid Id, int Version, Guid OrgUnitId, AgentDefin
 /// </summary>
 public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntitlementService entitlements, IAuthorizationService authz,
     IOrganizationHierarchy org, IAuditWriter audit, IClock clock, IAiGateway gateway, ToolRegistry tools, AgentPolicyService policies,
-    ISearchRetrieval retrieval, AgentMemory memory, MemoryRememberTool remember)
+    ISearchRetrieval retrieval, AgentMemory memory, MemoryRememberTool remember, AgentApprovals approvals, INotificationSender notifications)
 {
     public const int MaxMessage = 2000;
     public const string PromptVersion = "agent.v1";
@@ -591,6 +599,16 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
                         : await ExecuteAsync(runId, agent, user, state, gate.Tool!, gate.Arguments!.Value, gate.Hash!, watch, ct, ToolDecisions.Confirmed)));
                     continue;
                 }
+                if (gate.Approver is { } approver)
+                {
+                    // Governed execution (027 US1 L3): the call waits for an approver; the person cannot confirm it themselves.
+                    var approvalId = Guid.NewGuid();
+                    var due = await approvals.RequestAsync(approvalId, runId, agent, user, gate.Tool!, gate.Arguments!.Value, gate.Hash!, completion.Content, approver, ct);
+                    state.Pending = new PendingCall(approvalId, call.Id, gate.Tool!, call.Arguments, gate.Hash!, due, FromContent(gate.Arguments!.Value, state.Untrusted),
+                        Approval: true);
+                    await StepAsync(runId, state, "confirmation", gate.Tool, ToolDecisions.ApprovalRequested, null, gate.Hash, gate.Arguments, state.Classification, watch, ct);
+                    continue;
+                }
                 if (gate.Confirm)
                 {
                     var pending = new PendingCall(Guid.NewGuid(), call.Id, gate.Tool!, call.Arguments, gate.Hash!, clock.UtcNow + ConfirmationTimeout,
@@ -637,7 +655,8 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         return result ?? AiResult.Denied(AiDenials.ProviderUnavailable);
     }
 
-    private sealed record Gate(string? Tool, JsonElement? Arguments, string? Hash, string? Refusal = null, string? Stop = null, bool Confirm = false, bool Sandbox = false);
+    private sealed record Gate(string? Tool, JsonElement? Arguments, string? Hash, string? Refusal = null, string? Stop = null, bool Confirm = false, bool Sandbox = false,
+        ToolApprover? Approver = null);
 
     /// <summary>
     /// The tool gateway (027 US3 scenario 1), in order: agent state, the agent's allowlist and the registry, tenant policy,
@@ -674,9 +693,18 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
                 return new Gate(granted, null, null, Refusal: "tool.not_in_package");
             }
             var needed = definition.SideEffect switch { ToolSideEffects.Read => 0, ToolSideEffects.Draft => 1, ToolSideEffects.WriteSelf => 2, _ => 3 };
+            if (rule == ToolApprovalRules.Approval)
+            {
+                // An action that waits for an approver is governed execution (027 US1 L3).
+                needed = 3;
+            }
             if (needed > agent.Autonomy || needed > AgentAutonomy.Rank(AgentAutonomy.HighestBuilt))
             {
                 return new Gate(granted, null, null, Refusal: "tool.above_autonomy");
+            }
+            if (needed == 3 && !await entitlements.IsEnabledAsync(Capabilities.AiAgentsWriteTools, ct))
+            {
+                return new Gate(granted, null, null, Refusal: "tool.not_in_package");
             }
         }
         JsonElement arguments;
@@ -698,12 +726,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         {
             return new Gate(granted, arguments, hash, Stop: "tool_calls");
         }
-        if (rule == ToolApprovalRules.Approval)
-        {
-            // Approver tasks come with L3 in R2 (027 US4); until then such a call is refused.
-            return new Gate(granted, arguments, hash, Refusal: "tool.approval_not_available");
-        }
-        if (agent.Mode == "briefing" && ToolSideEffects.IsWrite(definition.SideEffect))
+        if (agent.Mode == "briefing" && (ToolSideEffects.IsWrite(definition.SideEffect) || rule == ToolApprovalRules.Approval))
         {
             // A briefing reads and reports; nobody is there to confirm an action (020 US8).
             return new Gate(granted, arguments, hash, Refusal: "tool.not_in_briefing");
@@ -712,9 +735,16 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         {
             return new Gate(granted, arguments, hash, Refusal: "tool.already_done");
         }
-        if (agent.DryRun && ToolSideEffects.IsWrite(definition.SideEffect))
+        if (agent.DryRun && (ToolSideEffects.IsWrite(definition.SideEffect) || rule == ToolApprovalRules.Approval))
         {
             return agent.Sandbox ? new Gate(granted, arguments, hash, Confirm: true, Sandbox: true) : new Gate(granted, arguments, hash, Refusal: "tool.test_mode");
+        }
+        if (rule == ToolApprovalRules.Approval)
+        {
+            // The action waits for an approver in the task inbox (027 US4); nobody named means nobody may approve it.
+            return agent.Policy.ApproverFor(definition) is { } approver
+                ? new Gate(granted, arguments, hash, Approver: approver)
+                : new Gate(granted, arguments, hash, Refusal: "tool.no_approver");
         }
         // A note for the person themselves, which they accepted and can delete, needs no confirmation card.
         return new Gate(granted, arguments, hash, Confirm: !memoryCall && (rule == ToolApprovalRules.Confirm || ToolSideEffects.IsWrite(definition.SideEffect)));
@@ -951,7 +981,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
     {
         using var doc = JsonDocument.Parse(pending.Arguments.Length == 0 ? "{}" : pending.Arguments);
         return new ConfirmationCard(pending.Id, pending.Tool, tools.Find(pending.Tool)?.Definition.SideEffect ?? ToolSideEffects.WriteSelf, doc.RootElement.Clone(),
-            pending.Hash, pending.ExpiresAt, pending.FromContent);
+            pending.Hash, pending.ExpiresAt, pending.FromContent, pending.Approval);
     }
 
     private async Task<RunView> FinishAsync(Guid runId, RunAgent agent, RunState state, string status, string outcome, string? reason, string? answer, string language,
@@ -1018,8 +1048,9 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
             throw AppException.Validation("confirm", "validation.agent_run.confirm");
         }
         var (agent, language, state) = await WaitingAsync(runId, user, ct);
-        if (state.Pending is not { } pending || pending.Id != confirmationId)
+        if (state.Pending is not { Approval: false } pending || pending.Id != confirmationId)
         {
+            // An action waiting for an approver is not the person's to confirm (027 US4).
             throw AppException.NotFound();
         }
         if (confirm && request.Hash != pending.Hash)
@@ -1060,6 +1091,78 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         return await LoopAsync(runId, agent, user, language, state, ct);
     }
 
+    public const string ApprovedTemplate = "agents.action_approved";
+    public const string RejectedTemplate = "agents.action_rejected";
+    public const string ExpiredTemplate = "agents.action_expired";
+
+    /// <summary>
+    /// Carries out an approver's decision as the person who asked (027 US4), called by the worker in the person's scope.
+    /// Approved: the gateway checks run again and exactly the approved parameters run, bound by their hash; the run goes
+    /// on. Rejected: the agent is told and answers the person. Past the due time with no decision: the action is cancelled
+    /// and the run ends as expired. The person is told in each case. Null when there is nothing (left) to do.
+    /// </summary>
+    public async Task<RunView?> ApprovalAsync(Guid approvalId, CancellationToken ct)
+    {
+        var user = context.RequireUser();
+        if (await approvals.FindAsync(approvalId, true, ct) is not { } approval || approval.RequestedBy != user)
+        {
+            return null;
+        }
+        RunAgent agent;
+        string language;
+        RunState state;
+        try
+        {
+            (agent, language, state) = await WaitingAsync(approval.RunId, user, ct);
+        }
+        catch (AppException e) when (e.Status == 404)
+        {
+            return null;
+        }
+        if (state.Pending is not { Approval: true } pending || pending.Id != approvalId || !await approvals.MarkAppliedAsync(approvalId, ct))
+        {
+            return null;
+        }
+        var watch = Stopwatch.StartNew();
+        state.Pending = null;
+        var names = agent.Definition.Name ?? [];
+        var parameters = new Dictionary<string, string> { ["agent"] = names.GetValueOrDefault(language) ?? names.GetValueOrDefault("en") ?? names.Values.FirstOrDefault() ?? "" };
+        async Task TellAsync(string template) =>
+            await notifications.SendAsync(new NotificationRequest([user], NotificationCategories.RequestUpdate, template, $"/agents/{agent.Id}", parameters,
+                DedupeKey: $"agent-approval:{approvalId:N}"), ct);
+        if (approval.Status == "pending")
+        {
+            await approvals.ExpireAsync(approval, ct);
+            await StepAsync(approval.RunId, state, "confirmation", pending.Tool, ToolDecisions.Cancelled, "approval_expired", pending.Hash, null, state.Classification, watch, ct);
+            await TellAsync(ExpiredTemplate);
+            return await FinishAsync(approval.RunId, agent, state, RunStatuses.Stopped, RunOutcomes.Expired, "approval_expired", null, language, (null, null, 0, 0), ct);
+        }
+        if (approval.Status != "approved")
+        {
+            await StepAsync(approval.RunId, state, "confirmation", pending.Tool, ToolDecisions.Cancelled, "approval_rejected", pending.Hash, null, state.Classification, watch, ct);
+            state.Messages.Add(ToolMessage(pending.CallId, RunAgent.ModelName(pending.Tool), ToolResult.Failed("tool.approval_rejected")));
+            await TellAsync(RejectedTemplate);
+            return await LoopAsync(approval.RunId, agent, user, language, state, ct);
+        }
+        // The gateway checks again at execution time: the agent, the policy or the approvers may have changed meanwhile.
+        var gate = await CheckAsync(agent, state, RunAgent.ModelName(pending.Tool), pending.Arguments, ct);
+        if (gate.Stop is not null || gate.Refusal is not null || gate.Approver is null || gate.Hash != pending.Hash)
+        {
+            var reason = gate.Stop ?? gate.Refusal ?? (gate.Hash != pending.Hash ? "tool.parameters_changed" : "tool.rule_changed");
+            state.Denials++;
+            await StepAsync(approval.RunId, state, "confirmation", pending.Tool, ToolDecisions.Refused, reason, pending.Hash, null, state.Classification, watch, ct);
+            await audit.WriteAsync(new AuditEntry(AuditActions.AgentToolDenied, "agent_run", approval.RunId.ToString(), AuditOutcome.Denied, agent.OrgUnitId,
+                new { agent = agent.Id, version = agent.Version, tool = pending.Tool, reason, hash = pending.Hash }), ct);
+            await TellAsync(ExpiredTemplate);
+            return await FinishAsync(approval.RunId, agent, state, RunStatuses.Stopped, gate.Stop == "agent.suspended" ? RunOutcomes.Suspended : RunOutcomes.PolicyBlocked,
+                reason, null, language, (null, null, 0, 0), ct);
+        }
+        var result = await ExecuteAsync(approval.RunId, agent, user, state, pending.Tool, gate.Arguments!.Value, pending.Hash, watch, ct, ToolDecisions.Approved);
+        state.Messages.Add(ToolMessage(pending.CallId, RunAgent.ModelName(pending.Tool), result));
+        await TellAsync(ApprovedTemplate);
+        return await LoopAsync(approval.RunId, agent, user, language, state, ct);
+    }
+
     /// <summary>A person can always stop their own run and cancel its pending action (027 section 6).</summary>
     public async Task<RunView> StopAsync(Guid runId, CancellationToken ct)
     {
@@ -1068,6 +1171,10 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         if (state.Pending is { } pending)
         {
             state.Pending = null;
+            if (pending.Approval)
+            {
+                await approvals.CancelAsync(pending.Id, ct);
+            }
             await StepAsync(runId, state, "confirmation", pending.Tool, ToolDecisions.Cancelled, "stopped", pending.Hash, null, state.Classification, Stopwatch.StartNew(), ct);
         }
         return await FinishAsync(runId, agent, state, RunStatuses.Stopped, RunOutcomes.Stopped, "stopped_by_person", null, language, (null, null, 0, 0), ct);
@@ -1240,6 +1347,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
             """
             update agents.run set status = 'stopped', outcome = 'expired', reason = 'confirmation_expired', finished_at = @now, updated_at = @now
             where status = 'waiting' and updated_at < @cutoff
+              and not exists (select 1 from agents.run_approval a where a.run_id = run.id and a.status <> 'cancelled' and a.applied_at is null)
             """, new { now, cutoff = now - ConfirmationTimeout - TimeSpan.FromMinutes(5) }, ct);
         // Waiting runs keep their card; running ones keep the checkpoint a worker resumes them from.
         await session.ExecAsync("delete from agents.run_checkpoint c using agents.run r where r.id = c.run_id and r.status not in ('waiting', 'running')", null, ct);

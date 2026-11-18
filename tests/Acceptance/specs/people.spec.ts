@@ -124,6 +124,15 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.getByRole("button", { name: msg(locale, "people.me.save") }).click();
       await expect(page.getByRole("status").filter({ hasText: msg(locale, "people.me.saved") })).toBeVisible();
       await expectAccessible(page, testInfo, `people-me-${locale}`);
+
+      // A photo (spec 010 FR-013): added from the profile, shown in the avatar, and removed again.
+      const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
+      await page.locator('.people-photo-actions input[type="file"]').setInputFiles({ name: "me.png", mimeType: "image/png", buffer: png });
+      await expect(page.getByText(msg(locale, "people.me.photo.saved"))).toBeVisible();
+      await expect(page.locator(".people-identity .ui-avatar img")).toHaveAttribute("src", /\/api\/v1\/people\/.+\/photo\?v=1/);
+      await page.getByRole("button", { name: msg(locale, "people.me.photo.remove") }).click();
+      await expect(page.getByText(msg(locale, "people.me.photo.removed"))).toBeVisible();
+      await expect(page.locator(".people-identity .ui-avatar img")).toHaveCount(0);
     });
 
     test("an administrator changes who sees a field", async ({ page }, testInfo) => {

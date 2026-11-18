@@ -24,7 +24,8 @@ public sealed record ProfileRow(
     DateOnly? HireDate,
     DateOnly FirstSeen,
     bool NewcomerOptOut,
-    int Version)
+    int Version,
+    int? PhotoVersion = null)
 {
     /// <summary>The value of a field under its current source, or null when the source holds none.</summary>
     public string? Value(FieldPolicy policy)
@@ -57,7 +58,7 @@ public sealed class ProfileStore(IDbSession session, IUserDirectory users, ITena
     private const string Columns =
         """
         user_id, display_name, names::text, email, membership_type, active, primary_unit_id, unit_ids, directory_id,
-        directory_values::text, own_values::text, admin_values::text, location_key, hire_date, first_seen, newcomer_opt_out, version, hr_values::text
+        directory_values::text, own_values::text, admin_values::text, location_key, hire_date, first_seen, newcomer_opt_out, version, hr_values::text, photo_version
         """;
 
     private static readonly IReadOnlyDictionary<string, string> Empty = new Dictionary<string, string>();
@@ -70,7 +71,8 @@ public sealed class ProfileStore(IDbSession session, IUserDirectory users, ITena
     private static ProfileRow Map(Npgsql.NpgsqlDataReader r) => new(
         r.GetGuid(0), r.GetString(1), Dict(r.GetString(2)), r.GetString(3), r.GetString(4), r.GetBoolean(5), r.Get<Guid?>("primary_unit_id"),
         r.GetFieldValue<Guid[]>(7), r.Get<string>("directory_id"), Dict(r.GetString(9)), Dict(r.GetString(10)), Dict(r.GetString(11)), Dict(r.GetString(17)),
-        r.Get<string>("location_key"), r.IsDBNull(13) ? null : r.GetFieldValue<DateOnly>(13), r.GetFieldValue<DateOnly>(14), r.GetBoolean(15), r.GetInt32(16));
+        r.Get<string>("location_key"), r.IsDBNull(13) ? null : r.GetFieldValue<DateOnly>(13), r.GetFieldValue<DateOnly>(14), r.GetBoolean(15), r.GetInt32(16),
+        r.Get<int?>("photo_version"));
 
     public async Task<ProfileRow?> GetAsync(Guid userId, CancellationToken ct) =>
         await session.QuerySingleOrDefaultAsync($"select {Columns} from people.profile where user_id = @u", new { u = userId }, Map, ct);

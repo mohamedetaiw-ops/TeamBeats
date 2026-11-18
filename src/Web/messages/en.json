@@ -2346,6 +2346,14 @@
         "directory": "Managed by the directory",
         "admin": "Managed by your administrator",
         "hr": "Managed by your HR system"
+      },
+      "photo": {
+        "add": "Add a photo",
+        "change": "Change photo",
+        "remove": "Remove photo",
+        "hint": "PNG or JPEG, up to 2 MB.",
+        "saved": "Your photo is saved.",
+        "removed": "Your photo is removed."
       }
     },
     "field": {
@@ -5747,6 +5755,11 @@
       "stopReading": "Stop reading",
       "preparing": "Preparing the audio",
       "playFailed": "The audio could not play in this browser."
+    },
+    "panel": {
+      "close": "Close the assistant",
+      "fullPage": "Open the full page",
+      "intro": "Ask about anything you can open in TeamBeats. Answers cite their sources. Press <key>Ctrl /</key>, or <key>⌘ /</key> on a Mac, to open this panel from any page."
     }
   },
   "agents": {
@@ -5877,7 +5890,8 @@
       "autonomyLevels": {
         "L0": "L0: answers only",
         "L1": "L1: drafts for the person",
-        "L2": "L2: acts for the person after they confirm"
+        "L2": "L2: acts for the person after they confirm",
+        "L3": "L3: acts after an approver approves"
       },
       "maxToolCalls": "Tool calls per run",
       "tools": "Tools",
@@ -6184,7 +6198,8 @@
       "step": "Using {tool}…",
       "interrupted": "The connection dropped while the agent was working. It carries on and keeps the answer for you.",
       "checkResult": "Check for the answer",
-      "stillWorking": "The agent is still working on this. Check again in a moment."
+      "stillWorking": "The agent is still working on this. Check again in a moment.",
+      "stillWaiting": "The approver has not decided yet."
     },
     "card": {
       "title": "Confirm this action",
@@ -6192,7 +6207,10 @@
       "fromContent": "Came from content the agent read",
       "confirm": "Confirm",
       "cancel": "Cancel",
-      "working": "Working…"
+      "working": "Working…",
+      "approvalTitle": "Waiting for approval",
+      "approvalIntro": "Running {tool} needs an approver. You will be told when it is decided. Nothing happens until then.",
+      "stop": "Stop"
     },
     "analytics": {
       "title": "Usage and quality",
@@ -6253,7 +6271,10 @@
         "parameters_changed": "Parameters changed",
         "test_mode": "Test mode",
         "timeout": "Timed out",
-        "unknown": "Unknown tool"
+        "unknown": "Unknown tool",
+        "approval_rejected": "Not approved",
+        "no_approver": "No approver named",
+        "rule_changed": "The approval rule changed"
       }
     },
     "studio": {
@@ -6363,6 +6384,30 @@
       "change": "Save changes",
       "unsubscribe": "Stop the briefing",
       "failed": "Something went wrong. Try again."
+    },
+    "approval": {
+      "title": "Agent action to approve",
+      "inbox": "Task inbox",
+      "summaryTitle": "What the agent asks",
+      "agent": "Agent",
+      "byAgent": "Requested by an AI agent",
+      "requester": "On behalf of",
+      "unknownPerson": "Unknown person",
+      "tool": "Action",
+      "reasoning": "The agent's reasoning",
+      "noReasoning": "The agent gave no summary.",
+      "due": "Decide by",
+      "parametersTitle": "Exact values",
+      "parametersHint": "Your approval applies to these values only. If anything changes, the action needs a new approval.",
+      "decisionTitle": "Your decision",
+      "decided": "Your decision is saved. The action runs as the person, or is cancelled, within a minute.",
+      "status": {
+        "pending": "This action is waiting for another approver.",
+        "approved": "This action was approved.",
+        "rejected": "This action was not approved.",
+        "expired": "This action was cancelled because nobody decided in time.",
+        "cancelled": "This action was cancelled."
+      }
     }
   },
   "evaluation": {

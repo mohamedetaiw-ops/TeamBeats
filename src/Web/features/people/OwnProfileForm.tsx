@@ -9,7 +9,7 @@ import { FormField, SelectField } from "@/components/ui/FormField";
 import { Icon } from "@/components/ui/Icon";
 import { dateLong, joinMeta, languageName, timeZoneLabel, timeZones } from "@/lib/format";
 import { problemMessages } from "@/lib/notifications/types";
-import { isPhoneField, localName, locationName, personName, type OwnField, type OwnProfile } from "@/lib/people/types";
+import { isPhoneField, localName, locationName, personName, photoAt, type OwnField, type OwnProfile } from "@/lib/people/types";
 import "./people.css";
 
 /** The groups of the profile page (spec 036 DLS-063); custom fields and any field not listed go to Other. */
@@ -57,6 +57,33 @@ export function OwnProfileForm({ initial }: { initial: OwnProfile }) {
         {t(`visibility.${f.visibility}` as "visibility.everyone")}
       </span>
     );
+
+  // The photo (FR-013): sent as the file itself; the API checks its type and size, removes its metadata and resizes it.
+  const [photo, setPhoto] = useState<string | null>(initial.profile.photo ?? null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoResult, setPhotoResult] = useState<{ ok: boolean; messages: string[] } | null>(null);
+
+  async function changePhoto(method: "PUT" | "DELETE", file?: File) {
+    setPhotoBusy(true);
+    setPhotoResult(null);
+    try {
+      const response = await fetch("/api/v1/me/photo", {
+        method,
+        headers: file ? { "content-type": file.type || "application/octet-stream" } : undefined,
+        body: file,
+      });
+      if (response.ok) {
+        setPhoto(((await response.json()) as { photo: string | null }).photo);
+        setPhotoResult({ ok: true, messages: [t(method === "PUT" ? "me.photo.saved" : "me.photo.removed")] });
+      } else {
+        setPhotoResult({ ok: false, messages: await problemMessages(response) });
+      }
+    } catch {
+      setPhotoResult({ ok: false, messages: [t("failed")] });
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
 
   async function save() {
     setBusy(true);
@@ -129,7 +156,7 @@ export function OwnProfileForm({ initial }: { initial: OwnProfile }) {
         {t("me.title")}
       </h2>
       <section className="people-identity" aria-label={name}>
-        <Avatar name={name} size="lg" />
+        <Avatar name={name} size="lg" src={photoAt(photo, 64)} />
         <div className="people-identity-text">
           <p className="people-identity-name">
             <bdi>{name}</bdi>
@@ -141,6 +168,36 @@ export function OwnProfileForm({ initial }: { initial: OwnProfile }) {
           ) : null}
           <p className="people-meta">
             {joinMeta([person.unit ? localName(person.unit.names, locale) : null, person.location ? locationName(person.location, locale) : null])}
+          </p>
+          <div className="people-photo-actions">
+            <label className="button button-secondary" data-size="sm" aria-disabled={photoBusy || undefined}>
+              <Icon name="upload" size={16} />
+              <span>{photo ? t("me.photo.change") : t("me.photo.add")}</span>
+              <input
+                type="file"
+                className="visually-hidden"
+                accept="image/png,image/jpeg"
+                disabled={photoBusy}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (file) void changePhoto("PUT", file);
+                }}
+              />
+            </label>
+            {photo ? (
+              <Button type="button" variant="quiet" size="sm" icon="trash" busy={photoBusy} onClick={() => void changePhoto("DELETE")}>
+                {t("me.photo.remove")}
+              </Button>
+            ) : null}
+            <span className="field-hint">{t("me.photo.hint")}</span>
+          </div>
+          <p aria-live="polite" className="people-photo-result">
+            {photoResult ? (
+              <span className={photoResult.ok ? undefined : "field-error"} role={photoResult.ok ? undefined : "alert"}>
+                {photoResult.messages.join(" ")}
+              </span>
+            ) : null}
           </p>
         </div>
         <Link className="button button-secondary" href={`/people/${person.id}`}>

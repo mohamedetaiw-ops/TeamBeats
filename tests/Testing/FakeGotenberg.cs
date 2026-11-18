@@ -24,6 +24,9 @@ public sealed class FakeGotenberg : HttpMessageHandler
     /// <summary>PNG renditions made through the Chromium screenshot route.</summary>
     public int Screenshots => _screenshots;
 
+    /// <summary>The page of the last screenshot asked for, so a test can see exactly what was sent to the service.</summary>
+    public string? LastScreenshotHtml { get; private set; }
+
     /// <summary>Makes the Chromium route fail, as when the conversion service is down.</summary>
     public bool HtmlDown { get; set; }
 
@@ -60,6 +63,7 @@ public sealed class FakeGotenberg : HttpMessageHandler
                         return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
                     }
                     Interlocked.Increment(ref _screenshots);
+                    LastScreenshotHtml = body;
                     var bytes = new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }.Concat(Encoding.ASCII.GetBytes($" fake {Size("width")}x{Size("height")}")).ToArray();
                     return new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(bytes) { Headers = { ContentType = new("image/png") } } };
                 }

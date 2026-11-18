@@ -17,12 +17,12 @@ public sealed record LocationRef(string Key, string Label, IReadOnlyDictionary<s
 public sealed record FieldView(string Key, string Value, IReadOnlyDictionary<string, string>? Names);
 
 public sealed record PersonCard(Guid Id, string DisplayName, IReadOnlyDictionary<string, string> Names, string? JobTitle, UnitRef? Unit, LocationRef? Location,
-    IReadOnlyList<FieldView>? Fields = null, int? Level = null);
+    IReadOnlyList<FieldView>? Fields = null, int? Level = null, string? Photo = null);
 
 /// <summary>A profile as the viewer may see it. <paramref name="Away"/> is approved leave covering today (spec 022 FR-005), dates only.</summary>
 public sealed record PersonView(Guid Id, string DisplayName, IReadOnlyDictionary<string, string> Names, UnitRef? Unit, IReadOnlyList<UnitRef> Units,
     LocationRef? Location, IReadOnlyList<FieldView> Fields, PersonCard? Manager, int DirectReports, bool IsSelf, bool CanSetManager, bool CanEditAdminFields,
-    TeamBeats.Modules.Hr.Contracts.LeaveAway? Away = null);
+    TeamBeats.Modules.Hr.Contracts.LeaveAway? Away = null, string? Photo = null);
 
 public sealed record SearchPage(IReadOnlyList<PersonCard> Items, int? Next);
 
@@ -210,10 +210,11 @@ public sealed class PeopleService(
         return new PersonView(row.UserId, row.DisplayName, row.Names, row.PrimaryUnitId is { } p ? unitRefs.FirstOrDefault(u => u.Id == p) : null, unitRefs,
             // An app reading as itself is not told who is on leave (spec 022 shows it to employees only).
             await LocationAsync(row.LocationKey, ct), fields, manager, reports, row.UserId == viewer.Id, canSetManager,
-            CanCorrect(viewer, row), context.ActorType != ActorType.App && leave.FirstOrDefault() is { } l ? await l.AwayAsync(row.UserId, ct) : null);
+            CanCorrect(viewer, row), context.ActorType != ActorType.App && leave.FirstOrDefault() is { } l ? await l.AwayAsync(row.UserId, ct) : null,
+            ProfilePhotos.Url(row.UserId, row.PhotoVersion));
     }
 
-    private static bool CanCorrect(Viewer viewer, ProfileRow row) => viewer.Manage.Covers(row.PrimaryUnitId) || viewer.Hr.Covers(row.PrimaryUnitId);
+    internal static bool CanCorrect(Viewer viewer, ProfileRow row) => viewer.Manage.Covers(row.PrimaryUnitId) || viewer.Hr.Covers(row.PrimaryUnitId);
 
     private async Task<IReadOnlyList<FieldView>> FieldsAsync(Viewer viewer, IReadOnlyList<FieldPolicy> policies, ProfileRow row, CancellationToken ct)
     {
@@ -236,7 +237,7 @@ public sealed class PeopleService(
             var jobTitle = viewer.Sees(row, title, root) ? row.Value(title) : null;
             cards.Add(new PersonCard(row.UserId, row.DisplayName, row.Names, jobTitle,
                 row.PrimaryUnitId is { } u ? _units.GetValueOrDefault(u) : null, await LocationAsync(row.LocationKey, ct), fields,
-                levels is not null && levels.TryGetValue(row.UserId, out var level) ? level : null));
+                levels is not null && levels.TryGetValue(row.UserId, out var level) ? level : null, ProfilePhotos.Url(row.UserId, row.PhotoVersion)));
         }
         return cards;
     }
