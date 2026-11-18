@@ -1,6 +1,8 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, type TestInfo } from "@playwright/test";
 import { exclusions } from "../a11y/exclusions";
+import { tenantApi } from "./pages";
+import type { TestTenant } from "./platform";
 
 /** The WCAG 2.0, 2.1 and 2.2 level A and AA rules (spec 038 A11Y-006). */
 export const wcagTags = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22a", "wcag22aa"];
@@ -49,4 +51,29 @@ export async function expectConformant(page: Page, testInfo: TestInfo, label: st
       `serious or critical axe violations on ${label}`,
     )
     .toEqual([]);
+}
+
+/** Sets the tenant's design through its brand token (spec 036). */
+export async function chooseDesign(tenant: TestTenant, design: string): Promise<void> {
+  const api = await tenantApi(tenant);
+  try {
+    const brands = (await (await api.get("/api/v1/experience/brands")).json()) as { id: string; name: string }[];
+    const saved = await api.put(`/api/v1/experience/brands/${brands[0]!.id}`, {
+      data: { name: brands[0]!.name, tokens: { "design.preset": { $value: design } } },
+    });
+    expect(saved.ok(), await saved.text()).toBe(true);
+  } finally {
+    await api.dispose();
+  }
+}
+
+/** Sets the administrator's colour mode through their preference profile (spec 008). */
+export async function chooseMode(tenant: TestTenant, mode: string): Promise<void> {
+  const api = await tenantApi(tenant);
+  try {
+    const saved = await api.put("/api/v1/me/preference-profile", { data: { values: { mode } } });
+    expect(saved.ok(), await saved.text()).toBe(true);
+  } finally {
+    await api.dispose();
+  }
 }

@@ -38,13 +38,19 @@ public sealed partial class DemoDataSeeder(IServiceScopeFactory scopes, IConfigu
         public void Add(string area, int count = 1) => Added[area] = Added.GetValueOrDefault(area) + count;
     }
 
-    private sealed record Run(Guid TenantId, string TenantKey, DemoPack Pack, Dictionary<string, Guid> People, Report Report)
+    private sealed record Run(Guid TenantId, string TenantKey, DemoPack Pack, Dictionary<string, Guid> People, Report Report, bool AdminStandsIn = false)
     {
         /// <summary>Seeded items by reference (<c>news:key</c>, <c>service:key</c> and so on), for links between areas.</summary>
         public Dictionary<string, (string Source, Guid Id)> Refs { get; } = new(StringComparer.Ordinal);
 
         public Guid? Person(string key) => People.TryGetValue(key, out var id) ? id : null;
+
+        /// <summary>The person who does a step: the persona, or the administrator for a tenant without the personas.</summary>
+        public Guid? Actor(string key) => Person(key) ?? (AdminStandsIn ? Person(AdminPersona) : null);
     }
+
+    /// <summary>The package the host ships, used on request when no folder is configured.</summary>
+    public const string PackageFolder = "seeds/demo";
 
     public static DemoPack Load(string folder)
     {
@@ -83,8 +89,30 @@ public sealed partial class DemoDataSeeder(IServiceScopeFactory scopes, IConfigu
             logger.LogInformation("Demo data: no test administrator of {Tenant} has signed in yet; the demo data is seeded on a later start", key);
             return null;
         }
-        var run = new Run(tenant.Id, key, pack, people, new Report());
-        logger.LogInformation("Demo data: seeding {Tenant} with {People} of {Personas} people found", key, people.Count, pack.People.Count + 1);
+        return await SeedAsync(new Run(tenant.Id, key, pack, people, new Report()), ct);
+    }
+
+    /// <summary>
+    /// Fills the caller's own tenant on request (the accessibility suite of spec 038 T008 needs records on its detail
+    /// pages). The caller is the administrator, and does every step whose persona is not a user of the tenant.
+    /// </summary>
+    public async Task<Report> SeedOnRequestAsync(Guid tenantId, Guid adminId, IReadOnlyDictionary<string, string>? people, CancellationToken ct)
+    {
+        string tenantKey;
+        await using (var list = scopes.CreateAsyncScope())
+        {
+            tenantKey = (await list.ServiceProvider.GetRequiredService<ITenantLister>().ListAsync(ct)).Single(t => t.Id == tenantId).Key;
+        }
+        var pack = Load(configuration[FolderKey] is { Length: > 0 } folder ? folder : PackageFolder);
+        var found = await ResolvePeopleAsync(tenantId, pack, ct, people);
+        found[AdminPersona] = adminId;
+        return await SeedAsync(new Run(tenantId, TenantRules.NormalizeKey(tenantKey), pack, found, new Report(), AdminStandsIn: true), ct);
+    }
+
+    private async Task<Report> SeedAsync(Run run, CancellationToken ct)
+    {
+        var key = run.TenantKey;
+        logger.LogInformation("Demo data: seeding {Tenant} with {People} of {Personas} people found", key, run.People.Count, run.Pack.People.Count + 1);
 
         // Order matters: units before content audiences, services before requests, content before search tuning.
         await AreaAsync(run, "org units", () => SeedOrgUnitsAsync(run, ct));
@@ -124,7 +152,7 @@ public sealed partial class DemoDataSeeder(IServiceScopeFactory scopes, IConfigu
     }
 
     /// <summary>Personas found as active users of the tenant; configuration overrides the pack's addresses.</summary>
-    private async Task<Dictionary<string, Guid>> ResolvePeopleAsync(Guid tenantId, DemoPack pack, CancellationToken ct)
+    private async Task<Dictionary<string, Guid>> ResolvePeopleAsync(Guid tenantId, DemoPack pack, CancellationToken ct, IReadOnlyDictionary<string, string>? overrides = null)
     {
         var emails = new Dictionary<string, string>(pack.People, StringComparer.Ordinal);
         foreach (var child in configuration.GetSection(PeopleKey).GetChildren())
@@ -133,6 +161,10 @@ public sealed partial class DemoDataSeeder(IServiceScopeFactory scopes, IConfigu
             {
                 emails[child.Key] = value;
             }
+        }
+        foreach (var (persona, email) in overrides ?? new Dictionary<string, string>())
+        {
+            emails[persona] = email;
         }
         var admins = configuration.GetSection(TestTenantSeeder.Section + ":Admins").Get<List<string>>() ?? [];
         var found = new Dictionary<string, Guid>(StringComparer.Ordinal);
@@ -166,7 +198,7 @@ public sealed partial class DemoDataSeeder(IServiceScopeFactory scopes, IConfigu
     /// </summary>
     private async Task<T?> AsAsync<T>(Run run, string persona, double daysAgo, Func<IServiceProvider, Task<T>> work, CancellationToken ct)
     {
-        if (run.Person(persona) is not { } userId)
+        if (run.Actor(persona) is not { } userId)
         {
             run.Report.Skipped.Add($"{persona} not found");
             return default;
@@ -234,3 +266,6 @@ public sealed partial class DemoDataSeeder(IServiceScopeFactory scopes, IConfigu
         }
     }
 }
+
+/// <summary>Body of the on-request demo data endpoint: persona key to the email address of a user of the caller's tenant.</summary>
+public sealed record DemoDataRequest(Dictionary<string, string>? People);

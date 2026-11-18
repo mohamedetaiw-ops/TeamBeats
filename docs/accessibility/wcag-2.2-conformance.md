@@ -5,7 +5,7 @@ Spec 038 A11Y-001. Every WCAG 2.2 level A and AA success criterion, how TeamBeat
 Last updated: 2026-11-18. Scope: the TeamBeats web app and installable web app (spec 030), every route in `tests/Acceptance/a11y/routes.ts`, in the four platform designs, light and dark, Arabic and English, desktop and phone.
 
 **Verification keys**
-- **Gate**: axe in the accessibility CI job (`tests/Acceptance/a11y/matrix.spec.ts`), zero critical and serious.
+- **Gate**: axe in the accessibility CI job, zero critical and serious: `tests/Acceptance/a11y/matrix.spec.ts` for every listed route, and `tests/Acceptance/a11y/details.spec.ts` for the detail routes, each opened on a seeded record.
 - **Page check**: a real-page check in the accessibility or design suite (named in the row).
 - **Lint**: a build-time check in `npm run verify` or the theme engine tests.
 - **Manual**: keyboard and screen reader review; external audit planned for R3 (A11Y-024).
@@ -81,7 +81,7 @@ Last updated: 2026-11-18. Scope: the TeamBeats web app and installable web app (
 | 3.3.2 Labels or instructions | A | Visible labels and hints on every field (FormField) | Gate (`label`, `select-name`) | Supports |
 | 3.3.3 Error suggestion | AA | Validation messages say how to fix (content guidelines, spec 007 FR-029) | Manual | Manual only |
 | 3.3.4 Error prevention (legal, financial, data) | AA | Review step or reversal for leave, expenses, letters, data changes, acknowledgements | Manual | Manual only |
-| 3.3.7 Redundant entry | A | Forms prefill from the profile and HR record (spec 019); journeys carry answers forward | Manual | Manual only |
+| 3.3.7 Redundant entry | A | Forms prefill from the profile and HR record (spec 019); a returned request opens with its answers; confirm steps keep what was entered | Manual (flow by flow review in `redundant-entry-review.md`); Page check (`a11y/authentication.spec.ts`, paste and autofill) | Supports |
 | 3.3.8 Accessible authentication (minimum) | AA | Sign-in through the identity provider; no cognitive tests; paste and autofill allowed, codes paste in one go (A11Y-022). The shared kiosk turns autofill off on purpose and offers a badge scan instead of typing | Page check (`authentication.spec.ts`); Manual | Supports |
 
 ## Robust
@@ -99,6 +99,6 @@ Moderate and minor findings from the gate, and gaps from manual review, with the
 | Issue | Criterion | Task |
 |---|---|---|
 | Uploaded video previews have no caption track unless the uploader provides captions | 1.2.2 | Listed as a limitation in the statement |
-| Detail routes checked only by their feature suites, not yet in the matrix | all | T008 |
+| 31 detail routes whose record needs the workers, a connected system, HR setup or a device are opened by their feature suites, which fail on critical findings only (the reason for each is in `routes.ts`) | all | T022 |
 | Generated PDFs are not tagged | 1.3.1, 4.1.2 for documents | T019 (R3) |
 | No external assistive technology audit yet | all | T018 (R3) |

@@ -536,7 +536,14 @@ export function PageEditor({
             </select>
           </div>
         </div>
-        <div className="builder-preview-frame" data-device={device}>
+        {/* The frame scrolls sideways on a narrow screen, so it takes focus to scroll by keyboard (WCAG 2.1.1). */}
+        <div
+          className="builder-preview-frame"
+          data-device={device}
+          tabIndex={0}
+          role="region"
+          aria-label={t("preview.frame", { device: t(`preview.devices.${device}`), language: language(previewLocale) })}
+        >
           <iframe
             key={`${previewLocale}-${savedCount}`}
             title={t("preview.frame", { device: t(`preview.devices.${device}`), language: language(previewLocale) })}
