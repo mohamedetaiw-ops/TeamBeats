@@ -28,7 +28,7 @@ Depends on 007 (baseline), 008 (shell and preferences), 032 (page builder), 033 
 
 ## Phase 5: Statement and report (US6)
 - [x] T016 `/accessibility` statement page, public, ar and en, footer fallback link (A11Y-023)
-- [ ] T017 Conformance map `docs/accessibility/wcag-2.2-conformance.md` and report `docs/accessibility/conformance-report.md` (A11Y-001, A11Y-002)
+- [x] T017 Conformance map `docs/accessibility/wcag-2.2-conformance.md` and report `docs/accessibility/conformance-report.md` (A11Y-001, A11Y-002)
 
 ## R3
 - [ ] T018 External assistive technology audit and report update (A11Y-024)

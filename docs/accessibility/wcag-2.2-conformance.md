@@ -39,14 +39,14 @@ Last updated: 2026-11-18. Scope: the TeamBeats web app and installable web app (
 | 1.4.10 Reflow | AA | Single column layouts on phones; tables and charts scroll inside their region | Page check (`interaction.spec.ts` at 320 px; design suite at 390 px) | Supports |
 | 1.4.11 Non-text contrast | AA | Focus ring, borders of fields and state indicators meet 3:1 in the tokens | Lint (theme contrast tests); Manual | Supports |
 | 1.4.12 Text spacing | AA | Containers grow with text; no fixed heights on text | Page check (`interaction.spec.ts`, WCAG spacing values) | Supports |
-| 1.4.13 Content on hover or focus | AA | Tooltips open on hover and focus, close on Escape, stay while hovered (`Tooltip`) | Manual; Page check in T011 | Partial until T011 is built |
+| 1.4.13 Content on hover or focus | AA | Tooltips open on hover and focus, close on Escape, stay while hovered (`Tooltip`) | Page check (`specs/components.spec.ts`: shows on focus, Escape hides it without moving focus); Manual (stays while hovered) | Supports |
 
 ## Operable
 
 | SC | Level | How TeamBeats meets it | Verification | Status |
 |---|---|---|---|---|
 | 2.1.1 Keyboard | A | Native controls first; composite widgets (tabs, menus, tree, grid, calendar) have arrow key support | Page check (`interaction.spec.ts`, keyboard journeys in feature suites); Manual | Partial: drag-only moves remain in some editors until T014 |
-| 2.1.2 No keyboard trap | A | Overlays trap focus only while open and release on Escape | Page check (T011) | Partial until T011 is built |
+| 2.1.2 No keyboard trap | A | Overlays trap focus only while open and release on Escape | Page check (`overlays.spec.ts`: Tab stays inside while open, Escape closes and returns focus) | Supports |
 | 2.1.4 Character key shortcuts | A | No single character shortcuts; the command palette opens with a modifier | Manual | Manual only |
 | 2.2.1 Timing adjustable | A | No time limits on tasks; an idle session ends on the server per the tenant session policy (spec 003), and the shared kiosk signs out after inactivity (spec 030), which is a security exception | Manual | Partial: no warning before an idle session ends |
 | 2.2.2 Pause, stop, hide | A | Carousels do not auto-advance; reduced motion stops animation | Page check (A11Y-015, T010) | Supports |
