@@ -13678,7 +13678,6 @@
     },
     "limitations": {
       "title": "Known limitations",
-      "drag": "Some editors still need dragging to move items; keyboard and single click alternatives are being added.",
       "captions": "Videos that people upload have no captions unless the uploader adds them.",
       "pdf": "Letters and reports downloaded as PDF are not yet tagged for screen readers.",
       "audit": "No independent assistive technology audit has been completed yet.",

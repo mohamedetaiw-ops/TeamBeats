@@ -11,7 +11,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
  */
 const lastReviewed = new Date("2026-11-18T00:00:00Z");
 
-const limitations = ["drag", "captions", "pdf", "audit", "timeout"] as const;
+const limitations = ["captions", "pdf", "audit", "timeout"] as const;
 const settings = ["text", "motion", "mode", "density"] as const;
 
 /**
