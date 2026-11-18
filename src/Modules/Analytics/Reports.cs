@@ -27,14 +27,15 @@ public static class ReportDashboards
     public const string ScopeLocation = "scope_location";
     public const string Experience = "experience";
     public const string Sentiment = "sentiment";
+    public const string AiUsage = "ai_usage";
 
-    public static readonly IReadOnlyList<string> All = [Overview, Campaign, Service, Compliance, ScopeUnit, ScopeLocation, Experience, Sentiment];
+    public static readonly IReadOnlyList<string> All = [Overview, Campaign, Service, Compliance, ScopeUnit, ScopeLocation, Experience, Sentiment, AiUsage];
 
     /// <summary>Dashboards that read one thing, named by <see cref="ReportDefinition.Target"/>.</summary>
     public static readonly IReadOnlySet<string> Targeted = new HashSet<string>(StringComparer.Ordinal) { Campaign, Service, ScopeUnit, ScopeLocation };
 
     /// <summary>Dashboards with a period: a schedule sends the last week or month, an export the period it names.</summary>
-    public static readonly IReadOnlySet<string> Dated = new HashSet<string>(StringComparer.Ordinal) { Overview, Service, ScopeUnit, ScopeLocation, Experience, Sentiment };
+    public static readonly IReadOnlySet<string> Dated = new HashSet<string>(StringComparer.Ordinal) { Overview, Service, ScopeUnit, ScopeLocation, Experience, Sentiment, AiUsage };
 }
 
 public static class ReportCadences
@@ -79,7 +80,8 @@ public sealed record ReportTable(string Key, IReadOnlyList<string> Columns, IRea
 public sealed record ReportView(ReportSummary Report, ReportDefinition Definition, bool CanDownload, JsonElement? Result, IReadOnlyList<ReportTable> Tables);
 
 /// <summary>What the report actions on a dashboard may offer, and the units a schedule may go to.</summary>
-public sealed record ReportOptions(bool CanExport, bool CanSchedule, IReadOnlyList<WorkspaceUnit> Units);
+/// <summary>What the package allows on a dashboard: exports, schedules (and their units), and AI summaries (both under analytics.advanced).</summary>
+public sealed record ReportOptions(bool CanExport, bool CanSchedule, IReadOnlyList<WorkspaceUnit> Units, bool CanSummarize = false);
 
 public sealed record ReportList(bool CanExport, bool CanSchedule, IReadOnlyList<ReportSummary> Reports, IReadOnlyList<ReportScheduleView> Schedules);
 
@@ -150,6 +152,7 @@ public sealed class ReportDefinitions(IServiceProvider services)
             ReportDashboards.ScopeLocation => await services.GetRequiredService<ScopeDashboards>().LocationAsync(d.Target!, from, to, ct),
             ReportDashboards.Experience => await services.GetRequiredService<ExperienceAnalytics>().GetAsync(from, to, ct),
             ReportDashboards.Sentiment => await services.GetRequiredService<SentimentAnalytics>().GetAsync(from, to, ct),
+            ReportDashboards.AiUsage => await services.GetRequiredService<AiUsageAnalytics>().GetAsync(from, to, ct),
             _ => throw AppException.Validation("definition.dashboard", "validation.analytics.dashboard"),
         };
         return JsonSerializer.SerializeToElement(result, result.GetType(), Json);
@@ -462,7 +465,7 @@ public sealed class AnalyticsReports(IDbSession session, IEntitlementService ent
             units = names.Select(n => new WorkspaceUnit(n.Key, n.Value))
                 .OrderBy(u => u.Names.GetValueOrDefault("en") ?? u.Names.Values.FirstOrDefault() ?? "", StringComparer.OrdinalIgnoreCase).ToList();
         }
-        return new ReportOptions(await entitlements.IsEnabledAsync(Capabilities.AnalyticsExport, ct), canSchedule, units);
+        return new ReportOptions(await entitlements.IsEnabledAsync(Capabilities.AnalyticsExport, ct), canSchedule, units, canSchedule);
     }
 
     public async Task<ReportList> ListAsync(CancellationToken ct)

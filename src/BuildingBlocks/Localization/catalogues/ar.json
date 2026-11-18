@@ -2617,5 +2617,6 @@
   "notifications.template.analytics.report_skipped.body": "لا يستطيع {count} من مستلمي {name} فتح تلك اللوحة، لذا لم يُرسل إليهم شيء.",
   "notifications.template.analytics.report_failed.title": "تعذر إعداد ملف التصدير",
   "notifications.template.analytics.report_failed.body": "تعذر إعداد {name}. راجع عوامل التصفية وحاول مرة أخرى.",
-  "validation.analytics.sentiment_package": "تحليل المشاعر غير مشمول في باقتك."
+  "validation.analytics.sentiment_package": "تحليل المشاعر غير مشمول في باقتك.",
+  "validation.analytics.language": "اختر العربية أو الإنجليزية للملخص."
 }

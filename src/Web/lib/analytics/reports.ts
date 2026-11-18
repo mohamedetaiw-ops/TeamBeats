@@ -1,7 +1,7 @@
 import type { MetricFilters } from "./types";
 
 /** Spec 021 T016: scheduled reports and exports. The API decides what may be exported or scheduled and runs each report. */
-export type ReportDashboard = "overview" | "campaign" | "service" | "compliance" | "scope_unit" | "scope_location" | "experience" | "sentiment";
+export type ReportDashboard = "overview" | "campaign" | "service" | "compliance" | "scope_unit" | "scope_location" | "experience" | "sentiment" | "ai_usage";
 
 export type ReportDefinition = {
   dashboard: ReportDashboard;
@@ -44,7 +44,12 @@ export type ReportTable = { key: string; columns: string[]; rows: ReportCell[][]
 
 export type ReportView = { report: ReportSummary; definition: ReportDefinition; canDownload: boolean; tables: ReportTable[] };
 export type ReportList = { canExport: boolean; canSchedule: boolean; reports: ReportSummary[]; schedules: ReportSchedule[] };
-export type ReportOptions = { canExport: boolean; canSchedule: boolean; units: { id: string; names: Record<string, string> }[] };
+export type ReportOptions = { canExport: boolean; canSchedule: boolean; canSummarize: boolean; units: { id: string; names: Record<string, string> }[] };
+
+/** An AI-generated description of a dashboard with the figures it used (spec 021 US8), or why none was made. */
+export type DashboardSummary = { text: string | null; figures: { label: string; value: number }[]; denial: string | null; generatedAt: string; aiGenerated: boolean };
+
+export const summariesApi = "/api/v1/analytics/summaries";
 
 export const reportsApi = "/api/v1/analytics/reports";
 export const exportsApi = "/api/v1/analytics/exports";

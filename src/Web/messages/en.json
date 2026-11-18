@@ -7578,7 +7578,8 @@
       "scopesLink": "Locations and units",
       "experienceLink": "Experience",
       "reportsLink": "Reports",
-      "sentimentLink": "Sentiment"
+      "sentimentLink": "Sentiment",
+      "aiUsageLink": "AI usage"
     },
     "campaigns": {
       "workspace": "Analytics",
@@ -7941,7 +7942,8 @@
         "scope_unit": "Unit dashboard",
         "scope_location": "Location dashboard",
         "experience": "Experience",
-        "sentiment": "Sentiment"
+        "sentiment": "Sentiment",
+        "ai_usage": "AI usage"
       },
       "column": {
         "name": "Name",
@@ -7982,6 +7984,29 @@
         "overdue": "Overdue",
         "counts": "Counts",
         "people": "People"
+      },
+      "summary": {
+        "action": "Summarize",
+        "title": "Summary",
+        "intro": "A short description of this dashboard written by AI from the figures on screen.",
+        "close": "Close",
+        "again": "Summarize again",
+        "busy": "Writing the summary…",
+        "failed": "The summary could not be made. Try again.",
+        "none": "No summary this time",
+        "aiGenerated": "AI-generated",
+        "figures": "Figures used",
+        "check": "Check important figures on the dashboard before acting on them.",
+        "denial": {
+          "unverified": "The AI answer used numbers that are not on the dashboard, so it was not shown.",
+          "no_figures": "There are no figures to summarize yet.",
+          "classification_blocked": "The AI policy does not allow these figures to be sent to a model.",
+          "provider_unavailable": "The AI provider is not available. Try again later.",
+          "quota_exhausted": "The AI quota is used up for now.",
+          "budget_exhausted": "The AI budget is used up for now.",
+          "not_in_package": "Your package does not include AI for this use.",
+          "other": "The AI gateway refused the request."
+        }
       }
     },
     "sentiment": {
@@ -8043,6 +8068,85 @@
         "source": "By source"
       },
       "privacyNote": "Each figure stands for at least {size} people. Smaller groups are combined so that no one can be singled out."
+    },
+    "aiUsage": {
+      "title": "AI usage",
+      "intro": "Requests, people and cost of AI across the organization, with assistant answers and agent quality. The same numbers as the AI usage and evaluation pages.",
+      "workspace": "Analytics",
+      "denied": "You cannot open AI usage",
+      "deniedHint": "AI usage needs a package with advanced analytics and permission to view analytics for the whole organization.",
+      "error": "AI usage could not be loaded",
+      "errorHint": "Try again in a few minutes.",
+      "hidden": "Hidden (fewer than {size} people)",
+      "other": "Other (groups under {size} people)",
+      "notCounted": "Not counted",
+      "empty": "No AI use yet",
+      "emptyHint": "Figures appear once people use the assistant, agents or other AI features.",
+      "requests": "Requests",
+      "users": "People",
+      "tokens": "Tokens",
+      "cost": "Estimated cost",
+      "sharedNote": "Requests, people and cost come from the AI usage page; agent quality comes from evaluation.",
+      "trend": "Requests by week",
+      "trendSummary": "AI requests over {weeks} weeks",
+      "assistant": "Assistant",
+      "questions": "Questions",
+      "answerRate": "Answered",
+      "citationRate": "Answers with sources",
+      "helpfulRate": "Rated helpful",
+      "byUseCase": "By use",
+      "agents": "Agents in use",
+      "runs": "Runs",
+      "successRate": "Answered",
+      "quality": "Quality",
+      "unnamed": "Unnamed agent",
+      "noGate": "Not evaluated",
+      "noScore": "No score",
+      "refused": "Refused requests",
+      "column": {
+        "week": "Week",
+        "useCase": "Use",
+        "agent": "Agent",
+        "reason": "Reason"
+      },
+      "useCase": {
+        "assistant": "Assistant",
+        "summarize": "Summaries and labels",
+        "translate": "Translation",
+        "draft": "Drafting",
+        "embed": "Search indexing",
+        "agent": "Agents",
+        "evaluation": "Evaluation",
+        "transcribe": "Speech to text",
+        "speak": "Read aloud"
+      },
+      "reason": {
+        "not_in_package": "Not in the package",
+        "quota_exhausted": "Quota used up",
+        "budget_exhausted": "Budget used up",
+        "classification_blocked": "Classification not allowed",
+        "model_not_allowed": "Model not allowed",
+        "region_blocked": "Region not allowed",
+        "provider_unavailable": "Provider unavailable",
+        "context_too_large": "Request too large",
+        "classification_missing": "Classification missing",
+        "invalid_request": "Invalid request"
+      },
+      "gate": {
+        "not_built": "No evaluation set",
+        "not_run": "Not evaluated",
+        "running": "Evaluating",
+        "passed": "Passed",
+        "failed": "Failed",
+        "failed_critical": "Failed a critical check",
+        "incomplete": "Incomplete",
+        "overridden": "Passed by override",
+        "stale": "Out of date",
+        "cancelled": "Cancelled"
+      },
+      "privacyNote": "Figures behind fewer than {size} people are hidden or combined so that no one can be singled out.",
+      "metric": "{metric} ({locale})",
+      "noValue": "None yet"
     }
   },
   "design_system": {

@@ -2617,5 +2617,6 @@
   "notifications.template.analytics.report_skipped.body": "{count} recipients of {name} cannot open that dashboard, so nothing was sent to them.",
   "notifications.template.analytics.report_failed.title": "Your export could not be made",
   "notifications.template.analytics.report_failed.body": "{name} could not be made. Check its filters and try again.",
-  "validation.analytics.sentiment_package": "Sentiment is not in your package."
+  "validation.analytics.sentiment_package": "Sentiment is not in your package.",
+  "validation.analytics.language": "Choose English or Arabic for the summary."
 }

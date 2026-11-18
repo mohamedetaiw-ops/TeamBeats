@@ -205,3 +205,50 @@ public sealed class AgentAnalytics(IDbSession session, AgentRegistry registry, I
 
     private static double? Rate(long part, long whole) => whole == 0 ? null : Math.Round(part / (double)whole, 4);
 }
+
+/// <summary>
+/// Assistant and agent usage for the analytics AI usage dashboard (spec 021 FR-016). Questions count assistant turns
+/// (spec 014), answered ones those that ended with an answer, cited ones those whose answer cites a source; ratings are
+/// the helpful or not helpful feedback. Agent rows count finished runs as the Agent Hub does, and quality is the gate
+/// run of the version in force (spec 034). Test panel and evaluation runs are left out.
+/// </summary>
+public sealed class AssistantUsageFigures(IDbSession session, IAgentCatalog catalog, IAgentReleaseGate gate) : IAssistantUsageFigures
+{
+    public async Task<AssistantUsageSummary> SummaryAsync(DateTimeOffset from, DateTimeOffset to, CancellationToken ct = default)
+    {
+        var args = new { from, to };
+        var turns = (await session.QueryAsync(
+            """
+            select count(*), count(distinct user_id), count(*) filter (where outcome = 'answered'),
+              count(*) filter (where outcome = 'answered' and jsonb_array_length(citations) > 0)
+            from agents.turn where created_at >= @from and created_at < @to
+            """, args, r => (Questions: r.GetInt64(0), Users: r.GetInt64(1), Answered: r.GetInt64(2), Cited: r.GetInt64(3)), ct))[0];
+        var feedback = (await session.QueryAsync(
+            "select count(*), count(*) filter (where helpful) from agents.feedback where created_at >= @from and created_at < @to",
+            args, r => (Count: r.GetInt64(0), Helpful: r.GetInt64(1)), ct))[0];
+        var runs = (await session.QueryAsync(
+            """
+            select agent_id, count(*), count(distinct user_id), count(*) filter (where outcome = 'answered')
+            from agents.run where mode = 'run' and status in ('completed', 'stopped', 'failed') and created_at >= @from and created_at < @to
+            group by 1
+            """, args, r => (Agent: r.GetGuid(0), Runs: r.GetInt64(1), Users: r.GetInt64(2), Answered: r.GetInt64(3)), ct)).ToDictionary(r => r.Agent);
+        var ratings = (await session.QueryAsync(
+            """
+            select r.agent_id, count(*), count(*) filter (where f.helpful)
+            from agents.feedback f join agents.turn t on t.id = f.turn_id join agents.run r on r.id = t.run_id
+            where f.created_at >= @from and f.created_at < @to
+            group by 1
+            """, args, r => (Agent: r.GetGuid(0), Count: r.GetInt64(1), Helpful: r.GetInt64(2)), ct)).ToDictionary(r => r.Agent);
+        var agents = new List<AgentUsageFigure>();
+        foreach (var agent in await catalog.PublishedAsync(ct))
+        {
+            var run = runs.GetValueOrDefault(agent.Id);
+            var rating = ratings.GetValueOrDefault(agent.Id);
+            var result = agent.CurrentVersion is { } version ? await gate.ResultAsync(agent.Id, version, ct) : null;
+            agents.Add(new AgentUsageFigure(agent.Id, agent.Name, run.Runs, run.Users, run.Answered, rating.Count, rating.Helpful, result?.Status,
+                result?.Diff?.Select(d => new AgentQualityFigure(d.Metric, d.Locale, d.Value)).ToList() ?? []));
+        }
+        return new AssistantUsageSummary(turns.Questions, turns.Users, turns.Answered, turns.Cited, feedback.Count, feedback.Helpful,
+            [.. agents.OrderByDescending(a => a.Runs).ThenBy(a => a.AgentId)]);
+    }
+}

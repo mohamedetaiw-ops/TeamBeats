@@ -261,3 +261,32 @@ export type SentimentView = {
   paused: { source: string; denial: string; at: string }[];
 };
 export type AnalyticsPolicyView = { sentiment: boolean; sentimentAvailable: boolean; canChange: boolean; version: number };
+
+/** AI usage (spec 021 FR-016): figures read from the AI Gateway, the assistant and evaluation; null means hidden. */
+export type AiUsageGroup = { group: string; requests: number | null; users: number | null };
+export type AiAgentFigures = {
+  agentId: string;
+  name: Record<string, string>;
+  runs: number | null;
+  successRate: number | null;
+  helpfulRate: number | null;
+  gate: string | null;
+  quality: { metric: string; locale: string; value: number | null }[];
+};
+export type AiUsageView = {
+  from: string;
+  to: string;
+  minGroupSize: number;
+  requests: number;
+  users: number;
+  inputTokens: number;
+  outputTokens: number;
+  cost: number;
+  currency: string;
+  rate: number;
+  weeks: AiUsageGroup[];
+  useCases: AiUsageGroup[];
+  denied: { reason: string; requests: number }[];
+  assistant: { questions: number | null; users: number | null; answerRate: number | null; citationRate: number | null; ratings: number | null; helpfulRate: number | null };
+  agents: AiAgentFigures[];
+};

@@ -41,6 +41,8 @@ public static class AnalyticsModule
         services.AddScoped<ReportRunner>();
         services.AddScoped<SentimentClassifier>();
         services.AddScoped<SentimentAnalytics>();
+        services.AddScoped<AiUsageAnalytics>();
+        services.AddScoped<DashboardSummaries>();
         services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IShellCommands, AnalyticsCommands>();
         services.AddScoped<IAnalyticsEvents, AnalyticsEventsEmitter>();
         services.AddMessageHandler<AnalyticsEventEmitted, AnalyticsEventHandler>("analytics.write_event");
@@ -101,6 +103,12 @@ public static class AnalyticsModule
         // Sentiment (spec 021 US8, T017): labels only, with the minimum group size; analytics.view for the whole tenant.
         analytics.MapGet("/sentiment", async (DateOnly? from, DateOnly? to, SentimentAnalytics sentiment, CancellationToken ct) =>
             Results.Ok(await sentiment.GetAsync(from, to, ct)));
+        // AI usage (spec 021 section 2, FR-016): figures read from the AI Gateway, the assistant and evaluation.
+        analytics.MapGet("/ai-usage", async (DateOnly? from, DateOnly? to, AiUsageAnalytics usage, CancellationToken ct) =>
+            Results.Ok(await usage.GetAsync(from, to, ct)));
+        // AI summaries of a dashboard (spec 021 US8 scenario 3): the figures it used, labelled as AI-generated.
+        analytics.MapPost("/summaries", async (SummaryRequest request, DashboardSummaries summaries, CancellationToken ct) =>
+            Results.Ok(await summaries.SummarizeAsync(request, ct)));
         // Scheduled reports and exports (spec 021 US7, T016): computed in the background as each recipient.
         analytics.MapGet("/reports/options", async (AnalyticsReports reports, CancellationToken ct) => Results.Ok(await reports.OptionsAsync(ct)));
         analytics.MapGet("/reports", async (AnalyticsReports reports, CancellationToken ct) => Results.Ok(await reports.ListAsync(ct)));

@@ -224,6 +224,26 @@ public interface IAiAgentUsage
     Task<IReadOnlyList<AgentVersionCost>> AgentCostsAsync(Guid agentId, DateTimeOffset from, DateTimeOffset to, CancellationToken ct = default);
 }
 
+/// <summary>Served requests and the distinct people behind them in one group of the AI usage figures.</summary>
+public sealed record AiUsageCount(string Key, long Requests, long Users);
+
+/// <summary>
+/// The tenant's AI usage over a period as the AI usage page of spec 013 counts it, for analytics (spec 021 FR-016), so
+/// one number shows everywhere: served requests, people, tokens and estimated cost (USD and the display currency), by
+/// week (Monday) and use case, and refused requests by reason.
+/// </summary>
+public sealed record AiUsageSummary(long Requests, long Users, long InputTokens, long OutputTokens, decimal Cost, string Currency, decimal Rate,
+    IReadOnlyList<AiUsageCount> Weeks, IReadOnlyList<AiUsageCount> UseCases, IReadOnlyList<AiUsageCount> Denied);
+
+/// <summary>
+/// AI usage figures for analytics (spec 021 FR-016). The caller decides who may see them; this reads the current
+/// tenant's call records and daily aggregates only.
+/// </summary>
+public interface IAiUsageFigures
+{
+    Task<AiUsageSummary> SummaryAsync(DateOnly from, DateOnly to, CancellationToken ct = default);
+}
+
 /// <summary>The tenant model policy changed and applies to new calls (spec 013 section 12).</summary>
 public sealed record AiPolicyChanged(int Version) : IIntegrationEvent;
 

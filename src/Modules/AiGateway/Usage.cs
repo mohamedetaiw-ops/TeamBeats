@@ -171,7 +171,7 @@ public sealed class UsageReports(
     /// Live call records and the daily aggregates of older ones, in one shape. An aggregate row has no person; its
     /// <c>archived_users</c> says how many people it covered.
     /// </summary>
-    private const string Source = """
+    internal const string Source = """
         (select at, unit_id, user_id, use_case, agent_id, model, provider, classification, decision, denial, 1::bigint as requests,
                 input_tokens::bigint as input_tokens, output_tokens::bigint as output_tokens, cost, 0 as archived_users
            from ai.usage_record
@@ -181,7 +181,7 @@ public sealed class UsageReports(
            from ai.usage_daily) u
         """;
 
-    private const string Sums = "coalesce(sum(requests), 0)::bigint, coalesce(sum(input_tokens), 0)::bigint, coalesce(sum(output_tokens), 0)::bigint, " +
+    internal const string Sums = "coalesce(sum(requests), 0)::bigint, coalesce(sum(input_tokens), 0)::bigint, coalesce(sum(output_tokens), 0)::bigint, " +
         "coalesce(sum(cost), 0), greatest(count(distinct user_id), coalesce(max(archived_users), 0))::bigint";
 
     private static UsageRow Row(Npgsql.NpgsqlDataReader r) => new(r.Get<string>("key"), r.GetInt64(1), r.GetInt64(2), r.GetInt64(3), r.GetDecimal(4), r.GetInt64(5));
@@ -416,4 +416,44 @@ public sealed class AiAgentUsage(IDbSession session) : IAiAgentUsage
             from ai.usage_record where agent_id = @agentId and agent_version is not null and decision = 'served' and at >= @from and at < @to
             group by 1 order by 1
             """, new { agentId, from, to }, r => new AgentVersionCost(r.GetInt32(0), r.GetInt64(1), r.GetInt64(2), r.GetDecimal(3)), ct);
+}
+
+/// <summary>
+/// The AI usage figures analytics shows (spec 021 FR-016), read from the same call records and daily aggregates and
+/// counted the same way as the AI usage page, so both show one number.
+/// </summary>
+public sealed class AiUsageFigures(IDbSession session, ModelPolicies policies) : IAiUsageFigures
+{
+    public async Task<AiUsageSummary> SummaryAsync(DateOnly from, DateOnly to, CancellationToken ct = default)
+    {
+        var args = new
+        {
+            start = new DateTimeOffset(from.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero),
+            end = new DateTimeOffset(to.AddDays(1).ToDateTime(TimeOnly.MinValue), TimeSpan.Zero),
+        };
+        const string served = "at >= @start and at < @end and decision = 'served'";
+        var total = await session.QueryAsync($"select {UsageReports.Sums} from {UsageReports.Source} where {served}", args,
+            r => (Requests: r.GetInt64(0), Input: r.GetInt64(1), Output: r.GetInt64(2), Cost: r.GetDecimal(3), Users: r.GetInt64(4)), ct);
+        static AiUsageCount Count(Npgsql.NpgsqlDataReader r) => new(r.GetString(0), r.GetInt64(1), r.GetInt64(2));
+        var weeks = await session.QueryAsync(
+            $"""
+            select to_char(date_trunc('week', at at time zone 'UTC'), 'YYYY-MM-DD'), coalesce(sum(requests), 0)::bigint,
+              greatest(count(distinct user_id), coalesce(max(archived_users), 0))::bigint
+            from {UsageReports.Source} where {served} group by 1 order by 1
+            """, args, Count, ct);
+        var useCases = await session.QueryAsync(
+            $"""
+            select use_case, coalesce(sum(requests), 0)::bigint, greatest(count(distinct user_id), coalesce(max(archived_users), 0))::bigint
+            from {UsageReports.Source} where {served} group by 1 order by 2 desc, 1
+            """, args, Count, ct);
+        var denied = await session.QueryAsync(
+            $"""
+            select denial, coalesce(sum(requests), 0)::bigint, greatest(count(distinct user_id), coalesce(max(archived_users), 0))::bigint
+            from {UsageReports.Source} where at >= @start and at < @end and decision = 'denied' group by 1 order by 2 desc, 1
+            """, args, Count, ct);
+        var document = (await policies.EffectiveAsync(ct)).Document;
+        var (currency, rate) = document.DisplayCurrency is { } c && document.DisplayRate is { } d ? (c, d) : ("USD", 1m);
+        var t = total[0];
+        return new AiUsageSummary(t.Requests, t.Users, t.Input, t.Output, t.Cost, currency, rate, weeks, useCases, denied);
+    }
 }

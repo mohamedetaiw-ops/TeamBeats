@@ -32,6 +32,7 @@ public static class AiGatewayModule
         services.AddScoped<EvaluatorTokens>();
         services.AddScoped<IAiEvaluatorTokens>(sp => sp.GetRequiredService<EvaluatorTokens>());
         services.AddScoped<IAiAgentUsage, AiAgentUsage>();
+        services.AddScoped<IAiUsageFigures, AiUsageFigures>();
         services.AddScoped<AiGatewayService>();
         services.AddScoped<IAiGateway>(sp => sp.GetRequiredService<AiGatewayService>());
         services.AddScoped<IAiClassificationPolicy>(sp => sp.GetRequiredService<AiGatewayService>());

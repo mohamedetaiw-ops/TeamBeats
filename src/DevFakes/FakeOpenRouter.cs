@@ -176,7 +176,8 @@ public sealed partial class FakeOpenRouter(string apiKey, string basePath, IRead
             // The photo safety check (spec 023 FR-017) answers safe, unless an attached file carries [fake:unsafe].
             // Content translation (spec 009 US5) answers each text marked as translated, in the target language's script.
             // Sentiment (spec 021 US8) labels each numbered text: [fake:positive] and [fake:negative] mark it, anything else is neutral.
-            reply = properties?["sentiments"] is not null ? Sentiments(last)
+            // A dashboard summary (spec 021 US8) states the first figure it was given and names it.
+            reply = properties?["sentiments"] is not null ? Sentiments(last) : properties?["figures"] is not null ? Summary(last)
                 : properties?["texts"] is not null ? Translation(last) : properties?["safe"] is not null ? JsonSerializer.Serialize(new { safe = !Attached(messages).Any(t => t.Contains("[fake:unsafe]", StringComparison.Ordinal)) })
                 : properties?["merchant"] is not null ? Receipt(messages) : judging
                 ? JsonSerializer.Serialize(last.Contains("[fake:judge:fail]", StringComparison.Ordinal)
@@ -258,6 +259,17 @@ public sealed partial class FakeOpenRouter(string apiKey, string basePath, IRead
         });
         return JsonSerializer.Serialize(new { sentiments = items });
     }
+
+    private static string Summary(string prompt)
+    {
+        var m = SummaryFigure().Match(prompt);
+        return m.Success
+            ? JsonSerializer.Serialize(new { summary = $"The figure {m.Groups[2].Value.Trim()} is {m.Groups[3].Value.Trim()}.", figures = new[] { m.Groups[1].Value } })
+            : JsonSerializer.Serialize(new { summary = "Nothing stands out.", figures = Array.Empty<string>() });
+    }
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"^\[(f\d+)\] (.*?) = (.*)$", System.Text.RegularExpressions.RegexOptions.Multiline)]
+    private static partial System.Text.RegularExpressions.Regex SummaryFigure();
 
     [System.Text.RegularExpressions.GeneratedRegex("<text n=\"(\\d+)\">(.*?)</text>", System.Text.RegularExpressions.RegexOptions.Singleline)]
     private static partial System.Text.RegularExpressions.Regex SentimentText();
