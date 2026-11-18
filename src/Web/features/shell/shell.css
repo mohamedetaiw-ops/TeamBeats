@@ -239,13 +239,9 @@
   text-decoration: none;
 }
 
-.shell-below .shell-breadcrumbs a:hover {
-  color: var(--tb-color-nav-text);
-  text-decoration: underline;
-}
-
+/* Hover underlines and keeps the colour, so it reads on light and dark bars alike. */
 .shell-breadcrumbs a:hover {
-  color: var(--tb-color-text-primary);
+  text-decoration: underline;
 }
 
 .shell-below .shell-breadcrumbs a[aria-current="page"] {
