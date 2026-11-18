@@ -356,6 +356,46 @@
   position: relative;
 }
 
+/* Favorites (spec 008 FR-017): one star button and a menu of rows; one that can't be opened is shown muted with its reason. */
+.shell-favorites {
+  position: relative;
+}
+
+.shell-favorites-panel {
+  --xp-popover-width: 20rem;
+}
+
+.shell-favorites-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shell-favorites-off {
+  color: var(--tb-color-text-secondary);
+  cursor: default;
+}
+
+.shell-favorites-off:hover {
+  background: none;
+}
+
+.shell-favorites-text {
+  display: grid;
+  padding-block: var(--tb-space-xs);
+}
+
+.shell-favorites-text small {
+  font-size: var(--tb-font-size-xs);
+}
+
+.shell-favorites-skeleton {
+  display: grid;
+  gap: var(--tb-space-xs);
+  padding: var(--tb-space-sm);
+}
+
 .shell-avatar {
   display: inline-grid;
   place-items: center;

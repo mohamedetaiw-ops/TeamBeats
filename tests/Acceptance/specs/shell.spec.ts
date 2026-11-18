@@ -142,6 +142,8 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
     test("the search shortcut opens the command palette with the same permitted destinations", async ({ page }) => {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await expect(page.getByRole("searchbox", { name: msg(locale, "shell.search.label") })).toBeVisible();
+      // Recent visits from the tests before show in an empty palette; this test starts without them.
+      expect((await page.request.delete(`${hostOrigin(tenant.key)}/api/v1/me/recents`)).ok()).toBe(true);
       await page.keyboard.press("Control+K");
       const palette = page.getByRole("dialog", { name: msg(locale, "shell.search.palette.label") });
       await expect(palette).toBeVisible();
@@ -152,6 +154,44 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(palette.getByRole("option", { name: about() })).toBeVisible();
       await page.keyboard.press("Escape");
       await expect(palette).toBeHidden();
+    });
+
+    test("a page is kept as a favorite, and favorites and recent visits open from the palette (spec 008 FR-017)", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/${setup.teamSlug}`);
+      await page.getByRole("button", { name: msg(locale, "shell.favorites.button") }).click();
+      const menu = page.getByRole("dialog", { name: msg(locale, "shell.favorites.title") });
+      await expect(menu).toBeVisible();
+      await menu.getByRole("button", { name: msg(locale, "shell.favorites.addHere") }).click();
+      await expect(menu.getByRole("status").filter({ hasText: msg(locale, "shell.favorites.added") })).toBeVisible();
+      await expect(menu.getByRole("link", { name: team() })).toHaveAttribute("href", `/${setup.teamSlug}`);
+      await expect(menu.getByRole("button", { name: msg(locale, "shell.favorites.removeHere") })).toBeVisible();
+      await expectAccessible(page, testInfo, `shell-favorites-${locale}`);
+      await page.keyboard.press("Escape");
+      await expect(menu).toBeHidden();
+
+      // The visit is recorded once the page has settled.
+      await expect
+        .poll(async () => ((await (await page.request.get(`${hostOrigin(tenant.key)}/api/v1/me/recents`)).json()) as { path: string }[]).map((r) => r.path))
+        .toContain(`/${setup.teamSlug}`);
+      await page.goto(`${hostOrigin(tenant.key)}/`);
+      await expect(page.getByRole("searchbox", { name: msg(locale, "shell.search.label") })).toBeVisible();
+      await page.keyboard.press("Control+K");
+      const palette = page.getByRole("dialog", { name: msg(locale, "shell.search.palette.label") });
+      await expect(palette.getByRole("group", { name: msg(locale, "shell.search.palette.favorites") }).getByRole("option", { name: team() })).toBeVisible();
+      const recents = palette.getByRole("group", { name: msg(locale, "shell.search.palette.recents") });
+      await expect(recents.getByRole("option", { name: new RegExp(setup.teamSlug) })).toBeVisible();
+      await recents.getByRole("option", { name: msg(locale, "shell.search.palette.clearRecents") }).click();
+      await expect
+        .poll(async () => ((await (await page.request.get(`${hostOrigin(tenant.key)}/api/v1/me/recents`)).json()) as unknown[]).length)
+        .toBe(0);
+
+      // Removing it from the page leaves no favorite behind.
+      await page.goto(`${hostOrigin(tenant.key)}/${setup.teamSlug}`);
+      await page.getByRole("button", { name: msg(locale, "shell.favorites.button") }).click();
+      await menu.getByRole("button", { name: msg(locale, "shell.favorites.removeHere") }).click();
+      await expect(menu.getByRole("status").filter({ hasText: msg(locale, "shell.favorites.removed") })).toBeVisible();
+      await expect(menu.getByText(msg(locale, "shell.favorites.empty"))).toBeVisible();
     });
 
     test("only one shell panel is open at a time, and a press outside closes it (spec 008 FR-060)", async ({ page }) => {

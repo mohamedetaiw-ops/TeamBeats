@@ -2575,5 +2575,9 @@
   "conflict.agent_security.alert_closed": "تم تجاهل هذا التنبيه أو تحويله إلى حادثة بالفعل.",
   "conflict.agent_security.incident_closed": "هذه الحادثة مغلقة.",
   "notifications.template.agents.tokens_revoked.title": "أُلغيت صلاحيات وكيل",
-  "notifications.template.agents.tokens_revoked.body": "ألغى مسؤول الأمان ما كان لدى وكيل للعمل نيابة عنك، مثل اشتراك الموجز أو الإذن بالتذكر. افتح الوكيل لإعدادها مرة أخرى إذا كنت لا تزال تريدها."
+  "notifications.template.agents.tokens_revoked.body": "ألغى مسؤول الأمان ما كان لدى وكيل للعمل نيابة عنك، مثل اشتراك الموجز أو الإذن بالتذكر. افتح الوكيل لإعدادها مرة أخرى إذا كنت لا تزال تريدها.",
+  "validation.experience.favorite_label": "أدخل اسمًا للمفضلة لا يزيد على 200 حرف.",
+  "validation.experience.favorite_target": "لا يمكن حفظ هذا العنوان أو العنصر في المفضلة، أو لا يمكنك فتحه.",
+  "validation.experience.recent_path": "لا يمكن الاحتفاظ بهذا العنوان في زياراتك الأخيرة.",
+  "conflict.experience.favorites_full": "لديك 50 عنصرًا في المفضلة. أزل واحدًا لإضافة آخر."
 }

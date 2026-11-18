@@ -55,7 +55,11 @@ export default async function AddressPage({ params }: { params: Promise<{ path: 
       {scoped?.ok ? (
         <ThemeLinks variants={scoped.data.variants} density={prefs.density === "compact" ? "compact" : "comfortable"} mode={prefs.mode === "light" || prefs.mode === "dark" ? prefs.mode : "system"} />
       ) : null}
-      <Header me={me.data} breadcrumbs={resolved.data.breadcrumbs} />
+      <Header
+        me={me.data}
+        breadcrumbs={resolved.data.breadcrumbs}
+        favorite={{ path: "/" + path.map(decodeURIComponent).join("/").toLowerCase(), label: resolved.data.breadcrumbs.at(-1)?.label }}
+      />
       <SectionMenu label={t("sectionNav")} links={resolved.data.sectionMenu} />
       <main id="main">
         <PageRenderer page={page.data} tabsLabel={te("panels")} tabLabel={(n) => te("panel", { number: n })} />

@@ -31,7 +31,7 @@ export default async function PublishedPage({ params }: { params: Promise<{ slug
       {scoped?.ok ? (
         <ThemeLinks variants={scoped.data.variants} density={prefs.density === "compact" ? "compact" : "comfortable"} mode={prefs.mode === "light" || prefs.mode === "dark" ? prefs.mode : "system"} />
       ) : null}
-      <Header me={me.data} />
+      <Header me={me.data} favorite={{ path: "/p/" + slug.map(decodeURIComponent).join("/").toLowerCase() }} />
       <main id="main">
         <PageRenderer page={page.data} tabsLabel={t("panels")} tabLabel={(n) => t("panel", { number: n })} />
       </main>

@@ -5198,6 +5198,103 @@
         }
       }
     },
+    "/api/v1/me/favorites": {
+      "get": {
+        "tags": [
+          "Me: favorites and recents"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Me: favorites and recents"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FavoriteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/favorites/{id}": {
+      "delete": {
+        "tags": [
+          "Me: favorites and recents"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/recents": {
+      "get": {
+        "tags": [
+          "Me: favorites and recents"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Me: favorites and recents"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Me: favorites and recents"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/me/preference-profile": {
       "get": {
         "tags": [
@@ -33216,6 +33313,42 @@
           }
         }
       },
+      "FavoriteRequest": {
+        "required": [
+          "path",
+          "source",
+          "itemId",
+          "label"
+        ],
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "source": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "itemId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "label": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "FeatureOptionsRequest": {
         "required": [
           "previewLine",
@@ -37923,6 +38056,27 @@
           }
         }
       },
+      "RecentRequest": {
+        "required": [
+          "path",
+          "label"
+        ],
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "label": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "RecognitionBadgeRequest": {
         "required": [
           "key",
@@ -42489,6 +42643,9 @@
     },
     {
       "name": "Experience: shell and navigation"
+    },
+    {
+      "name": "Me: favorites and recents"
     },
     {
       "name": "Me: personalization"

@@ -45,6 +45,7 @@ public static class ExperienceModule
         services.AddSingleton<Offline.OfflineKeySource>();
         services.AddScoped<Offline.OfflineBundles>();
         services.AddScoped<ShellService>();
+        services.AddScoped<Favorites>();
         return services;
     }
 
@@ -213,6 +214,7 @@ public static class ExperienceModule
 
         MapThemeEndpoints(app);
         MapShellEndpoints(app);
+        MapFavoriteEndpoints(app);
         MapPersonalizationEndpoints(app);
         return app;
     }
@@ -453,6 +455,44 @@ public static class ExperienceModule
             var items = await shell.QuickNavAsync(q, locale.Locale, ct);
             await session.CommitAsync(ct);
             return Results.Ok(items);
+        });
+    }
+
+    /// <summary>Favorites and recents of the signed in person (spec 008 T019, FR-017). Writes commit.</summary>
+    private static void MapFavoriteEndpoints(IEndpointRouteBuilder app)
+    {
+        var me = app.MapGroup("/api/v1/me").RequireTenantUser().WithTags("Me: favorites and recents");
+
+        me.MapGet("/favorites", async (Favorites f, RequestLocale locale, CancellationToken ct) => Results.Ok(await f.ListAsync(locale.Locale, ct)));
+
+        me.MapPost("/favorites", async (FavoriteRequest request, Favorites f, RequestLocale locale, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await f.AddAsync(request, locale.Locale, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        me.MapDelete("/favorites/{id:guid}", async (Guid id, Favorites f, IDbSession session, CancellationToken ct) =>
+        {
+            await f.RemoveAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        me.MapGet("/recents", async (Favorites f, RequestLocale locale, CancellationToken ct) => Results.Ok(await f.RecentsAsync(locale.Locale, ct)));
+
+        me.MapPost("/recents", async (RecentRequest request, Favorites f, IDbSession session, CancellationToken ct) =>
+        {
+            await f.VisitAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        me.MapDelete("/recents", async (Favorites f, IDbSession session, CancellationToken ct) =>
+        {
+            await f.ClearRecentsAsync(ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
         });
     }
 

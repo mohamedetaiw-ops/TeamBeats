@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useState } from "react";
 import { useTranslations } from "next-intl";
-import type { QuickNavItem } from "@/lib/shell/types";
+import type { Favorite, QuickNavItem, RecentVisit } from "@/lib/shell/types";
 import type { Suggestion } from "@/lib/search/types";
 import { CommandPalette, type CommandGroup } from "@/components/ui/CommandPalette";
 import { Icon } from "@/components/ui/Icon";
@@ -17,7 +17,8 @@ async function json<T>(response: Response): Promise<T[]> {
  * The shell search box (spec 008 FR-016, spec 012 US1 and FR-009). As the person types it lists pages they may open
  * and permitted search suggestions, both from the API; Enter opens the full results page. Results are links announced
  * by count; Escape clears the box. Ctrl+K, or Command+K on a Mac, opens the same search as a command palette
- * (spec 036 DLS-036), so it is one keystroke away on every page.
+ * (spec 036 DLS-036), so it is one keystroke away on every page. Before anything is typed the palette lists the
+ * person's favorites they may still open and their recent visits, with a command to clear the recents (spec 008 FR-017).
  */
 export function QuickNav() {
   const t = useTranslations("shell.search");
@@ -42,7 +43,46 @@ export function QuickNav() {
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
+  const [mine, setMine] = useState<{ favorites: Favorite[]; recents: RecentVisit[] } | null>(null);
+
+  useEffect(() => {
+    if (!palette) return;
+    const controller = new AbortController();
+    Promise.all([
+      fetch("/api/v1/me/favorites", { signal: controller.signal, cache: "no-store" }).then((r) => json<Favorite>(r)),
+      fetch("/api/v1/me/recents", { signal: controller.signal, cache: "no-store" }).then((r) => json<RecentVisit>(r)),
+    ])
+      .then(([favorites, recents]) => setMine({ favorites, recents }))
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [palette]);
+
+  async function clearRecents() {
+    const response = await fetch("/api/v1/me/recents", { method: "DELETE" }).catch(() => null);
+    if (response?.ok) setMine((m) => (m ? { ...m, recents: [] } : m));
+  }
+
   const groups: CommandGroup[] = [];
+  if (palette && term.length < 2 && mine) {
+    const open = mine.favorites.filter((f) => f.available && f.href);
+    if (open.length > 0) {
+      groups.push({
+        key: "favorites",
+        label: t("palette.favorites"),
+        commands: open.map((f) => ({ key: `favorite:${f.id}`, label: f.label, icon: "star", href: f.href! })),
+      });
+    }
+    if (mine.recents.length > 0) {
+      groups.push({
+        key: "recents",
+        label: t("palette.recents"),
+        commands: [
+          ...mine.recents.map((r) => ({ key: `recent:${r.path}`, label: r.label, hint: r.path, icon: "clock" as const, href: r.path })),
+          { key: "recents:clear", label: t("palette.clearRecents"), icon: "trash", onSelect: () => void clearRecents() },
+        ],
+      });
+    }
+  }
   if (palette && current && current.pages.length > 0) {
     groups.push({
       key: "pages",

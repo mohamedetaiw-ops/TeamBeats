@@ -81,3 +81,9 @@ export type PreferenceSetting = { key: PreferenceKey; values: string[]; default:
 export type PreferenceProfile = { schemaVersion: number; values: Record<PreferenceKey, string>; schema: PreferenceSetting[]; chosen?: string[] };
 
 export const defaultPreferences: Record<PreferenceKey, string> = { mode: "light", density: "comfortable", motion: "system", text_scale: "100" };
+
+/** A favorite as its owner sees it now (spec 008 FR-017): `href` is null when it can't be opened, and `reason` says why. */
+export type Favorite = { id: string; kind: "page" | "item"; label: string; href: string | null; available: boolean; reason: string | null; createdAt: string };
+
+/** A recent visit: the path alone, never a query string or fragment. */
+export type RecentVisit = { path: string; label: string; visitedAt: string };

@@ -1517,7 +1517,10 @@
         "label": "Go to a page or search",
         "pages": "Pages",
         "suggestions": "Suggestions",
-        "hint": "Type two letters or more to find pages, people, files and services."
+        "hint": "Type two letters or more to find pages, people, files and services.",
+        "favorites": "Favorites",
+        "recents": "Recent visits",
+        "clearRecents": "Clear recent visits"
       }
     },
     "recovery": {
@@ -1571,7 +1574,21 @@
       "classification": "Classification: {value}",
       "accessibility": "Accessibility"
     },
-    "guest": "Guest"
+    "guest": "Guest",
+    "favorites": {
+      "button": "Favorites",
+      "title": "Favorites",
+      "addHere": "Add this page to favorites",
+      "removeHere": "Remove this page from favorites",
+      "added": "Added to your favorites.",
+      "removed": "Removed from your favorites.",
+      "failed": "Favorites couldn't be loaded or changed. Try again.",
+      "empty": "No favorites yet",
+      "emptyHint": "Open a page and add it here to find it again quickly.",
+      "reasons": {
+        "not_available": "You can no longer open this."
+      }
+    }
   },
   "shell_settings": {
     "title": "Shell and footer",

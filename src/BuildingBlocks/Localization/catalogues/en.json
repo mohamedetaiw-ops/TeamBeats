@@ -2575,5 +2575,9 @@
   "conflict.agent_security.alert_closed": "This alert was already dismissed or turned into an incident.",
   "conflict.agent_security.incident_closed": "This incident is closed.",
   "notifications.template.agents.tokens_revoked.title": "An agent's access was revoked",
-  "notifications.template.agents.tokens_revoked.body": "A security officer revoked what an agent held to act for you, such as a briefing subscription or permission to remember. Open the agent to set them up again if you still want them."
+  "notifications.template.agents.tokens_revoked.body": "A security officer revoked what an agent held to act for you, such as a briefing subscription or permission to remember. Open the agent to set them up again if you still want them.",
+  "validation.experience.favorite_label": "Give the favorite a name of up to 200 characters.",
+  "validation.experience.favorite_target": "This address or item can't be saved as a favorite, or you can't open it.",
+  "validation.experience.recent_path": "This address can't be kept in your recent visits.",
+  "conflict.experience.favorites_full": "You have 50 favorites already. Remove one to add another."
 }
