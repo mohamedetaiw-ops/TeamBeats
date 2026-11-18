@@ -5768,7 +5768,9 @@
     "tabs": {
       "agents": "Agents",
       "policy": "Policy and kill switch",
-      "runs": "Runs"
+      "runs": "Runs",
+      "units": "Unit policies",
+      "security": "Security Center"
     },
     "status": {
       "draft": "Draft",
@@ -5934,7 +5936,9 @@
         "choose": "Choose a version",
         "version": "Version {number}",
         "rollback": "Roll back",
-        "rolledBack": "The earlier version is in use again."
+        "rolledBack": "The earlier version is in use again.",
+        "revokeTokens": "Revoke tokens",
+        "tokensRevoked": "Tokens revoked. Waiting actions were stopped, and briefing subscriptions and memory permissions must be given again."
       },
       "purpose": "Business purpose",
       "owners": {
@@ -6200,7 +6204,9 @@
       "interrupted": "The connection dropped while the agent was working. It carries on and keeps the answer for you.",
       "checkResult": "Check for the answer",
       "stillWorking": "The agent is still working on this. Check again in a moment.",
-      "stillWaiting": "The approver has not decided yet."
+      "stillWaiting": "The approver has not decided yet.",
+      "degradedTitle": "This agent works with fewer tools for now",
+      "degraded": "A connection it uses is turned off, so some of its actions are not available. It still answers what it can."
     },
     "card": {
       "title": "Confirm this action",
@@ -6275,7 +6281,8 @@
         "unknown": "Unknown tool",
         "approval_rejected": "Not approved",
         "no_approver": "No approver named",
-        "rule_changed": "The approval rule changed"
+        "rule_changed": "The approval rule changed",
+        "connector_disabled": "The connection is turned off"
       }
     },
     "studio": {
@@ -6408,6 +6415,112 @@
         "rejected": "This action was not approved.",
         "expired": "This action was cancelled because nobody decided in time.",
         "cancelled": "This action was cancelled."
+      }
+    },
+    "degraded": {
+      "title": "Some tools are turned off",
+      "body": "These tools are off because their connection is turned off: {tools}. The agent works without them until the connection is turned on again."
+    },
+    "unitPolicy": {
+      "title": "Unit agent policies",
+      "pickHeading": "Choose a unit",
+      "intro": "A unit can make the agent rules stricter for its own agents and the units below it, never looser than the rules above it.",
+      "unit": "Unit",
+      "open": "Open unit policy",
+      "unknownUnit": "Unknown unit",
+      "notYours": "You can't change the agent policy of this unit.",
+      "heading": "Agent rules for {unit}",
+      "inheritHint": "Leave a field empty to keep the rule from above.",
+      "inherit": "From above: {value}",
+      "switches": "Turn off for this unit",
+      "noScheduled": "No scheduled agents in this unit",
+      "noMemory": "No agent memory in this unit",
+      "allInherited": "Every tool allowed above",
+      "save": "Save unit policy",
+      "remove": "Remove unit rules",
+      "saved": "Agent rules saved for {unit}.",
+      "removed": "{unit} now follows the rules above it."
+    },
+    "security": {
+      "title": "Agent Security Center",
+      "unavailable": "The Agent Security Center is not part of your organization's plan.",
+      "failed": "Something went wrong. Try again.",
+      "notYours": "This record is outside your area.",
+      "working": "Working…",
+      "alerts": "Alerts",
+      "incidents": "Incidents",
+      "watch": "Watch list",
+      "watchIntro": "High risk agents stay on this list for 30 days after each publication.",
+      "status": "Status",
+      "apply": "Show",
+      "when": "Last seen",
+      "agent": "Agent",
+      "rule": "Rule",
+      "severity": "Severity",
+      "matches": "Matches",
+      "opened": "Opened",
+      "version": "Version",
+      "watchedUntil": "Watched until",
+      "firstSeen": "First seen",
+      "lastSeen": "Last seen",
+      "runs": "Runs",
+      "noRuns": "No runs are linked.",
+      "runN": "Run {n}",
+      "alertN": "Alert {n}",
+      "unknownAgent": "Unknown agent",
+      "noAlerts": "No alerts with this status.",
+      "noIncidents": "No incidents yet.",
+      "noWatch": "No agent is being watched.",
+      "alertStatus": {
+        "open": "Open",
+        "dismissed": "Dismissed",
+        "incident": "Incident opened"
+      },
+      "incidentStatus": {
+        "open": "Open",
+        "closed": "Closed"
+      },
+      "severities": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "critical": "Critical"
+      },
+      "rules": {
+        "denied_burst": "Many refused tool calls",
+        "injection": "Possible prompt injection",
+        "cost_spike": "Unusual usage"
+      },
+      "ruleHelp": {
+        "denied_burst": "At least 10 tool calls of this agent were refused within 10 minutes.",
+        "injection": "Content the agent read looked like instructions. The agent treats such content as data and did not follow it.",
+        "cost_spike": "The agent used at least five times its usual hourly model tokens in the last hour."
+      },
+      "alert": {
+        "facts": "What happened",
+        "work": "Act on this alert",
+        "toIncident": "Open incident",
+        "dismiss": "Dismiss",
+        "dismissed": "Alert dismissed.",
+        "openIncident": "Open the incident"
+      },
+      "incident": {
+        "title": "Title",
+        "facts": "Incident",
+        "actions": "Actions taken",
+        "noActions": "No action recorded yet.",
+        "record": "Record an action",
+        "actionTaken": "Action taken",
+        "save": "Save",
+        "saved": "Incident updated.",
+        "stale": "Someone changed this incident. Reload to see the latest version.",
+        "closeHeading": "Close the incident",
+        "closureNote": "Closure note",
+        "close": "Close incident",
+        "closed": "Incident closed.",
+        "closedAt": "Closed on",
+        "evidence": "Export evidence",
+        "openAgent": "Open the agent"
       }
     }
   },

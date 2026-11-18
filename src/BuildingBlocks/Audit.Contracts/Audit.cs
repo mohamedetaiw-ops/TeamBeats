@@ -516,6 +516,7 @@ public static class AuditActions
     public const string AgentResumed = "agent.resumed";
     public const string AgentRetired = "agent.retired";
     public const string AgentKillSwitch = "agent.kill_switch";
+    public const string AgentTokensRevoked = "agent.tokens_revoked";
 
     // Spec 027 R2 Agent Security Center (FR-023).
     public const string AgentAlertRaised = "agent.alert_raised";
@@ -655,7 +656,7 @@ public static class AuditActions
         AssistantHistoryDeleted, AssistantRetentionChanged, AssistantGuestsChanged, AssistantFileAdded, AssistantFileRefused,
         AgentInstalledFromTemplate, AgentCreated, AgentCloned, AgentAccessRequested, AgentAccessGranted, AgentAccessDenied, AgentMemoryAccepted, AgentMemoryDeleted, AgentTemplateUpdateApplied, AgentAudienceChanged, AgentOwnerChanged, AgentPolicyChanged, AgentToolCalled, AgentExternalCallRefused, AgentToolDenied, AgentInjectionDetected, AgentActionConfirmed, AgentActionRejected, AgentActionApproved, AgentActionExpired,
         AgentVersionSubmitted, AgentVersionApproved, AgentVersionRejected, AgentVersionPublished, AgentRolledBack, AgentSuspended, AgentResumed, AgentAlertRaised, AgentAlertDismissed, AgentIncidentOpened, AgentIncidentUpdated, AgentIncidentClosed, AgentEvidenceExported,
-        AgentRetired, AgentKillSwitch,
+        AgentRetired, AgentKillSwitch, AgentTokensRevoked,
         EvalSuiteCreated, EvalSuiteChanged, EvalDatasetVersionCreated, EvalDatasetImported, EvalPolicyChanged, EvalPersonaCreated, EvalGateDecided, EvalGateOverridden,
         EvalRubricCalibrated, EvalRubricDemoted,
         EngagementCommunityCreated, EngagementCommunityChanged, EngagementCommunityArchived, EngagementMemberChanged, EngagementPostPinned,

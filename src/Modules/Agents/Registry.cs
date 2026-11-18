@@ -83,7 +83,7 @@ public sealed record AgentVersionView(int Number, string State, string RiskClass
 
 /// <summary>An agent with the definition of its latest version, which is what the editor works on.</summary>
 public sealed record AgentDetail(AgentSummary Agent, AgentDefinition Definition, AgentVersionView Latest, IReadOnlyList<AgentVersionView> Versions, bool CanEdit,
-    int? TemplateUpdate = null);
+    int? TemplateUpdate = null, IReadOnlyList<string>? UnavailableTools = null);
 
 public sealed record TemplateUpdateRequest(int? Version);
 
@@ -374,8 +374,10 @@ public sealed class AgentRegistry(IDbSession session, ITenantContext context, IE
         // A newer platform version of the agent's template is offered, never applied on its own (FR-005).
         int? update = agent.TemplateId is { } templateId && AgentTemplates.Find(templateId) is { } template && template.Version > (agent.TemplateVersion ?? 0)
             ? template.Version : null;
-        return new AgentDetail(agent, Definition(versions[0].Definition), versions[0].View, versions.Select(v => v.View).ToList(),
-            canEdit && agent.Status != AgentStatuses.Retired, update);
+        var definition = Definition(versions[0].Definition);
+        await tools.LoadAsync(ct);
+        return new AgentDetail(agent, definition, versions[0].View, versions.Select(v => v.View).ToList(),
+            canEdit && agent.Status != AgentStatuses.Retired, update, AgentDefinitions.UnavailableTools(definition, tools));
     }
 
     /// <summary>

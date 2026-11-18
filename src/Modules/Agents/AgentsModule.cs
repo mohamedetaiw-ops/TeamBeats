@@ -488,6 +488,13 @@ public static class AgentsModule
             return Results.Ok(detail);
         });
 
+        agents.MapPost("/{id:guid}/revoke-tokens", async (Guid id, ReasonRequest request, AgentLifecycle lifecycle, IDbSession session, CancellationToken ct) =>
+        {
+            var detail = await lifecycle.RevokeTokensAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(detail);
+        });
+
         agents.MapPost("/{id:guid}/resume", async (Guid id, AgentLifecycle lifecycle, IDbSession session, CancellationToken ct) =>
         {
             var detail = await lifecycle.ResumeAsync(id, ct);

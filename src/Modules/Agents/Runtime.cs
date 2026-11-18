@@ -504,7 +504,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
 
     private async Task<RunView> LoopAsync(Guid runId, RunAgent agent, Guid user, string language, RunState state, CancellationToken ct)
     {
-        var offered = (agent.Definition.Tools ?? []).Select(tools.Find).Where(t => t is not null)
+        var offered = (agent.Definition.Tools ?? []).Select(tools.Find).Where(t => t is not null && t.Definition.Unavailable is null)
             .Select(t => new AiTool(RunAgent.ModelName(t!.Definition.Name), t.Definition.Description, t.Definition.Parameters)).ToList();
         if (state.Memory)
         {
@@ -681,6 +681,11 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
             return new Gate(granted, null, null, Refusal: "tool.unknown");
         }
         var definition = tool.Definition;
+        if (definition.Unavailable is not null)
+        {
+            // A tool of a disabled connector is off for every agent (027 US7 scenario 3).
+            return new Gate(granted, null, null, Refusal: "tool.connector_disabled");
+        }
         var rule = memoryCall ? ToolApprovalRules.Execute : agent.Policy.RuleFor(definition);
         if (!memoryCall)
         {

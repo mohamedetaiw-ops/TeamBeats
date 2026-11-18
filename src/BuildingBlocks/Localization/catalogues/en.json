@@ -2573,5 +2573,7 @@
   "validation.agent_security.runs": "An incident can link at most 50 runs.",
   "validation.agent_security.text": "This text is too long.",
   "conflict.agent_security.alert_closed": "This alert was already dismissed or turned into an incident.",
-  "conflict.agent_security.incident_closed": "This incident is closed."
+  "conflict.agent_security.incident_closed": "This incident is closed.",
+  "notifications.template.agents.tokens_revoked.title": "An agent's access was revoked",
+  "notifications.template.agents.tokens_revoked.body": "A security officer revoked what an agent held to act for you, such as a briefing subscription or permission to remember. Open the agent to set them up again if you still want them."
 }

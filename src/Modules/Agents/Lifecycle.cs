@@ -324,16 +324,49 @@ public sealed class AgentLifecycle(IDbSession session, ITenantContext context, I
     /// Stops waiting and running runs; their pending actions are cancelled and approvals they wait on leave the approvers'
     /// inbox (027 US7 scenario 1). Raising the attempt makes a request still running one roll back at its next checkpoint (020 T021).
     /// </summary>
-    private async Task StopWaitingAsync(string where, object args, CancellationToken ct) =>
+    private async Task StopWaitingAsync(string where, object args, CancellationToken ct, string outcome = "suspended") =>
         await session.ExecAsync(
             $"""
             update agents.run_approval a set status = 'cancelled', decided_at = @now
             from agents.run r where r.id = a.run_id and r.status = 'waiting' and a.status = 'pending' and r.{where};
             delete from agents.run_checkpoint c using agents.run r where r.id = c.run_id and r.status = 'waiting' and r.{where};
-            update agents.run set status = 'stopped', outcome = 'suspended', reason = 'agent.suspended', finished_at = @now, updated_at = @now,
+            update agents.run set status = 'stopped', outcome = '{outcome}', reason = 'agent.{outcome}', finished_at = @now, updated_at = @now,
               attempt = attempt + 1
             where status in ('waiting', 'running') and {where};
             """, args, ct);
+
+    /// <summary>The notice people get when an agent's delegated grants were revoked (027 US7 scenario 4).</summary>
+    public const string TokensRevokedTemplate = "agents.tokens_revoked";
+
+    /// <summary>
+    /// Revokes everything the agent holds to act for people later (027 US7 scenario 4, FR-020): waiting runs stop and
+    /// their confirmations, approvals and checkpoints are cancelled; scheduled briefing subscriptions, which run as the
+    /// subscribing person, are removed; and the people's acceptances that the agent may remember are withdrawn. Each must
+    /// be given again, and the people concerned are told. Agents hold no connector credentials of their own: connector
+    /// calls use the connection, which the integration administrator disables or reconnects (spec 006). The agent itself
+    /// stays as it is; suspending it is a separate control.
+    /// </summary>
+    public async Task<AgentDetail> RevokeTokensAsync(Guid id, ReasonRequest request, CancellationToken ct)
+    {
+        await UserAsync(ct);
+        var agent = await registry.GetAsync(id, ct);
+        await DemandOnAgentAsync(Permissions.AgentSuspend, agent, ct);
+        var reason = Reason(request.Reason, required: true);
+        var now = clock.UtcNow;
+        var waiting = await session.ScalarAsync<long>("select count(*) from agents.run where agent_id = @id and status in ('waiting', 'running')", new { id }, ct);
+        await StopWaitingAsync("agent_id = @id", new { id, now }, ct, "tokens_revoked");
+        var briefings = await session.QueryAsync("delete from agents.agent_briefing where agent_id = @id returning user_id", new { id }, r => r.GetGuid(0), ct);
+        var consents = await session.QueryAsync("delete from agents.agent_memory_consent where agent_id = @id returning user_id", new { id }, r => r.GetGuid(0), ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.AgentTokensRevoked, "agent", id.ToString(), TargetOrgUnitId: agent.Agent.OrgUnitId,
+            Changes: new { reason, runs = waiting, briefings = briefings.Count, memoryConsents = consents.Count }), ct);
+        var people = briefings.Concat(consents).Distinct().ToList();
+        if (people.Count > 0)
+        {
+            await notifications.SendAsync(new NotificationRequest(people, NotificationCategories.SecurityNotice, TokensRevokedTemplate, $"/agents/{id}",
+                DedupeKey: $"agents.tokens_revoked:{id:N}:{now.ToUnixTimeSeconds()}"), ct);
+        }
+        return await registry.GetAsync(id, ct);
+    }
 
     public async Task<AgentDetail> ResumeAsync(Guid id, CancellationToken ct)
     {

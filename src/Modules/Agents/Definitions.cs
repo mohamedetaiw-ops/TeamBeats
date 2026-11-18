@@ -252,6 +252,10 @@ public static class AgentDefinitions
         errors.ThrowIfAny();
     }
 
+    /// <summary>The agent's tools that cannot be called now, such as those of a disabled connector (027 US7 scenario 3).</summary>
+    public static IReadOnlyList<string> UnavailableTools(AgentDefinition d, ToolRegistry tools) =>
+        (d.Tools ?? []).Where(t => tools.Find(t)?.Definition.Unavailable is not null).ToList();
+
     /// <summary>Spec 027 US9: computed from the definition, never lowered by hand.</summary>
     public static string RiskClass(AgentDefinition d, ToolRegistry tools)
     {

@@ -2573,5 +2573,7 @@
   "validation.agent_security.runs": "يمكن ربط 50 عملية تشغيل على الأكثر بالحادثة.",
   "validation.agent_security.text": "هذا النص طويل جدًا.",
   "conflict.agent_security.alert_closed": "تم تجاهل هذا التنبيه أو تحويله إلى حادثة بالفعل.",
-  "conflict.agent_security.incident_closed": "هذه الحادثة مغلقة."
+  "conflict.agent_security.incident_closed": "هذه الحادثة مغلقة.",
+  "notifications.template.agents.tokens_revoked.title": "أُلغيت صلاحيات وكيل",
+  "notifications.template.agents.tokens_revoked.body": "ألغى مسؤول الأمان ما كان لدى وكيل للعمل نيابة عنك، مثل اشتراك الموجز أو الإذن بالتذكر. افتح الوكيل لإعدادها مرة أخرى إذا كنت لا تزال تريدها."
 }

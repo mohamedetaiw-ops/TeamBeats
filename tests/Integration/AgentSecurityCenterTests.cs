@@ -212,6 +212,39 @@ public sealed class AgentSecurityCenterTests(TenantWorld world)
     }
 
     [Fact]
+    public async Task Revoking_an_agents_tokens_stops_its_waiting_runs_and_removes_what_it_holds_for_people()
+    {
+        var t = await FreshAsync("workplace_plus");
+        var agent = await PublishedAgentAsync(t, "L1");
+        var waiting = await RunAsync(t, agent, 0);
+        await world.Database.TenantScalarAsync<object>(t.Id,
+            """
+            update agents.run set status = 'waiting', finished_at = null where id = @run;
+            insert into agents.agent_briefing (tenant_id, user_id, agent_id, time, days, time_zone, created_at, next_run_at)
+            values (@t, @sara, @agent, '08:00', '{1,2,3,4,5}', 'Asia/Dubai', now(), now() + interval '1 day');
+            insert into agents.agent_memory_consent (tenant_id, user_id, agent_id, accepted_at) values (@t, @sec, @agent, now());
+            """, ("t", t.Id), ("run", waiting), ("sara", t["sara"].Id), ("sec", t["sec"].Id), ("agent", agent));
+
+        // Only a security officer over the agent's unit may do it, with a reason.
+        Assert.False((await t["africasec"].Client.PostAsJsonAsync($"{Agents}/{agent}/revoke-tokens", new { reason = "Leaked" })).IsSuccessStatusCode);
+        Assert.False((await t["sara"].Client.PostAsJsonAsync($"{Agents}/{agent}/revoke-tokens", new { reason = "Leaked" })).IsSuccessStatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await t["gulfsec"].Client.PostAsJsonAsync($"{Agents}/{agent}/revoke-tokens", new { reason = "" })).StatusCode);
+        var detail = await OkAsync(t["gulfsec"].Client.PostAsJsonAsync($"{Agents}/{agent}/revoke-tokens", new { reason = "Credential seen in a shared document" }));
+        Assert.Equal(AgentStatuses.Published, detail.GetProperty("agent").GetProperty("status").GetString());
+
+        Assert.Equal("tokens_revoked", await world.Database.TenantScalarAsync<string>(t.Id, "select outcome from agents.run where id = @run", ("run", waiting)));
+        Assert.Equal(0L, await world.Database.CountInTenantAsync(t.Id, "select count(*) from agents.agent_briefing where agent_id = @a", ("a", agent)));
+        Assert.Equal(0L, await world.Database.CountInTenantAsync(t.Id, "select count(*) from agents.agent_memory_consent where agent_id = @a", ("a", agent)));
+        await world.Database.AssertAuditedAsync(t.Id, AuditActions.AgentTokensRevoked, agent.ToString());
+        Assert.Equal(1L, await NotifiedAsync(t, "sara", AgentLifecycle.TokensRevokedTemplate));
+        Assert.Equal(1L, await NotifiedAsync(t, "sec", AgentLifecycle.TokensRevokedTemplate));
+
+        // Another tenant does not find the agent.
+        var other = await FreshAsync("workplace_plus");
+        Assert.Equal(HttpStatusCode.NotFound, (await other["sec"].Client.PostAsJsonAsync($"{Agents}/{agent}/revoke-tokens", new { reason = "Leaked" })).StatusCode);
+    }
+
+    [Fact]
     public async Task The_security_center_needs_its_package_and_raises_nothing_without_it()
     {
         var t = await FreshAsync("workplace_plus");

@@ -188,8 +188,23 @@ public sealed class ConnectorToolTests(TenantWorld world)
         var off = await OkAsync(t["emp"].Client.PostAsJsonAsync($"{Agents}/{agent}/runs",
             new { message = "And now? " + Call("connector.incident_status", """{"number":"INC000042"}""") }));
         var offRecord = await OkAsync(t["emp"].Client.GetAsync($"{Agents}/runs/{off.GetProperty("id").GetGuid()}"));
-        Assert.Contains(("tool", "connector.incident_status", "refused", "tool.connector_unavailable"), Steps(offRecord));
+        // The tool is no longer offered to the model, and the gateway would refuse it (tool.connector_disabled).
+        Assert.DoesNotContain(Steps(offRecord), s => s.Kind == "tool");
         Assert.Single(Ticketing.CallsFor(c));
+
+        // Agents that hold the tool show a degraded notice to their designers and to the people who use them (027 US7 scenario 3).
+        var detail = await OkAsync(t["sara"].Client.GetAsync($"{Agents}/{agent}"));
+        Assert.Equal("connector.incident_status", Assert.Single(detail.GetProperty("unavailableTools").EnumerateArray()).GetString());
+        var choice = (await OkAsync(t["emp"].Client.GetAsync($"{Agents}/available"))).GetProperty("agents").EnumerateArray().Single(a => a.GetProperty("id").GetGuid() == agent);
+        Assert.True(choice.GetProperty("degraded").GetBoolean());
+
+        // Enabled again, the tool is back for every agent.
+        await OkAsync(t["admin"].Client.PostAsync($"{Base}/{c}:enable", null));
+        Assert.Empty((await OkAsync(t["sara"].Client.GetAsync($"{Agents}/{agent}"))).GetProperty("unavailableTools").EnumerateArray());
+        var back = await OkAsync(t["emp"].Client.PostAsJsonAsync($"{Agents}/{agent}/runs",
+            new { message = "And now? " + Call("connector.incident_status", """{"number":"INC000042"}""") }));
+        var backRecord = await OkAsync(t["emp"].Client.GetAsync($"{Agents}/runs/{back.GetProperty("id").GetGuid()}"));
+        Assert.Contains(("tool", "connector.incident_status", "executed", null), Steps(backRecord));
     }
 
     [Fact]
