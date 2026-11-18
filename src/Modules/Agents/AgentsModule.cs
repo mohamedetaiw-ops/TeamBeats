@@ -54,6 +54,8 @@ public static class AgentsModule
         services.AddScoped<Contracts.IAgentEvaluationRuntime, AgentEvaluationRuntime>();
         services.AddScoped<Contracts.IAssistantEvaluationRuntime, AssistantEvaluationRuntime>();
         services.AddScoped<AgentRuns>();
+        services.AddScoped<AgentApprovals>();
+        services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<AgentApprovals>());
         services.AddScoped<AgentLifecycle>();
         services.AddScoped<AgentRouter>();
         services.TryAddScoped<Contracts.IAgentReleaseGate, NoReleaseGate>();
@@ -416,6 +418,7 @@ public static class AgentsModule
         });
 
         agents.MapGet("/runs/{id:guid}/result", async (Guid id, AgentRuns runs, CancellationToken ct) => Results.Ok(await runs.ResultAsync(id, ct)));
+        agents.MapGet("/approvals/{id:guid}", async (Guid id, AgentApprovals approvals, CancellationToken ct) => Results.Ok(await approvals.GetAsync(id, ct)));
 
         agents.MapPost("/{id:guid}/test", async (Guid id, RunRequest request, AgentRuns runs, IDbSession session, CancellationToken ct) =>
         {

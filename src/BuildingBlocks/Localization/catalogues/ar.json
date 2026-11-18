@@ -2545,5 +2545,13 @@
   "validation.agent.briefing_time_zone": "اختر منطقة زمنية معروفة.",
   "validation.agent_policy.risk_classes": "اختر فئات المخاطر من منخفضة ومتوسطة وعالية.",
   "conflict.agent.briefing_not_offered": "هذا الوكيل لا يقدم لك إحاطة يومية الآن.",
-  "conflict.agent_run.resumed_elsewhere": "استؤنف هذا التشغيل بعد انقطاع. افتح نتيجته لمعرفة حالته."
+  "conflict.agent_run.resumed_elsewhere": "استؤنف هذا التشغيل بعد انقطاع. افتح نتيجته لمعرفة حالته.",
+  "agents.approval.task": "طلبه وكيل الذكاء الاصطناعي {agent} نيابة عن مقدم الطلب",
+  "notifications.template.agents.action_approved.title": "تمت الموافقة على إجراء وكيلك",
+  "notifications.template.agents.action_approved.body": "تمت الموافقة على الإجراء الذي طلبه {agent} نيابة عنك وتم تنفيذه. افتح الوكيل لرؤية الإجابة.",
+  "notifications.template.agents.action_rejected.title": "لم تتم الموافقة على إجراء وكيلك",
+  "notifications.template.agents.action_rejected.body": "لم يوافق المعتمد على الإجراء الذي طلبه {agent} نيابة عنك. لم يُنفّذ شيء.",
+  "notifications.template.agents.action_expired.title": "تم إلغاء إجراء وكيلك",
+  "notifications.template.agents.action_expired.body": "تم إلغاء الإجراء الذي طلبه {agent} نيابة عنك لأن أحدًا لم يوافق عليه في الوقت المحدد أو لأن القواعد تغيرت. لم يُنفّذ شيء.",
+  "validation.agent_policy.approver": "حدد معتمدين لأداة مسجلة: صلاحية معروفة أو ما يصل إلى 20 شخصًا أو كليهما."
 }

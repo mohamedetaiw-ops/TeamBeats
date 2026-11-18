@@ -3,6 +3,7 @@
   <PropertyGroup><RootNamespace>TeamBeats.Modules.Agents</RootNamespace><AssemblyName>TeamBeats.Modules.Agents</AssemblyName></PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../BuildingBlocks/Persistence/TeamBeats.Persistence.csproj" />
+    <ProjectReference Include="../../BuildingBlocks/Localization/TeamBeats.Localization.csproj" />
     <ProjectReference Include="../../BuildingBlocks/Messaging/TeamBeats.Messaging.csproj" />
     <ProjectReference Include="../../BuildingBlocks/Authorization.Contracts/TeamBeats.Authorization.Contracts.csproj" />
     <ProjectReference Include="../../BuildingBlocks/Entitlements.Contracts/TeamBeats.Entitlements.Contracts.csproj" />

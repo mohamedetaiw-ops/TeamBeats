@@ -28,7 +28,8 @@ public sealed record AgentPolicy(
     int MaxRunSeconds = AgentPolicy.DefaultRunSeconds,
     int MaxDailyRunsPerAgent = AgentPolicy.DefaultDailyRuns,
     ExternalAiPolicy? External = null,
-    List<string>? ScheduledRiskClasses = null)
+    List<string>? ScheduledRiskClasses = null,
+    Dictionary<string, ToolApprover>? Approvers = null)
 {
     /// <summary>The risk classes whose agents may run on a schedule (spec 020 US8 scenario 4); Low only until the administrator widens it.</summary>
     [System.Text.Json.Serialization.JsonIgnore]
@@ -38,8 +39,21 @@ public sealed record AgentPolicy(
     [System.Text.Json.Serialization.JsonIgnore]
     public ExternalAiPolicy ExternalPolicy => External ?? ExternalAiPolicy.Default;
 
-    /// <summary>The platform default, used until the tenant saves a policy.</summary>
-    public static readonly AgentPolicy Default = new(AgentAutonomy.HighestBuilt, "internal", null, [], false, false, 20, 40);
+    /// <summary>
+    /// The platform default, used until the tenant saves a policy. Autonomy stops at L2 until the AI Policy Administrator
+    /// raises it: L3 needs <c>ai.agents.write_tools</c> and a deliberate choice (spec 027 US1).
+    /// </summary>
+    public static readonly AgentPolicy Default = new(DefaultMaxAutonomy, "internal", null, [], false, false, 20, 40);
+
+    public const string DefaultMaxAutonomy = "L2";
+    public const int MaxApproverUsers = 20;
+
+    /// <summary>
+    /// Who approves a call of the tool whose rule is "approval": the tenant's choice for the tool, else the tool's own
+    /// approver permission; null when nobody is named, and then the call is refused.
+    /// </summary>
+    public ToolApprover? ApproverFor(ToolDefinition tool) =>
+        Approvers?.GetValueOrDefault(tool.Name) ?? (tool.ApproverPermission is { } permission ? new ToolApprover(permission, null) : null);
 
     public const int PlatformMaxToolCalls = 50;
     public const int PlatformMaxSteps = 100;
@@ -61,6 +75,12 @@ public sealed record AgentPolicy(
             ? rule
             : tool.ApprovalRule;
 }
+
+/// <summary>
+/// The approvers of an agent action (spec 027 US4): holders of <paramref name="Permission"/> at the agent's unit, named
+/// <paramref name="Users"/>, or both. The person who asked never approves their own action.
+/// </summary>
+public sealed record ToolApprover(string? Permission, List<Guid>? Users);
 
 /// <summary>
 /// An MCP client the AI Policy Administrator allows (spec 035 FR-021), by client ID, with the highest classification
@@ -134,6 +154,11 @@ public sealed class AgentPolicyService(IDbSession session, ITenantContext contex
         }
         var current = await CurrentAsync(ct);
         policy = Validate(policy, tools);
+        if (AgentAutonomy.Rank(policy.MaxAutonomy) >= AgentAutonomy.Rank("L3"))
+        {
+            // Governed execution is a package feature (spec 027 US1 table): L3 needs write tools in the package.
+            await entitlements.DemandAsync(Capabilities.AiAgentsWriteTools, ct);
+        }
         if (request.Version != current.Version)
         {
             throw AppException.Conflict("conflict.agent_policy.version");
@@ -186,6 +211,16 @@ public sealed class AgentPolicyService(IDbSession session, ITenantContext contex
                 errors.Add($"toolRules.{name}", "validation.agent_policy.rule");
             }
         }
+        foreach (var (name, approver) in p.Approvers ?? [])
+        {
+            var users = approver.Users ?? [];
+            if (tools.Find(name) is null || (approver.Permission is null && users.Count == 0)
+                || (approver.Permission is { } permission && !Permissions.All.Contains(permission))
+                || users.Count > AgentPolicy.MaxApproverUsers || users.Distinct().Count() != users.Count || users.Contains(Guid.Empty))
+            {
+                errors.Add($"approvers.{name}", "validation.agent_policy.approver");
+            }
+        }
         if (p.ScheduledRiskClasses is { } classes &&
             (classes.Count > 3 || classes.Any(c => c is not (AgentRiskClasses.Low or AgentRiskClasses.Medium or AgentRiskClasses.High)) || classes.Distinct().Count() != classes.Count))
         {
@@ -230,6 +265,9 @@ public sealed class AgentPolicyService(IDbSession session, ITenantContext contex
         {
             AllowedTools = p.AllowedTools?.Distinct().Order(StringComparer.Ordinal).ToList(),
             ToolRules = p.ToolRules is null ? [] : new Dictionary<string, string>(p.ToolRules.OrderBy(k => k.Key, StringComparer.Ordinal)),
+            Approvers = p.Approvers is null ? null
+                : new Dictionary<string, ToolApprover>(p.Approvers.OrderBy(k => k.Key, StringComparer.Ordinal)
+                    .Select(k => KeyValuePair.Create(k.Key, k.Value with { Users = k.Value.Users?.Order().ToList() }))),
             External = external is null ? null : external with
             {
                 Clients = (external.Clients ?? []).OrderBy(c => c.ClientId, StringComparer.Ordinal).ToList(),

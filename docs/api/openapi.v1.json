@@ -22881,6 +22881,29 @@
         }
       }
     },
+    "/api/v1/agents/approvals/{id}": {
+      "get": {
+        "tags": [
+          "Agents"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/agents/{id}/test": {
       "post": {
         "tags": [
@@ -27909,6 +27932,15 @@
             ],
             "items": {
               "type": "string"
+            }
+          },
+          "approvers": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ToolApprover"
             }
           }
         }
@@ -41134,6 +41166,31 @@
             ],
             "additionalProperties": {
               "type": "string"
+            }
+          }
+        }
+      },
+      "ToolApprover": {
+        "required": [
+          "permission",
+          "users"
+        ],
+        "type": "object",
+        "properties": {
+          "permission": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "users": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
             }
           }
         }

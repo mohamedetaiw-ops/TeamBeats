@@ -2545,5 +2545,13 @@
   "validation.agent.briefing_time_zone": "Choose a known time zone.",
   "validation.agent_policy.risk_classes": "Choose risk classes from low, medium and high.",
   "conflict.agent.briefing_not_offered": "This agent does not offer a daily briefing to you right now.",
-  "conflict.agent_run.resumed_elsewhere": "This run was picked up again after an interruption. Open its result to see where it stands."
+  "conflict.agent_run.resumed_elsewhere": "This run was picked up again after an interruption. Open its result to see where it stands.",
+  "agents.approval.task": "Requested by the AI agent {agent} on behalf of the requester",
+  "notifications.template.agents.action_approved.title": "Your agent's action was approved",
+  "notifications.template.agents.action_approved.body": "The action {agent} asked for on your behalf was approved and has run. Open the agent to see the answer.",
+  "notifications.template.agents.action_rejected.title": "Your agent's action was not approved",
+  "notifications.template.agents.action_rejected.body": "The approver did not approve the action {agent} asked for on your behalf. Nothing was done.",
+  "notifications.template.agents.action_expired.title": "Your agent's action was cancelled",
+  "notifications.template.agents.action_expired.body": "The action {agent} asked for on your behalf was cancelled because nobody approved it in time, or the rules changed. Nothing was done.",
+  "validation.agent_policy.approver": "Name approvers for a registered tool: a known permission, up to 20 people, or both."
 }

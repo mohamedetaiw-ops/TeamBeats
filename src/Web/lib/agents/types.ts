@@ -192,6 +192,7 @@ export type ConfirmationCard = {
   hash: string;
   expiresAt: string;
   fromContent: string[];
+  awaitingApproval: boolean;
 };
 
 export type RunView = {
@@ -313,7 +314,7 @@ export type AccessRequestView = { id: string; agentId: string; userId: string; s
 /** Who outside an agent's audience sees it in the marketplace (spec 020 FR-010). */
 export const AUDIENCE_OUTSIDE = ["hidden", "request_access"] as const;
 
-export const AUTONOMY_BUILT = ["L0", "L1", "L2"] as const;
+export const AUTONOMY_BUILT = ["L0", "L1", "L2", "L3"] as const;
 export const TONES = ["neutral", "friendly", "formal"] as const;
 export const OUTPUT_FORMATS = ["text", "bullets", "steps"] as const;
 export const CLASSIFICATIONS = ["public", "internal", "confidential", "restricted"] as const;
@@ -368,4 +369,23 @@ export type AgentAnalyticsView = {
   total: AgentVersionStats;
   versions: AgentVersionStats[];
   detail: AgentAnalyticsDetail | null;
+};
+
+/** An agent action waiting for its approver (spec 027 US4); the API shows it only to someone who holds its task. */
+export type AgentApprovalView = {
+  id: string;
+  runId: string;
+  agentId: string;
+  agentVersion: number;
+  agentNames: Localized;
+  requestedBy: string;
+  requesterName: string | null;
+  tool: string;
+  parameters: Record<string, unknown>;
+  hash: string;
+  summary: string | null;
+  status: "pending" | "approved" | "rejected" | "expired" | "cancelled";
+  dueAt: string;
+  createdAt: string;
+  taskId: string | null;
 };
