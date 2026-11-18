@@ -73,17 +73,23 @@ export type Resolved = {
 
 export type QuickNavItem = { label: string; href: string; owner: string | null };
 
-export type PreferenceKey = "mode" | "density" | "motion" | "text_scale";
+export type PreferenceKey = "mode" | "density" | "motion" | "text_scale" | "focus";
 
 export type PreferenceSetting = { key: PreferenceKey; values: string[]; default: string; scope: string };
 
 /** `chosen` names the settings the person saved; the others are defaults a design may replace. */
 export type PreferenceProfile = { schemaVersion: number; values: Record<PreferenceKey, string>; schema: PreferenceSetting[]; chosen?: string[] };
 
-export const defaultPreferences: Record<PreferenceKey, string> = { mode: "light", density: "comfortable", motion: "system", text_scale: "100" };
+export const defaultPreferences: Record<PreferenceKey, string> = { mode: "light", density: "comfortable", motion: "system", text_scale: "100", focus: "off" };
 
 /** A favorite as its owner sees it now (spec 008 FR-017): `href` is null when it can't be opened, and `reason` says why. */
 export type Favorite = { id: string; kind: "page" | "item"; label: string; href: string | null; available: boolean; reason: string | null; createdAt: string };
 
 /** A recent visit: the path alone, never a query string or fragment. */
 export type RecentVisit = { path: string; label: string; visitedAt: string };
+
+/** A command the person may use now (spec 008 FR-008): `key` names its label, `href` opens the module's page. */
+export type CommandItem = { key: string; href: string; icon: string };
+
+/** A help hint or short tour for the current page, in the viewer's language (spec 008 FR-020). */
+export type HelpItem = { key: string; kind: "hint" | "tour"; path: string; title: string; body: string | null; steps: { title: string; body: string }[]; dismissed: boolean };

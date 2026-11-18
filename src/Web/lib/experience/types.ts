@@ -18,6 +18,8 @@ export type RenderedPlacement = {
   personal: boolean;
   /** The component's own content budget at this width when it is lower than the platform's (spec 032 FR-071). */
   budget?: number | null;
+  /** The widths, in grid columns, this viewer may choose for it in personalization mode (spec 008 FR-025). */
+  widths?: number[] | null;
 };
 
 export type SectionMode = "contained" | "full_bleed" | "fixed" | "fluid";

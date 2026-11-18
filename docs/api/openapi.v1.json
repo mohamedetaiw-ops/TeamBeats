@@ -1370,6 +1370,16 @@
             "description": "OK"
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "Me: personalization"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
       }
     },
     "/api/v1/identity/users/{id}/sessions/revoke-all": {
@@ -5177,6 +5187,18 @@
         }
       }
     },
+    "/api/v1/experience/commands": {
+      "get": {
+        "tags": [
+          "Experience: shell and navigation"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/experience/quick-nav": {
       "get": {
         "tags": [
@@ -5295,6 +5317,101 @@
         }
       }
     },
+    "/api/v1/experience/help": {
+      "get": {
+        "tags": [
+          "Experience: help and tours"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Experience: help and tours"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HelpDefinition"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/help": {
+      "get": {
+        "tags": [
+          "Me: help and tours"
+        ],
+        "parameters": [
+          {
+            "name": "path",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/help/{key}/dismiss": {
+      "post": {
+        "tags": [
+          "Me: help and tours"
+        ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Me: help and tours"
+        ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/me/preference-profile": {
       "get": {
         "tags": [
@@ -5320,6 +5437,18 @@
           },
           "required": true
         },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/preferences/export": {
+      "get": {
+        "tags": [
+          "Me: personalization"
+        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -5402,11 +5531,132 @@
         }
       }
     },
+    "/api/v1/me/pages/{pageId}/layout/preset": {
+      "post": {
+        "tags": [
+          "Me: personalization"
+        ],
+        "parameters": [
+          {
+            "name": "pageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PresetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/me/layouts": {
       "delete": {
         "tags": [
           "Me: personalization"
         ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/suggestions": {
+      "get": {
+        "tags": [
+          "Me: personalization"
+        ],
+        "parameters": [
+          {
+            "name": "pageId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/suggestions/accept": {
+      "post": {
+        "tags": [
+          "Me: personalization"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuggestionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/suggestions/decline": {
+      "post": {
+        "tags": [
+          "Me: personalization"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuggestionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/suggestions/undo": {
+      "post": {
+        "tags": [
+          "Me: personalization"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuggestionRequest"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "description": "OK"
@@ -33965,6 +34215,81 @@
           }
         }
       },
+      "HelpDefinition": {
+        "required": [
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/HelpItem"
+            }
+          }
+        }
+      },
+      "HelpItem": {
+        "required": [
+          "key",
+          "kind",
+          "path",
+          "title",
+          "body",
+          "steps"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "kind": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "path": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "body": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "steps": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/TourStep"
+            }
+          }
+        }
+      },
       "HoldRequest": {
         "required": [
           "name",
@@ -35344,6 +35669,15 @@
               "string"
             ],
             "format": "int32"
+          },
+          "span": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -35376,6 +35710,12 @@
             "items": {
               "$ref": "#/components/schemas/LayoutOperation"
             }
+          },
+          "thisDevice": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },
@@ -37448,6 +37788,20 @@
         "type": "object",
         "properties": {
           "locale": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "PresetRequest": {
+        "required": [
+          "preset"
+        ],
+        "type": "object",
+        "properties": {
+          "preset": {
             "type": [
               "null",
               "string"
@@ -40933,6 +41287,28 @@
           }
         }
       },
+      "SuggestionRequest": {
+        "required": [
+          "key",
+          "pageId"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "pageId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
       "SuiteMetric": {
         "required": [
           "key"
@@ -41911,6 +42287,33 @@
           }
         }
       },
+      "TourStep": {
+        "required": [
+          "title",
+          "body"
+        ],
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "body": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "TrainingRequest": {
         "required": [
           "courseId",
@@ -42612,6 +43015,9 @@
       "name": "Tenant: kiosks"
     },
     {
+      "name": "Me: personalization"
+    },
+    {
       "name": "Authorization"
     },
     {
@@ -42648,7 +43054,10 @@
       "name": "Me: favorites and recents"
     },
     {
-      "name": "Me: personalization"
+      "name": "Experience: help and tours"
+    },
+    {
+      "name": "Me: help and tours"
     },
     {
       "name": "Experience: personalization"

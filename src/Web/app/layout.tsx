@@ -63,7 +63,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const design = designOf(theme.ok ? theme.data.variants : []);
   const scale = ["125", "150", "200"].includes(prefs.text_scale) ? `${prefs.text_scale}%` : undefined;
   return (
-    <html lang={locale} dir={dir} {...designAttributes(design)} data-mode={mode} data-density={density} data-motion={prefs.motion} style={scale ? { fontSize: scale } : undefined}>
+    <html lang={locale} dir={dir} {...designAttributes(design)} data-mode={mode} data-density={density} data-motion={prefs.motion} data-focus={prefs.focus === "on" ? "on" : undefined} style={scale ? { fontSize: scale } : undefined}>
       <body>
         {theme.ok ? <ThemeLinks variants={theme.data.variants} density={density} mode={mode} /> : null}
         {/* The installable app (spec 030 FR-001): the manifest is per tenant and brand, so it needs the session cookie. */}

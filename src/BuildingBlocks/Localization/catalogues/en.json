@@ -2579,5 +2579,19 @@
   "validation.experience.favorite_label": "Give the favorite a name of up to 200 characters.",
   "validation.experience.favorite_target": "This address or item can't be saved as a favorite, or you can't open it.",
   "validation.experience.recent_path": "This address can't be kept in your recent visits.",
-  "conflict.experience.favorites_full": "You have 50 favorites already. Remove one to add another."
+  "conflict.experience.favorites_full": "You have 50 favorites already. Remove one to add another.",
+  "validation.personalization.span": "This width isn't allowed for this item",
+  "validation.personalization.preset": "Choose default, compact or focus",
+  "validation.personalization.device": "This device isn't known yet, so the layout can only be kept for every device",
+  "validation.help.text_required": "Write this text in at least one language",
+  "validation.help.locale": "This language isn't offered",
+  "validation.help.text_length": "Write up to the allowed length; the text can't be empty",
+  "validation.help.too_many": "Keep up to 60 hints and tours",
+  "validation.help.key": "Use a key of lowercase letters, digits, dashes or underscores, up to 60 characters",
+  "validation.help.key_duplicate": "Each hint and tour needs its own key",
+  "validation.help.kind": "Choose hint or tour",
+  "validation.help.path": "Use an address that starts with a slash, without a query string",
+  "validation.help.hint_steps": "A hint has a text, not steps",
+  "validation.help.steps": "A tour has one to eight steps",
+  "validation.personalization.suggestion": "This suggestion is no longer offered"
 }

@@ -22,6 +22,7 @@ export function FavoritesMenu({ here, label }: { here?: string; label?: string }
   const root = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useShellPanel(root);
   const button = useRef<HTMLButtonElement>(null);
+  const toggleRow = useRef<HTMLButtonElement>(null);
   const panelId = useId();
   const [items, setItems] = useState<Favorite[] | "loading" | "failed">("loading");
   const [busy, setBusy] = useState(false);
@@ -62,6 +63,8 @@ export function FavoritesMenu({ here, label }: { here?: string; label?: string }
       setResult({ ok: false, messages: [t("failed")] });
     } finally {
       setBusy(false);
+      // The row is disabled while busy, which drops focus; give it back so Escape and Tab keep working in the menu.
+      requestAnimationFrame(() => toggleRow.current?.focus());
     }
   }
 
@@ -103,7 +106,7 @@ export function FavoritesMenu({ here, label }: { here?: string; label?: string }
             <div className="shell-popover-body">
               {here && Array.isArray(items) ? (
                 <>
-                  <button type="button" className="shell-popover-row" onClick={() => void toggleHere()} disabled={busy} aria-pressed={current ? true : false}>
+                  <button ref={toggleRow} type="button" className="shell-popover-row" onClick={() => void toggleHere()} disabled={busy} aria-pressed={current ? true : false}>
                     <Icon name={current ? "minus" : "plus"} size={16} />
                     {current ? t("removeHere") : t("addHere")}
                   </button>

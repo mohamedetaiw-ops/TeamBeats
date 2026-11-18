@@ -188,7 +188,8 @@ public sealed partial class Favorites(IDbSession session, ITenantContext context
         await session.ExecAsync(
             """
             insert into experience.recent_visit (tenant_id, user_id, path, label, visited_at) values (platform.current_tenant_id(), @user, @path, @label, @now)
-            on conflict (tenant_id, user_id, path) do update set label = excluded.label, visited_at = excluded.visited_at;
+            on conflict (tenant_id, user_id, path) do update set label = excluded.label, visited_at = excluded.visited_at,
+              visit_count = least(experience.recent_visit.visit_count + 1, 1000000);
             delete from experience.recent_visit where user_id = @user and path not in
               (select path from experience.recent_visit where user_id = @user order by visited_at desc limit @max);
             """, new { user, path, label, now = clock.UtcNow, max = MaxRecents }, ct);

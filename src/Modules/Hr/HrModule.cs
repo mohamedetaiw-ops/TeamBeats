@@ -21,6 +21,7 @@ public static class HrModule
     public static IServiceCollection AddHrModule(this IServiceCollection services)
     {
         services.AddScoped<CalendarService>();
+        services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IShellCommands, LeaveCommands>();
         services.AddScoped<WorkingCalendar>();
         services.AddScoped<IWorkingCalendar>(sp => sp.GetRequiredService<WorkingCalendar>());
         services.AddScoped<LeaveConfig>();

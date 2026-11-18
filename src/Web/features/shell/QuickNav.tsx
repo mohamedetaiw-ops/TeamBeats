@@ -2,10 +2,10 @@
 
 import { useEffect, useId, useState } from "react";
 import { useTranslations } from "next-intl";
-import type { Favorite, QuickNavItem, RecentVisit } from "@/lib/shell/types";
+import type { CommandItem, Favorite, QuickNavItem, RecentVisit } from "@/lib/shell/types";
 import type { Suggestion } from "@/lib/search/types";
 import { CommandPalette, type CommandGroup } from "@/components/ui/CommandPalette";
-import { Icon } from "@/components/ui/Icon";
+import { Icon, iconNames, type IconName } from "@/components/ui/Icon";
 
 type Found = { term: string; pages: QuickNavItem[]; suggestions: Suggestion[] };
 
@@ -19,6 +19,7 @@ async function json<T>(response: Response): Promise<T[]> {
  * by count; Escape clears the box. Ctrl+K, or Command+K on a Mac, opens the same search as a command palette
  * (spec 036 DLS-036), so it is one keystroke away on every page. Before anything is typed the palette lists the
  * person's favorites they may still open and their recent visits, with a command to clear the recents (spec 008 FR-017).
+ * It also lists the commands the API says the person may use, such as booking a room (spec 008 FR-008); typing filters them.
  */
 export function QuickNav() {
   const t = useTranslations("shell.search");
@@ -43,7 +44,7 @@ export function QuickNav() {
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
-  const [mine, setMine] = useState<{ favorites: Favorite[]; recents: RecentVisit[] } | null>(null);
+  const [mine, setMine] = useState<{ favorites: Favorite[]; recents: RecentVisit[]; commands: CommandItem[] } | null>(null);
 
   useEffect(() => {
     if (!palette) return;
@@ -51,8 +52,9 @@ export function QuickNav() {
     Promise.all([
       fetch("/api/v1/me/favorites", { signal: controller.signal, cache: "no-store" }).then((r) => json<Favorite>(r)),
       fetch("/api/v1/me/recents", { signal: controller.signal, cache: "no-store" }).then((r) => json<RecentVisit>(r)),
+      fetch("/api/v1/experience/commands", { signal: controller.signal, cache: "no-store" }).then((r) => json<CommandItem>(r)),
     ])
-      .then(([favorites, recents]) => setMine({ favorites, recents }))
+      .then(([favorites, recents, commands]) => setMine({ favorites, recents, commands }))
       .catch(() => undefined);
     return () => controller.abort();
   }, [palette]);
@@ -63,6 +65,20 @@ export function QuickNav() {
   }
 
   const groups: CommandGroup[] = [];
+  const needle = term.toLocaleLowerCase();
+  const commands = palette && mine ? mine.commands.filter((c) => t.has(`commands.${c.key}`) && (term.length < 2 || t(`commands.${c.key}`).toLocaleLowerCase().includes(needle))) : [];
+  if (commands.length > 0) {
+    groups.push({
+      key: "commands",
+      label: t("palette.commands"),
+      commands: commands.map((c) => ({
+        key: `command:${c.key}`,
+        label: t(`commands.${c.key}`),
+        icon: (iconNames as string[]).includes(c.icon) ? (c.icon as IconName) : "arrow-forward",
+        href: c.href,
+      })),
+    });
+  }
   if (palette && term.length < 2 && mine) {
     const open = mine.favorites.filter((f) => f.available && f.href);
     if (open.length > 0) {

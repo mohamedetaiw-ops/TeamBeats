@@ -9,6 +9,9 @@ import { CriticalNotices } from "@/features/content/CriticalNotices";
 import { AccountMenu } from "./AccountMenu";
 import { FavoritesMenu } from "./FavoritesMenu";
 import { RecentVisits } from "./RecentVisits";
+import { DeviceClass } from "./DeviceClass";
+import { FocusToggle } from "./FocusToggle";
+import { HelpCenter } from "./HelpCenter";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { GlobalMenu } from "./GlobalMenu";
 import { MobileNav } from "./MobileNav";
@@ -106,8 +109,11 @@ export async function Shell({ me, breadcrumbs = [], favorite }: { me: Me; breadc
           {shell.ok && shell.data.assistant ? (
             <AssistantPanel />
           ) : null}
-          {layout.end.map(render)}
+          {/* Page tools come first, so the tenant's end controls (settings) stay beside the account menu and their panels never cover it. */}
+          <FocusToggle initial={values.focus === "on"} />
+          {!me.sharedDevice ? <HelpCenter /> : null}
           {regions.includes("identity") && !me.sharedDevice ? <FavoritesMenu here={favorite?.path} label={favorite?.label} /> : null}
+          {layout.end.map(render)}
           {regions.includes("identity") ? <AccountMenu name={me.displayName} administration={shell.ok && shell.data.administration} /> : null}
         </div>
       </div>
@@ -120,7 +126,10 @@ export async function Shell({ me, breadcrumbs = [], favorite }: { me: Me; breadc
         <GlobalMenu key={menu.orgUnitId} id={`organization-${menu.orgUnitId}`} label={t("organizationNav", { name: menu.name })} links={menu.items} />
       ))}
       <div className="shell-below">{layout.below.map(render)}</div>
+      {/* Help hints and the open tour (spec 008 FR-020) sit here, in the page flow, never over the page. */}
+      <div data-shell-help="" />
       <CriticalNotices />
+      <DeviceClass />
       {shell.ok && regions.includes("global_navigation") && shell.data.mobileNav?.length ? <MobileNav items={shell.data.mobileNav} all={shell.data.globalMenu} /> : null}
       {me.sharedDevice ? (
         // A shared kiosk keeps nothing on the device: no push offer, no offline copy, and a timer that signs out (spec 030 US4).

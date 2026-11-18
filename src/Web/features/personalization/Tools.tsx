@@ -16,8 +16,8 @@ const targetsOnPage: DragTargets = { item: ".xp-placement[data-placement-id]", i
 /**
  * Actions on one placement in personalization mode (spec 008 FR-024, FR-025): drag the handle to move an item within
  * its area or to another one, or use move up, move down and move to another area from the keyboard; hide an item of
- * the page, remove one of the user's own. Only actions the API granted for this region appear; the API checks them
- * again on save.
+ * the page, remove one of the user's own; make it narrower or wider among the widths its component allows (FR-025 R2).
+ * Only actions the API granted for this region appear; the API checks them again on save.
  */
 export function PlacementTools({
   placementId,
@@ -25,6 +25,8 @@ export function PlacementTools({
   index,
   count,
   personal,
+  span,
+  widths = [],
   rights,
   targets,
   neighbor,
@@ -34,6 +36,9 @@ export function PlacementTools({
   index: number;
   count: number;
   personal: boolean;
+  /** The current width in grid columns, and the widths the API allows here. */
+  span?: number;
+  widths?: number[];
   rights: PersonalRight[];
   targets: Target[];
   /** The item that takes the focus when this one leaves the page. */
@@ -58,6 +63,10 @@ export function PlacementTools({
 
   function move(to: string, position: number | null, text: string) {
     void p!.change({ op: "move", placementId, regionId: to, position }, { placementId, regionId: to, index: position ?? 0 }, text);
+  }
+
+  function resize(to: number) {
+    void p!.change({ op: "resize", placementId, span: to }, { placementId, regionId, index }, t("resized", { columns: to }));
   }
 
   // Drag and drop with the handle, within this area or into another one that takes items; the move buttons stay for
@@ -103,6 +112,24 @@ export function PlacementTools({
           </Button>
           <Button variant="quiet" disabled={index === count - 1 || p.busy} onClick={() => move(regionId, index + 1, t("moved", { position: index + 2, count, region }))}>
             {t("moveDown")}
+          </Button>
+        </>
+      ) : null}
+      {reorder && span !== undefined && widths.length > 1 ? (
+        <>
+          <Button
+            variant="quiet"
+            disabled={p.busy || !widths.some((w) => w < span)}
+            onClick={() => resize(Math.max(...widths.filter((w) => w < span)))}
+          >
+            {t("narrower")}
+          </Button>
+          <Button
+            variant="quiet"
+            disabled={p.busy || !widths.some((w) => w > span)}
+            onClick={() => resize(Math.min(...widths.filter((w) => w > span)))}
+          >
+            {t("wider")}
           </Button>
         </>
       ) : null}

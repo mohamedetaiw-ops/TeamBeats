@@ -919,6 +919,17 @@
   }
 }
 
+/*
+ * On a phone the bar has no room for the focus mode button or the favorites star. Focus mode is also in the settings
+ * panel, and the side areas it hides are already folded away at this width; favorites and recent visits open from
+ * the search palette.
+ */
+@media (width <= 40rem) {
+  .shell-bar :is(.shell-focus-toggle, .shell-favorites) {
+    display: none;
+  }
+}
+
 /* At the narrowest reflow width (320 px) the bar has no room for the page edit control; editing a layout needs more room anyway. */
 @media (width < 22.5rem) {
   .shell-bar .pz-toggle {
@@ -1139,4 +1150,71 @@
   .shell-bar {
     padding-inline: var(--tb-space-xs);
   }
+}
+
+/*
+ * Focus or reading mode (spec 008 FR-009): the side rail, organization and section menus and the secondary regions of a
+ * page step aside, and the main region takes the row. The bar, headings, landmarks and the skip link stay.
+ */
+:root[data-focus="on"] .shell-rail,
+:root[data-focus="on"] .shell-section,
+:root[data-focus="on"] .xp-region[data-secondary] {
+  display: none;
+}
+
+:root[data-focus="on"] .xp-row-grid > .xp-region:not([data-secondary]) {
+  grid-column: 1 / -1;
+}
+
+/* Help and tours (spec 008 FR-020): hints and the tour panel sit below the bar in the page flow, never over the page. */
+.shell-help {
+  position: relative;
+}
+
+.shell-help-panel {
+  --xp-popover-width: 20rem;
+}
+
+.shell-help-none {
+  margin: 0;
+  padding: var(--tb-space-sm);
+  color: var(--tb-color-text-secondary);
+}
+
+.shell-help-area {
+  display: grid;
+  gap: var(--tb-space-sm);
+  inline-size: 100%;
+  max-inline-size: var(--xp-content, 90rem);
+  margin: var(--tb-space-sm) auto 0;
+  padding-inline: var(--tb-space-md);
+}
+
+.shell-tour {
+  display: grid;
+  gap: var(--tb-space-xs);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+}
+
+.shell-tour h2 {
+  margin: 0;
+  font-size: var(--tb-font-size-md);
+}
+
+.shell-tour p {
+  margin: 0;
+}
+
+.shell-tour-count {
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-xs);
+}
+
+.shell-tour-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs);
 }

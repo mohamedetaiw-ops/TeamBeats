@@ -25,7 +25,11 @@ async function apiRequest<T>(path: string, init: { method: string; body?: unknow
   const session = cookieStore.get("tb_session")?.value;
   // On a shared kiosk (spec 030 US4) the session is bound to the device, so the device cookie goes along with it.
   const kiosk = cookieStore.get("tb_kiosk")?.value;
-  const cookie = [session ? `tb_session=${session}` : null, kiosk ? `tb_kiosk=${kiosk}` : null].filter(Boolean).join("; ");
+  // The screen's device class picks the person's device-specific choices (spec 008 FR-032); it grants nothing.
+  const device = cookieStore.get("tb_device")?.value;
+  const cookie = [session ? `tb_session=${session}` : null, kiosk ? `tb_kiosk=${kiosk}` : null, device ? `tb_device=${encodeURIComponent(device)}` : null]
+    .filter(Boolean)
+    .join("; ");
   const address = clientAddress(incoming.get("x-forwarded-for"));
   let response: Response;
   try {

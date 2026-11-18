@@ -135,7 +135,8 @@
       "api": "API and MCP access",
       "processes": "Processes",
       "decisions": "Decisions",
-      "process_operations": "Process operations"
+      "process_operations": "Process operations",
+      "help": "Help and tours"
     },
     "navBadge": "{count, plural, one {# needs attention} other {# need attention}}",
     "common": {
@@ -1101,7 +1102,8 @@
       "guest": "Guests",
       "experience": "Experience",
       "analytics": "Analytics",
-      "other": "Workspace"
+      "other": "Workspace",
+      "help": "Help and tours"
     },
     "auditActions": {
       "tenant_created": "Workspace created",
@@ -1520,7 +1522,15 @@
         "hint": "Type two letters or more to find pages, people, files and services.",
         "favorites": "Favorites",
         "recents": "Recent visits",
-        "clearRecents": "Clear recent visits"
+        "clearRecents": "Clear recent visits",
+        "commands": "Commands"
+      },
+      "commands": {
+        "new_request": "New request",
+        "ask_assistant": "Ask the assistant",
+        "book_room": "Book a room",
+        "request_leave": "Request leave",
+        "my_tasks": "Open my tasks"
       }
     },
     "recovery": {
@@ -1588,6 +1598,25 @@
       "reasons": {
         "not_available": "You can no longer open this."
       }
+    },
+    "focus": {
+      "label": "Focus mode",
+      "on": "Focus mode is on. Menus and side areas are hidden.",
+      "off": "Focus mode is off."
+    },
+    "help": {
+      "button": "Help",
+      "title": "Help for this page",
+      "none": "There is no help for this page yet.",
+      "dismiss": "Dismiss",
+      "step": "Step {step} of {count}",
+      "back": "Back",
+      "next": "Next",
+      "finish": "Finish",
+      "close": "Close tour",
+      "startTour": "Tour, {count, plural, one {# step} other {# steps}}",
+      "showHint": "Show this hint again",
+      "shownHint": "Shown on this page"
     }
   },
   "shell_settings": {
@@ -1691,7 +1720,37 @@
     "close": "Close",
     "loading": "Loading",
     "conflict": "Your layout changed in another window, so the latest version is shown. Try your change again.",
-    "failed": "Your change could not be saved. Try again."
+    "failed": "Your change could not be saved. Try again.",
+    "narrower": "Narrower",
+    "wider": "Wider",
+    "resized": "Now {columns} columns wide.",
+    "presets": {
+      "label": "Layout presets",
+      "compact": "Compact layout",
+      "focus": "Focus layout",
+      "compactDone": "Compact layout applied. Undo or Reset brings back your layout.",
+      "focusDone": "Focus layout applied. Undo or Reset brings back your layout."
+    },
+    "thisDevice": "Keep these changes for this device only",
+    "thisDeviceOn": "Your changes now apply on this device only.",
+    "thisDeviceOff": "Your changes now apply on every device.",
+    "suggestions": {
+      "pinTitle": "Pin {label}?",
+      "addTitle": "Add {label} to this page?",
+      "reasons": {
+        "pin_page": "You opened this page {count} times recently. Pinning it puts it in your favorites.",
+        "add_component": "{count} colleagues in your unit added this to this page."
+      },
+      "pin": "Pin",
+      "add": "Add",
+      "decline": "Not now",
+      "working": "Working",
+      "accepted": "{label} was added.",
+      "undone": "{label} was taken away again.",
+      "undo": "Undo",
+      "dismiss": "Dismiss",
+      "failed": "That didn't work. Try again."
+    }
   },
   "toolbox": {
     "clock": {
@@ -9045,6 +9104,15 @@
       "title": "Apps you allowed",
       "hint": "{count, plural, =0 {No apps use your account through the API.} one {# app uses your account through the API.} other {# apps use your account through the API.}}",
       "link": "Manage connected apps"
+    },
+    "data": {
+      "title": "Your data",
+      "hint": "Download your own preferences, layouts, favorites and recent visits as a file, or reset your preferences and layouts on every device.",
+      "export": "Download my preferences",
+      "reset": "Reset preferences",
+      "resetQuestion": "Reset appearance on every device and every page you arranged? Favorites and recent visits stay.",
+      "resetConfirm": "Reset",
+      "cancel": "Cancel"
     }
   },
   "hr_integration": {
@@ -13715,5 +13783,36 @@
       "own": "If something in TeamBeats is hard to use, tell your organization:",
       "admin": "If something in TeamBeats is hard to use, contact your organization's TeamBeats administrator, who can report it to us."
     }
+  },
+  "help_settings": {
+    "title": "Help and tours",
+    "intro": "Write short hints and tours for pages of the intranet. People see them on those pages and the pages under them, can dismiss them, and reopen them from the help menu.",
+    "version": "Live version: {version}",
+    "empty": "No hints or tours yet.",
+    "item": "Item {number}",
+    "key": "Key",
+    "keyHint": "Lowercase letters, digits, dashes or underscores.",
+    "kind": "Kind",
+    "kinds": {
+      "hint": "Hint",
+      "tour": "Tour"
+    },
+    "path": "Address",
+    "pathHint": "The page it belongs to, such as /leave. It also shows on pages under it.",
+    "titleEn": "Title in English",
+    "titleAr": "Title in Arabic",
+    "bodyEn": "Text in English",
+    "bodyAr": "Text in Arabic",
+    "stepLegend": "Step {number}",
+    "addStep": "Add step",
+    "removeStep": "Remove step {number}",
+    "remove": "Remove item {number}",
+    "addHint": "Add hint",
+    "addTour": "Add tour",
+    "publish": "Publish help",
+    "publishing": "Publishing",
+    "published": "Help published as version {version}.",
+    "refused": "Help wasn't published",
+    "failed": "Help couldn't be published. Try again."
   }
 }

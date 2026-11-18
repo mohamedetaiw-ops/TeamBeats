@@ -9,6 +9,7 @@ import { Icon, type IconName } from "@/components/ui/Icon";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { OutlookSettings } from "@/features/shell/OutlookSettings";
 import { PagesReset } from "@/features/shell/PagesReset";
+import { PreferencesData } from "@/features/shell/PreferencesData";
 import { PreferenceControls } from "@/features/shell/SettingsPanel";
 import { KioskBadgeSettings } from "@/features/kiosk/KioskBadgeSettings";
 import type { Badge } from "@/lib/kiosk";
@@ -86,6 +87,9 @@ export default async function PreferencesPage() {
         ) : null}
         <Section id="pref-pages" icon="home" title={t("pages.title")} hint={t("pages.hint")}>
           <PagesReset />
+        </Section>
+        <Section id="pref-data" icon="download" title={t("data.title")} hint={t("data.hint")}>
+          <PreferencesData />
         </Section>
       </main>
     </>
