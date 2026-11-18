@@ -105,6 +105,10 @@ public sealed class DevHostProgram
         {
             builder.Services.AddHostedService<TeamBeats.Modules.Analytics.AnalyticsMaintenanceWorker>();
         }
+        if (builder.Configuration.GetValue<bool>(TeamBeats.Modules.Analytics.ReportWorker.InProcessKey))
+        {
+            builder.Services.AddHostedService<TeamBeats.Modules.Analytics.ReportWorker>();
+        }
         if (builder.Configuration.GetValue<bool>(TeamBeats.Modules.Search.SearchBootstrapWorker.InProcessKey))
         {
             builder.Services.AddHostedService<TeamBeats.Modules.Search.SearchBootstrapWorker>();

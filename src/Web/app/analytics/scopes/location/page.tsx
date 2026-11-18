@@ -7,6 +7,7 @@ import { Header } from "@/components/shell/Header";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StateView } from "@/components/ui/StateView";
 import { ScopeDashboard } from "@/features/analytics/ScopeDashboard";
+import { ReportActions } from "@/features/analytics/ReportActions";
 import "@/features/analytics/analytics.css";
 
 const pick = (names: Record<string, string>, locale: string) => names[locale] ?? names.en ?? Object.values(names)[0] ?? "";
@@ -41,7 +42,7 @@ export default async function ScopeLocationPage({ searchParams }: { searchParams
         ]}
       />
       <main id="main" className="page analytics-scope">
-        <PageHeader title={title} description={t("detailIntro")} icon="pin" />
+        <PageHeader title={title} description={t("detailIntro")} icon="pin" actions={key && view?.ok ? <ReportActions definition={{ dashboard: "scope_location", target: key }} /> : undefined} />
         {view === null ? (
           <StateView kind="empty" title={t("pickTitle")} message={t("pickHint")} />
         ) : view.ok ? (

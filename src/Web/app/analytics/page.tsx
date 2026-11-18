@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { ButtonLink } from "@/components/ui/Button";
 import { StateView } from "@/components/ui/StateView";
 import { WorkspaceExplorer } from "@/features/analytics/WorkspaceExplorer";
+import { ReportActions } from "@/features/analytics/ReportActions";
 import "@/features/analytics/analytics.css";
 
 /**
@@ -45,6 +46,12 @@ export default async function AnalyticsWorkspacePage() {
               <ButtonLink href="/analytics/experience" icon="trend-up" size="sm">
                 {t("experienceLink")}
               </ButtonLink>
+              <ButtonLink href="/analytics/reports" icon="files" size="sm">
+                {t("reportsLink")}
+              </ButtonLink>
+              {workspace.ok && workspace.data.metrics[0] ? (
+                <ReportActions definition={{ dashboard: "overview", metric: workspace.data.metrics[0].key }} />
+              ) : null}
             </>
           }
         />

@@ -597,6 +597,11 @@ public static class AuditActions
     // 021
     public const string AnalyticsPrivacySettingChanged = "analytics.privacy_setting_changed";
     public const string AnalyticsEstimatesChanged = "analytics.estimates_changed";
+    public const string AnalyticsExportRequested = "analytics.export_requested";
+    public const string AnalyticsExportCompleted = "analytics.export_completed";
+    public const string AnalyticsExportDownloaded = "analytics.export_downloaded";
+    public const string AnalyticsScheduleCreated = "analytics.schedule_created";
+    public const string AnalyticsScheduleChanged = "analytics.schedule_changed";
 
     /// <summary>Events that R0 must emit and test. R2 items (add-ons, overrides, quotas, IdP config UI) are listed separately.</summary>
     public static readonly IReadOnlyList<string> RequiredInR0 =

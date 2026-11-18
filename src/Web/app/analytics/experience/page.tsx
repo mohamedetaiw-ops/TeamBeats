@@ -6,6 +6,7 @@ import { Header } from "@/components/shell/Header";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StateView } from "@/components/ui/StateView";
 import { ExperienceDashboard } from "@/features/analytics/ExperienceAnalytics";
+import { ReportActions } from "@/features/analytics/ReportActions";
 import "@/features/analytics/analytics.css";
 
 /** Experience dashboards (spec 021 T015, US9) for the last 30 days. The API needs analytics.view for the whole tenant. */
@@ -20,7 +21,7 @@ export default async function ExperienceAnalyticsPage() {
     <>
       <Header me={me.data} breadcrumbs={[{ label: t("workspace"), href: "/analytics" }, { label: t("title"), href: "/analytics/experience" }]} />
       <main id="main" className="page analytics-experience">
-        <PageHeader title={t("title")} description={t("intro")} icon="trend-up" />
+        <PageHeader title={t("title")} description={t("intro")} icon="trend-up" actions={view.ok ? <ReportActions definition={{ dashboard: "experience" }} /> : undefined} />
         {view.ok ? <ExperienceDashboard view={view.data} /> : <StateView kind="denied" title={t("denied")} message={t("deniedHint")} />}
       </main>
     </>

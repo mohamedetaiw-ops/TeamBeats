@@ -6,6 +6,7 @@ import { Header } from "@/components/shell/Header";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StateView } from "@/components/ui/StateView";
 import { ServiceDashboard } from "@/features/analytics/ServiceAnalytics";
+import { ReportActions } from "@/features/analytics/ReportActions";
 import "@/features/analytics/analytics.css";
 
 const pick = (names: Record<string, string>, locale: string) => names[locale] ?? names.en ?? Object.values(names)[0] ?? "";
@@ -33,7 +34,7 @@ export default async function ServiceAnalyticsDetailPage({ params }: { params: P
         ]}
       />
       <main id="main" className="page analytics-service">
-        <PageHeader title={title} description={t("detailIntro")} icon="services" />
+        <PageHeader title={title} description={t("detailIntro")} icon="services" actions={view.ok ? <ReportActions definition={{ dashboard: "service", target: id }} /> : undefined} />
         {view.ok ? <ServiceDashboard view={view.data} /> : <StateView kind="denied" title={t("denied")} message={t("deniedHint")} />}
       </main>
     </>

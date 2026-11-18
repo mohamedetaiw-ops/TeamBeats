@@ -36,6 +36,9 @@ public static class AnalyticsModule
         services.AddScoped<ComplianceAnalytics>();
         services.AddScoped<ScopeDashboards>();
         services.AddScoped<ExperienceAnalytics>();
+        services.AddScoped<ReportDefinitions>();
+        services.AddScoped<AnalyticsReports>();
+        services.AddScoped<ReportRunner>();
         services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IShellCommands, AnalyticsCommands>();
         services.AddScoped<IAnalyticsEvents, AnalyticsEventsEmitter>();
         services.AddMessageHandler<AnalyticsEventEmitted, AnalyticsEventHandler>("analytics.write_event");
@@ -93,6 +96,34 @@ public static class AnalyticsModule
         // Experience dashboards (spec 021 US9, T015): analytics.view for the whole tenant.
         analytics.MapGet("/experience", async (DateOnly? from, DateOnly? to, ExperienceAnalytics experience, CancellationToken ct) =>
             Results.Ok(await experience.GetAsync(from, to, ct)));
+        // Scheduled reports and exports (spec 021 US7, T016): computed in the background as each recipient.
+        analytics.MapGet("/reports/options", async (AnalyticsReports reports, CancellationToken ct) => Results.Ok(await reports.OptionsAsync(ct)));
+        analytics.MapGet("/reports", async (AnalyticsReports reports, CancellationToken ct) => Results.Ok(await reports.ListAsync(ct)));
+        analytics.MapGet("/reports/{id:guid}", async (Guid id, AnalyticsReports reports, CancellationToken ct) => Results.Ok(await reports.GetAsync(id, ct)));
+        analytics.MapGet("/reports/{id:guid}/file", async (Guid id, string? format, AnalyticsReports reports, IDbSession session, CancellationToken ct) =>
+        {
+            var file = await reports.FileAsync(id, format, ct);
+            await session.CommitAsync(ct);
+            return Results.File(file.Content, file.ContentType, file.FileName);
+        });
+        analytics.MapPost("/exports", async (ExportRequest request, AnalyticsReports reports, IDbSession session, CancellationToken ct) =>
+        {
+            var report = await reports.ExportAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Accepted(AnalyticsReports.Link(report.Id), report);
+        });
+        analytics.MapPost("/schedules", async (ScheduleRequest request, AnalyticsReports reports, IDbSession session, CancellationToken ct) =>
+        {
+            var schedule = await reports.ScheduleAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created("/api/v1/analytics/reports", schedule);
+        });
+        analytics.MapDelete("/schedules/{id:guid}", async (Guid id, AnalyticsReports reports, IDbSession session, CancellationToken ct) =>
+        {
+            await reports.DeleteScheduleAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
         analytics.MapGet("/estimates", async (AnalyticsEstimates estimates, CancellationToken ct) => Results.Ok(await estimates.ViewAsync(ct)));
 
         var admin = analytics.MapGroup("").InAdminArea();

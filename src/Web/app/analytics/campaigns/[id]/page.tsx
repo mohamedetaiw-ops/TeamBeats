@@ -6,6 +6,7 @@ import { Header } from "@/components/shell/Header";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StateView } from "@/components/ui/StateView";
 import { CampaignDashboard } from "@/features/analytics/CampaignAnalytics";
+import { ReportActions } from "@/features/analytics/ReportActions";
 import "@/features/analytics/analytics.css";
 
 /** One campaign's analytics (spec 021 T011, US2). Content decides who may see it: anyone else gets not found. */
@@ -30,7 +31,7 @@ export default async function CampaignAnalyticsDetailPage({ params }: { params: 
         ]}
       />
       <main id="main" className="page analytics-campaign">
-        <PageHeader title={title} description={t("detailIntro")} icon="megaphone" />
+        <PageHeader title={title} description={t("detailIntro")} icon="megaphone" actions={view.ok ? <ReportActions definition={{ dashboard: "campaign", target: id }} /> : undefined} />
         {view.ok ? <CampaignDashboard view={view.data} /> : <StateView kind="denied" title={t("denied")} message={t("deniedHint")} />}
       </main>
     </>

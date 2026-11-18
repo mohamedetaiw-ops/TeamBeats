@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { analyticsQueryApi, noUnitGroup, otherGroup, type MetricFilters, type MetricResult, type WorkspaceView } from "@/lib/analytics/types";
+import { announceReportDefinition } from "@/lib/analytics/reports";
 import { problemMessages } from "@/lib/notifications/types";
 import { BarChart, ChartCard, LineChart, seriesTable } from "@/components/ui/Charts";
 import { FilterToolbar, ToolbarSelect, type AppliedFilter } from "@/components/ui/FilterToolbar";
@@ -48,6 +49,11 @@ export function WorkspaceExplorer({ workspace }: { workspace: WorkspaceView }) {
     [unitId, membershipType, weeks],
   );
   const key = JSON.stringify({ metric: info?.key, groupBy: breakdown, filters });
+
+  // The report actions on the page export and schedule what is on screen.
+  useEffect(() => {
+    if (info) announceReportDefinition({ dashboard: "overview", metric: info.key, groupBy: breakdown || null, filters });
+  }, [info, breakdown, filters]);
 
   useEffect(() => {
     if (!info) return;
