@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { Icon } from "@/components/ui/Icon";
 import { currentSection } from "./AdminNavLink";
@@ -27,6 +27,17 @@ export function AdminNavMenu({
     pathname,
     items.map((i) => i.path),
   );
+  // Following any menu link closes the menu, the current section's link too (the path does not change then).
+  const list = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const node = list.current;
+    if (!node) return;
+    const close = (e: MouseEvent) => {
+      if ((e.target as HTMLElement | null)?.closest("a")) setOpenOn(null);
+    };
+    node.addEventListener("click", close);
+    return () => node.removeEventListener("click", close);
+  }, []);
   const name = items.find((i) => i.path === current)?.label;
   return (
     <>
@@ -42,12 +53,10 @@ export function AdminNavMenu({
         <Icon name="chevron-down" />
       </button>
       <div
+        ref={list}
         id="admin-nav-list"
         className="admin-nav-list"
         data-open={open ? "" : undefined}
-        onClick={(e) => {
-          if ((e.target as HTMLElement).closest("a")) setOpenOn(null);
-        }}
       >
         {children}
       </div>
