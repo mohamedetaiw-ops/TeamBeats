@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Icon } from "@/components/ui/Icon";
@@ -68,15 +68,21 @@ export function FavoritesMenu({ here, label }: { here?: string; label?: string }
     }
   }
 
-  function onKeyDown(e: KeyboardEvent<HTMLDivElement>) {
-    if (e.key === "Escape" && open) {
-      setOpen(false);
-      button.current?.focus();
-    }
-  }
+  // Escape closes the menu wherever focus is, since a row that was busy may have dropped it to the page.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        button.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, setOpen]);
 
   return (
-    <div ref={root} className="shell-favorites" onKeyDown={onKeyDown}>
+    <div ref={root} className="shell-favorites">
       <button
         ref={button}
         type="button"

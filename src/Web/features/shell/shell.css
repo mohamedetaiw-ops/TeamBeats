@@ -930,9 +930,10 @@
   }
 }
 
-/* At the narrowest reflow width (320 px) the bar has no room for the page edit control; editing a layout needs more room anyway. */
+/* At the narrowest reflow width (320 px) the bar has no room for the page edit control or the help menu; editing a layout needs more room anyway. */
 @media (width < 22.5rem) {
-  .shell-bar .pz-toggle {
+  /* Hints and tours still show in the page; only the menu that reopens them waits for a wider screen. */
+  .shell-bar :is(.pz-toggle, .shell-help) {
     display: none;
   }
 }
