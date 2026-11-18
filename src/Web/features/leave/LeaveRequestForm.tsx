@@ -154,7 +154,7 @@ export function LeaveRequestForm({ types, onSubmitted }: { types: LeaveType[]; o
         onChange={(e) => setTypeKey(e.target.value)}
         options={types.map((x) => ({ value: x.key, label: pick(x.names, locale, x.key) }))}
       />
-      <div className="leave-row">
+      <div className="ui-control-row">
         <FormField label={t("start")} name="start" type="date" value={start} onChange={(e) => setStart(e.target.value)} required error={missing.start} />
         {byHour ? (
           <FormField label={t("hours")} name="hours" type="number" min={0.25} max={24} step={0.25} value={hours} onChange={(e) => setHours(e.target.value)} required error={missing.hours} />
@@ -163,7 +163,7 @@ export function LeaveRequestForm({ types, onSubmitted }: { types: LeaveType[]; o
         )}
       </div>
       {type?.halfDays && !byHour ? (
-        <div className="leave-row">
+        <div className="ui-control-row">
           <Checkbox label={t("startHalf")} name="startHalf" checked={startHalf} onChange={(e) => setStartHalf(e.target.checked)} />
           <Checkbox label={t("endHalf")} name="endHalf" checked={endHalf} onChange={(e) => setEndHalf(e.target.checked)} />
         </div>

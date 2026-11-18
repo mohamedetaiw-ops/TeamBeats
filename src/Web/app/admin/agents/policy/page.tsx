@@ -7,6 +7,7 @@ import { AgentPolicyEditor } from "@/features/agents/AgentPolicyEditor";
 import { KillSwitch } from "@/features/agents/KillSwitch";
 import { agentsSection } from "@/features/agents/guard";
 import "@/features/agents/agents.css";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /**
  * The tenant agent policy and kill switch (spec 027 US7, US8, T013). Designers and overseers read the policy; only the
@@ -24,8 +25,7 @@ export default async function AgentPolicyPage() {
   const t = await getTranslations("agents.policy");
   return (
     <>
-      <h1>{t("title")}</h1>
-      <AgentTabs current="policy" />
+      <AdminHeader section="agents" title={t("title")} nav={<AgentTabs current="policy" />} />
       <div className="agents">
         {kill.ok ? <KillSwitch initial={kill.data} /> : null}
         <AgentPolicyEditor initial={policy.data} tools={tools.ok ? tools.data.tools : []} verified={verified.ok ? verified.data.items : []} />

@@ -4,6 +4,7 @@ import { apiGet, type NavigationSection } from "@/lib/api";
 import { listUnits } from "@/lib/experience/client";
 import type { Letter, LetterSettings, LetterType } from "@/lib/letters";
 import { LetterAdmin } from "@/features/letters/LetterAdmin";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /**
  * Letter types, the verification page setting and the letters HR covers (spec 022 FR-021, FR-022). The section appears
@@ -23,8 +24,7 @@ export default async function LettersAdminPage() {
   const t = await getTranslations("letters.admin");
   return (
     <>
-      <h1>{t("title")}</h1>
-      <p className="notice">{t("intro")}</p>
+      <AdminHeader section="letters" description={t("intro")} />
       {types.ok && settings.ok ? (
         <LetterAdmin types={types.data} settings={settings.data} letters={letters.ok ? letters.data : []} units={units.ok ? units.data : []} />
       ) : (

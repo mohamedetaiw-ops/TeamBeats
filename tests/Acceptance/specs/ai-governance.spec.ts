@@ -29,7 +29,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.goto(`${hostOrigin(tenant.key)}/admin`);
       await page.getByRole("navigation", { name: m("admin.navLabel") }).getByRole("link", { name: m("admin.nav.ai") }).click();
-      await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("ai.policy.title"));
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("admin.nav.ai"));
       // Two chat models, the embedding model, and the speech to text and text to speech models of spec 014 voice.
       await expect(page.getByTestId("ai-catalogue").locator("tbody tr")).toHaveCount(5);
       await expect(page.getByTestId("ai-read-only")).toHaveCount(0);

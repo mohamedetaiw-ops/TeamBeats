@@ -17,6 +17,12 @@ import type {
 import { BrandPreview, type PreviewSample } from "./BrandPreview";
 import { ContrastTable } from "./ContrastTable";
 import { DesignPicker } from "./DesignPicker";
+import { EmptyCell } from "@/components/ui/EmptyCell";
+import { KeyName } from "@/components/ui/KeyName";
+import { keyName } from "@/lib/admin/keys";
+import { Checkbox } from "@/components/ui/Checkbox";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 
 export type { PreviewSample };
 
@@ -172,7 +178,7 @@ export function BrandManager({
   function input(entry: TokenSchemaEntry, mode: string | null) {
     const value = mode === null ? (tokens[entry.name]?.$value ?? "") : (tokens[entry.name]?.$modes?.[mode] ?? "");
     const placeholder = (mode === "dark" ? entry.dark : mode === "compact" ? entry.compact : entry.light) ?? entry.light;
-    const label = t("tokenInput", { token: entry.name, mode: modeName(mode ?? "light") });
+    const label = t("tokenInput", { token: keyName(t, "tokenNames", entry.name), mode: modeName(mode ?? "light") });
     const field = `tokens.${entry.name}${mode ? `.${mode}` : ""}`;
     const error = fieldError(field) ?? (mode === null ? fieldError(`tokens.${entry.name}`) : undefined);
     const choices =
@@ -200,7 +206,7 @@ export function BrandManager({
               <input
                 type="color"
                 className="brand-swatch"
-                aria-label={t("pickColor", { token: entry.name, mode: modeName(mode ?? "light") })}
+                aria-label={t("pickColor", { token: keyName(t, "tokenNames", entry.name), mode: modeName(mode ?? "light") })}
                 value={hex.test(value) ? value : hex.test(placeholder) ? placeholder : "#000000"}
                 onChange={(e) => setToken(entry, mode, e.target.value)}
               />
@@ -228,56 +234,58 @@ export function BrandManager({
 
   return (
     <div className="brand-manager" data-testid="brand-manager">
-      <div className="brand-toolbar">
-        {brands.length > 1 ? (
-          <label className="brand-field">
-            <span>{t("brandLabel")}</span>
-            <select value={brand.id} onChange={(e) => router.push(`/admin/branding?brand=${encodeURIComponent(e.target.value)}`)}>
-              {brands.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : null}
-        <label className="brand-field">
-          <span>{t("name")}</span>
-          <input
-            type="text"
-            value={name}
-            maxLength={80}
-            onChange={(e) => {
-              setName(e.target.value);
-              setStatus({ kind: "idle" });
-            }}
-            aria-invalid={fieldError("name") ? true : undefined}
-          />
-          {fieldError("name") ? (
-            <span className="field-error" role="alert">
-              {fieldError("name")}
-            </span>
+      {/* Name, policy and save on the field grid (DLS-094, DLS-099): nothing shares a cramped row with the button. */}
+      <section className="brand-settings" aria-label={t("name")}>
+        <div className="ui-field-grid">
+          {brands.length > 1 ? (
+            <label className="field">
+              <span>{t("brandLabel")}</span>
+              <select value={brand.id} onChange={(e) => router.push(`/admin/branding?brand=${encodeURIComponent(e.target.value)}`)}>
+                {brands.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            </label>
           ) : null}
-        </label>
-        <p className="notice">{t("version", { version: brand.version })}</p>
-        <label className="inline-field">
-          <input
-            type="checkbox"
-            checked={strict}
-            onChange={(e) => {
-              setStrict(e.target.checked);
-              scheduleCheck(tokens, e.target.checked);
-            }}
-          />
-          <span>{t("strict")}</span>
-        </label>
-        <button type="button" className="button" onClick={() => void save()} disabled={status.kind === "saving"}>
-          {status.kind === "saving" ? t("saving") : t("save")}
-        </button>
-        <p className={status.kind === "saved" ? "notice" : "field-error"} role="status" data-testid="brand-status">
-          {status.message ?? ""}
-        </p>
-      </div>
+          <label className="field">
+            <span>{t("name")}</span>
+            <input
+              type="text"
+              value={name}
+              maxLength={80}
+              onChange={(e) => {
+                setName(e.target.value);
+                setStatus({ kind: "idle" });
+              }}
+              aria-invalid={fieldError("name") ? true : undefined}
+            />
+            {fieldError("name") ? (
+              <span className="field-error" role="alert">
+                {fieldError("name")}
+              </span>
+            ) : null}
+          </label>
+        </div>
+        <Checkbox
+          checked={strict}
+          label={t("strict")}
+          onChange={(e) => {
+            setStrict(e.target.checked);
+            scheduleCheck(tokens, e.target.checked);
+          }}
+        />
+        <div className="ui-form-actions">
+          <Button variant="primary" onClick={() => void save()} busy={status.kind === "saving"} busyLabel={t("saving")}>
+            {t("save")}
+          </Button>
+          <Badge>{t("version", { version: brand.version })}</Badge>
+          <p className={`brand-status ${status.kind === "saved" ? "notice" : "field-error"}`} role="status" data-testid="brand-status">
+            {status.message ?? ""}
+          </p>
+        </div>
+      </section>
 
       <DesignPicker
         designs={schema.designs}
@@ -319,11 +327,11 @@ export function BrandManager({
                       {entries.map((entry) => (
                         <tr key={entry.name} data-token={entry.name}>
                           <th scope="row">
-                            <code dir="ltr">{entry.name}</code>
+                            <KeyName name={keyName(t, "tokenNames", entry.name)} code={entry.name} />
                           </th>
                           <td>{input(entry, null)}</td>
-                          {showDark ? <td>{entry.modes.includes("dark") ? input(entry, "dark") : null}</td> : null}
-                          {showCompact ? <td>{entry.modes.includes("compact") ? input(entry, "compact") : null}</td> : null}
+                          {showDark ? <td>{entry.modes.includes("dark") ? input(entry, "dark") : <EmptyCell />}</td> : null}
+                          {showCompact ? <td>{entry.modes.includes("compact") ? input(entry, "compact") : <EmptyCell />}</td> : null}
                         </tr>
                       ))}
                     </tbody>

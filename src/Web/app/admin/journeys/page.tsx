@@ -8,6 +8,7 @@ import { ExitReasonsPanel } from "@/features/journeys/ExitReasonsPanel";
 import { JourneyDashboard } from "@/features/journeys/JourneyDashboard";
 import { JourneySettingsPanel } from "@/features/journeys/JourneySettingsPanel";
 import { JourneyTemplates } from "@/features/journeys/JourneyTemplates";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /**
  * Journeys (spec 022 US4, US5, FR-013, FR-016, FR-018): the dashboard of journeys in the officer's units, exit reasons,
@@ -30,8 +31,7 @@ export default async function JourneysAdminPage() {
   const t = await getTranslations("journeys.admin");
   return (
     <>
-      <h1>{t("title")}</h1>
-      <p className="notice">{t("intro")}</p>
+      <AdminHeader section="journeys" description={t("intro")} />
       {templates.ok && journeys.ok ? (
         <div className="journeys">
           <JourneyDashboard initial={journeys.data} templates={templates.data} />

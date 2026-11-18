@@ -153,6 +153,7 @@ export function JudgedSets({ initial, units }: { initial: JudgedSetSummary[]; un
       <p>{t("intro")}</p>
       <DataTable
         caption={t("caption")}
+        captionHidden
         columns={setColumns}
         rows={initial}
         rowKey={(s) => s.id}

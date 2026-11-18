@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { apiGet, type NavigationSection } from "@/lib/api";
 import type { UserSummary } from "@/lib/admin/types";
-import { PageHeader } from "@/components/ui/PageHeader";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 import { UsersAdmin } from "@/features/admin/UsersAdmin";
 
 /**
@@ -22,7 +22,7 @@ export default async function UsersPage() {
   const t = await getTranslations("admin");
   return (
     <>
-      <PageHeader title={t("nav.users")} description={t(section.wholeTenant ? "users.description" : "users.descriptionScoped")} icon="people" />
+      <AdminHeader section="users" description={t(section.wholeTenant ? "users.description" : "users.descriptionScoped")} />
       <UsersAdmin initial={users.data} />
     </>
   );

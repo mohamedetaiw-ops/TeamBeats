@@ -5,6 +5,7 @@ import { apiGet, type NavigationSection } from "@/lib/api";
 import type { FrontendErrorsView } from "@/lib/analytics/types";
 import { StateView } from "@/components/ui/StateView";
 import "@/features/analytics/analytics.css";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /**
  * Frontend errors for support (spec 021 US9 scenario 6, FR-020): failures of the last days by release, kind, component
@@ -24,8 +25,7 @@ export default async function FrontendErrorsPage({ searchParams }: { searchParam
 
   return (
     <div className="analytics-item" data-testid="frontend-errors">
-      <h1>{t("title")}</h1>
-      <p className="analytics-meta">{t("intro", { days: v.days })}</p>
+      <AdminHeader section="analytics" title={t("title")} description={t("intro", { days: v.days })} />
       <p>
         <Link href="/admin/analytics">{t("back")}</Link>
       </p>

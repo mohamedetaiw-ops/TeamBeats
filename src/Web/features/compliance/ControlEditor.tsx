@@ -112,7 +112,7 @@ export function ControlEditor({ detail }: { detail: ControlDetail }) {
                 </li>
               ))}
             </ul>
-            <div className="admin-row">
+            <div className="ui-control-row">
               <FormField label={t("findPolicy")} name="policyQuery" value={policyQuery} onChange={(e) => setPolicyQuery(e.target.value)} />
               <Button icon="search" onClick={() => void searchPolicies()}>
                 {t("search")}
@@ -149,7 +149,7 @@ export function ControlEditor({ detail }: { detail: ControlDetail }) {
                 </li>
               ))}
             </ul>
-            <div className="admin-row">
+            <div className="ui-control-row">
               <FormField
                 label={t("documentLink")}
                 hint={t("documentLinkHint")}
@@ -170,7 +170,7 @@ export function ControlEditor({ detail }: { detail: ControlDetail }) {
           <Badge tone="info">{t("ownerBadge")}</Badge> {t("ownerHint")}
         </p>
       )}
-      <div className="admin-row">
+      <div className="ui-control-row">
         <Button type="submit" variant="primary" busy={action.busy === "save"} busyLabel={t("working")}>
           {t("save")}
         </Button>

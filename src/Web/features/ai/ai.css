@@ -67,12 +67,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.ai-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--tb-space-sm);
-  align-items: end;
-}
 
 .ai-route {
   display: grid;

@@ -73,7 +73,7 @@ export function FrameworkAdmin({ library }: { library: LibraryView }) {
             <FormField label={t("nameAr")} name="nameAr" lang="ar" dir="rtl" maxLength={120} value={nameAr} onChange={(e) => setNameAr(e.target.value)} />
           </div>
           <TextAreaField label={t("controlLines")} hint={t("controlLinesHint")} name="controls" rows={8} value={controls} onChange={(e) => setControls(e.target.value)} />
-          <div className="admin-row">
+          <div className="ui-control-row">
             <Button type="submit" variant="primary" icon="plus" busy={action.busy === "add"} busyLabel={t("working")}>
               {t("add")}
             </Button>

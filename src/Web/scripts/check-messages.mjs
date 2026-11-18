@@ -85,6 +85,26 @@ for (const list of valueLists) {
   }
 }
 
+// Stored keys administrators see (spec 006 FR-021, DLS-093): every permission of the catalogue and every design token
+// needs a name, so Roles and access and Brand never show a raw key. Audit actions without their own name fall back to
+// their area, so every area prefix needs an area name.
+const permissionSource = readFileSync(join(root, "..", "BuildingBlocks", "Authorization.Contracts", "Permissions.cs"), "utf8");
+const permissionKeys = [...permissionSource.matchAll(/const string \w+ = "([a-z_]+\.[a-z_]+)";/g)].map((m) => m[1]);
+if (permissionKeys.length === 0) errors.push("no permission keys found in Permissions.cs");
+for (const key of permissionKeys) {
+  if (!en.has(`admin.permissions.${key}`)) errors.push(`missing admin.permissions.${key}`);
+}
+const tokenSource = readFileSync(join(root, "..", "Modules", "Experience", "Themes", "Tokens.cs"), "utf8");
+const tokenKeys = new Set([...tokenSource.matchAll(/\b[A-Z]\w*\("((?:color|font|space|radius|border|shadow|motion|state|layout|design)\.[a-z0-9_.]+[a-z0-9])"/g)].map((m) => m[1]));
+if (tokenKeys.size === 0) errors.push("no design tokens found in Tokens.cs");
+for (const key of tokenKeys) {
+  if (!en.has(`brand.tokenNames.${key}`)) errors.push(`missing brand.tokenNames.${key}`);
+}
+for (const key of permissionKeys) {
+  const area = key.split(".")[0];
+  if (!en.has(`admin.auditAreas.${area}`) && !en.has(`admin.areas.${area}`)) errors.push(`missing admin.auditAreas.${area}`);
+}
+
 if (errors.length) {
   console.error(errors.join("\n"));
   process.exit(1);

@@ -86,7 +86,7 @@ export function SiemAdmin({ initial, canManage }: { initial: SiemDestination[]; 
             align: "end",
             cell: (d) =>
               canManage ? (
-                <div className="admin-row">
+                <div className="ui-control-row">
                   <Button
                     size="sm"
                     variant="secondary"
@@ -178,7 +178,7 @@ export function SiemAdmin({ initial, canManage }: { initial: SiemDestination[]; 
               options={["0", "1", "7"].map((v) => ({ value: v, label: t(`historyOptions.d${v}`) }))}
             />
           </div>
-          <div className="admin-row">
+          <div className="ui-control-row">
             <Button type="submit" variant="primary" busy={action.busy === "add"} busyLabel={t("working")}>
               {t("add")}
             </Button>

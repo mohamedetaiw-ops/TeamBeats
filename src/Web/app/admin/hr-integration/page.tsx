@@ -6,6 +6,7 @@ import type { HrChange, HrLeaveHandOff, HrLeaveSetting, HrOrgCode, HrOverview, H
 import { HrIntegrationAdmin } from "@/features/hr-integration/HrIntegrationAdmin";
 import { HrLeavePanel } from "@/features/hr-integration/HrLeavePanel";
 import { HrLifecyclePanel } from "@/features/hr-integration/HrLifecyclePanel";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /**
  * HR integration (spec 019 section 10): last run and counts, held runs, records by state, links made by hand, the
@@ -30,8 +31,7 @@ export default async function HrIntegrationPage() {
   ]);
   return (
     <>
-      <h1>{t("title")}</h1>
-      <p className="notice">{t("intro")}</p>
+      <AdminHeader section="hr_integration" description={t("intro")} />
       {overview.ok && runs.ok && records.ok ? (
         <>
           <HrIntegrationAdmin initial={overview.data} initialRuns={runs.data} initialRecords={records.data} />

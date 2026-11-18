@@ -103,7 +103,7 @@ export function LeaveAdjustments({ types }: { types: LeaveType[] }) {
               void adjust();
             }}
           >
-            <div className="leave-row">
+            <div className="ui-control-row">
               <SelectField label={t("type")} name="adjustType" value={typeKey} onChange={(e) => setTypeKey(e.target.value)} options={types.map((x) => ({ value: x.key, label: pick(x.names, locale, x.key) }))} />
               <FormField label={t("year")} name="adjustYear" type="number" min={2000} max={2100} value={year} onChange={(e) => setYear(e.target.value)} />
               <FormField label={t("delta")} hint={t("deltaHint")} name="adjustDelta" type="number" step={0.25} inputMode="decimal" required value={delta} onChange={(e) => setDelta(e.target.value)} />

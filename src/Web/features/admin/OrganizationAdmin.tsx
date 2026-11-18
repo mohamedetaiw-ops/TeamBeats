@@ -158,7 +158,7 @@ export function OrganizationAdmin({ initialUnits, types: initialTypes }: { initi
               />
               {directory ? <p className="admin-meta">{t("directoryHint")}</p> : null}
               {active ? (
-                <div className="admin-row admin-actions">
+                <div className="ui-control-row admin-actions">
                   <Button size="sm" icon="plus" onClick={() => setForm({ kind: "create", parentId: unit.id })}>
                     {t("actions.addChild")}
                   </Button>

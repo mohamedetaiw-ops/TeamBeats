@@ -239,6 +239,13 @@ public sealed class PublicApiPipelineTests(TenantWorld world)
     {
         var t = await FreshAsync();
         var app = await AppAsync(t);
+        // The limiter counts fixed windows that start on the minute (RateLimits.cs), so the burst must not cross a
+        // minute boundary or its count starts again; begin it early enough in a minute to finish inside it.
+        var intoMinute = DateTimeOffset.UtcNow.Second;
+        if (intoMinute >= 50)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(61 - intoMinute));
+        }
         HttpResponseMessage? limited = null;
         for (var i = 0; i < ApiRules.TokenRequestsPerMinute + 1 && limited is null; i++)
         {

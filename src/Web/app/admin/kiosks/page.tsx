@@ -4,6 +4,7 @@ import { apiGet, type NavigationSection } from "@/lib/api";
 import { listUnits } from "@/lib/experience/client";
 import type { KioskDevice } from "@/lib/kiosk";
 import { KioskAdmin } from "@/features/kiosk/KioskAdmin";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /**
  * Shared kiosks and badges (spec 030 US4, FR-014, FR-015). The section appears only when the API lists it; every call
@@ -21,8 +22,7 @@ export default async function KiosksPage() {
   const t = await getTranslations("kiosk.admin");
   return (
     <>
-      <h1>{t("title")}</h1>
-      <p className="notice">{t("intro")}</p>
+      <AdminHeader section="kiosks" description={t("intro")} />
       <KioskAdmin initial={devices.data} units={units.ok ? units.data : []} />
     </>
   );

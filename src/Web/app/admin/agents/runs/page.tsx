@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/Button";
 import { AgentTabs } from "@/features/agents/AgentTabs";
 import { agentsSection } from "@/features/agents/guard";
 import "@/features/agents/agents.css";
+import { StateView } from "@/components/ui/StateView";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 type Filters = { agent?: string; outcome?: string; tool?: string };
 
@@ -33,8 +35,7 @@ export default async function AgentRunsPage({ searchParams }: { searchParams: Pr
   const names = new Map((agents.ok ? agents.data.agents : []).map((a) => [a.id, pickText(a.name, locale)]));
   return (
     <>
-      <h1>{t("runs.title")}</h1>
-      <AgentTabs current="runs" />
+      <AdminHeader section="agents" title={t("runs.title")} nav={<AgentTabs current="runs" />} />
       <div className="agents">
         <form className="agents-section" method="get" aria-labelledby="agents-runs-filters">
           <h2 id="agents-runs-filters">{t("runs.filters")}</h2>
@@ -71,7 +72,7 @@ export default async function AgentRunsPage({ searchParams }: { searchParams: Pr
         <section className="agents-section" aria-labelledby="agents-runs-list">
           <h2 id="agents-runs-list">{t("runs.list")}</h2>
           {runs.data.runs.length === 0 ? (
-            <p>{t("runs.empty")}</p>
+            <StateView kind="empty" title={t("runs.empty")} />
           ) : (
             <div className="agents-table">
               <table data-testid="agents-runs">

@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { apiGet, type NavigationSection } from "@/lib/api";
 import type { DataChange, DataChangeSettings } from "@/lib/data-changes";
 import { DataChangeAdmin } from "@/features/data-changes/DataChangeAdmin";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /**
  * Data change settings and the changes HR covers (spec 022 FR-019). The section appears only when the API lists it;
@@ -17,8 +18,7 @@ export default async function DataChangesAdminPage() {
   const t = await getTranslations("data_changes.admin");
   return (
     <>
-      <h1>{t("title")}</h1>
-      <p className="notice">{t("intro")}</p>
+      <AdminHeader section="data_changes" description={t("intro")} />
       {settings.ok ? <DataChangeAdmin settings={settings.data} changes={changes.ok ? changes.data : []} /> : <p className="notice">{t("notInPackage")}</p>}
     </>
   );

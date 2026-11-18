@@ -4,24 +4,21 @@
   gap: var(--tb-space-lg);
 }
 
-.brand-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
+.brand-settings {
+  display: grid;
   gap: var(--tb-space-md);
+  max-inline-size: 48rem;
 }
 
-.brand-toolbar p {
+.brand-settings .ui-form-actions {
+  align-items: center;
   margin: 0;
 }
 
-.brand-field {
-  display: grid;
-  gap: var(--tb-space-xs);
+.brand-status {
+  margin: 0;
 }
 
-.brand-field input,
-.brand-field select,
 .brand-input input[type="text"],
 .brand-input select {
   padding: var(--tb-space-xs) var(--tb-space-sm);
@@ -57,6 +54,7 @@
 }
 
 .brand-group summary {
+  padding-block: var(--tb-space-xs);
   cursor: pointer;
   font-weight: var(--tb-font-weight-bold);
 }

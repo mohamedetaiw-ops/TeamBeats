@@ -7,6 +7,8 @@ import { pick } from "@/lib/services/types";
 import type { ProcessModelSummary } from "@/lib/processes";
 import { Modeler } from "@/features/processes/Modeler";
 import "@/features/processes/processes.css";
+import { StateView } from "@/components/ui/StateView";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /**
  * Processes (spec 024 FR-001): the process models the person may design or read, and a new model. The section
@@ -22,8 +24,7 @@ export default async function ProcessesPage() {
   const locale = await getLocale();
   return (
     <>
-      <h1>{t("pageTitle")}</h1>
-      <p className="notice">{t("pageIntro")}</p>
+      <AdminHeader section="processes" description={t("pageIntro")} />
       <section className="processes-section" aria-labelledby="process-list">
         <h2 id="process-list">{t("listTitle")}</h2>
         {models.ok && models.data.length > 0 ? (
@@ -41,10 +42,9 @@ export default async function ProcessesPage() {
             ))}
           </ul>
         ) : (
-          <p className="field-hint">{t("empty")}</p>
+          <StateView kind="empty" title={t("empty")} />
         )}
       </section>
-      <h2>{t("newTitle")}</h2>
       <Modeler processKey={null} initial={null} units={units.ok ? units.data : []} />
     </>
   );

@@ -17,7 +17,7 @@ const paneAccent = (page: Page, mode: "light" | "dark", dir: "ltr" | "rtl") =>
     .evaluate((el) => getComputedStyle(el).getPropertyValue("--tb-color-accent-base").trim());
 
 const tokenInput = (page: Page, locale: LaunchLocale, token: string, mode: "light" | "dark") =>
-  page.getByRole("textbox", { name: msg(locale, "brand.tokenInput", { token, mode: msg(locale, `brand.modes.${mode}`) }), exact: true });
+  page.getByRole("textbox", { name: msg(locale, "brand.tokenInput", { token: msg(locale, `brand.tokenNames.${token}`), mode: msg(locale, `brand.modes.${mode}`) }), exact: true });
 
 for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
   test.describe(`brand manager in ${locale}`, () => {

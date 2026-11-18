@@ -6,6 +6,7 @@ import { AiTabs } from "@/features/ai/AiTabs";
 import { PolicyEditor } from "@/features/ai/PolicyEditor";
 import { aiSection } from "@/features/ai/guard";
 import "@/features/ai/ai.css";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /** Model policy (spec 013 US1, T016). People who only see usage for their units go straight to AI usage. */
 export default async function AiPolicyPage() {
@@ -16,8 +17,7 @@ export default async function AiPolicyPage() {
   const t = await getTranslations("ai");
   return (
     <>
-      <h1>{t("policy.title")}</h1>
-      <AiTabs current="policy" />
+      <AdminHeader section="ai" nav={<AiTabs current="policy" />} />
       <PolicyEditor catalogue={catalogue.data} initial={policy.data} />
     </>
   );

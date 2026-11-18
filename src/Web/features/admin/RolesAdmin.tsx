@@ -15,7 +15,8 @@ import { RadioGroup } from "@/components/ui/RadioGroup";
 import { Tabs } from "@/components/ui/Tabs";
 import { PersonPicker } from "@/features/services/PersonPicker";
 import { byArea, customRoleName, scopeTypeName, unitLabel, type AssignmentView, type DecisionReason, type ExplainResult, type OrgUnitView, type RoleView } from "@/lib/admin/types";
-import { ResultAlert, useAdminAction, useKeyLabel, usePeopleNames, useWhen } from "./shared";
+import { KeyName } from "@/components/ui/KeyName";
+import { ResultAlert, useAdminAction, useKeyLabel, usePeopleNames, usePermissionName, useWhen } from "./shared";
 
 const RETURN = "/admin/roles";
 
@@ -41,6 +42,7 @@ export function RolesAdmin({
   const locale = useLocale();
   const when = useWhen();
   const area = useKeyLabel("admin.areas");
+  const permissionName = usePermissionName();
   const { busy, result, run } = useAdminAction(focusUser ? `${RETURN}?user=${focusUser}` : RETURN);
   const [roles, setRoles] = useState(initialRoles);
   const [assignments, setAssignments] = useState(initialAssignments);
@@ -98,7 +100,7 @@ export function RolesAdmin({
                   <ul className="admin-chips">
                     {list.map((p) => (
                       <li key={p}>
-                        <code dir="ltr">{p}</code>
+                        <KeyName name={permissionName(p)} code={p} showKey={false} />
                       </li>
                     ))}
                   </ul>
@@ -124,7 +126,7 @@ export function RolesAdmin({
         </div>
         <p className="admin-meta">{t("assignmentsIntro")}</p>
         {onlyUser ? (
-          <div className="admin-row">
+          <div className="ui-control-row">
             <Badge tone="accent">{t("onlyFor", { name: person(onlyUser) })}</Badge>
             <Button size="xs" variant="quiet" onClick={() => setOnlyUser(null)}>
               {t("showEveryone")}
@@ -133,6 +135,7 @@ export function RolesAdmin({
         ) : null}
         <DataTable
           caption={t("assignmentsTitle")}
+          captionHidden
           rows={shown}
           rowKey={(a) => a.id}
           emptyTitle={t("noAssignments")}
@@ -142,12 +145,13 @@ export function RolesAdmin({
               key: "who",
               header: t("who"),
               rowHeader: true,
+              nowrap: true,
               sortValue: (a) => (a.subjectType === "user" ? person(a.subjectId) : a.subjectId),
               cell: (a) => (a.subjectType === "user" ? <bdi>{person(a.subjectId)}</bdi> : t("group", { id: a.subjectId.slice(0, 8) })),
             },
             { key: "role", header: t("role"), sortValue: (a) => nameOf(a.roleKey), cell: (a) => nameOf(a.roleKey) },
             { key: "where", header: t("where"), cell: (a) => <bdi>{where(a.scopeType, a.scopeId)}</bdi> },
-            { key: "since", header: t("since"), sortValue: (a) => a.createdAt, cell: (a) => when(a.createdAt, "short"), hideable: true },
+            { key: "since", header: t("since"), nowrap: true, sortValue: (a) => a.createdAt, cell: (a) => when(a.createdAt, "short"), hideable: true },
             {
               key: "actions",
               header: t("actions"),
@@ -230,6 +234,7 @@ function DefineRole({
 }) {
   const t = useTranslations("admin.roles");
   const area = useKeyLabel("admin.areas");
+  const permissionName = usePermissionName();
   const formId = useId();
   const [key, setKey] = useState("");
   const [names, setNames] = useState({ en: "", ar: "" });
@@ -275,7 +280,7 @@ function DefineRole({
                   key={p}
                   name="permissions"
                   value={p}
-                  label={<code dir="ltr">{p}</code>}
+                  label={<KeyName name={permissionName(p)} code={p} />}
                   checked={chosen.includes(p)}
                   onChange={(e) => setChosen(e.target.checked ? [...chosen, p] : chosen.filter((x) => x !== p))}
                 />
@@ -371,6 +376,7 @@ function Explain({
 }) {
   const t = useTranslations("admin.roles");
   const locale = useLocale();
+  const permissionName = usePermissionName();
   const [user, setUser] = useState<string | null>(null);
   const [permission, setPermission] = useState(permissions[0] ?? "");
   const [unit, setUnit] = useState("");
@@ -424,10 +430,10 @@ function Explain({
       >
         <PersonPicker label={t("who")} value={user} onChange={setUser} />
         <div className="admin-fields">
-          <SelectField label={t("permission")} name="permission" value={permission} onChange={(e) => setPermission(e.target.value)} options={permissions.map((p) => ({ value: p, label: p }))} />
+          <SelectField label={t("permission")} name="permission" value={permission} onChange={(e) => setPermission(e.target.value)} options={permissions.map((p) => ({ value: p, label: permissionName(p) }))} />
           <SelectField label={t("inUnit")} name="explainUnit" value={unit} onChange={(e) => setUnit(e.target.value)} options={[{ value: "", label: t("scopes.tenant") }, ...units.filter((u) => u.status === "active").map((u) => ({ value: u.id, label: unitLabel(u, locale) }))]} />
         </div>
-        <div className="admin-row">
+        <div className="ui-control-row">
           <Button type="submit" variant="primary" busy={busy} busyLabel={t("working")} disabled={!user}>
             {t("check")}
           </Button>

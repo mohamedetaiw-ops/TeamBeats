@@ -8,6 +8,8 @@ import { EvaluationTabs } from "@/features/evaluation/EvaluationTabs";
 import { StartAssistantRun } from "@/features/evaluation/StartRun";
 import { evaluationSection } from "@/features/evaluation/guard";
 import "@/features/agents/agents.css";
+import { StateView } from "@/components/ui/StateView";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /**
  * The evaluation overview (spec 034 US6): the agents whose evaluation the viewer may read, with the gate of their latest
@@ -25,13 +27,12 @@ export default async function EvaluationOverviewPage() {
   const format = await getFormatter();
   return (
     <>
-      <h1>{t("title")}</h1>
-      <EvaluationTabs current="agents" />
+      <AdminHeader section="evaluation" nav={<EvaluationTabs current="agents" />} />
       <div className="agents">
         <section className="agents-section" aria-labelledby="eval-agents">
           <h2 id="eval-agents">{t("overview.title")}</h2>
           {agents.data.length === 0 ? (
-            <p>{t("overview.empty")}</p>
+            <StateView kind="empty" title={t("overview.empty")} />
           ) : (
             <div className="agents-table">
               <table data-testid="eval-agents">

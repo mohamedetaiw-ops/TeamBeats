@@ -46,7 +46,7 @@ export function ConfirmAction({
 
   if (!asking) {
     return (
-      <Button ref={trigger} variant="destructive" onClick={() => setAsking(true)} aria-haspopup="dialog">
+      <Button ref={trigger} variant="destructive" className="ui-confirm-trigger" onClick={() => setAsking(true)} aria-haspopup="dialog">
         {label}
       </Button>
     );
@@ -70,7 +70,7 @@ export function ConfirmAction({
         <Button ref={cancel} variant="secondary" onClick={close}>
           {cancelLabel}
         </Button>
-        <Button variant="destructive" busy={busy} onClick={() => void confirm()}>
+        <Button variant="danger" busy={busy} onClick={() => void confirm()}>
           {confirmLabel}
         </Button>
       </div>

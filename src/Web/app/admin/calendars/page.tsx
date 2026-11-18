@@ -4,6 +4,7 @@ import { apiGet, type NavigationSection } from "@/lib/api";
 import { listUnits } from "@/lib/experience/client";
 import type { Assignment, Calendar } from "@/lib/hr/types";
 import { CalendarManager } from "@/features/calendars/CalendarManager";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /**
  * Working calendars (spec 022 US2): working weeks, public holidays and the units each calendar applies to, with a
@@ -25,8 +26,7 @@ export default async function CalendarsPage() {
   const t = await getTranslations("calendars");
   return (
     <>
-      <h1>{t("title")}</h1>
-      <p className="notice">{t("intro")}</p>
+      <AdminHeader section="calendars" description={t("intro")} />
       <CalendarManager initialCalendars={calendars.data} initialAssignments={assignments.data} units={units.ok ? units.data : []} />
     </>
   );

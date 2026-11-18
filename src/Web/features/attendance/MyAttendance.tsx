@@ -111,7 +111,7 @@ export function MyAttendance() {
         {data.webSignIn ? (
           <>
             {data.locationMode !== "off" ? <p className="field-hint">{t("sign.locationHint")}</p> : null}
-            <div className="attendance-row">
+            <div className="ui-control-row">
               <Button variant={signedIn ? "secondary" : "primary"} busy={busy && !signedIn} busyLabel={t("sign.saving")} disabled={busy} onClick={() => void punch("in")}>
                 {t("sign.in")}
               </Button>

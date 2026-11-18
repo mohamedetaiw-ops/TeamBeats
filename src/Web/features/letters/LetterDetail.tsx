@@ -109,7 +109,7 @@ export function LetterDetail({ initial, taskId }: { initial: Letter; taskId: str
           ) : null}
         </dl>
         {letter.status === "approved" ? <p className="field-hint">{t("detail.printing")}</p> : null}
-        <div className="letters-row">
+        <div className="ui-control-row">
           {letter.rights.download ? (
             <a className="letters-download" href={`/api/v1/hr/letters/${letter.id}/pdf`} download>
               {t("download")}
@@ -158,7 +158,7 @@ export function LetterDetail({ initial, taskId }: { initial: Letter; taskId: str
               />
             ))}
           {letter.rights.editValues && letter.fields.some((f) => !f.fromHr) ? (
-            <div className="letters-row">
+            <div className="ui-control-row">
               <Button
                 busy={busy === "values"}
                 busyLabel={t("sending")}

@@ -60,6 +60,8 @@
 }
 
 .processes-table-scroll {
+  /* Positioned so visually hidden labels inside the table stay in the scroll box instead of widening the page. */
+  position: relative;
   overflow-x: auto;
   max-inline-size: 100%;
 }

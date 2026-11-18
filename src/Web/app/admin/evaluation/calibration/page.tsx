@@ -7,6 +7,7 @@ import { CalibrationLabels, CalibrationStart } from "@/features/evaluation/Calib
 import { EvaluationTabs } from "@/features/evaluation/EvaluationTabs";
 import { evaluationSection } from "@/features/evaluation/guard";
 import "@/features/agents/agents.css";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 const METRIC = /^[a-z_]{1,60}$/;
 
@@ -28,8 +29,7 @@ export default async function EvaluationCalibrationPage({ searchParams }: { sear
   const percent = (v: number | null) => (v === null ? t("none") : format.number(v, { style: "percent", maximumFractionDigits: 1 }));
   return (
     <>
-      <h1>{t("calibration.title")}</h1>
-      <EvaluationTabs current="calibration" />
+      <AdminHeader section="evaluation" title={t("calibration.title")} nav={<EvaluationTabs current="calibration" />} />
       <div className="agents">
         <p>{t("calibration.intro")}</p>
         <section className="agents-section" aria-labelledby="eval-rubrics">

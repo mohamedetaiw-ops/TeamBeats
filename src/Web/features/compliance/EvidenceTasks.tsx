@@ -112,7 +112,7 @@ export function EvidenceTasks({ detail }: { detail: ControlDetail }) {
               </ul>
             ) : null}
             {task.canAttach || task.canEdit ? (
-              <div className="admin-row">
+              <div className="ui-control-row">
                 {task.canAttach ? (
                   <Button size="sm" icon={task.doneAt ? "minus" : "check"} busy={action.busy === "done:" + task.id} busyLabel={t("working")} onClick={() => void done(task)}>
                     {t(task.doneAt ? "reopen" : "complete")}
@@ -149,7 +149,7 @@ export function EvidenceTasks({ detail }: { detail: ControlDetail }) {
             <FormField label={t("dueOn")} name="dueOn" type="date" value={due} onChange={(e) => setDue(e.target.value)} />
           </div>
           <PersonPicker label={t("taskOwner")} value={owner} onChange={setOwner} />
-          <div className="admin-row">
+          <div className="ui-control-row">
             <Button type="submit" variant="primary" icon="plus" busy={action.busy === "add"} busyLabel={t("working")}>
               {t("add")}
             </Button>

@@ -9,7 +9,8 @@ import { Icon, type IconName } from "./Icon";
  * Sizes (spec 036 DLS-033): medium is the 44 px default for the actions of a page or form; small (36 px) and compact
  * (28 px) are for toolbars, table rows and dense panels only, never for the main action of a page.
  */
-export type ButtonVariant = "primary" | "secondary" | "destructive" | "quiet";
+/** `danger` is the solid danger button, kept for the confirmation step of a destructive action (DLS-084). */
+export type ButtonVariant = "primary" | "secondary" | "destructive" | "danger" | "quiet";
 export type ButtonSize = "md" | "sm" | "xs";
 
 type Look = { variant?: ButtonVariant; size?: ButtonSize; icon?: IconName; iconEnd?: IconName };

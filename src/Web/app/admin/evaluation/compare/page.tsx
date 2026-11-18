@@ -6,6 +6,7 @@ import type { ChangedCase, CompareSide, CompareView } from "@/lib/evaluation/typ
 import { EvaluationTabs } from "@/features/evaluation/EvaluationTabs";
 import { evaluationSection } from "@/features/evaluation/guard";
 import "@/features/agents/agents.css";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 const GUID = /^[0-9a-f-]{36}$/i;
 
@@ -76,8 +77,7 @@ export default async function EvaluationComparePage({ searchParams }: { searchPa
   const versionName = (version: number | null) => (version === null ? t("assistantName") : String(version));
   return (
     <>
-      <h1>{t("compare.title", { a: versionName(v.a.version), b: versionName(v.b.version) })}</h1>
-      <EvaluationTabs current="agents" />
+      <AdminHeader section="evaluation" title={t("compare.title", { a: versionName(v.a.version), b: versionName(v.b.version) })} nav={<EvaluationTabs current="agents" />} />
       <div className="agents">
         <p>
           {v.b.agentId ? (

@@ -66,7 +66,7 @@ export function NewProject({ frameworks }: { frameworks: FrameworkSummary[] }) {
           options={[{ value: "", label: t("wholeTenant") }, ...units.map((u) => ({ value: u.id, label: pick(u.names, locale) }))]}
         />
       </div>
-      <div className="admin-row">
+      <div className="ui-control-row">
         <Button type="submit" variant="primary" icon="plus" busy={action.busy === "create"} busyLabel={t("working")}>
           {t("submit")}
         </Button>

@@ -6,6 +6,7 @@ import { noUnitGroup, otherGroup, type AdoptionView } from "@/lib/analytics/type
 import { StateView } from "@/components/ui/StateView";
 import { AdoptionCharts } from "@/features/analytics/AdoptionCharts";
 import "@/features/analytics/analytics.css";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 const pick = (names: Record<string, string>, locale: string) => names[locale] ?? names.en ?? Object.values(names)[0] ?? "";
 
@@ -30,8 +31,7 @@ export default async function AdoptionPage() {
 
   return (
     <div className="analytics-item" data-testid="adoption">
-      <h1>{t("title")}</h1>
-      <p className="analytics-meta">{t("intro", { size: a.minGroupSize })}</p>
+      <AdminHeader section="analytics" description={t("intro", { size: a.minGroupSize })} />
       <p>
         <Link href="/admin/analytics/errors">{t("errorsLink")}</Link>
       </p>

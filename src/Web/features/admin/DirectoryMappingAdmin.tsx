@@ -234,7 +234,7 @@ export function DirectoryMappingAdmin({
             </div>
           ))}
           {wholeTenant ? (
-            <div className="admin-row">
+            <div className="ui-control-row">
               <Button variant="secondary" size="sm" icon="plus" onClick={() => setAliases([...aliases, { from: "", to: "" }])}>
                 {t("addAlias")}
               </Button>
@@ -268,7 +268,7 @@ export function DirectoryMappingAdmin({
             </div>
           ))}
           {wholeTenant ? (
-            <div className="admin-row">
+            <div className="ui-control-row">
               <Button variant="secondary" size="sm" icon="plus" onClick={() => setValueMap([...valueMap, { key: "", unitId: "" }])}>
                 {t("addValue")}
               </Button>
@@ -277,7 +277,7 @@ export function DirectoryMappingAdmin({
         </fieldset>
 
         {wholeTenant ? (
-          <div className="admin-row">
+          <div className="ui-control-row">
             <Button variant="primary" busy={busy === "save"} busyLabel={t("saving")} onClick={() => void save()}>
               {t("save")}
             </Button>

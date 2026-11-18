@@ -13,9 +13,9 @@ export const taskPollInterval = 30_000;
  * The shell's task badge (spec 016 FR-007): how many tasks wait for the signed-in person, linking to the task inbox.
  * The count comes from the API, which applies the assignment, delegation and permission rules.
  */
-export function TaskBadge() {
+export function TaskBadge({ initialOpen = null }: { initialOpen?: number | null } = {}) {
   const t = useTranslations("services.badge");
-  const [open, setOpen] = useState<number | null>(null);
+  const [open, setOpen] = useState<number | null>(initialOpen);
 
   const refresh = useCallback(async () => {
     try {

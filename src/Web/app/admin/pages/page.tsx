@@ -5,7 +5,9 @@ import { apiGet, type NavigationSection } from "@/lib/api";
 import { getCatalogue, listPages, listUnits } from "@/lib/experience/client";
 import { pagePath, unitName } from "@/lib/experience/builder-types";
 import { StateView } from "@/components/ui/StateView";
+import { Badge } from "@/components/ui/Badge";
 import "@/features/builder/builder.css";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /**
  * Pages (spec 032 US1): the pages the editor may change, newest change first, with their template, scope and release.
@@ -22,7 +24,7 @@ export default async function PagesPage() {
   if (!pages.ok || !catalogue.ok) {
     return (
       <>
-        <h1>{t("pages.title")}</h1>
+        <AdminHeader section="pages" />
         <StateView kind={pages.ok || pages.status !== 403 ? "error" : "denied"} title={t("pages.unavailable")} message="" />
       </>
     );
@@ -33,13 +35,15 @@ export default async function PagesPage() {
 
   return (
     <>
-      <div className="builder-heading">
-        <h1>{t("pages.title")}</h1>
-        <Link className="button button-primary" href="/admin/pages/new">
-          {t("pages.create")}
-        </Link>
-      </div>
-      <p className="notice">{t("pages.intro")}</p>
+      <AdminHeader
+        section="pages"
+        description={t("pages.intro")}
+        actions={
+          <Link className="button button-primary" href="/admin/pages/new">
+            {t("pages.create")}
+          </Link>
+        }
+      />
       {pages.data.length === 0 ? (
         <StateView kind="empty" title={t("pages.empty")} message={t("pages.emptyMessage")} />
       ) : (
@@ -62,9 +66,13 @@ export default async function PagesPage() {
                       <bdi dir="ltr">{pagePath(p.slug)}</bdi>
                     </Link>
                   </th>
-                  <td>{templates.get(p.templateId) ?? p.templateId}</td>
+                  <td className="ui-nowrap">{templates.get(p.templateId) ?? p.templateId}</td>
                   <td>{p.orgUnitId ? (unitNames.get(p.orgUnitId) ?? t("pages.unit")) : t("pages.wholeTenant")}</td>
-                  <td>{p.currentRelease === null ? t("pages.draftOnly") : t("pages.published", { release: p.currentRelease })}</td>
+                  <td>
+                    <Badge tone={p.currentRelease === null ? "neutral" : "success"}>
+                      {p.currentRelease === null ? t("pages.draftOnly") : t("pages.published", { release: p.currentRelease })}
+                    </Badge>
+                  </td>
                   <td>
                     <time dateTime={p.draftUpdatedAt}>{when.format(new Date(p.draftUpdatedAt))}</time>
                   </td>

@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { apiGet, type NavigationSection } from "@/lib/api";
 import type { AdminConsent, ApiApp, ApiScope, ApiSettings, ApiUsage, DeveloperPage } from "@/lib/api-access";
 import { ApiAccessAdmin } from "@/features/api-access/ApiAccessAdmin";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /**
  * API and MCP access (spec 035 US1, US5, US6, US7, FR-029). The section appears only when the API lists it, for API
@@ -28,8 +29,7 @@ export default async function ApiAccessPage({ searchParams }: { searchParams: Pr
   const t = await getTranslations("apiAccess.admin");
   return (
     <>
-      <h1>{t("title")}</h1>
-      <p className="notice">{t("intro")}</p>
+      <AdminHeader section="api" description={t("intro")} />
       <ApiAccessAdmin
         apps={apps.data}
         scopes={scopes.data}

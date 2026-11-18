@@ -4,6 +4,7 @@ import { apiGet, type NavigationSection } from "@/lib/api";
 import { listPages } from "@/lib/experience/client";
 import { getShell } from "@/lib/shell/client";
 import { ShellSettings, type AudienceOption, type ShellAdmin } from "@/features/shell-settings/ShellSettings";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /**
  * Shell settings (spec 008 FR-056, FR-058, spec 030 FR-005): the footer every page shows, the extra home views offered
@@ -27,8 +28,7 @@ export default async function ShellSettingsPage() {
   const t = await getTranslations("shell_settings");
   return (
     <>
-      <h1>{t("title")}</h1>
-      <p className="notice">{t("intro")}</p>
+      <AdminHeader section="shell" description={t("intro")} />
       <ShellSettings
         initial={shell.data}
         pages={pages.ok ? pages.data.filter((p) => p.currentRelease !== null).map((p) => ({ id: p.id, slug: p.slug })) : []}

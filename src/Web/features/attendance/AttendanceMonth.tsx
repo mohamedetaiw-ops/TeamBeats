@@ -13,7 +13,7 @@ export function MonthPicker({ month, onChange }: { month: string; onChange: (mon
   const format = useFormatter();
   const label = format.dateTime(new Date(`${month}-01T00:00:00Z`), { month: "long", year: "numeric", timeZone: "UTC" });
   return (
-    <div className="attendance-row" role="group" aria-label={t("month")}>
+    <div className="ui-control-row" role="group" aria-label={t("month")}>
       <Button size="sm" onClick={() => onChange(addMonths(month, -1))}>
         {t("previous")}
       </Button>

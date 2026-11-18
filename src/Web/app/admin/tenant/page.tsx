@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { apiGet, type NavigationSection } from "@/lib/api";
 import type { AdminAppointment, MembershipPolicy, TenantSettings } from "@/lib/admin/types";
-import { PageHeader } from "@/components/ui/PageHeader";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 import { TenantSettingsAdmin } from "@/features/admin/TenantSettingsAdmin";
 import { MembershipPoliciesAdmin } from "@/features/admin/MembershipPoliciesAdmin";
 
@@ -26,7 +26,7 @@ export default async function TenantSettingsPage() {
   const t = await getTranslations("admin");
   return (
     <>
-      <PageHeader title={t("nav.tenant_settings")} description={t("tenant.description")} icon="settings" />
+      <AdminHeader section="tenant_settings" description={t("tenant.description")} />
       <div className="admin-screen">
         <TenantSettingsAdmin initial={settings.data} initialAdmins={admins.ok ? admins.data : null} />
         {policies.ok ? <MembershipPoliciesAdmin initial={policies.data} /> : null}

@@ -56,7 +56,7 @@ export function UsersAdmin({ initial }: { initial: UserSummary[] }) {
           <div className="admin-toolbar">
             <form
               role="search"
-              className="admin-row"
+              className="ui-control-row"
               onSubmit={(e) => {
                 e.preventDefault();
                 void search(query);

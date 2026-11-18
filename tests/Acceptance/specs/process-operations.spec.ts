@@ -93,9 +93,9 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.getByLabel(m("processes.decisions.outputCell", { rule: "2", number: "1" })).fill('"head"');
       await expectAccessible(page, testInfo, "decision table");
       await page.getByRole("button", { name: m("processes.decisions.save") }).click();
-      await expect(page.getByRole("main").getByRole("status")).toHaveText(m("processes.decisions.saved"));
+      await expect(page.getByRole("main").getByRole("status").filter({ hasText: m("processes.decisions.saved") })).toBeVisible();
       await page.getByRole("button", { name: m("processes.decisions.publish"), exact: true }).click();
-      await expect(page.getByRole("main").getByRole("status")).toHaveText(m("processes.decisions.published", { version: "1" }));
+      await expect(page.getByRole("main").getByRole("status").filter({ hasText: m("processes.decisions.published", { version: "1" }) })).toBeVisible();
 
       await page.getByLabel(m("processes.decisions.testRows")).fill('{"amount": 5000}\n{"amount": 10}');
       await page.getByRole("button", { name: m("processes.decisions.runTest") }).click();
@@ -132,9 +132,9 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expectAccessible(page, testInfo, "process modeler");
 
       await page.getByRole("button", { name: md("save") }).click();
-      await expect(page.getByRole("main").getByRole("status")).toHaveText(md("saved"));
+      await expect(page.getByRole("main").getByRole("status").filter({ hasText: md("saved") })).toBeVisible();
       await page.getByRole("button", { name: md("publish"), exact: true }).click();
-      await expect(page.getByRole("main").getByRole("status")).toHaveText(md("published", { version: "1" }));
+      await expect(page.getByRole("main").getByRole("status").filter({ hasText: md("published", { version: "1" }) })).toBeVisible();
 
       await page.getByLabel(md("testVariables")).fill('{"amount": 5000}');
       await page.getByRole("button", { name: md("runTest") }).click();

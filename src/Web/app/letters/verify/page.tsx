@@ -30,7 +30,7 @@ export default async function LetterVerifyPage({ searchParams }: { searchParams:
       <div className="letters-verify">
         <h1>{t("title")}</h1>
         <p className="notice">{t("intro")}</p>
-        <form method="get" action="/letters/verify" className="letters-row">
+        <form method="get" action="/letters/verify" className="ui-control-row">
           <FormField label={t("code")} name="code" defaultValue={clean} maxLength={20} autoComplete="off" dir="ltr" />
           <Button type="submit" variant="primary">
             {t("check")}

@@ -29,6 +29,20 @@ The extended catalogue adds five patterns built from `components/ui/Patterns.tsx
 | Record profile | T09 Detail on L03 with L09 tabs | `ProfileLayout`, `FactList` details, `Timeline` activity, people and related items beside them | A request, a case, an asset, a policy record |
 | Board | T07 Workspace on L01 with columns along the line | `Board` columns by stage; cards move with their menu or by dragging, each move is announced | Requests by stage, campaign or onboarding work |
 
+## Admin pages
+
+Every admin section (spec 006 FR-020 to FR-022) uses the same frame so an administrator always knows where they are.
+
+| Part | Rule |
+|---|---|
+| Admin menu | Grouped headings (spec 006 FR-017); the item of the page shown carries `aria-current="page"` and the selected state, also on its sub pages (DLS-092) |
+| Page header | `PageHeader` with the section's icon tile, a title equal to the menu name, one line description, the main action at the end. Exactly one h1; no section heading repeats the title |
+| Settings form | Fields on `ui-field-grid` (DLS-094): labels above, two columns from 40rem, equal widths per row, Save after the fields |
+| Table | `DataTable` or a table in `ui-table-frame`: a dash for empty cells, dates and statuses on one line, quiet row actions with confirmation for removal (DLS-095, DLS-096) |
+| Keys | Shown by name; the key only as secondary `code.ui-key` (DLS-093) |
+| Long values | Read-only URLs and references in a wrapping value block with Copy (DLS-097) |
+| Empty | The shared empty state with a reason and one next step (DLS-087), never a second heading with the page name |
+
 ## Rules
 
 - Every page states its three levels (primary action, supporting context, discovery) and its states; see [Composition](foundations/composition.md).

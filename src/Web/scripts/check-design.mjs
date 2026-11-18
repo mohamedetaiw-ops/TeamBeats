@@ -85,7 +85,7 @@ const usesHeader = (file, seen = new Set()) => {
   } catch {
     return false;
   }
-  if (/<PageHeader[\s>]/.test(source)) return true;
+  if (/<(PageHeader|AdminHeader)[\s>]/.test(source)) return true; // AdminHeader renders PageHeader
   for (const m of source.matchAll(/from "@\/(features\/[^"]+)"/g)) {
     for (const ext of [".tsx", "/index.tsx"]) {
       if (usesHeader(join(root, m[1] + ext), seen)) return true;

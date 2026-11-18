@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { apiGet, type NavigationSection } from "@/lib/api";
 import type { Location, Policy } from "@/lib/people/types";
 import { PeoplePolicyAdmin } from "@/features/people/PeoplePolicyAdmin";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /**
  * People directory administration (spec 010 US1): field sources and visibility, tenant fields, the new joiner period,
@@ -20,8 +21,7 @@ export default async function PeopleAdminPage() {
   const t = await getTranslations("people.admin");
   return (
     <>
-      <h1>{t("title")}</h1>
-      <p className="notice">{t("intro")}</p>
+      <AdminHeader section="people" description={t("intro")} />
       <PeoplePolicyAdmin initialPolicy={policy.data} initialLocations={locations.ok ? locations.data : []} />
     </>
   );

@@ -74,7 +74,9 @@ export function PlanAdmin({ plan }: { plan: Entitlements }) {
         ]}
       />
       <p className="admin-meta">
-        {t("versionMeta", { version: format.number(plan.version) })} {t("changeHint")}
+        <strong>{t("versionMeta", { version: format.number(plan.version) })}</strong>
+        <br />
+        {t("changeHint")}
       </p>
       <div className="admin-toolbar" role="search">
         <SearchField label={t("searchLabel")} name="plan-search" placeholder={t("searchPlaceholder")} value={query} onValueChange={setQuery} />

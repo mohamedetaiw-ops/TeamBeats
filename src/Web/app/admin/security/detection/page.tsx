@@ -5,6 +5,7 @@ import { SecurityTabs } from "@/features/security/SecurityTabs";
 import { DetectionAdmin } from "@/features/security/DetectionAdmin";
 import { securitySection } from "@/features/security/guard";
 import "@/features/security/security.css";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /** Sensitive data detection (spec 026 US6). Plans without it get the API's refusal as a notice; the API authorizes every change. */
 export default async function SecurityDetectionPage() {
@@ -13,8 +14,7 @@ export default async function SecurityDetectionPage() {
   const t = await getTranslations("security");
   return (
     <>
-      <h1>{t("detection.title")}</h1>
-      <SecurityTabs current="detection" openAlerts={section.badge} />
+      <AdminHeader section="security" title={t("detection.title")} nav={<SecurityTabs current="detection" openAlerts={section.badge} />} />
       <p className="notice">{t("detection.intro")}</p>
       {detection.ok ? (
         <DetectionAdmin initial={detection.data} />

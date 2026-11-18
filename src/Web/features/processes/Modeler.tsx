@@ -700,7 +700,7 @@ export function Modeler({ processKey, initial, units }: { processKey: string | n
       ) : null}
 
       <section className="processes-section" aria-labelledby="modeler-settings">
-        <h2 id="modeler-settings">{t("settings")}</h2>
+        <h2 id="modeler-settings">{processKey === null ? t("newTitle") : t("settings")}</h2>
         <div className="processes-filters">
           <FormField label={t("key")} hint={t("keyHint")} name="key" value={key} onChange={(e) => setKey(e.target.value)} readOnly={processKey !== null} maxLength={64} dir="ltr" />
           <FormField label={t("processNameEn")} name="processNameEn" value={draft.nameEn} disabled={xmlMode} onChange={(e) => change((d) => ({ ...d, nameEn: e.target.value }))} maxLength={200} />

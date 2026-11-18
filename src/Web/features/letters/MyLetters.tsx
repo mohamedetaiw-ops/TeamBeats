@@ -114,7 +114,7 @@ export function MyLetters({ choices }: { choices: LetterChoice[] }) {
               hint={t("addresseeHint")}
               onChange={(e) => setAddressee(e.target.value)}
             />
-            <div className="letters-row">
+            <div className="ui-control-row">
               <Button variant="primary" busy={busy} busyLabel={t("sending")} disabled={!type} onClick={() => void send()}>
                 {t("send")}
               </Button>
