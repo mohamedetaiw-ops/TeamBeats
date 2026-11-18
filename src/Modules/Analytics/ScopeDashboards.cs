@@ -36,7 +36,7 @@ public sealed record ScopeDashboardView(ScopeRef Scope, DateOnly From, DateOnly 
 /// A unit dashboard needs <c>analytics.view</c> at the unit; a location dashboard needs it for the whole tenant, since
 /// locations are not an authorization scope. Under the minimum group size of active people, every tile says "not enough
 /// data". The organization figure is shown only when the people outside the scope reach the minimum and sit in at least
-/// two other units or locations, so it can never be one other scope's number.
+/// two other units or locations, so it can never be one other scope's number. Needs <c>analytics.location_dashboards</c>.
 /// </summary>
 public sealed class ScopeDashboards(IDbSession session, IEntitlementService entitlements, IAuthorizationService authz, ITenantContext context,
     AnalyticsPolicies policies, IOrganizationHierarchy organization, ITenantMemberships memberships, IProfiles profiles, Pseudonyms pseudonyms,
@@ -48,7 +48,7 @@ public sealed class ScopeDashboards(IDbSession session, IEntitlementService enti
 
     private async Task<OrgCoverage> DemandAsync(CancellationToken ct)
     {
-        await entitlements.DemandAsync(Capabilities.AnalyticsAdvanced, ct);
+        await entitlements.DemandAsync(Capabilities.AnalyticsLocationDashboards, ct);
         context.RequireUser();
         var coverage = await authz.CoverageAsync(Permissions.AnalyticsView, ct);
         if (!coverage.Any)

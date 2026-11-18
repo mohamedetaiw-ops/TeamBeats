@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using TeamBeats.Authorization.Contracts;
+using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Messaging;
 using TeamBeats.Modules.Analytics.Contracts;
 using TeamBeats.Modules.Tenancy.Contracts;
@@ -145,6 +146,9 @@ public sealed class ScopeDashboardTests(TenantWorld world)
 
         var basic = await world.CreateTenantAsync("sd-" + Guid.NewGuid().ToString("N")[..8], "workplace");
         Assert.Equal(HttpStatusCode.Forbidden, (await basic["admin"].Client.GetAsync(Scopes)).StatusCode);
+        // The dashboards have their own capability (spec 021 section 9).
+        await world.SetCapabilityAsync(t, Capabilities.AnalyticsLocationDashboards, new { enabled = false });
+        Assert.Equal(HttpStatusCode.Forbidden, (await t["admin"].Client.GetAsync($"{Scopes}/unit/{dubai}")).StatusCode);
     }
 
     [Fact]
