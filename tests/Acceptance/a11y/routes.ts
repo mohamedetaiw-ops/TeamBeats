@@ -90,6 +90,7 @@ export const routes: readonly Route[] = [
   { path: "/admin/users/[id]", tier: "detail" },
   { path: "/agents", tier: "other" },
   { path: "/agents/[id]", tier: "detail" },
+  { path: "/agents/approvals/[id]", tier: "detail" },
   { path: "/agents/marketplace", tier: "other" },
   { path: "/ai-actions/[id]", tier: "detail" },
   { path: "/app-consent", tier: "other" },

@@ -187,7 +187,9 @@ for (const design of designs) {
             await settle(page);
             expect.soft(await page.locator("[tabindex]:not([tabindex='0']):not([tabindex='-1'])").count(), `positive tabindex on ${where}`).toBe(0);
             await page.keyboard.press("Tab");
-            expect.soft((await focusFacts(page))?.skip, `skip link is the first Tab stop on ${where}`).toBe(true);
+            const first = await focusFacts(page);
+            const focused = first?.name ?? (await page.evaluate(() => document.activeElement?.tagName.toLowerCase() ?? "nothing"));
+            expect.soft(first?.skip, `skip link is the first Tab stop on ${where}, not ${focused}`).toBe(true);
             await page.keyboard.press("Enter");
             await page.keyboard.press("Tab");
             expect.soft((await focusFacts(page))?.inMain, `the skip link moves focus into main on ${where}`).toBe(true);
