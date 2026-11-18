@@ -43,7 +43,7 @@
 
 .attendance-totals {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 10rem), 1fr));
   gap: var(--tb-space-sm);
   margin: 0;
 }
@@ -72,7 +72,7 @@
 
 .attendance-site {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
   align-items: end;
   gap: var(--tb-space-sm);
   padding-block-end: var(--tb-space-sm);

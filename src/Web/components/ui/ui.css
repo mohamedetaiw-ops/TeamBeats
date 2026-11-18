@@ -495,7 +495,7 @@
 
 .gallery-icons {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 6.5rem), 1fr));
   gap: var(--tb-space-sm);
   margin: 0;
   padding: 0;
@@ -518,7 +518,7 @@
 
 .gallery-swatches {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 9rem), 1fr));
   gap: var(--tb-space-sm);
   margin: 0;
   padding: 0;
@@ -928,7 +928,7 @@
 /* Tile card: icon tile or avatar, a covering title link, meta line, optional footer action above the cover. */
 .ui-tiles {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
   gap: var(--tb-space-md);
   margin: 0;
   padding: 0;
@@ -1001,7 +1001,7 @@
 }
 
 .ui-tile:has(.ui-tile-link:focus-visible) {
-  outline: var(--tb-border-width-focus) solid var(--tb-color-accent-base);
+  outline: var(--tb-border-width-focus) solid var(--tb-color-focus-ring);
   outline-offset: var(--tb-border-width-focus);
 }
 

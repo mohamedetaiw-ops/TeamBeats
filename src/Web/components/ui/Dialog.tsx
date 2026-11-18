@@ -52,6 +52,7 @@ function Surface({ open, onClose, title, description, children, footer, size = "
   }
 
   return (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- a click on the backdrop closes it; the keyboard closes the native dialog with Escape
     <dialog
       ref={ref}
       className="ui-dialog"

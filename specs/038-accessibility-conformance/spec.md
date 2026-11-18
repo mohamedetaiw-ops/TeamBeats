@@ -92,7 +92,7 @@ Employee (including people who use screen readers, magnification, voice control,
 **Acceptance scenarios:**
 1. **Given** anyone, signed in or not, **When** they open `/accessibility`, **Then** they see the TeamBeats accessibility statement in their language: the target (WCAG 2.2 AA), how it is checked, the date of the last check, known limitations, and how to report a problem.
 2. **Given** a tenant that configured an accessibility link in its footer (spec 008 FR-056), **Then** the statement shows that link as the organization's own contact, and the footer link stays as configured.
-3. **Given** a tenant that configured no accessibility link, **Then** the footer still offers the TeamBeats statement, and the statement says to contact the organization's TeamBeats administrator.
+3. **Given** a tenant whose footer has no accessibility link, **Then** the footer offers the TeamBeats statement, and the statement says to contact the organization's TeamBeats administrator. A tenant with no footer at all keeps none (spec 008 FR-056); the statement is still reachable at its address and from the sign-in page.
 4. **Given** a buyer, **Then** the conformance report in `docs/accessibility/conformance-report.md` states for every criterion Supports, Partially supports, Does not support or Not applicable, with remarks, and is never more favorable than the conformance map.
 
 ## 5. Functional requirements
@@ -130,7 +130,7 @@ Employee (including people who use screen readers, magnification, voice control,
 - **A11Y-022**: Authentication MUST NOT need a cognitive function test, and every TeamBeats sign-in field MUST allow paste and autofill (`autocomplete` set) (WCAG 3.3.8, 1.3.5).
 
 ### Statement and audit
-- **A11Y-023**: A public route `/accessibility` MUST show the accessibility statement in the person's language, signed in or not, with the tenant's own accessibility link when configured. The footer MUST link to it when the tenant configured no accessibility link of its own. All text comes from resource keys.
+- **A11Y-023**: A public route `/accessibility` MUST show the accessibility statement in the person's language, signed in or not, with the tenant's own accessibility link when configured. A configured footer MUST link to it when the tenant gave no accessibility link of its own, and the sign-in page MUST link to it. All text comes from resource keys.
 - **A11Y-024**: Before each release from R3, a qualified auditor MUST test the primary journeys with NVDA and JAWS on Windows, VoiceOver on macOS and iOS, and TalkBack on Android, in Arabic and English, and the conformance map and report MUST be updated from the findings. Until then the report says that assistive technology testing is internal only.
 
 ## 6. Business and validation rules

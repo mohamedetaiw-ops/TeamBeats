@@ -105,6 +105,7 @@ export function CommandPalette({
   // The position of each group's first command in the flat list that the arrow keys walk.
   const starts = shown.map((_, g) => shown.slice(0, g).reduce((count, group) => count + group.commands.length, 0));
   return (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- a click on the backdrop closes it; the keyboard closes the native dialog with Escape
     <dialog
       ref={dialog}
       className="ui-dialog ui-palette"
@@ -146,6 +147,7 @@ export function CommandPalette({
               {group.commands.map((command, c) => {
                 const mine = starts[g]! + c;
                 return (
+                  // eslint-disable-next-line jsx-a11y/click-events-have-key-events -- options take the keyboard on the search field through aria-activedescendant
                   <div
                     key={command.key}
                     id={optionId(mine)}

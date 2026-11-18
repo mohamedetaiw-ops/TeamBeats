@@ -451,6 +451,17 @@
     background: var(--tb-color-surface-base);
   }
 
+  /* Administration puts its section menu beside main, so the whole admin frame is the page surface. Without it the
+     menu sat on the navigation colour, dark in Pulse, and its links could not be read (WCAG 1.4.3, spec 038). */
+  :root:not([data-nav="top"]) body:has(.shell-rail) .admin {
+    border-start-start-radius: var(--tb-radius-lg);
+    background: var(--tb-color-surface-base);
+  }
+
+  :root:not([data-nav="top"]) body:has(.shell-rail) .admin > main {
+    border-start-start-radius: 0;
+  }
+
   :root:not([data-nav="top"]) .shell-rail .shell-menu-list {
     flex-flow: column nowrap;
     align-items: stretch;
@@ -889,6 +900,11 @@
 }
 
 @media (width <= 40rem) {
+  /* Keyboard focus and in-page links stop above the bottom navigation, never under it (WCAG 2.4.11, spec 038 A11Y-010). */
+  html {
+    scroll-padding-block-end: calc(4.5rem + env(safe-area-inset-bottom));
+  }
+
   .mobile-nav {
     position: fixed;
     z-index: 15;

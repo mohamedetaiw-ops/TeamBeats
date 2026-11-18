@@ -93,7 +93,8 @@
     "testNotice": "Staging only. Skip single sign-on and sign in as the test administrator or as a test employee. These options never exist in production.",
     "testSubmit": "Sign in as test admin",
     "testEmployee": "Sign in as test employee",
-    "testFailed": "Test sign-in was refused. The staging test account is not set up."
+    "testFailed": "Test sign-in was refused. The staging test account is not set up.",
+    "accessibility": "Accessibility statement"
   },
   "admin": {
     "title": "Administration",
@@ -1566,7 +1567,8 @@
     "payslips": "My payslips",
     "footer": {
       "label": "Footer",
-      "classification": "Classification: {value}"
+      "classification": "Classification: {value}",
+      "accessibility": "Accessibility"
     },
     "guest": "Guest"
   },
@@ -13500,5 +13502,42 @@
     "people": "People",
     "busy": "Saving",
     "failed": "That did not work. Try again."
+  },
+  "accessibility_statement": {
+    "title": "Accessibility statement",
+    "intro": "TeamBeats is built so that everyone in your organization can use it, including people who use a screen reader, magnification, voice control, switch access or only a keyboard.",
+    "standard": {
+      "title": "The standard we work to",
+      "body": "TeamBeats aims to meet the Web Content Accessibility Guidelines (WCAG) 2.2 at level AA on every page, in Arabic and English, in every design, in light and dark mode, on desktop and phone."
+    },
+    "checks": {
+      "title": "How we check",
+      "automated": "Every change to TeamBeats is checked automatically on every page in all four designs, light and dark mode, Arabic and English, and desktop and phone widths, and a change that adds a serious accessibility problem cannot be released.",
+      "pages": "Our main pages are also checked for keyboard access, visible focus, target size, text at 200 percent, text spacing, reflow at small widths and reduced motion.",
+      "manual": "Our team reviews the main journeys with a keyboard and screen readers. An independent audit with assistive technologies is planned.",
+      "reviewed": "This statement was last reviewed on {date}."
+    },
+    "limitations": {
+      "title": "Known limitations",
+      "drag": "Some editors still need dragging to move items; keyboard and single click alternatives are being added.",
+      "captions": "Videos that people upload have no captions unless the uploader adds them.",
+      "pdf": "Letters and reports downloaded as PDF are not yet tagged for screen readers.",
+      "audit": "No independent assistive technology audit has been completed yet.",
+      "timeout": "An idle session ends without a warning first. Your work in progress in forms is kept where the page allows.",
+      "content": "Your organization writes its own news, pages and documents. TeamBeats checks images for alternative text and pages for accessibility problems before they are published, but the content itself is your organization's responsibility."
+    },
+    "settings": {
+      "title": "Settings that can help",
+      "text": "Text size up to 200 percent.",
+      "motion": "Reduced motion, which stops animations.",
+      "mode": "Light, dark or your device's mode.",
+      "density": "Comfortable or compact spacing.",
+      "open": "Open your preferences"
+    },
+    "report": {
+      "title": "Report a problem",
+      "own": "If something in TeamBeats is hard to use, tell your organization:",
+      "admin": "If something in TeamBeats is hard to use, contact your organization's TeamBeats administrator, who can report it to us."
+    }
   }
 }

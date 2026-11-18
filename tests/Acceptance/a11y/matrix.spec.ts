@@ -62,7 +62,8 @@ async function chooseMode(tenant: TestTenant, mode: string) {
 for (const design of designs) {
   for (const locale of locales) {
     test.describe(`${design} design in ${locale}`, () => {
-      test.describe.configure({ mode: "serial" });
+      // Default mode: a failing combination still lets the others run, each worker with its own tenant.
+      test.describe.configure({ mode: "default" });
       test.use({ locale: locale === "ar" ? "ar-AE" : "en-US" });
       let tenant: TestTenant;
 

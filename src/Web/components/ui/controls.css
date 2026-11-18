@@ -373,7 +373,7 @@
   border-radius: calc(var(--tb-radius-sm) * 0.75);
   color: var(--tb-color-text-secondary);
   font-size: var(--tb-font-size-sm);
-  white-space: nowrap;
+  text-align: center;
   cursor: pointer;
   transition: color var(--tb-motion-duration-fast) var(--tb-motion-easing-standard);
 }
@@ -402,14 +402,13 @@
   outline-offset: 0;
 }
 
-/* On a phone the options keep equal widths and their labels wrap, so four options fit a 360 px screen (spec 030 FR-003). */
+/* The options keep equal widths, and their labels wrap only when the row runs out of room (large text, narrow screens).
+   On a phone they get bigger targets, so four options fit a 360 px screen (spec 030 FR-003). */
 @media (width <= 40rem) {
   .ui-segment {
     min-block-size: 2.75rem;
     min-inline-size: 2.75rem;
     padding-inline: var(--tb-space-sm);
-    text-align: center;
-    white-space: normal;
   }
 }
 

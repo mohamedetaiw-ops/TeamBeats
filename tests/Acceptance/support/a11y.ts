@@ -44,7 +44,8 @@ export async function expectConformant(page: Page, testInfo: TestInfo, label: st
     .filter((v) => v.nodes.length > 0);
   expect
     .soft(
-      blocking.map((v) => `${v.impact} ${v.id}: ${v.help} (${v.nodes.slice(0, 5).map((n) => n.target.join(" ")).join(", ")})`),
+      // The first node's own message (for contrast: the colours and the ratio) makes a CI failure readable without the report.
+      blocking.map((v) => `${v.impact} ${v.id}: ${v.help} (${v.nodes.slice(0, 5).map((n) => n.target.join(" ")).join(", ")}) ${v.nodes[0]?.any[0]?.message ?? ""}`.trim()),
       `serious or critical axe violations on ${label}`,
     )
     .toEqual([]);

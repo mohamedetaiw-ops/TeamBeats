@@ -34,7 +34,10 @@ function useTimes(locale: string) {
 function EventChip({ event, time }: { event: CalendarEvent; time?: string }) {
   const content = (
     <>
-      <bdi className="ui-event-title">{event.title}</bdi>
+      {/* A short chip cuts a long title with an ellipsis; the full title shows on hover (WCAG 1.4.12). */}
+      <bdi className="ui-event-title" title={event.title}>
+        {event.title}
+      </bdi>
       {time ? <span className="ui-event-time">{time}</span> : null}
     </>
   );

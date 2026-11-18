@@ -35,8 +35,9 @@ export default defineConfig({
     ? [{ name: "budgets", testDir: "./budgets", use: { ...devices["Desktop Chrome"], launchOptions: hosts } }]
     : [
         { name: "chromium", testDir: "./specs", use: { ...devices["Desktop Chrome"], launchOptions: hosts } },
-        // The accessibility conformance gate of spec 038 (tests/Acceptance/a11y), its own CI job.
-        { name: "a11y", testDir: "./a11y", use: { ...devices["Desktop Chrome"], launchOptions: hosts } },
+        // The accessibility conformance gate of spec 038 (tests/Acceptance/a11y), its own CI job. Its findings are
+        // deterministic and named in the failure message, so it needs no retry and no trace, which keeps the report small.
+        { name: "a11y", testDir: "./a11y", retries: 0, use: { ...devices["Desktop Chrome"], launchOptions: hosts, trace: "off" } },
       ],
   webServer: local
     ? [
