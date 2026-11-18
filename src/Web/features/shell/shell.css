@@ -226,12 +226,22 @@
   transform: rotate(-45deg);
 }
 
+/* The bar below the header carries the nav colours, so its crumbs take the nav text colour (a dark nav in Pulse). */
+.shell-below .shell-breadcrumbs ol {
+  color: var(--tb-color-nav-text);
+}
+
 .shell-below .shell-breadcrumbs a {
   display: inline-flex;
   align-items: center;
   min-block-size: 2.75rem;
-  color: var(--tb-color-text-secondary);
+  color: var(--tb-color-nav-text);
   text-decoration: none;
+}
+
+.shell-below .shell-breadcrumbs a:hover {
+  color: var(--tb-color-nav-text);
+  text-decoration: underline;
 }
 
 .shell-breadcrumbs a:hover {
@@ -239,7 +249,8 @@
 }
 
 .shell-below .shell-breadcrumbs a[aria-current="page"] {
-  color: var(--tb-color-text-primary);
+  color: var(--tb-color-nav-text);
+  font-weight: var(--tb-font-weight-medium);
   text-decoration: none;
 }
 
