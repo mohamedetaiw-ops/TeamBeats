@@ -21,6 +21,7 @@ import { ChartsGallery } from "./ChartsGallery";
 import { ChartRulesGallery } from "./ChartRulesGallery";
 import { WidgetBudgetGallery } from "./WidgetBudgetGallery";
 import { DataGallery } from "./DataGallery";
+import { CellsGallery } from "./CellsGallery";
 import { CalendarGallery } from "./CalendarGallery";
 import { InputsGallery } from "./InputsGallery";
 import { OverlaysGallery } from "./OverlaysGallery";
@@ -258,6 +259,7 @@ export function ComponentsGallery() {
       <CalendarGallery />
       <ChartRulesGallery />
       <WidgetBudgetGallery />
+      <CellsGallery />
     </div>
   );
 }
