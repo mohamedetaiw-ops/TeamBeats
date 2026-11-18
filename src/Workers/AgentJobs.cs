@@ -47,6 +47,7 @@ public sealed class AgentRunResumeService(IServiceScopeFactory scopes, ILogger<P
         {
             await runner.RunAsync((sp, ct) => sp.GetRequiredService<AgentRunResumer>().ResumeStalledAsync(ct), stoppingToken);
             await runner.RunAsync((sp, ct) => sp.GetRequiredService<AgentRunResumer>().ApplyApprovalsAsync(ct), stoppingToken);
+            await runner.RunAsync((sp, ct) => sp.GetRequiredService<AgentSecurityCenter>().ScanAsync(ct), stoppingToken);
             await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
         }
     }

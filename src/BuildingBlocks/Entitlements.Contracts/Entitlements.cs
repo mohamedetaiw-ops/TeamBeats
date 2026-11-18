@@ -15,6 +15,9 @@ public static class Capabilities
     public const string AiAgentsDepartment = "ai.agents.department";
     public const string AiAgentsMarketplace = "ai.agents.marketplace";
     public const string AiAgentsAdvanced = "ai.agents.advanced";
+
+    /// <summary>The Agent Security Center: anomaly alerts, incidents, the watch list and evidence export (spec 027 FR-023).</summary>
+    public const string AiGovernanceSecurityCenter = "ai.governance.security_center";
     public const string AiModelChoice = "ai.model_choice";
 
     // Spec 013 section 9 (R2): the tenant budget is in every package; org unit, agent and user budgets, and private

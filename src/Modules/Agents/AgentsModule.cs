@@ -44,6 +44,8 @@ public static class AgentsModule
         services.AddScoped<Workflow.Contracts.IPersonalTaskSource, ExternalActionTasks>();
         services.AddScoped<ToolRegistry>();
         services.AddScoped<AgentPolicyService>();
+        services.AddScoped<UnitAgentPolicyService>();
+        services.AddScoped<AgentSecurityCenter>();
         services.AddScoped<AgentRegistry>();
         services.AddScoped<AgentOwnerHandover>();
         services.AddScoped<AgentAnalytics>();
@@ -486,6 +488,13 @@ public static class AgentsModule
             return Results.Ok(detail);
         });
 
+        agents.MapPost("/{id:guid}/revoke-tokens", async (Guid id, ReasonRequest request, AgentLifecycle lifecycle, IDbSession session, CancellationToken ct) =>
+        {
+            var detail = await lifecycle.RevokeTokensAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(detail);
+        });
+
         agents.MapPost("/{id:guid}/resume", async (Guid id, AgentLifecycle lifecycle, IDbSession session, CancellationToken ct) =>
         {
             var detail = await lifecycle.ResumeAsync(id, ct);
@@ -515,10 +524,69 @@ public static class AgentsModule
         {
             var view = await policies.ChangeAsync(request, ct);
             // Published agents that break the new policy are suspended in the same transaction (027 FR-018).
-            await lifecycle.SuspendBreakingAsync(view.Policy, ct);
+            await lifecycle.SuspendBreakingAsync(null, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });
+
+        // Org unit agent policies (027 US8 scenario 3): only stricter than the policy above, applied to the unit's agents.
+        agents.MapGet("/policy/units/{unitId:guid}", async (Guid unitId, UnitAgentPolicyService units, CancellationToken ct) => Results.Ok(await units.GetAsync(unitId, ct)));
+
+        agents.MapPut("/policy/units/{unitId:guid}", async (Guid unitId, UnitAgentPolicyRequest request, UnitAgentPolicyService units, AgentLifecycle lifecycle,
+            IDbSession session, CancellationToken ct) =>
+        {
+            var view = await units.ChangeAsync(unitId, request, ct);
+            await lifecycle.SuspendBreakingAsync(unitId, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        agents.MapDelete("/policy/units/{unitId:guid}", async (Guid unitId, UnitAgentPolicyService units, IDbSession session, CancellationToken ct) =>
+        {
+            await units.DeleteAsync(unitId, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        // The Agent Security Center (027 FR-023): alerts, incidents, evidence export and the watch list.
+        var security = agents.MapGroup("/security");
+        security.MapGet("/alerts", async (string? status, Guid? agentId, int? limit, AgentSecurityCenter center, CancellationToken ct) =>
+            Results.Ok(await center.AlertsAsync(status, agentId, limit ?? 50, ct)));
+        security.MapGet("/alerts/{id:guid}", async (Guid id, AgentSecurityCenter center, CancellationToken ct) => Results.Ok(await center.AlertAsync(id, ct)));
+        security.MapPost("/alerts/{id:guid}/dismiss", async (Guid id, AgentSecurityCenter center, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await center.DismissAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+        security.MapGet("/incidents", async (string? status, int? limit, AgentSecurityCenter center, CancellationToken ct) =>
+            Results.Ok(await center.IncidentsAsync(status, limit ?? 50, ct)));
+        security.MapPost("/incidents", async (OpenIncidentRequest request, AgentSecurityCenter center, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await center.OpenIncidentAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/agents/security/incidents/{view.Id}", view);
+        });
+        security.MapGet("/incidents/{id:guid}", async (Guid id, AgentSecurityCenter center, CancellationToken ct) => Results.Ok(await center.IncidentAsync(id, ct)));
+        security.MapPatch("/incidents/{id:guid}", async (Guid id, IncidentChangeRequest request, AgentSecurityCenter center, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await center.ChangeIncidentAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+        security.MapPost("/incidents/{id:guid}/close", async (Guid id, CloseIncidentRequest request, AgentSecurityCenter center, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await center.CloseIncidentAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+        security.MapGet("/incidents/{id:guid}/evidence", async (Guid id, AgentSecurityCenter center, AgentRuns runs, IDbSession session, CancellationToken ct) =>
+        {
+            var evidence = await center.EvidenceAsync(id, runs, ct);
+            await session.CommitAsync(ct);
+            return Results.Json(evidence, contentType: "application/json", statusCode: 200);
+        });
+        security.MapGet("/watch", async (AgentSecurityCenter center, CancellationToken ct) => Results.Ok(await center.WatchListAsync(ct)));
 
         app.MapAssistantPublicEndpoints();
         return app;

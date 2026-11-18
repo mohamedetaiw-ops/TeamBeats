@@ -165,7 +165,7 @@ internal sealed record RunAgent(Guid Id, int Version, Guid OrgUnitId, AgentDefin
 /// record with its ordered steps. Test runs (the designer's test panel, 020 US1 scenario 4) never execute a write tool.
 /// </summary>
 public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntitlementService entitlements, IAuthorizationService authz,
-    IOrganizationHierarchy org, IAuditWriter audit, IClock clock, IAiGateway gateway, ToolRegistry tools, AgentPolicyService policies,
+    IOrganizationHierarchy org, IAuditWriter audit, IClock clock, IAiGateway gateway, ToolRegistry tools, UnitAgentPolicyService unitPolicies,
     ISearchRetrieval retrieval, AgentMemory memory, MemoryRememberTool remember, AgentApprovals approvals, INotificationSender notifications)
 {
     public const int MaxMessage = 2000;
@@ -261,7 +261,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
             throw AppException.Conflict(agent.Status == AgentStatuses.Suspended ? "conflict.agent.suspended" : "conflict.agent.unavailable");
         }
         await DemandNoKillSwitchAsync(ct);
-        return (new RunAgent(agentId, version, agent.Unit, definition, "run", (await policies.CurrentAsync(ct)).Policy), user, message);
+        return (new RunAgent(agentId, version, agent.Unit, definition, "run", await unitPolicies.ForUnitAsync(agent.Unit, ct)), user, message);
     }
 
     /// <summary>
@@ -284,7 +284,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
             return null;
         }
         var definition = await VersionAsync(agentId, version, ct);
-        var policy = (await policies.CurrentAsync(ct)).Policy;
+        var policy = await unitPolicies.ForUnitAsync(agent.Unit, ct);
         var risk = await session.ScalarAsync<string>("select risk_class from agents.agent_version where agent_id = @agentId and number = @version", new { agentId, version }, ct);
         if (!AgentBriefings.Allowed(definition, policy, risk) || !await InAudienceAsync(agentId, definition.Audience, user, ct))
         {
@@ -317,7 +317,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         }
         await DemandNoKillSwitchAsync(ct);
         var latest = await session.ScalarAsync<int>("select max(number) from agents.agent_version where agent_id = @agentId", new { agentId }, ct);
-        var run = new RunAgent(agentId, latest, agent.Unit, await VersionAsync(agentId, latest, ct), "test", (await policies.CurrentAsync(ct)).Policy);
+        var run = new RunAgent(agentId, latest, agent.Unit, await VersionAsync(agentId, latest, ct), "test", await unitPolicies.ForUnitAsync(agent.Unit, ct));
         return await StartAsync(run, user, message, request, null, ct);
     }
 
@@ -340,7 +340,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         }
         await DemandNoKillSwitchAsync(ct);
         var definition = await VersionAsync(agentId, version, ct);
-        var run = new RunAgent(agentId, version, agent.Unit, definition, "eval", (await policies.CurrentAsync(ct)).Policy, routeChangeId);
+        var run = new RunAgent(agentId, version, agent.Unit, definition, "eval", await unitPolicies.ForUnitAsync(agent.Unit, ct), routeChangeId);
         var watch = Stopwatch.StartNew();
         var view = await StartAsync(run, user, message.Length > MaxMessage ? message[..MaxMessage] : message, new RunRequest(message, language), null, ct);
         var duration = (int)Math.Min(int.MaxValue, watch.ElapsedMilliseconds);
@@ -504,7 +504,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
 
     private async Task<RunView> LoopAsync(Guid runId, RunAgent agent, Guid user, string language, RunState state, CancellationToken ct)
     {
-        var offered = (agent.Definition.Tools ?? []).Select(tools.Find).Where(t => t is not null)
+        var offered = (agent.Definition.Tools ?? []).Select(tools.Find).Where(t => t is not null && t.Definition.Unavailable is null)
             .Select(t => new AiTool(RunAgent.ModelName(t!.Definition.Name), t.Definition.Description, t.Definition.Parameters)).ToList();
         if (state.Memory)
         {
@@ -681,6 +681,11 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
             return new Gate(granted, null, null, Refusal: "tool.unknown");
         }
         var definition = tool.Definition;
+        if (definition.Unavailable is not null)
+        {
+            // A tool of a disabled connector is off for every agent (027 US7 scenario 3).
+            return new Gate(granted, null, null, Refusal: "tool.connector_disabled");
+        }
         var rule = memoryCall ? ToolApprovalRules.Execute : agent.Policy.RuleFor(definition);
         if (!memoryCall)
         {
@@ -836,6 +841,16 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
     {
         await audit.WriteAsync(new AuditEntry(AuditActions.AgentInjectionDetected, "agent_run", runId.ToString(), TargetOrgUnitId: agent.OrgUnitId,
             Changes: new { agent = agent.Id, version = agent.Version, mode = agent.Mode, tool, rule = finding.Rule, source = finding.Source, itemId = finding.ItemId }), ct);
+        if (agent.Mode == "eval")
+        {
+            return;
+        }
+        // Kept for the Security Center injection rule (027 T017), which raises an alert on its next pass.
+        await session.ExecAsync(
+            """
+            insert into agents.injection_finding (tenant_id, id, run_id, agent_id, rule, source, at)
+            values (platform.current_tenant_id(), @id, @runId, @agent, @rule, @source, @now)
+            """, new { id = Ids.New(), runId, agent = agent.Id, rule = finding.Rule, source = tool ?? finding.Source, now = clock.UtcNow }, ct);
     }
 
     /// <summary>A tool result for the model, always inside the untrusted envelope; failures are a short key, never internal detail.</summary>
@@ -1032,7 +1047,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
             throw AppException.NotFound();
         }
         var row = rows[0];
-        var agent = new RunAgent(row.Agent, row.Version, row.Unit, await VersionAsync(row.Agent, row.Version, ct), row.Mode, (await policies.CurrentAsync(ct)).Policy);
+        var agent = new RunAgent(row.Agent, row.Version, row.Unit, await VersionAsync(row.Agent, row.Version, ct), row.Mode, await unitPolicies.ForUnitAsync(row.Unit, ct));
         return (agent, row.Language, JsonSerializer.Deserialize<RunState>(row.State, Json)!);
     }
 
@@ -1315,7 +1330,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         }
         var row = rows[0];
         var definition = await VersionAsync(row.Agent, row.Version, ct);
-        var agent = new RunAgent(row.Agent, row.Version, row.Unit, definition, "run", (await policies.CurrentAsync(ct)).Policy);
+        var agent = new RunAgent(row.Agent, row.Version, row.Unit, definition, "run", await unitPolicies.ForUnitAsync(row.Unit, ct));
         var state = JsonSerializer.Deserialize<RunState>(row.State, Json)!;
         state.Attempt = attempt;
         state.Durable = true;

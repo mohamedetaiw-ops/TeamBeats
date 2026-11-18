@@ -27,7 +27,7 @@ public sealed record BriefingView(Guid AgentId, bool Offered, string DefaultTime
 /// briefing runs.
 /// </summary>
 public sealed class AgentBriefings(IDbSession session, ITenantContext context, IEntitlementService entitlements, IOrganizationHierarchy org,
-    AgentPolicyService policies, ITenantSettingsReader settings, IClock clock)
+    UnitAgentPolicyService policies, ITenantSettingsReader settings, IClock clock)
 {
     public const string NotificationCategory = NotificationCategories.AgentBriefings;
     public const string Template = "agents.briefing";
@@ -40,15 +40,15 @@ public sealed class AgentBriefings(IDbSession session, ITenantContext context, I
     public static bool Allowed(AgentDefinition definition, AgentPolicy policy, string? riskClass) =>
         AgentBriefingSettings.Offers(definition) && policy.ScheduledAgents && riskClass is not null && policy.ScheduledClasses.Contains(riskClass);
 
-    private sealed record Published(string Status, AgentDefinition? Definition, string? Risk);
+    private sealed record Published(string Status, AgentDefinition? Definition, string? Risk, Guid Unit);
 
     private async Task<Published?> AgentAsync(Guid agentId, CancellationToken ct) =>
         await session.QuerySingleOrDefaultAsync(
             """
-            select a.status, v.definition::text, v.risk_class from agents.agent a
+            select a.status, v.definition::text, v.risk_class, a.org_unit_id from agents.agent a
             left join agents.agent_version v on v.agent_id = a.id and v.number = a.current_version
             where a.id = @agentId
-            """, new { agentId }, r => new Published(r.GetString(0), r.Get<string?>("definition") is { } d ? Definition(d) : null, r.Get<string?>("risk_class")), ct);
+            """, new { agentId }, r => new Published(r.GetString(0), r.Get<string?>("definition") is { } d ? Definition(d) : null, r.Get<string?>("risk_class"), r.GetGuid(3)), ct);
 
     private async Task<(Guid User, Published Agent, bool Offered)> OfferAsync(Guid agentId, CancellationToken ct)
     {
@@ -59,7 +59,7 @@ public sealed class AgentBriefings(IDbSession session, ITenantContext context, I
         {
             throw AppException.NotFound();
         }
-        var offered = agent.Status == AgentStatuses.Published && Allowed(definition, (await policies.CurrentAsync(ct)).Policy, agent.Risk);
+        var offered = agent.Status == AgentStatuses.Published && Allowed(definition, await policies.ForUnitAsync(agent.Unit, ct), agent.Risk);
         return (user, agent, offered);
     }
 

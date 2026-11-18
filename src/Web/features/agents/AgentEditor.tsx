@@ -480,6 +480,13 @@ export function AgentEditor({
               </Button>
             )}
             <Button
+              busy={busy === "revoke"}
+              busyLabel={t("saving")}
+              onClick={() => void send("revoke", `${base}/revoke-tokens`, "POST", { reason }, t("lifecycle.tokensRevoked"))}
+            >
+              {t("lifecycle.revokeTokens")}
+            </Button>
+            <Button
               variant="destructive"
               busy={busy === "retire"}
               busyLabel={t("saving")}

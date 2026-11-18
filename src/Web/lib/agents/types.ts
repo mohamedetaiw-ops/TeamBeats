@@ -87,6 +87,8 @@ export type AgentDetail = {
   versions: AgentVersion[];
   canEdit: boolean;
   templateUpdate: number | null;
+  /** Tools the agent holds that cannot be called now, such as those of a disabled connection (spec 027 US7 scenario 3). */
+  unavailableTools?: string[] | null;
 };
 
 export type TemplateView = {
@@ -288,7 +290,7 @@ export type RunRecord = {
   itemId: string | null;
 };
 
-export type AgentChoice = { id: string; name: Localized | null; description: Localized | null; icon: string | null; category: string | null; favourite?: boolean };
+export type AgentChoice = { id: string; name: Localized | null; description: Localized | null; icon: string | null; category: string | null; favourite?: boolean; degraded?: boolean };
 
 /** An agent in the marketplace as the signed-in person sees it (spec 020 US6). The API decides every flag. */
 export type MarketplaceAgent = {
@@ -389,3 +391,66 @@ export type AgentApprovalView = {
   createdAt: string;
   taskId: string | null;
 };
+
+/** An org unit's own agent rules (spec 027 US8 scenario 3); a null value inherits from the policy above. */
+export type UnitAgentPolicy = {
+  maxAutonomy: string | null;
+  maxClassification: string | null;
+  allowedTools: string[] | null;
+  toolRules: Record<string, string> | null;
+  scheduledAgents: boolean | null;
+  persistentMemory: boolean | null;
+  maxToolCalls: number | null;
+  maxSteps: number | null;
+  maxRunSeconds: number | null;
+  maxDailyRunsPerAgent: number | null;
+};
+
+export type UnitAgentPolicyView = {
+  unitId: string;
+  version: number;
+  policy: UnitAgentPolicy;
+  inherited: AgentPolicy;
+  effective: AgentPolicy;
+  updatedAt: string | null;
+};
+
+/** Agent Security Center records (spec 027 FR-023). */
+export const ALERT_RULES = ["denied_burst", "injection", "cost_spike"] as const;
+export const SEVERITIES = ["low", "medium", "high", "critical"] as const;
+
+export type AgentAlert = {
+  id: string;
+  agentId: string;
+  agentNames: Localized;
+  orgUnitId: string;
+  rule: string;
+  severity: string;
+  status: "open" | "dismissed" | "incident" | string;
+  matches: number;
+  runIds: string[];
+  details: Record<string, unknown>;
+  incidentId: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AgentIncident = {
+  id: string;
+  title: string;
+  severity: string;
+  status: "open" | "closed" | string;
+  agentId: string | null;
+  orgUnitId: string;
+  runIds: string[];
+  actions: { at: string; by: string; text: string }[];
+  closureNote: string | null;
+  openedBy: string;
+  openedAt: string;
+  closedBy: string | null;
+  closedAt: string | null;
+  version: number;
+  alertIds: string[];
+};
+
+export type AgentWatch = { agentId: string; agentNames: Localized; orgUnitId: string; version: number; reason: string; since: string; until: string };

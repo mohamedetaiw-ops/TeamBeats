@@ -27,6 +27,15 @@ public static class AssistantOutcomes
 public sealed record AssistantAnswered(Guid TurnId, Guid ConversationId, Guid UserId, string? Agent, string Outcome, int Citations) : IIntegrationEvent;
 
 /// <summary>What a tool changes (spec 027 FR-005). Read tools change nothing; drafts stay with the person until they act.</summary>
+/// <summary>
+/// Why a registered tool cannot be called now (spec 027 US7 scenario 3): the gateway refuses it, it is not offered to the
+/// model, and agents that hold it show a degraded notice.
+/// </summary>
+public static class ToolUnavailable
+{
+    public const string ConnectorDisabled = "connector_disabled";
+}
+
 public static class ToolSideEffects
 {
     public const string Read = "read";
@@ -90,7 +99,8 @@ public sealed record ToolDefinition(
     string? RequiredCapability = null,
     IReadOnlyDictionary<string, string>? Title = null,
     bool Exposable = false,
-    string? ApproverPermission = null);
+    string? ApproverPermission = null,
+    string? Unavailable = null);
 
 /// <summary>
 /// Who a tool call runs for: the person, through an agent, in a run. Authorization is the person's at the time of the

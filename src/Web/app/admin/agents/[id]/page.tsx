@@ -3,6 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { apiGet } from "@/lib/api";
 import { listUnits } from "@/lib/experience/client";
 import { pickText, type AccessRequestView, type AgentAnalyticsView, type AgentDetail, type StudioOffer, type ToolView } from "@/lib/agents/types";
+import { Alert } from "@/components/ui/Alert";
 import { AgentTabs } from "@/features/agents/AgentTabs";
 import { AgentEditor } from "@/features/agents/AgentEditor";
 import { AgentAnalytics } from "@/features/agents/AgentAnalytics";
@@ -32,6 +33,11 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
         <bdi>{pickText(detail.data.definition.name, locale) || t("editor.untitled")}</bdi>
       </h1>
       <AgentTabs current="agents" />
+      {detail.data.unavailableTools && detail.data.unavailableTools.length > 0 ? (
+        <Alert tone="warning" title={t("degraded.title")}>
+          {t("degraded.body", { tools: detail.data.unavailableTools.map((name) => (t.has(`toolNames.${name}`) ? t(`toolNames.${name}`) : name)).join(", ") })}
+        </Alert>
+      ) : null}
       <AgentEditor initial={detail.data} tools={tools.ok ? tools.data.tools : []} units={units.ok ? units.data : []} studio={studio.ok ? studio.data : null} />
       {access.ok ? <AccessRequests requests={access.data.requests} /> : null}
       {analytics.ok ? <AgentAnalytics view={analytics.data} /> : null}
