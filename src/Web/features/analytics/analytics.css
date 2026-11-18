@@ -90,3 +90,21 @@
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 28rem), 1fr));
   gap: var(--tb-space-lg);
 }
+
+/* Spec 021 T016: report actions, the reports list and one report. */
+.analytics-report-form {
+  display: grid;
+  gap: var(--tb-space-md);
+}
+
+.analytics-reports,
+.analytics-report {
+  display: grid;
+  gap: var(--tb-space-xl);
+}
+
+.analytics-report-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+}

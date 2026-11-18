@@ -2602,5 +2602,19 @@
   "validation.analytics.currency": "أدخل رمز عملة من ثلاثة أحرف، مثل SAR أو USD.",
   "validation.analytics.compare": "اختر حملتين مختلفتين للمقارنة.",
   "conflict.analytics.estimates_version": "غيّر شخص آخر التقديرات أثناء تحريرك. أعد التحميل وحاول مرة أخرى.",
-  "validation.services.field_reportable": "لا يمكن الإبلاغ عن سبب منظم إلا من حقل اختيار واحد."
+  "validation.services.field_reportable": "لا يمكن الإبلاغ عن سبب منظم إلا من حقل اختيار واحد.",
+  "validation.analytics.dashboard": "اختر لوحة من القائمة.",
+  "validation.analytics.target": "اختر الحملة أو الخدمة أو الوحدة أو الموقع الذي تخصه هذه اللوحة.",
+  "validation.analytics.format": "اختر CSV أو Excel.",
+  "validation.analytics.cadence": "اختر أسبوعيًا أو شهريًا.",
+  "validation.analytics.schedule_dates": "يرسل الجدول دائمًا آخر أسبوع أو شهر، لذا لا تحدد التواريخ.",
+  "validation.analytics.name_too_long": "استخدم 120 حرفًا أو أقل.",
+  "conflict.analytics.report_not_ready": "هذا التقرير غير جاهز بعد. حاول مرة أخرى بعد قليل.",
+  "conflict.analytics.too_many_schedules": "لديك 50 تقريرًا مجدولًا. احذف واحدًا قبل إضافة آخر.",
+  "notifications.template.analytics.report_ready.title": "تقريرك جاهز",
+  "notifications.template.analytics.report_ready.body": "{name} جاهز للفتح.",
+  "notifications.template.analytics.report_skipped.title": "لم يصل تقريرك إلى بعض الأشخاص",
+  "notifications.template.analytics.report_skipped.body": "لا يستطيع {count} من مستلمي {name} فتح تلك اللوحة، لذا لم يُرسل إليهم شيء.",
+  "notifications.template.analytics.report_failed.title": "تعذر إعداد ملف التصدير",
+  "notifications.template.analytics.report_failed.body": "تعذر إعداد {name}. راجع عوامل التصفية وحاول مرة أخرى."
 }

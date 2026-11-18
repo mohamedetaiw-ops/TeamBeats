@@ -7,6 +7,7 @@ import { Header } from "@/components/shell/Header";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StateView } from "@/components/ui/StateView";
 import { ComplianceDashboard } from "@/features/analytics/ComplianceAnalytics";
+import { ReportActions } from "@/features/analytics/ReportActions";
 import "@/features/analytics/analytics.css";
 
 /** Policy compliance analytics (spec 021 T013, US5). The API answers 403 to anyone without policy.manage or the package. */
@@ -25,7 +26,7 @@ export default async function ComplianceAnalyticsPage() {
     <>
       <Header me={me.data} breadcrumbs={[{ label: t("workspace"), href: "/analytics" }, { label: t("title"), href: "/analytics/compliance" }]} />
       <main id="main" className="page analytics-compliance">
-        <PageHeader title={t("title")} description={t("intro")} icon="policy" />
+        <PageHeader title={t("title")} description={t("intro")} icon="policy" actions={view.ok ? <ReportActions definition={{ dashboard: "compliance" }} /> : undefined} />
         {view.ok ? (
           <ComplianceDashboard view={view.data} locations={names} />
         ) : (

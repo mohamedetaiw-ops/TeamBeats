@@ -44,6 +44,7 @@ public static class AnalyticsEvents
     public const string PersonalizationChanged = "personalization.changed";
     public const string TaskOutcome = "task.outcome";
     public const string UiError = "ui.error";
+    public const string PageVitals = "page.vitals";
     public const string EngagementAction = "engagement.action";
     public const string EngagementAnonymousAction = "engagement.anonymous_action";
     public const string LearningProgress = "learning.progress";
@@ -102,6 +103,8 @@ public static class AnalyticsEvents
     {
         EngagementAction, EngagementAnonymousAction, LearningProgress, BookingActivity, MobilePushOptIn, ProcessInstanceEnded, RequestServiceLevelBreached,
     };
+
+    public static readonly IReadOnlySet<string> DeviceClasses = new HashSet<string>(StringComparer.Ordinal) { "mobile", "tablet", "desktop" };
 
     public static readonly IReadOnlySet<string> ErrorKinds = new HashSet<string>(StringComparer.Ordinal) { "render", "boundary", "network", "chunk" };
 
@@ -178,6 +181,17 @@ public static class AnalyticsEvents
         {
             ["serviceId"] = new(AnalyticsFieldType.Id, true),
         }, Unkeyed: true),
+        // Spec 021 FR-020: Core Web Vitals of a spec 032 page, essential performance telemetry with no person in it.
+        [PageVitals] = new(PageVitals, true, new Dictionary<string, AnalyticsField>
+        {
+            ["pageId"] = new(AnalyticsFieldType.Id, true),
+            ["release"] = new(AnalyticsFieldType.Count),
+            ["deviceClass"] = new(AnalyticsFieldType.Key, true, DeviceClasses),
+            ["theme"] = new(AnalyticsFieldType.Key),
+            ["lcp"] = new(AnalyticsFieldType.Number),
+            ["inp"] = new(AnalyticsFieldType.Number),
+            ["cls"] = new(AnalyticsFieldType.Number),
+        }),
         [UiError] = new(UiError, true, new Dictionary<string, AnalyticsField>
         {
             ["kind"] = new(AnalyticsFieldType.Key, true, ErrorKinds),

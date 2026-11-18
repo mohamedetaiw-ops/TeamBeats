@@ -18,8 +18,19 @@ export function PageTelemetry({ page }: { page: PageKey }) {
       if (sent || document.visibilityState !== "hidden") return;
       sent = true;
       const vitals = stop();
-      queueTelemetry({ name: "page.web_vitals", pageId, template, layout, deviceClass: deviceClass(window.innerWidth), ...vitals });
+      const device = deviceClass(window.innerWidth);
+      queueTelemetry({ name: "page.web_vitals", pageId, template, layout, deviceClass: device, ...vitals });
       flushTelemetry();
+      // The same vitals as essential analytics (spec 021 FR-020) for the performance dashboard; no person is attached.
+      const fields: Record<string, string | number> = { pageId, release, deviceClass: device };
+      const theme = document.documentElement.dataset.design;
+      if (theme) fields.theme = theme;
+      for (const key of ["lcp", "inp", "cls"] as const) {
+        const value = vitals[key];
+        if (value !== null) fields[key] = value;
+      }
+      const body = JSON.stringify({ events: [{ name: "page.vitals", fields }] });
+      void fetch("/api/v1/analytics/events", { method: "POST", headers: { "content-type": "application/json" }, body, keepalive: true }).catch(() => undefined);
     };
     document.addEventListener("visibilitychange", send);
     return () => {

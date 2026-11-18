@@ -2602,5 +2602,19 @@
   "validation.analytics.currency": "Enter a three-letter currency code, such as SAR or USD.",
   "validation.analytics.compare": "Choose two different campaigns to compare.",
   "conflict.analytics.estimates_version": "Someone changed the estimates while you were editing. Reload and try again.",
-  "validation.services.field_reportable": "Only a single choice field can be reported as a structured reason."
+  "validation.services.field_reportable": "Only a single choice field can be reported as a structured reason.",
+  "validation.analytics.dashboard": "Choose a dashboard from the list.",
+  "validation.analytics.target": "Choose the campaign, service, unit or location this dashboard is about.",
+  "validation.analytics.format": "Choose CSV or Excel.",
+  "validation.analytics.cadence": "Choose weekly or monthly.",
+  "validation.analytics.schedule_dates": "A schedule always sends the last week or month, so leave the dates out.",
+  "validation.analytics.name_too_long": "Use 120 characters or fewer.",
+  "conflict.analytics.report_not_ready": "This report is not ready yet. Try again in a moment.",
+  "conflict.analytics.too_many_schedules": "You have 50 scheduled reports. Remove one before adding another.",
+  "notifications.template.analytics.report_ready.title": "Your report is ready",
+  "notifications.template.analytics.report_ready.body": "{name} is ready to open.",
+  "notifications.template.analytics.report_skipped.title": "Some people did not get your report",
+  "notifications.template.analytics.report_skipped.body": "{count} recipients of {name} cannot open that dashboard, so nothing was sent to them.",
+  "notifications.template.analytics.report_failed.title": "Your export could not be made",
+  "notifications.template.analytics.report_failed.body": "{name} could not be made. Check its filters and try again."
 }

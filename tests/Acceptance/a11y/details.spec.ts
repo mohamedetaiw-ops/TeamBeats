@@ -260,6 +260,11 @@ async function seedExtras(api: APIRequestContext, found: Found): Promise<void> {
   found.set("/analytics/campaigns/[id]", `/analytics/campaigns/${campaign.id as string}`);
   // A unit dashboard (spec 021 T014) for the seeded unit.
   found.set("/analytics/scopes/unit/[id]", `/analytics/scopes/unit/${unitId}`);
+  // An export (spec 021 T016): the report page opens while it is still being made.
+  const report = await ok(await api.post("/api/v1/analytics/exports", {
+    data: { definition: { dashboard: "overview", metric: "active_people" }, format: "xlsx", name: "Weekly activity" },
+  }));
+  found.set("/analytics/reports/[id]", `/analytics/reports/${report.id as string}`);
 }
 
 const detailRoutes = routes.filter((r) => r.tier === "detail" && !r.reason).map((r) => r.path);
