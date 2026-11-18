@@ -2795,7 +2795,7 @@
       "noneHint": "Add a pattern for data only your organization uses, such as employee numbers.",
       "name": "Name",
       "pattern": "Pattern",
-      "patternHint": "A regular expression, such as \\bEMP-\\d{6}\\b.",
+      "patternHint": "A regular expression, such as \\bEMP-\\d'{6}'\\b.",
       "state": "State",
       "actions": "Actions",
       "on": "On",
@@ -4010,7 +4010,7 @@
         "active": "Active",
         "archived": "Archived"
       },
-      "manage": "Manage {name}",
+      "manage": "Site settings: {name}",
       "create": "Create a site",
       "createIntro": "A template sets the home page layout, comments, moderation and whether news needs approval. You can change all of it later.",
       "nameEn": "Name in English",
@@ -5841,7 +5841,7 @@
       "notReadyPolicy": "Its autonomy is above what your agent policy allows.",
       "notReadyTools": "A tool it needs is missing or not allowed by your agent policy.",
       "install": "Use template",
-      "installNamed": "Use the {name} template",
+      "installNamed": "Use template: {name}",
       "installing": "Creating…",
       "failed": "Something went wrong. Try again."
     },

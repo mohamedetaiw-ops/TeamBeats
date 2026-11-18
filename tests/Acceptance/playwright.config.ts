@@ -17,7 +17,6 @@ const production = stack.webMode === "production";
 const hosts = local ? { args: [`--host-resolver-rules=MAP *.${stack.baseDomain} 127.0.0.1`] } : {};
 
 export default defineConfig({
-  testDir: production ? "./budgets" : "./specs",
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 1 : 0,
@@ -31,16 +30,14 @@ export default defineConfig({
     screenshot: "only-on-failure",
     video: "off",
   },
-  projects: [
-    {
-      name: production ? "budgets" : "chromium",
-      use: {
-        ...devices["Desktop Chrome"],
-        // Every tenant is a subdomain of the base domain; map them all to this machine for the local target.
-        launchOptions: hosts,
-      },
-    },
-  ],
+  // Every tenant is a subdomain of the base domain; map them all to this machine for the local target.
+  projects: production
+    ? [{ name: "budgets", testDir: "./budgets", use: { ...devices["Desktop Chrome"], launchOptions: hosts } }]
+    : [
+        { name: "chromium", testDir: "./specs", use: { ...devices["Desktop Chrome"], launchOptions: hosts } },
+        // The accessibility conformance gate of spec 038 (tests/Acceptance/a11y), its own CI job.
+        { name: "a11y", testDir: "./a11y", use: { ...devices["Desktop Chrome"], launchOptions: hosts } },
+      ],
   webServer: local
     ? [
         {

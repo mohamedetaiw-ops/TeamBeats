@@ -1,6 +1,6 @@
 <!--
 Sync Impact Report
-Version: 1.3.0
+Version: 1.3.1
 Source: AI Intranet Product Foundation v0.1, section 17, plus review findings (docs/review/foundation-v0.1-review.md)
 Source rules C-01..C-20 are all carried over and grouped into Parts A to E.
 Added beyond the source: V development authentication isolation, XI untrusted content, XII AI-native not AI-dependent, XIII AI in every package, XXI backend entitlements, XXII dependency licensing, XXV data classification and privacy
@@ -8,7 +8,8 @@ Templates to keep aligned: .specify/templates/spec-template.md, plan-template.md
 Added in 1.2.0: XXXI one design language (spec 036, docs/design-system).
 Changed in 1.2.1: XXXI names four platform designs (Studio added, spec 036).
 Changed in 1.3.0: XXXI expanded from a visual language to an experience system: page hierarchy, content budgets, one instance per data source, complete states, five separate experience settings, presentation variants per design, one system for admin and employee screens, gates on real pages (spec 036 DLS-100 to DLS-119).
-Status: RATIFIED by Mohamed (1.0.0 on 2026-11-04, 1.1.0 and 1.1.1 on 2026-11-05, 1.2.0 on 2026-11-09, 1.2.1 on 2026-11-10 and 1.3.0 on 2026-11-14 under standing approval). Binding.
+Changed in 1.3.1: XXIV verification names the conformance gate over every route and the conformance map (spec 038).
+Status: RATIFIED by Mohamed (1.0.0 on 2026-11-04, 1.1.0 and 1.1.1 on 2026-11-05, 1.2.0 on 2026-11-09, 1.2.1 on 2026-11-10 and 1.3.0 on 2026-11-14 and 1.3.1 on 2026-11-18 under standing approval). Binding.
 -->
 
 # TeamBeats Constitution
@@ -233,7 +234,7 @@ Verified by: lint rule for literal strings in UI components; pseudo-localization
 
 - Primary employee and administrator journeys MUST meet WCAG 2.2 AA. Color MUST NOT be the only carrier of meaning.
 
-Verified by: automated accessibility checks in CI plus manual keyboard and screen reader checks in the Definition of Done for primary journeys.
+Verified by: the accessibility gate of spec 038 in CI (zero critical and serious violations on every route in every design, mode, language and width, plus keyboard, focus, target size, reflow, zoom, text spacing and motion checks on real pages), the WCAG 2.2 conformance map in `docs/accessibility`, and manual keyboard and screen reader checks in the Definition of Done for primary journeys.
 
 ### XXV. Data classification and privacy
 
