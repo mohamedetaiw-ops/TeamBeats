@@ -98,9 +98,9 @@ public sealed class ContentPerformanceTests(TenantWorld world, ITestOutputHelper
             where id in (md5('item2')::uuid, md5('item5')::uuid);
             insert into content.audience_member (tenant_id, item_id, user_id)
             select platform.current_tenant_id(), id, @reader from content.content_item where critical is not null;
-            analyze content.content_item;
-            analyze content.content_version;
             """, new { site, elsewhere, units = units.ToArray(), n = Items, author = t["admin"].Id, reader = t["reader"].Id });
+        // Statistics as autovacuum would have them; only the table owner may analyze (the app role's analyze is skipped).
+        await world.Database.OwnerExecAsync("analyze content.content_item, content.content_version");
         Assert.True(await world.Database.CountInTenantAsync(t.Id, "select count(*) from content.content_item where status = 'published'") >= Items);
 
         var feed = await TimeAsync(reader, "/api/v1/content/feed?limit=20", 40);

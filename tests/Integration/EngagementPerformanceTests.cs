@@ -68,8 +68,9 @@ public sealed class EngagementPerformanceTests(TenantWorld world, ITestOutputHel
                    (select body from engagement.post where community_id = @community limit 1), 'Post ' || i, i % 2500 = 0,
                    now() - make_interval(mins => i)
             from generate_series(1, @n) as i;
-            analyze engagement.post;
             """, new { community, channel, author = t["admin"].Id, n = Posts });
+        // Statistics as autovacuum would have them; only the table owner may analyze (the app role's analyze is skipped).
+        await world.Database.OwnerExecAsync("analyze engagement.post");
         Assert.True(await world.Database.CountInTenantAsync(t.Id, "select count(*) from engagement.post where community_id = @c", ("c", community)) > Posts);
 
         var url = $"{Api}/communities/{community}/posts";
@@ -143,9 +144,10 @@ public sealed class EngagementPerformanceTests(TenantWorld world, ITestOutputHel
             union all
             select platform.current_tenant_id(), gen_random_uuid(), md5('r' || i)::uuid, q.id, null::uuid, null::int, 'More quiet time ' || i
             from generate_series(1, @n) as i join q on q.kind = 'text' where i % 10 = 0;
-            analyze engagement.survey_response;
-            analyze engagement.survey_answer;
             """, new { id, groups = groups.ToArray(), n = Respondents });
+        // Statistics as autovacuum would have them; only the table owner may analyze (the app role's analyze is skipped,
+        // which left the planner expecting one row and made the results query a nested loop over every answer).
+        await world.Database.OwnerExecAsync("analyze engagement.survey_response, engagement.survey_answer");
         await OkAsync(admin.PostAsync($"{Api}/surveys/{id}:close", null));
 
         var clock = Stopwatch.StartNew();
