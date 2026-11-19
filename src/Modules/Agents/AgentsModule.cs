@@ -51,6 +51,7 @@ public static class AgentsModule
         services.AddScoped<AgentOwnerHandover>();
         services.AddScoped<AgentAnalytics>();
         services.AddScoped<Contracts.IAssistantUsageFigures, AssistantUsageFigures>();
+        services.AddScoped<Contracts.IAssistantKnowledgeFigures, AssistantKnowledgeFigures>();
         services.AddMessageHandler<Identity.Contracts.UserDeprovisioned, AgentOwnerHandler>("agents.owner_left");
         services.AddMessageHandler<Identity.Contracts.UserDeprovisioned, AgentMemoryLeavers>("agents.memory_leaver");
         services.AddMessageHandler<Identity.Contracts.UserDeprovisioned, AgentBriefingLeavers>("agents.briefing_leaver");

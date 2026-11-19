@@ -87,3 +87,17 @@ public interface ISecurityAlertThresholds
 {
     Task<AlertThresholds> GetAsync(CancellationToken ct = default);
 }
+
+/// <summary>
+/// Security posture trends for the analytics security dashboard (spec 021 section 2): alerts raised per ISO week and per
+/// kind in the period (people: distinct subjects), alerts still open, and the keys of the posture checks that are weaker
+/// than the recommended baseline now, out of the checks that apply. No subject is named.
+/// </summary>
+public sealed record SecurityTrendSummary(long Alerts, long OpenAlerts, IReadOnlyList<GroupFigure> AlertWeeks,
+    IReadOnlyList<GroupFigure> AlertKinds, IReadOnlyList<string> WeakerChecks, int Checks);
+
+/// <summary>Security trend figures for analytics; the caller decides who may see them. Current tenant only.</summary>
+public interface ISecurityTrendFigures
+{
+    Task<SecurityTrendSummary> SummaryAsync(DateTimeOffset from, DateTimeOffset to, CancellationToken ct = default);
+}

@@ -70,6 +70,7 @@ public static class HrModule
         services.AddSingleton<Services.Contracts.IModuleServiceSource, Expenses.ExpenseModuleServices>();
         services.AddScoped<JourneyTaskSource>();
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<JourneyTaskSource>());
+        services.AddScoped<Contracts.IHrFigures, HrFigures>();
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, JourneyTaskSource>("hr.journey_notify_task");
         services.AddMessageHandler<Workflow.Contracts.UserTaskDue, JourneyTaskSource>("hr.journey_step_overdue");
         services.AddMessageHandler<Policies.Contracts.PolicyAttested, JourneyTaskSource>("hr.journey_attested");

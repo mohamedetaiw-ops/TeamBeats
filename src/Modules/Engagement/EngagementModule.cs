@@ -18,6 +18,7 @@ public static class EngagementModule
         services.AddSingleton<Experience.Contracts.IComponentRegistration, EngagementComponents>();
         services.AddScoped<MediaChecks>();
         services.AddScoped<EngagementActivity>();
+        services.AddScoped<Contracts.IEngagementFigures, EngagementFigures>();
         services.AddScoped<PostAttachments>();
         services.AddScoped<Communities>();
         services.AddScoped<TeamBeats.Modules.Analytics.Contracts.IAnalyticsTextSource, CommunityTextSource>();

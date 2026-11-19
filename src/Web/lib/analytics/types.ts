@@ -309,3 +309,29 @@ export type SearchGapsView = {
   canAddBestBet: boolean;
   canWriteArticle: boolean;
 };
+
+/**
+ * Knowledge, engagement, HR and security trend dashboards (spec 021 section 2): headline figures and sections in one
+ * shape. Null figures are hidden behind the minimum group size; the Other row gathers groups that are too small.
+ */
+export type AreaKey = "knowledge" | "engagement" | "hr" | "security";
+export type AreaColumn = "count" | "people" | "amount" | "rate" | "date";
+export type AreaRow = {
+  key: string;
+  names: Record<string, string> | null;
+  label: string | null;
+  date: string | null;
+  count: number | null;
+  people: number | null;
+  amount: number | null;
+  rate: number | null;
+};
+export type AreaSection = { key: string; group: "week" | "key" | "name" | "label"; columns: AreaColumn[]; rows: AreaRow[]; link: string | null };
+export type AreaView = {
+  area: AreaKey;
+  from: string;
+  to: string;
+  minGroupSize: number;
+  totals: { key: string; value: number | null; share: boolean }[];
+  sections: AreaSection[];
+};

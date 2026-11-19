@@ -44,6 +44,7 @@ public static class AnalyticsModule
         services.AddScoped<AiUsageAnalytics>();
         services.AddScoped<DashboardSummaries>();
         services.AddScoped<SearchGaps>();
+        services.AddScoped<AreaDashboards>();
         services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IShellCommands, AnalyticsCommands>();
         services.AddScoped<IAnalyticsEvents, AnalyticsEventsEmitter>();
         services.AddMessageHandler<AnalyticsEventEmitted, AnalyticsEventHandler>("analytics.write_event");
@@ -110,6 +111,15 @@ public static class AnalyticsModule
         // Search gaps (spec 021 US3, FR-007): from the spec 012 query feed, five people or more, no personal data.
         analytics.MapGet("/search", async (DateOnly? from, DateOnly? to, string? locale, SearchGaps gaps, CancellationToken ct) =>
             Results.Ok(await gaps.GetAsync(from, to, locale, ct)));
+        // Knowledge, engagement, HR and security trends (spec 021 section 2, FR-002): read from their owners, minimum group size.
+        analytics.MapGet("/knowledge", async (DateOnly? from, DateOnly? to, AreaDashboards areas, CancellationToken ct) =>
+            Results.Ok(await areas.KnowledgeAsync(from, to, ct)));
+        analytics.MapGet("/engagement", async (DateOnly? from, DateOnly? to, AreaDashboards areas, CancellationToken ct) =>
+            Results.Ok(await areas.EngagementAsync(from, to, ct)));
+        analytics.MapGet("/hr", async (DateOnly? from, DateOnly? to, AreaDashboards areas, CancellationToken ct) =>
+            Results.Ok(await areas.HrAsync(from, to, ct)));
+        analytics.MapGet("/security", async (DateOnly? from, DateOnly? to, AreaDashboards areas, CancellationToken ct) =>
+            Results.Ok(await areas.SecurityAsync(from, to, ct)));
         // AI summaries of a dashboard (spec 021 US8 scenario 3): the figures it used, labelled as AI-generated.
         analytics.MapPost("/summaries", async (SummaryRequest request, DashboardSummaries summaries, CancellationToken ct) =>
             Results.Ok(await summaries.SummarizeAsync(request, ct)));
