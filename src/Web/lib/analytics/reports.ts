@@ -1,7 +1,7 @@
 import type { MetricFilters } from "./types";
 
 /** Spec 021 T016: scheduled reports and exports. The API decides what may be exported or scheduled and runs each report. */
-export type ReportDashboard = "overview" | "campaign" | "service" | "compliance" | "scope_unit" | "scope_location" | "experience" | "sentiment" | "ai_usage";
+export type ReportDashboard = "overview" | "campaign" | "service" | "compliance" | "scope_unit" | "scope_location" | "experience" | "sentiment" | "ai_usage" | "search";
 
 export type ReportDefinition = {
   dashboard: ReportDashboard;

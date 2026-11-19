@@ -68,7 +68,7 @@ export type WorkspaceView = {
   metrics: WorkspaceMetric[];
 };
 
-export type MetricFilters = { unitId?: string; channel?: string; membershipType?: string; from?: string; to?: string };
+export type MetricFilters = { unitId?: string; channel?: string; membershipType?: string; from?: string; to?: string; locale?: string };
 
 /** A metric answer. Suppressed selections carry no figures; a week under the minimum group size is null. */
 export type MetricResult = {
@@ -289,4 +289,23 @@ export type AiUsageView = {
   denied: { reason: string; requests: number }[];
   assistant: { questions: number | null; users: number | null; answerRate: number | null; citationRate: number | null; ratings: number | null; helpfulRate: number | null };
   agents: AiAgentFigures[];
+};
+
+/** Search gaps (spec 021 US3) from the spec 012 query feed: only queries five or more people searched for. */
+export type SearchQueryRow = { query: string; searches: number; people: number; zeroResults: number; clicks: number };
+export type SearchGapsView = {
+  from: string;
+  to: string;
+  locale: string | null;
+  minPeople: number;
+  searches: number;
+  zeroResults: number;
+  clicked: number;
+  clickThrough: number;
+  queryTextHidden: boolean;
+  zeroResultQueries: SearchQueryRow[];
+  noClickQueries: SearchQueryRow[];
+  topQueries: SearchQueryRow[];
+  canAddBestBet: boolean;
+  canWriteArticle: boolean;
 };

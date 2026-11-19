@@ -28,14 +28,15 @@ public static class ReportDashboards
     public const string Experience = "experience";
     public const string Sentiment = "sentiment";
     public const string AiUsage = "ai_usage";
+    public const string Search = "search";
 
-    public static readonly IReadOnlyList<string> All = [Overview, Campaign, Service, Compliance, ScopeUnit, ScopeLocation, Experience, Sentiment, AiUsage];
+    public static readonly IReadOnlyList<string> All = [Overview, Campaign, Service, Compliance, ScopeUnit, ScopeLocation, Experience, Sentiment, AiUsage, Search];
 
     /// <summary>Dashboards that read one thing, named by <see cref="ReportDefinition.Target"/>.</summary>
     public static readonly IReadOnlySet<string> Targeted = new HashSet<string>(StringComparer.Ordinal) { Campaign, Service, ScopeUnit, ScopeLocation };
 
     /// <summary>Dashboards with a period: a schedule sends the last week or month, an export the period it names.</summary>
-    public static readonly IReadOnlySet<string> Dated = new HashSet<string>(StringComparer.Ordinal) { Overview, Service, ScopeUnit, ScopeLocation, Experience, Sentiment, AiUsage };
+    public static readonly IReadOnlySet<string> Dated = new HashSet<string>(StringComparer.Ordinal) { Overview, Service, ScopeUnit, ScopeLocation, Experience, Sentiment, AiUsage, Search };
 }
 
 public static class ReportCadences
@@ -124,7 +125,9 @@ public sealed class ReportDefinitions(IServiceProvider services)
         {
             errors.Add("definition.metric", "validation.analytics.metric");
         }
-        if (d.Dashboard != ReportDashboards.Overview && (d.Metric is not null || d.GroupBy is not null || HasNonDateFilter(d.Filters)))
+        // The search dashboard filters by locale only (spec 021 US3); others take dates only.
+        var filters = d.Dashboard == ReportDashboards.Search && d.Filters is not null ? d.Filters with { Locale = null } : d.Filters;
+        if (d.Dashboard != ReportDashboards.Overview && (d.Metric is not null || d.GroupBy is not null || HasNonDateFilter(filters)))
         {
             errors.Add("definition.filters", "validation.analytics.filter");
         }
@@ -153,6 +156,7 @@ public sealed class ReportDefinitions(IServiceProvider services)
             ReportDashboards.Experience => await services.GetRequiredService<ExperienceAnalytics>().GetAsync(from, to, ct),
             ReportDashboards.Sentiment => await services.GetRequiredService<SentimentAnalytics>().GetAsync(from, to, ct),
             ReportDashboards.AiUsage => await services.GetRequiredService<AiUsageAnalytics>().GetAsync(from, to, ct),
+            ReportDashboards.Search => await services.GetRequiredService<SearchGaps>().GetAsync(from, to, d.Filters?.Locale, ct),
             _ => throw AppException.Validation("definition.dashboard", "validation.analytics.dashboard"),
         };
         return JsonSerializer.SerializeToElement(result, result.GetType(), Json);

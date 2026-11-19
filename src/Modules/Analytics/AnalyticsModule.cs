@@ -43,6 +43,7 @@ public static class AnalyticsModule
         services.AddScoped<SentimentAnalytics>();
         services.AddScoped<AiUsageAnalytics>();
         services.AddScoped<DashboardSummaries>();
+        services.AddScoped<SearchGaps>();
         services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IShellCommands, AnalyticsCommands>();
         services.AddScoped<IAnalyticsEvents, AnalyticsEventsEmitter>();
         services.AddMessageHandler<AnalyticsEventEmitted, AnalyticsEventHandler>("analytics.write_event");
@@ -106,6 +107,9 @@ public static class AnalyticsModule
         // AI usage (spec 021 section 2, FR-016): figures read from the AI Gateway, the assistant and evaluation.
         analytics.MapGet("/ai-usage", async (DateOnly? from, DateOnly? to, AiUsageAnalytics usage, CancellationToken ct) =>
             Results.Ok(await usage.GetAsync(from, to, ct)));
+        // Search gaps (spec 021 US3, FR-007): from the spec 012 query feed, five people or more, no personal data.
+        analytics.MapGet("/search", async (DateOnly? from, DateOnly? to, string? locale, SearchGaps gaps, CancellationToken ct) =>
+            Results.Ok(await gaps.GetAsync(from, to, locale, ct)));
         // AI summaries of a dashboard (spec 021 US8 scenario 3): the figures it used, labelled as AI-generated.
         analytics.MapPost("/summaries", async (SummaryRequest request, DashboardSummaries summaries, CancellationToken ct) =>
             Results.Ok(await summaries.SummarizeAsync(request, ct)));

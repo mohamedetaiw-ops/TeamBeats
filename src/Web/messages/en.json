@@ -7579,7 +7579,8 @@
       "experienceLink": "Experience",
       "reportsLink": "Reports",
       "sentimentLink": "Sentiment",
-      "aiUsageLink": "AI usage"
+      "aiUsageLink": "AI usage",
+      "searchLink": "Search gaps"
     },
     "campaigns": {
       "workspace": "Analytics",
@@ -7943,7 +7944,8 @@
         "scope_location": "Location dashboard",
         "experience": "Experience",
         "sentiment": "Sentiment",
-        "ai_usage": "AI usage"
+        "ai_usage": "AI usage",
+        "search": "Search gaps"
       },
       "column": {
         "name": "Name",
@@ -8147,6 +8149,50 @@
       "privacyNote": "Figures behind fewer than {size} people are hidden or combined so that no one can be singled out.",
       "metric": "{metric} ({locale})",
       "noValue": "None yet"
+    },
+    "search": {
+      "title": "Search gaps",
+      "intro": "What people search for and do not find, so knowledge editors can fill the gaps. Only searches shared by several people are listed.",
+      "workspace": "Analytics",
+      "denied": "You cannot open search gaps",
+      "deniedHint": "Search gaps need a package with advanced analytics and permission to view analytics for the whole organization, manage search or edit knowledge.",
+      "error": "Search gaps could not be loaded",
+      "errorHint": "Try again in a few minutes.",
+      "locale": "Language",
+      "anyLocale": "All languages",
+      "empty": "No searches in this period",
+      "emptyHint": "Figures appear once people search.",
+      "searches": "Searches",
+      "zeroResults": "With no results",
+      "clickThrough": "Searches with a click",
+      "textHidden": "Search words are not kept",
+      "textHiddenHint": "Search administrators turned query text off, so only the counts are shown.",
+      "zero": {
+        "title": "Searches with no results",
+        "hint": "Add a best bet or write an article so the next search finds something."
+      },
+      "noClick": {
+        "title": "Searches nobody clicked",
+        "hint": "Results came back but nobody opened one. The words or the results may need work."
+      },
+      "top": {
+        "title": "Top searches",
+        "hint": "What people look for most."
+      },
+      "noQueries": "No search was made by {size} or more people.",
+      "column": {
+        "query": "Search",
+        "searches": "Searches",
+        "people": "People",
+        "zeroResults": "No results",
+        "clicks": "Clicks",
+        "actions": "Next step"
+      },
+      "bestBet": "Add a best bet",
+      "bestBetFor": "Add a best bet for {query}",
+      "article": "Write an article",
+      "articleFor": "Write an article for {query}",
+      "privacyNote": "A search is listed only when at least {size} people made it, and never when it looks like personal data such as an email address or ID number."
     }
   },
   "design_system": {

@@ -16,17 +16,20 @@ export function NewArticleForm({
   templates,
   locales,
   defaultLocale,
+  title,
 }: {
   templates: KbTemplate[];
   locales: string[];
   defaultLocale: string;
+  /** A starting title, such as a search with no results (spec 021 US3), in the given language. */
+  title?: { locale: string; text: string };
 }) {
   const t = useTranslations("documents.kb_new");
   const viewer = useLocale();
   const router = useRouter();
   const ids = useId();
   const [template, setTemplate] = useState<string>(templates[0]?.key ?? "sop");
-  const [titles, setTitles] = useState<Record<string, string>>({});
+  const [titles, setTitles] = useState<Record<string, string>>(title && locales.includes(title.locale) ? { [title.locale]: title.text } : {});
   const [busy, setBusy] = useState(false);
   const [messages, setMessages] = useState<string[]>([]);
   const languages = new Intl.DisplayNames([viewer], { type: "language" });

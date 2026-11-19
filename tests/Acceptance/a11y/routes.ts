@@ -110,6 +110,7 @@ export const routes: readonly Route[] = [
   { path: "/analytics/experience", tier: "other" },
   { path: "/analytics/sentiment", tier: "other" },
   { path: "/analytics/ai-usage", tier: "other" },
+  { path: "/analytics/search", tier: "other" },
   { path: "/analytics/scopes", tier: "other" },
   { path: "/analytics/scopes/location", tier: "other" },
   { path: "/analytics/scopes/unit/[id]", tier: "detail" },

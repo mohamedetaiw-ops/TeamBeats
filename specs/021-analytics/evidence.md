@@ -20,3 +20,25 @@ The spec stays Approved, not Implemented, until its R2 and R3 parts are built: t
 | SC-001 share read and acknowledged in under 30 seconds | Met | The item editor and the policy page link to the analytics page, which leads with audience, readers, reach and acknowledgement (`content-authoring.spec.ts`, `policies.spec.ts`) |
 | SC-002 no group under the minimum in privacy tests | Met for R1 views | `ItemAnalyticsMergeTests`, `AdoptionCountsTests`, `ItemAnalyticsTests`, `AdoptionTests` |
 | Section 7 cross-tenant cases | Met | Each test class reads from a second tenant: salts and keys differ, events, aggregates, items, adoption and errors of one tenant are never in another |
+
+# Spec 021 evidence (R2)
+
+R2 builds the analytics workspace and its dashboards, scheduled reports, export, sentiment, AI usage and AI summaries (T010 to T019). Defaults, deviations and gaps are in the spec 021 sections of `docs/architecture/r2-implementation-notes.md`. The spec stays Approved, not Implemented: R3 adds KPI tiles, benchmarks, the analytics API and experiments, and the R2 gaps below remain.
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| FR-002 advanced dashboards | Partly met | Campaigns, services and workflows, policy compliance, AI usage, search, location and unit, experience and sentiment are workspace sections under `analytics.advanced` or their own key (`CampaignAnalyticsTests`, `ServiceAnalyticsTests`, `ComplianceAnalyticsTests`, `AnalyticsAiTests`, `SearchGapsTests`, `ScopeDashboardTests`, `ExperienceAnalyticsTests`, `SentimentTests`). Gap (T020): HR, knowledge and security posture dashboards are not yet sections of the workspace; engagement figures are counted (`EngagementAnalyticsTests`) but have no dashboard yet; search is by locale, not yet by unit or refinement |
+| FR-006 filters and viewer scope | Met | `AnalyticsWorkspaceTests` (all four), `AnalyticsWorkspaceMergeTests` |
+| FR-007 zero result and no click queries, five people, no personal data | Met | `SearchGapsTests`, `SearchQueryLogTests`, `analytics-search.spec.ts` (en and ar, axe) |
+| FR-008 service volume, cycle time, steps, breaches, reasons, automation | Met | `ServiceAnalyticsTests`, `analytics-services.spec.ts` |
+| FR-009 campaign funnel by channel and return on effort | Met | `CampaignAnalyticsTests`, `CampaignAnalyticsMergeTests`, `analytics-campaigns.spec.ts` |
+| FR-010 location and unit dashboards that never reveal another single scope | Met for R2 (KPI tiles are R3) | `ScopeDashboardTests` (all three), `analytics-scopes.spec.ts` |
+| FR-011 permissions per recipient at send time | Met | `AnalyticsReportTests.Schedule_to_a_unit_sends_each_member_what_they_may_see_skips_the_rest_and_tells_the_owner` |
+| FR-012 exports with the same rules, in the background, audited | Met | `AnalyticsReportTests.Export_is_made_in_the_background_...`, `Export_is_refused_without_the_export_capability`, `ReportTablesTests`, `analytics-reports.spec.ts` |
+| FR-013 sentiment on de-identified text, AI policy, no link to anonymous answers | Met | `SentimentTests` (all three), `SentimentMathTests`, `analytics-sentiment.spec.ts` |
+| FR-014 retention | Met (R1) | `AnalyticsPipelineTests.Raw_events_past_the_tenants_retention_are_removed_and_aggregates_stay` |
+| FR-016 one number for AI usage and quality | Met | `AnalyticsAiTests.Ai_usage_shows_the_gateway_numbers_and_hides_small_groups` compares with the spec 013 usage page; agent quality is the spec 034 gate result the Agent Hub shows |
+| FR-019 to FR-021 experience, vitals and outcomes | Met for R2 | `ExperienceAnalyticsTests`, `ExperienceAnalyticsMathTests`, `analytics-experience.spec.ts` |
+| FR-025 trends as charts with table alternatives | Met | Workspace line and bar charts with tables (`WorkspaceExplorer`), weekly charts on sentiment and AI usage; the a11y suite checks every analytics route |
+| US2 to US9 R2 scenarios | Met except as noted | The tests above; US8 scenario 3 by `AnalyticsAiTests.A_summary_names_the_figures_it_used_and_follows_the_dashboard_access`, `AnalyticsAiMathTests` and `analytics-ai.spec.ts` |
+| Section 7 cross-tenant cases | Met | Each R2 integration class reads from a second tenant and sees none of the first tenant's figures |
