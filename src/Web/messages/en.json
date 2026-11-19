@@ -7577,7 +7577,10 @@
       "complianceLink": "Policy compliance",
       "scopesLink": "Locations and units",
       "experienceLink": "Experience",
-      "reportsLink": "Reports"
+      "reportsLink": "Reports",
+      "sentimentLink": "Sentiment",
+      "aiUsageLink": "AI usage",
+      "searchLink": "Search gaps"
     },
     "campaigns": {
       "workspace": "Analytics",
@@ -7939,7 +7942,10 @@
         "compliance": "Policy compliance",
         "scope_unit": "Unit dashboard",
         "scope_location": "Location dashboard",
-        "experience": "Experience"
+        "experience": "Experience",
+        "sentiment": "Sentiment",
+        "ai_usage": "AI usage",
+        "search": "Search gaps"
       },
       "column": {
         "name": "Name",
@@ -7980,7 +7986,213 @@
         "overdue": "Overdue",
         "counts": "Counts",
         "people": "People"
+      },
+      "summary": {
+        "action": "Summarize",
+        "title": "Summary",
+        "intro": "A short description of this dashboard written by AI from the figures on screen.",
+        "close": "Close",
+        "again": "Summarize again",
+        "busy": "Writing the summary…",
+        "failed": "The summary could not be made. Try again.",
+        "none": "No summary this time",
+        "aiGenerated": "AI-generated",
+        "figures": "Figures used",
+        "check": "Check important figures on the dashboard before acting on them.",
+        "denial": {
+          "unverified": "The AI answer used numbers that are not on the dashboard, so it was not shown.",
+          "no_figures": "There are no figures to summarize yet.",
+          "classification_blocked": "The AI policy does not allow these figures to be sent to a model.",
+          "provider_unavailable": "The AI provider is not available. Try again later.",
+          "quota_exhausted": "The AI quota is used up for now.",
+          "budget_exhausted": "The AI budget is used up for now.",
+          "not_in_package": "Your package does not include AI for this use.",
+          "other": "The AI gateway refused the request."
+        }
       }
+    },
+    "sentiment": {
+      "title": "Sentiment",
+      "intro": "How people feel in comments and survey answers, by week, topic, unit, location and source. No text and no person is shown.",
+      "workspace": "Analytics",
+      "denied": "You cannot open sentiment",
+      "deniedHint": "Sentiment needs a package that includes it and permission to view analytics for the whole organization.",
+      "error": "Sentiment could not be loaded",
+      "errorHint": "Try again in a few minutes.",
+      "setting": "Sentiment analysis",
+      "switch": "Label comments and survey answers by sentiment",
+      "switchHint": "Texts are sent through the AI gateway to be labelled. Only the label is kept, never the text.",
+      "switchFailed": "The setting could not be changed. Try again.",
+      "hidden": "Hidden (fewer than {size} people)",
+      "other": "Other (groups under {size} people)",
+      "noUnit": "No unit",
+      "notRecorded": "Not recorded",
+      "source": {
+        "content_comment": "News and page comments",
+        "community_comment": "Community comments",
+        "survey_answer": "Survey answers"
+      },
+      "paused": "{source} is paused",
+      "denial": {
+        "classification_blocked": "The AI policy does not allow texts of this classification to be sent to a model.",
+        "provider_unavailable": "The AI provider is not available. Labelling resumes on its own.",
+        "quota_exhausted": "The AI quota is used up for now. Labelling resumes when it is renewed.",
+        "budget_exhausted": "The AI budget is used up for now. Labelling resumes when it is renewed.",
+        "not_in_package": "Your package does not include AI for this use.",
+        "unusable_answer": "The model gave an answer that could not be used. Labelling tries again later.",
+        "other": "The AI gateway refused the request. Labelling tries again later."
+      },
+      "off": "Sentiment is off",
+      "offHint": "Turn it on to start labelling new comments and survey answers.",
+      "empty": "Nothing labelled yet",
+      "emptyHint": "Comments and answers from closed surveys are labelled within a few minutes.",
+      "tooFew": "Too few people to show",
+      "tooFewHint": "Figures appear once at least {size} people have written.",
+      "texts": "Texts",
+      "positive": "Positive",
+      "neutral": "Neutral",
+      "negative": "Negative",
+      "score": "Score",
+      "scoreHint": "The score runs from minus 1 (all negative) to plus 1 (all positive).",
+      "trend": "Score by week",
+      "trendSummary": "Sentiment score over {weeks} weeks",
+      "column": {
+        "week": "Week",
+        "topic": "Topic",
+        "unit": "Unit",
+        "location": "Location",
+        "source": "Source"
+      },
+      "by": {
+        "topic": "By topic",
+        "unit": "By unit",
+        "location": "By location",
+        "source": "By source"
+      },
+      "privacyNote": "Each figure stands for at least {size} people. Smaller groups are combined so that no one can be singled out."
+    },
+    "aiUsage": {
+      "title": "AI usage",
+      "intro": "Requests, people and cost of AI across the organization, with assistant answers and agent quality. The same numbers as the AI usage and evaluation pages.",
+      "workspace": "Analytics",
+      "denied": "You cannot open AI usage",
+      "deniedHint": "AI usage needs a package with advanced analytics and permission to view analytics for the whole organization.",
+      "error": "AI usage could not be loaded",
+      "errorHint": "Try again in a few minutes.",
+      "hidden": "Hidden (fewer than {size} people)",
+      "other": "Other (groups under {size} people)",
+      "notCounted": "Not counted",
+      "empty": "No AI use yet",
+      "emptyHint": "Figures appear once people use the assistant, agents or other AI features.",
+      "requests": "Requests",
+      "users": "People",
+      "tokens": "Tokens",
+      "cost": "Estimated cost",
+      "sharedNote": "Requests, people and cost come from the AI usage page; agent quality comes from evaluation.",
+      "trend": "Requests by week",
+      "trendSummary": "AI requests over {weeks} weeks",
+      "assistant": "Assistant",
+      "questions": "Questions",
+      "answerRate": "Answered",
+      "citationRate": "Answers with sources",
+      "helpfulRate": "Rated helpful",
+      "byUseCase": "By use",
+      "agents": "Agents in use",
+      "runs": "Runs",
+      "successRate": "Answered",
+      "quality": "Quality",
+      "unnamed": "Unnamed agent",
+      "noGate": "Not evaluated",
+      "noScore": "No score",
+      "refused": "Refused requests",
+      "column": {
+        "week": "Week",
+        "useCase": "Use",
+        "agent": "Agent",
+        "reason": "Reason"
+      },
+      "useCase": {
+        "assistant": "Assistant",
+        "summarize": "Summaries and labels",
+        "translate": "Translation",
+        "draft": "Drafting",
+        "embed": "Search indexing",
+        "agent": "Agents",
+        "evaluation": "Evaluation",
+        "transcribe": "Speech to text",
+        "speak": "Read aloud"
+      },
+      "reason": {
+        "not_in_package": "Not in the package",
+        "quota_exhausted": "Quota used up",
+        "budget_exhausted": "Budget used up",
+        "classification_blocked": "Classification not allowed",
+        "model_not_allowed": "Model not allowed",
+        "region_blocked": "Region not allowed",
+        "provider_unavailable": "Provider unavailable",
+        "context_too_large": "Request too large",
+        "classification_missing": "Classification missing",
+        "invalid_request": "Invalid request"
+      },
+      "gate": {
+        "not_built": "No evaluation set",
+        "not_run": "Not evaluated",
+        "running": "Evaluating",
+        "passed": "Passed",
+        "failed": "Failed",
+        "failed_critical": "Failed a critical check",
+        "incomplete": "Incomplete",
+        "overridden": "Passed by override",
+        "stale": "Out of date",
+        "cancelled": "Cancelled"
+      },
+      "privacyNote": "Figures behind fewer than {size} people are hidden or combined so that no one can be singled out.",
+      "metric": "{metric} ({locale})",
+      "noValue": "None yet"
+    },
+    "search": {
+      "title": "Search gaps",
+      "intro": "What people search for and do not find, so knowledge editors can fill the gaps. Only searches shared by several people are listed.",
+      "workspace": "Analytics",
+      "denied": "You cannot open search gaps",
+      "deniedHint": "Search gaps need a package with advanced analytics and permission to view analytics for the whole organization, manage search or edit knowledge.",
+      "error": "Search gaps could not be loaded",
+      "errorHint": "Try again in a few minutes.",
+      "locale": "Language",
+      "anyLocale": "All languages",
+      "empty": "No searches in this period",
+      "emptyHint": "Figures appear once people search.",
+      "searches": "Searches",
+      "zeroResults": "With no results",
+      "clickThrough": "Searches with a click",
+      "textHidden": "Search words are not kept",
+      "textHiddenHint": "Search administrators turned query text off, so only the counts are shown.",
+      "zero": {
+        "title": "Searches with no results",
+        "hint": "Add a best bet or write an article so the next search finds something."
+      },
+      "noClick": {
+        "title": "Searches nobody clicked",
+        "hint": "Results came back but nobody opened one. The words or the results may need work."
+      },
+      "top": {
+        "title": "Top searches",
+        "hint": "What people look for most."
+      },
+      "noQueries": "No search was made by {size} or more people.",
+      "column": {
+        "query": "Search",
+        "searches": "Searches",
+        "people": "People",
+        "zeroResults": "No results",
+        "clicks": "Clicks",
+        "actions": "Next step"
+      },
+      "bestBet": "Add a best bet",
+      "bestBetFor": "Add a best bet for {query}",
+      "article": "Write an article",
+      "articleFor": "Write an article for {query}",
+      "privacyNote": "A search is listed only when at least {size} people made it, and never when it looks like personal data such as an email address or ID number."
     }
   },
   "design_system": {

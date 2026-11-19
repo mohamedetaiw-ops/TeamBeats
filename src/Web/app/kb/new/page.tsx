@@ -7,7 +7,7 @@ import { NewArticleForm } from "@/features/documents/NewArticleForm";
 import { PageHeader } from "@/components/ui/PageHeader";
 
 /** Starts a knowledge article from a template (spec 011 US4 scenario 1); writing it continues in the content editor. */
-export default async function NewArticlePage() {
+export default async function NewArticlePage({ searchParams }: { searchParams: Promise<{ title?: string; locale?: string }> }) {
   const me = await apiGet<Me>("/api/v1/me");
   if (!me.ok) {
     redirect("/signin");
@@ -17,6 +17,8 @@ export default async function NewArticlePage() {
     notFound();
   }
   const t = await getTranslations("documents.kb");
+  const start = await searchParams;
+  const title = start.title ? { locale: start.locale ?? me.data.tenant.defaultLocale, text: start.title.slice(0, 200) } : undefined;
   return (
     <>
       <Header
@@ -32,6 +34,7 @@ export default async function NewArticlePage() {
           templates={templates.data}
           locales={me.data.tenant.enabledLocales}
           defaultLocale={me.data.tenant.defaultLocale}
+          title={title}
         />
       </main>
     </>

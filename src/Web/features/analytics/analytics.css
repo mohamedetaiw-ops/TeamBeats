@@ -108,3 +108,17 @@
   flex-wrap: wrap;
   gap: var(--tb-space-sm);
 }
+
+/* AI summary of a dashboard (spec 021 US8): the labelled text, then the figures it used. */
+.analytics-summary {
+  display: grid;
+  gap: var(--tb-space-sm);
+  justify-items: start;
+}
+
+.analytics-summary-figures {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding-inline-start: var(--tb-space-md);
+}

@@ -39,6 +39,11 @@ public static class AnalyticsModule
         services.AddScoped<ReportDefinitions>();
         services.AddScoped<AnalyticsReports>();
         services.AddScoped<ReportRunner>();
+        services.AddScoped<SentimentClassifier>();
+        services.AddScoped<SentimentAnalytics>();
+        services.AddScoped<AiUsageAnalytics>();
+        services.AddScoped<DashboardSummaries>();
+        services.AddScoped<SearchGaps>();
         services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IShellCommands, AnalyticsCommands>();
         services.AddScoped<IAnalyticsEvents, AnalyticsEventsEmitter>();
         services.AddMessageHandler<AnalyticsEventEmitted, AnalyticsEventHandler>("analytics.write_event");
@@ -96,6 +101,18 @@ public static class AnalyticsModule
         // Experience dashboards (spec 021 US9, T015): analytics.view for the whole tenant.
         analytics.MapGet("/experience", async (DateOnly? from, DateOnly? to, ExperienceAnalytics experience, CancellationToken ct) =>
             Results.Ok(await experience.GetAsync(from, to, ct)));
+        // Sentiment (spec 021 US8, T017): labels only, with the minimum group size; analytics.view for the whole tenant.
+        analytics.MapGet("/sentiment", async (DateOnly? from, DateOnly? to, SentimentAnalytics sentiment, CancellationToken ct) =>
+            Results.Ok(await sentiment.GetAsync(from, to, ct)));
+        // AI usage (spec 021 section 2, FR-016): figures read from the AI Gateway, the assistant and evaluation.
+        analytics.MapGet("/ai-usage", async (DateOnly? from, DateOnly? to, AiUsageAnalytics usage, CancellationToken ct) =>
+            Results.Ok(await usage.GetAsync(from, to, ct)));
+        // Search gaps (spec 021 US3, FR-007): from the spec 012 query feed, five people or more, no personal data.
+        analytics.MapGet("/search", async (DateOnly? from, DateOnly? to, string? locale, SearchGaps gaps, CancellationToken ct) =>
+            Results.Ok(await gaps.GetAsync(from, to, locale, ct)));
+        // AI summaries of a dashboard (spec 021 US8 scenario 3): the figures it used, labelled as AI-generated.
+        analytics.MapPost("/summaries", async (SummaryRequest request, DashboardSummaries summaries, CancellationToken ct) =>
+            Results.Ok(await summaries.SummarizeAsync(request, ct)));
         // Scheduled reports and exports (spec 021 US7, T016): computed in the background as each recipient.
         analytics.MapGet("/reports/options", async (AnalyticsReports reports, CancellationToken ct) => Results.Ok(await reports.OptionsAsync(ct)));
         analytics.MapGet("/reports", async (AnalyticsReports reports, CancellationToken ct) => Results.Ok(await reports.ListAsync(ct)));

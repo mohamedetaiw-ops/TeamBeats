@@ -13,7 +13,7 @@ import { AdminHeader } from "@/components/shell/AdminHeader";
  * its release gate (US3 scenario 3, FR-008, T007) and the judged query sets it scores (US8), federated sources (US5) and the AI summary (US6) where the package has them. The page exists only when
  * the API lists the section; every call is authorized again by the API.
  */
-export default async function SearchAdminPage() {
+export default async function SearchAdminPage({ searchParams }: { searchParams: Promise<{ query?: string; locale?: string }> }) {
   const nav = await apiGet<NavigationSection[]>("/api/v1/admin/navigation");
   if (!nav.ok || !nav.data.some((s) => s.key === "search")) notFound();
   const [bets, synonyms, rebuilds, retrieval, federated, summary, judged, units, queryText] = await Promise.all([
@@ -29,10 +29,11 @@ export default async function SearchAdminPage() {
   ]);
   if (!bets.ok || !synonyms.ok || !rebuilds.ok || !retrieval.ok) notFound();
   const t = await getTranslations("search.admin");
+  const start = await searchParams;
   return (
     <div className="search-admin">
       <AdminHeader section="search" description={t("intro")} />
-      <BestBets initial={bets.data.bestBets} />
+      <BestBets initial={bets.data.bestBets} query={start.query?.slice(0, 200)} locale={start.locale === "ar" || start.locale === "en" ? start.locale : undefined} />
       <Synonyms initial={synonyms.data.synonymSets} />
       <Rebuilds initial={rebuilds.data} />
       <RetrievalSettingsPanel initial={retrieval.data} />

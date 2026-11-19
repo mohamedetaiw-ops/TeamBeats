@@ -291,6 +291,26 @@ public interface IAgentReleaseGate
     Task<AgentGateResult> ResultAsync(Guid agentId, int version, CancellationToken ct);
 }
 
+/// <summary>A metric of an agent's version in force, as its release gate run of spec 034 measured it.</summary>
+public sealed record AgentQualityFigure(string Metric, string Locale, double? Value);
+
+/// <summary>One agent in use: its runs, answered runs and ratings in the period, and the quality of its version in force.</summary>
+public sealed record AgentUsageFigure(Guid AgentId, IReadOnlyDictionary<string, string>? Name, long Runs, long Users, long Answered, long Ratings, long Helpful,
+    string? Gate, IReadOnlyList<AgentQualityFigure> Quality);
+
+/// <summary>
+/// Assistant and agent figures for analytics (spec 021 FR-016): assistant questions, the people who asked, answered
+/// questions, answers with citations and ratings, and per agent in use the same figures the Agent Hub shows with the
+/// quality scores of spec 034, so one number shows everywhere.
+/// </summary>
+public sealed record AssistantUsageSummary(long Questions, long Users, long Answered, long Cited, long Ratings, long Helpful, IReadOnlyList<AgentUsageFigure> Agents);
+
+/// <summary>Assistant and agent usage for analytics. The caller decides who may see it; the current tenant only, no person named.</summary>
+public interface IAssistantUsageFigures
+{
+    Task<AssistantUsageSummary> SummaryAsync(DateTimeOffset from, DateTimeOffset to, CancellationToken ct = default);
+}
+
 /// <summary>What other modules may know about one version of an agent: its state, risk class and last editor (spec 034 overrides).</summary>
 public sealed record AgentVersionFacts(int Number, string State, string RiskClass, Guid LastEditor);
 

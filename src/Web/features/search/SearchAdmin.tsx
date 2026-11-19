@@ -48,12 +48,13 @@ function LocaleSelect({ id, value, onChange }: { id: string; value: string; onCh
 }
 
 /** Best bets (spec 012 US4 scenario 1): the words, an item picked from search, and the list with remove. */
-export function BestBets({ initial }: { initial: BestBet[] }) {
+/** Best bets; a link from the search gaps dashboard (spec 021 US3) can start one for a query. */
+export function BestBets({ initial, query: startQuery = "", locale: startLocale = "" }: { initial: BestBet[]; query?: string; locale?: string }) {
   const t = useTranslations("search.admin");
   const tk = useTranslations("search.kinds");
   const router = useRouter();
-  const [query, setQuery] = useState("");
-  const [locale, setLocale] = useState("");
+  const [query, setQuery] = useState(startQuery);
+  const [locale, setLocale] = useState(startLocale);
   const [find, setFind] = useState("");
   const [picks, setPicks] = useState<{ term: string; items: Suggestion[] } | null>(null);
   const [target, setTarget] = useState<Suggestion | null>(null);
@@ -112,7 +113,7 @@ export function BestBets({ initial }: { initial: BestBet[] }) {
   }
 
   return (
-    <section aria-labelledby="best-bets-title">
+    <section id="best-bets" aria-labelledby="best-bets-title">
       <h2 id="best-bets-title">{t("bestBets.title")}</h2>
       <p>{t("bestBets.intro")}</p>
       <form className="search-admin-form" onSubmit={(e) => void add(e)}>

@@ -68,7 +68,7 @@ export type WorkspaceView = {
   metrics: WorkspaceMetric[];
 };
 
-export type MetricFilters = { unitId?: string; channel?: string; membershipType?: string; from?: string; to?: string };
+export type MetricFilters = { unitId?: string; channel?: string; membershipType?: string; from?: string; to?: string; locale?: string };
 
 /** A metric answer. Suppressed selections carry no figures; a week under the minimum group size is null. */
 export type MetricResult = {
@@ -242,4 +242,70 @@ export type ExperienceAnalyticsView = {
     flags: { pageId: string; template: string; release: number | null; deviceClass: string; samples: number; lcp: number | null; inp: number | null; cls: number | null; missed: string[] }[];
   };
   outcomes: { flow: string; started: number; completed: number; abandoned: number; completionRate: number | null; dropOffStep: string | null }[];
+};
+
+// Spec 021 T017 (US8): sentiment labels with the minimum group size; no text is ever shown.
+export type SentimentCounts = { texts: number | null; positive: number | null; neutral: number | null; negative: number | null; score: number | null };
+export type SentimentGroup = { group: string; names: Record<string, string>; counts: SentimentCounts };
+export type SentimentView = {
+  enabled: boolean;
+  from: string;
+  to: string;
+  minGroupSize: number;
+  total: SentimentCounts;
+  weeks: { week: string; counts: SentimentCounts }[];
+  topics: SentimentGroup[];
+  units: SentimentGroup[];
+  locations: SentimentGroup[];
+  sources: SentimentGroup[];
+  paused: { source: string; denial: string; at: string }[];
+};
+export type AnalyticsPolicyView = { sentiment: boolean; sentimentAvailable: boolean; canChange: boolean; version: number };
+
+/** AI usage (spec 021 FR-016): figures read from the AI Gateway, the assistant and evaluation; null means hidden. */
+export type AiUsageGroup = { group: string; requests: number | null; users: number | null };
+export type AiAgentFigures = {
+  agentId: string;
+  name: Record<string, string>;
+  runs: number | null;
+  successRate: number | null;
+  helpfulRate: number | null;
+  gate: string | null;
+  quality: { metric: string; locale: string; value: number | null }[];
+};
+export type AiUsageView = {
+  from: string;
+  to: string;
+  minGroupSize: number;
+  requests: number;
+  users: number;
+  inputTokens: number;
+  outputTokens: number;
+  cost: number;
+  currency: string;
+  rate: number;
+  weeks: AiUsageGroup[];
+  useCases: AiUsageGroup[];
+  denied: { reason: string; requests: number }[];
+  assistant: { questions: number | null; users: number | null; answerRate: number | null; citationRate: number | null; ratings: number | null; helpfulRate: number | null };
+  agents: AiAgentFigures[];
+};
+
+/** Search gaps (spec 021 US3) from the spec 012 query feed: only queries five or more people searched for. */
+export type SearchQueryRow = { query: string; searches: number; people: number; zeroResults: number; clicks: number };
+export type SearchGapsView = {
+  from: string;
+  to: string;
+  locale: string | null;
+  minPeople: number;
+  searches: number;
+  zeroResults: number;
+  clicked: number;
+  clickThrough: number;
+  queryTextHidden: boolean;
+  zeroResultQueries: SearchQueryRow[];
+  noClickQueries: SearchQueryRow[];
+  topQueries: SearchQueryRow[];
+  canAddBestBet: boolean;
+  canWriteArticle: boolean;
 };

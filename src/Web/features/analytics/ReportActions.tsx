@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useId, useState, type FormEvent } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
 import {
   exportsApi,
   reportHref,
   reportsApi,
   schedulesApi,
   reportDefinitionEvent,
+  summariesApi,
+  type DashboardSummary,
   type ReportDefinition,
   type ReportOptions,
 } from "@/lib/analytics/reports";
@@ -17,6 +19,7 @@ import { Dialog } from "@/components/ui/Dialog";
 import { FormField, SelectField } from "@/components/ui/FormField";
 import { RadioGroup } from "@/components/ui/RadioGroup";
 import { Alert } from "@/components/ui/Alert";
+import { Badge } from "@/components/ui/Badge";
 
 /** The definition last announced by the dashboard on the page, starting from the page's own. */
 function useReportDefinition(initial: ReportDefinition | null): ReportDefinition | null {
@@ -60,7 +63,7 @@ export function ReportActions({ definition: initial }: { definition: ReportDefin
     return () => controller.abort();
   }, []);
 
-  if (!options || !definition || (!options.canExport && !options.canSchedule)) return null;
+  if (!options || !definition || (!options.canExport && !options.canSchedule && !options.canSummarize)) return null;
 
   function show(kind: "export" | "schedule") {
     setResult(null);
@@ -118,6 +121,7 @@ export function ReportActions({ definition: initial }: { definition: ReportDefin
           {t("schedule")}
         </Button>
       ) : null}
+      {options.canSummarize ? <SummaryAction definition={definition} /> : null}
       <Dialog
         open={open !== null}
         onClose={() => setOpen(null)}
@@ -179,6 +183,89 @@ export function ReportActions({ definition: initial }: { definition: ReportDefin
             </Alert>
           ) : null}
         </form>
+      </Dialog>
+    </>
+  );
+}
+
+/**
+ * Summarize (spec 021 US8 scenario 3): asks the AI Gateway for a short description of the dashboard on screen and shows
+ * it labelled as AI-generated, with the figures it used. Nothing is kept; asking again makes a new one.
+ */
+function SummaryAction({ definition }: { definition: ReportDefinition }) {
+  const t = useTranslations("analytics.reports");
+  const locale = useLocale();
+  const format = useFormatter();
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function run() {
+    setOpen(true);
+    setBusy(true);
+    setSummary(null);
+    setError(null);
+    try {
+      const response = await fetch(summariesApi, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ definition, language: locale === "ar" ? "ar" : "en" }),
+      });
+      if (!response.ok) {
+        setError((await problemMessages(response))[0] ?? t("summary.failed"));
+        return;
+      }
+      setSummary((await response.json()) as DashboardSummary);
+    } catch {
+      setError(t("summary.failed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const denial = summary?.denial ? (t.has(`summary.denial.${summary.denial}`) ? t(`summary.denial.${summary.denial}`) : t("summary.denial.other")) : null;
+  return (
+    <>
+      <Button size="sm" icon="spark" onClick={() => void run()} busy={busy && !open} busyLabel={t("summary.busy")}>
+        {t("summary.action")}
+      </Button>
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        title={t("summary.title")}
+        description={t("summary.intro")}
+        closeLabel={t("summary.close")}
+        footer={
+          <Button variant="primary" icon="spark" onClick={() => void run()} busy={busy} busyLabel={t("summary.busy")}>
+            {t("summary.again")}
+          </Button>
+        }
+      >
+        <div className="analytics-summary" data-testid="analytics-summary" aria-live="polite" aria-busy={busy}>
+          {busy ? <p>{t("summary.busy")}</p> : null}
+          {error ? <Alert tone="danger" title={error} /> : null}
+          {denial ? <Alert tone="warning" title={t("summary.none")}><p>{denial}</p></Alert> : null}
+          {summary?.text ? (
+            <>
+              <Badge tone="accent" icon="spark">
+                {t("summary.aiGenerated")}
+              </Badge>
+              <p>
+                <bdi>{summary.text}</bdi>
+              </p>
+              <h3>{t("summary.figures")}</h3>
+              <ul className="analytics-summary-figures">
+                {summary.figures.map((f) => (
+                  <li key={f.label}>
+                    <bdi dir="ltr">{f.label}</bdi> <span data-number>{format.number(f.value, { maximumFractionDigits: 4 })}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="analytics-note">{t("summary.check")}</p>
+            </>
+          ) : null}
+        </div>
       </Dialog>
     </>
   );

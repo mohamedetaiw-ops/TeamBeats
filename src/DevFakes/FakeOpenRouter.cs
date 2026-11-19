@@ -175,7 +175,10 @@ public sealed partial class FakeOpenRouter(string apiKey, string basePath, IRead
             // or with nothing read.
             // The photo safety check (spec 023 FR-017) answers safe, unless an attached file carries [fake:unsafe].
             // Content translation (spec 009 US5) answers each text marked as translated, in the target language's script.
-            reply = properties?["texts"] is not null ? Translation(last) : properties?["safe"] is not null ? JsonSerializer.Serialize(new { safe = !Attached(messages).Any(t => t.Contains("[fake:unsafe]", StringComparison.Ordinal)) })
+            // Sentiment (spec 021 US8) labels each numbered text: [fake:positive] and [fake:negative] mark it, anything else is neutral.
+            // A dashboard summary (spec 021 US8) states the first figure it was given and names it.
+            reply = properties?["sentiments"] is not null ? Sentiments(last) : properties?["figures"] is not null ? Summary(last)
+                : properties?["texts"] is not null ? Translation(last) : properties?["safe"] is not null ? JsonSerializer.Serialize(new { safe = !Attached(messages).Any(t => t.Contains("[fake:unsafe]", StringComparison.Ordinal)) })
                 : properties?["merchant"] is not null ? Receipt(messages) : judging
                 ? JsonSerializer.Serialize(last.Contains("[fake:judge:fail]", StringComparison.Ordinal)
                     ? new { verdict = "fail", score = 0.0, reason = "Fake judge: marked to fail." }
@@ -246,6 +249,31 @@ public sealed partial class FakeOpenRouter(string apiKey, string basePath, IRead
     }
 
     /// <summary>A stable, recognisable answer: tests can assert on it and testers can see it is not a real model.</summary>
+    private static string Sentiments(string prompt)
+    {
+        var items = SentimentText().Matches(prompt).Select(m => new
+        {
+            n = int.Parse(m.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture),
+            label = m.Groups[2].Value.Contains("[fake:positive]", StringComparison.Ordinal) ? "positive"
+                : m.Groups[2].Value.Contains("[fake:negative]", StringComparison.Ordinal) ? "negative" : "neutral",
+        });
+        return JsonSerializer.Serialize(new { sentiments = items });
+    }
+
+    private static string Summary(string prompt)
+    {
+        var m = SummaryFigure().Match(prompt);
+        return m.Success
+            ? JsonSerializer.Serialize(new { summary = $"The figure {m.Groups[2].Value.Trim()} is {m.Groups[3].Value.Trim()}.", figures = new[] { m.Groups[1].Value } })
+            : JsonSerializer.Serialize(new { summary = "Nothing stands out.", figures = Array.Empty<string>() });
+    }
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"^\[(f\d+)\] (.*?) = (.*)$", System.Text.RegularExpressions.RegexOptions.Multiline)]
+    private static partial System.Text.RegularExpressions.Regex SummaryFigure();
+
+    [System.Text.RegularExpressions.GeneratedRegex("<text n=\"(\\d+)\">(.*?)</text>", System.Text.RegularExpressions.RegexOptions.Singleline)]
+    private static partial System.Text.RegularExpressions.Regex SentimentText();
+
     public static string Reply(string question)
     {
         var excerpt = question.Length > 160 ? question[..160] : question;
