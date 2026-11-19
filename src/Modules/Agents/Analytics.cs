@@ -252,3 +252,43 @@ public sealed class AssistantUsageFigures(IDbSession session, IAgentCatalog cata
             [.. agents.OrderByDescending(a => a.Runs).ThenBy(a => a.AgentId)]);
     }
 }
+
+/// <summary>
+/// Questions the assistant could not answer and the sources it cited most (spec 021 knowledge dashboard), from the stored
+/// turns. Outcomes other than <c>answered</c> count as unanswered. A cited source counts once per answer.
+/// </summary>
+public sealed class AssistantKnowledgeFigures(IDbSession session) : IAssistantKnowledgeFigures
+{
+    public async Task<AssistantKnowledgeSummary> SummaryAsync(DateTimeOffset from, DateTimeOffset to, int limit, CancellationToken ct = default)
+    {
+        var args = new { from, to, limit = Math.Clamp(limit, 1, 100) };
+        var totals = (await session.QueryAsync(
+            """
+            select count(*), count(distinct user_id), count(*) filter (where outcome <> 'answered'), count(distinct user_id) filter (where outcome <> 'answered')
+            from agents.turn where created_at >= @from and created_at < @to
+            """, args, r => (Questions: r.GetInt64(0), People: r.GetInt64(1), Unanswered: r.GetInt64(2), UnansweredPeople: r.GetInt64(3)), ct))[0];
+        var weeks = await session.QueryAsync(
+            """
+            select to_char(date_trunc('week', created_at at time zone 'UTC'), 'YYYY-MM-DD'), count(*), count(distinct user_id)
+            from agents.turn where created_at >= @from and created_at < @to and outcome <> 'answered'
+            group by 1 order by 1
+            """, args, r => new GroupFigure(r.GetString(0), r.GetInt64(1), r.GetInt64(2)), ct);
+        var outcomes = await session.QueryAsync(
+            """
+            select outcome, count(*), count(distinct user_id) from agents.turn
+            where created_at >= @from and created_at < @to and outcome <> 'answered'
+            group by 1 order by 2 desc, 1
+            """, args, r => new GroupFigure(r.GetString(0), r.GetInt64(1), r.GetInt64(2)), ct);
+        var cited = await session.QueryAsync(
+            """
+            select c.source, c.item_id, max(c.title), count(distinct t.id), count(distinct t.user_id)
+            from agents.turn t
+            cross join lateral (
+              select e->>'source' as source, (e->>'itemId')::uuid as item_id, e->>'title' as title
+              from jsonb_array_elements(t.citations) e where e->>'itemId' is not null) c
+            where t.created_at >= @from and t.created_at < @to and t.outcome = 'answered'
+            group by 1, 2 order by 4 desc, 5 desc, 2 limit @limit
+            """, args, r => new CitedSource(r.GetString(0), r.GetGuid(1), r.IsDBNull(2) ? string.Empty : r.GetString(2), r.GetInt64(3), r.GetInt64(4)), ct);
+        return new AssistantKnowledgeSummary(totals.Questions, totals.People, totals.Unanswered, totals.UnansweredPeople, weeks, outcomes, cited);
+    }
+}

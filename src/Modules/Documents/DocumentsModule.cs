@@ -56,6 +56,7 @@ public static class DocumentsModule
         services.AddSingleton<Experience.Contracts.IComponentRegistration, DocumentsComponents>();
         services.AddScoped<KnowledgeBase>();
         services.AddScoped<Contracts.IKnowledgeIndex>(sp => sp.GetRequiredService<KnowledgeBase>());
+        services.AddScoped<Contracts.IKnowledgeFigures, KnowledgeFigures>();
         services.AddScoped<Contracts.IDocumentReferences, DocumentReferences>();
         services.AddScoped<Contracts.ISpaceLibraries, SpaceLibraries>();
         services.AddScoped<IResourceDescriptorProvider, LibraryDescriptorProvider>();

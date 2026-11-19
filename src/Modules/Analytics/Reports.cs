@@ -29,14 +29,20 @@ public static class ReportDashboards
     public const string Sentiment = "sentiment";
     public const string AiUsage = "ai_usage";
     public const string Search = "search";
+    public const string Knowledge = AreaDashboards.Knowledge;
+    public const string Engagement = AreaDashboards.Engagement;
+    public const string Hr = AreaDashboards.Hr;
+    public const string SecurityTrends = AreaDashboards.Security;
 
-    public static readonly IReadOnlyList<string> All = [Overview, Campaign, Service, Compliance, ScopeUnit, ScopeLocation, Experience, Sentiment, AiUsage, Search];
+    public static readonly IReadOnlyList<string> All = [Overview, Campaign, Service, Compliance, ScopeUnit, ScopeLocation, Experience, Sentiment, AiUsage, Search,
+        Knowledge, Engagement, Hr, SecurityTrends];
 
     /// <summary>Dashboards that read one thing, named by <see cref="ReportDefinition.Target"/>.</summary>
     public static readonly IReadOnlySet<string> Targeted = new HashSet<string>(StringComparer.Ordinal) { Campaign, Service, ScopeUnit, ScopeLocation };
 
     /// <summary>Dashboards with a period: a schedule sends the last week or month, an export the period it names.</summary>
-    public static readonly IReadOnlySet<string> Dated = new HashSet<string>(StringComparer.Ordinal) { Overview, Service, ScopeUnit, ScopeLocation, Experience, Sentiment, AiUsage, Search };
+    public static readonly IReadOnlySet<string> Dated = new HashSet<string>(StringComparer.Ordinal) { Overview, Service, ScopeUnit, ScopeLocation, Experience, Sentiment, AiUsage, Search,
+        Knowledge, Engagement, Hr, SecurityTrends };
 }
 
 public static class ReportCadences
@@ -157,6 +163,10 @@ public sealed class ReportDefinitions(IServiceProvider services)
             ReportDashboards.Sentiment => await services.GetRequiredService<SentimentAnalytics>().GetAsync(from, to, ct),
             ReportDashboards.AiUsage => await services.GetRequiredService<AiUsageAnalytics>().GetAsync(from, to, ct),
             ReportDashboards.Search => await services.GetRequiredService<SearchGaps>().GetAsync(from, to, d.Filters?.Locale, ct),
+            ReportDashboards.Knowledge => await services.GetRequiredService<AreaDashboards>().KnowledgeAsync(from, to, ct),
+            ReportDashboards.Engagement => await services.GetRequiredService<AreaDashboards>().EngagementAsync(from, to, ct),
+            ReportDashboards.Hr => await services.GetRequiredService<AreaDashboards>().HrAsync(from, to, ct),
+            ReportDashboards.SecurityTrends => await services.GetRequiredService<AreaDashboards>().SecurityAsync(from, to, ct),
             _ => throw AppException.Validation("definition.dashboard", "validation.analytics.dashboard"),
         };
         return JsonSerializer.SerializeToElement(result, result.GetType(), Json);

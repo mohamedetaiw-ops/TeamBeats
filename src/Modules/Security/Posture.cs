@@ -39,12 +39,18 @@ public sealed class PostureService(IAuthorizationService authz, IEntitlementServ
         {
             throw AppException.Denied();
         }
+        var checks = await ChecksAsync(ct);
+        var applicable = checks.Where(c => c.State != Unavailable).ToList();
+        return new PostureView(applicable.Count(c => c.State == Passed), applicable.Count, checks, await settings.GetRegionAsync(ct));
+    }
+
+    /// <summary>The checks of the current tenant; the caller decides who may see them (analytics security trends read them too).</summary>
+    public async Task<IReadOnlyList<PostureCheck>> ChecksAsync(CancellationToken ct)
+    {
         var policy = await store.ReadAsync(ct) ?? SecurityPolicySnapshot.Default;
         var scoped = await entitlements.IsEnabledAsync(Capabilities.SecurityIpRulesScoped, ct);
         var methods = await signIns.CurrentAsync(ct);
-        var checks = Evaluate(policy, scoped, methods).Append(PlatformAccess(await breakGlass.AnyOpenAsync(ct))).ToList();
-        var applicable = checks.Where(c => c.State != Unavailable).ToList();
-        return new PostureView(applicable.Count(c => c.State == Passed), applicable.Count, checks, await settings.GetRegionAsync(ct));
+        return [.. Evaluate(policy, scoped, methods), PlatformAccess(await breakGlass.AnyOpenAsync(ct))];
     }
 
     /// <summary>Spec 026 FR-020: fails while a platform operator has a break-glass session open on the tenant; links to the audit entries.</summary>

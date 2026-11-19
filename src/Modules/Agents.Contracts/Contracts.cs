@@ -311,6 +311,22 @@ public interface IAssistantUsageFigures
     Task<AssistantUsageSummary> SummaryAsync(DateTimeOffset from, DateTimeOffset to, CancellationToken ct = default);
 }
 
+/// <summary>A source the assistant cited, by item, with the answers that cited it and the distinct people they went to.</summary>
+public sealed record CitedSource(string Source, Guid ItemId, string Title, long Answers, long People);
+
+/// <summary>
+/// Assistant questions for the knowledge dashboard (spec 021 section 2): questions and askers, unanswered questions per ISO
+/// week and per outcome, and the most cited sources. No question text and no person.
+/// </summary>
+public sealed record AssistantKnowledgeSummary(long Questions, long People, long Unanswered, long UnansweredPeople, IReadOnlyList<GroupFigure> UnansweredWeeks,
+    IReadOnlyList<GroupFigure> Outcomes, IReadOnlyList<CitedSource> Cited);
+
+/// <summary>Assistant knowledge figures for analytics; the caller decides who may see them. Current tenant only.</summary>
+public interface IAssistantKnowledgeFigures
+{
+    Task<AssistantKnowledgeSummary> SummaryAsync(DateTimeOffset from, DateTimeOffset to, int limit, CancellationToken ct = default);
+}
+
 /// <summary>What other modules may know about one version of an agent: its state, risk class and last editor (spec 034 overrides).</summary>
 public sealed record AgentVersionFacts(int Number, string State, string RiskClass, Guid LastEditor);
 

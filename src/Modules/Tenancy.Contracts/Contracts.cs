@@ -146,3 +146,12 @@ public sealed record OrganizationUnitMoved(Guid UnitId, Guid? OldParentId, Guid?
 public sealed record OrganizationUnitDeactivated(Guid UnitId) : IIntegrationEvent;
 public sealed record OrganizationMembershipChanged(Guid UserId, Guid OrgUnitId, string Change) : IIntegrationEvent;
 public sealed record TenantMembershipDisabled(Guid UserId) : IIntegrationEvent;
+
+/// <summary>Guest memberships for the analytics security dashboard (spec 021 section 2): active guests now, and guests added per ISO week of the period.</summary>
+public sealed record GuestFigures(long Active, IReadOnlyList<GroupFigure> AddedWeeks);
+
+/// <summary>Guest counts; the caller decides who may see them. Current tenant only, no person named.</summary>
+public interface IGuestFigures
+{
+    Task<GuestFigures> SummaryAsync(DateTimeOffset from, DateTimeOffset to, CancellationToken ct = default);
+}

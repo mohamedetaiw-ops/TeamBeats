@@ -7580,7 +7580,11 @@
       "reportsLink": "Reports",
       "sentimentLink": "Sentiment",
       "aiUsageLink": "AI usage",
-      "searchLink": "Search gaps"
+      "searchLink": "Search gaps",
+      "knowledgeLink": "Knowledge",
+      "engagementLink": "Engagement",
+      "hrLink": "HR",
+      "securityLink": "Security trends"
     },
     "campaigns": {
       "workspace": "Analytics",
@@ -7945,7 +7949,11 @@
         "experience": "Experience",
         "sentiment": "Sentiment",
         "ai_usage": "AI usage",
-        "search": "Search gaps"
+        "search": "Search gaps",
+        "knowledge": "Knowledge",
+        "engagement": "Engagement",
+        "hr": "HR",
+        "security": "Security trends"
       },
       "column": {
         "name": "Name",
@@ -8193,6 +8201,277 @@
       "article": "Write an article",
       "articleFor": "Write an article for {query}",
       "privacyNote": "A search is listed only when at least {size} people made it, and never when it looks like personal data such as an email address or ID number."
+    },
+    "areas": {
+      "workspace": "Analytics",
+      "hidden": "Hidden (fewer than {size} people)",
+      "other": "Other (groups under {size} people)",
+      "notCounted": "Not counted",
+      "noValue": "None yet",
+      "week": "Week",
+      "trendSummary": "Weekly figures over {weeks} weeks",
+      "error": "This dashboard could not be loaded",
+      "errorHint": "Try again in a few minutes.",
+      "knowledge": {
+        "title": "Knowledge",
+        "intro": "How knowledge articles are read and rated, which reviews are due, the questions the assistant could not answer and the sources it cites most.",
+        "denied": "You cannot open knowledge analytics",
+        "deniedHint": "Knowledge analytics need a package with advanced analytics and permission to view analytics for the whole organization or to edit knowledge.",
+        "empty": "No knowledge activity yet",
+        "emptyHint": "Figures appear once articles are published and people read them or ask the assistant.",
+        "note": "Articles you may read are listed. Helpfulness, questions and cited sources are shown only for {size} people or more.",
+        "total": {
+          "articles": "Articles",
+          "ratings": "Ratings",
+          "helpfulRate": "Rated helpful",
+          "reviewsDue": "Reviews overdue",
+          "questions": "Assistant questions",
+          "unanswered": "Not answered",
+          "unansweredRate": "Share not answered"
+        },
+        "articles": {
+          "title": "Articles",
+          "group": "Article",
+          "count": "Views",
+          "people": "New readers",
+          "amount": "Ratings",
+          "rate": "Rated helpful",
+          "empty": "No published articles you may read."
+        },
+        "reviews": {
+          "title": "Reviews due",
+          "group": "Article",
+          "date": "Review date",
+          "empty": "No review is due in the next 30 days."
+        },
+        "unansweredWeeks": {
+          "title": "Questions not answered by week",
+          "count": "Questions",
+          "people": "People",
+          "empty": "Every question was answered.",
+          "trend": "Questions not answered"
+        },
+        "outcomes": {
+          "title": "Why questions were not answered",
+          "group": "Reason",
+          "count": "Questions",
+          "people": "People",
+          "empty": "Every question was answered.",
+          "keys": {
+            "no_evidence": "Nothing found in the sources",
+            "policy_blocked": "Blocked by the AI policy",
+            "unavailable": "Assistant unavailable"
+          }
+        },
+        "cited": {
+          "title": "Most cited sources",
+          "group": "Source",
+          "count": "Answers",
+          "people": "People",
+          "empty": "No source was cited yet."
+        }
+      },
+      "engagement": {
+        "title": "Engagement",
+        "intro": "Community activity, recognition and survey participation across the organization.",
+        "denied": "You cannot open engagement analytics",
+        "deniedHint": "Engagement analytics need a package with advanced analytics and permission to view analytics for the whole organization.",
+        "empty": "No engagement yet",
+        "emptyHint": "Figures appear once people post, comment, recognize colleagues or answer surveys.",
+        "note": "No post, comment or answer is shown. Groups of fewer than {size} people are hidden or counted under Other.",
+        "total": {
+          "posts": "Posts",
+          "comments": "Comments",
+          "reactions": "Reactions",
+          "contributors": "People taking part",
+          "recognitions": "Recognitions",
+          "recognized": "People recognized",
+          "polls": "Polls",
+          "pollVoters": "Poll votes"
+        },
+        "activityWeeks": {
+          "title": "Community activity by week",
+          "count": "Posts and comments",
+          "people": "People",
+          "empty": "No posts or comments in this period.",
+          "trend": "Posts and comments"
+        },
+        "communities": {
+          "title": "Most active communities",
+          "group": "Community",
+          "count": "Posts and comments",
+          "people": "Members",
+          "empty": "No community activity in this period."
+        },
+        "recognitionWeeks": {
+          "title": "Recognition by week",
+          "count": "Recognitions",
+          "people": "People recognized",
+          "empty": "No recognition in this period.",
+          "trend": "Recognitions"
+        },
+        "recognitionValues": {
+          "title": "Recognition by value",
+          "group": "Value",
+          "count": "Recognitions",
+          "people": "People recognized",
+          "empty": "No recognition named a value in this period."
+        },
+        "surveys": {
+          "title": "Survey responses",
+          "group": "Survey",
+          "count": "Responses",
+          "empty": "No survey responses in this period."
+        }
+      },
+      "hr": {
+        "title": "HR",
+        "intro": "Leave patterns, attendance requests, onboarding progress, exit reasons and HR requests, all as totals.",
+        "denied": "You cannot open HR analytics",
+        "deniedHint": "HR analytics need a package with advanced analytics and permission to view analytics or manage HR for the whole organization.",
+        "empty": "No HR activity yet",
+        "emptyHint": "Figures appear once people request leave or HR runs journeys.",
+        "note": "No person is named. Groups of fewer than {size} people are hidden or counted under Other, and sensitive leave types are counted together.",
+        "total": {
+          "leaveRequests": "Leave requests",
+          "leavePeople": "People requesting leave",
+          "leaveDays": "Approved leave days",
+          "onboardingJourneys": "Onboarding journeys",
+          "exitInterviews": "Exit interviews"
+        },
+        "leaveTypes": {
+          "title": "Leave by type",
+          "group": "Leave type",
+          "count": "Requests",
+          "people": "People",
+          "amount": "Approved days",
+          "empty": "No leave requests in this period.",
+          "keys": {
+            "sensitive": "Sensitive leave types"
+          }
+        },
+        "leaveWeeks": {
+          "title": "Approved leave by week it starts",
+          "count": "Requests",
+          "people": "People",
+          "amount": "Days",
+          "empty": "No approved leave starts in this period.",
+          "trend": "Approved leave requests"
+        },
+        "attendance": {
+          "title": "Attendance requests",
+          "group": "Kind",
+          "count": "Requests",
+          "people": "People",
+          "empty": "No attendance requests in this period.",
+          "keys": {
+            "correction": "Corrections",
+            "compensation": "Compensation days"
+          }
+        },
+        "onboarding": {
+          "title": "Onboarding",
+          "group": "Journey template",
+          "count": "Journeys started",
+          "rate": "Due steps done",
+          "empty": "No onboarding journeys started in this period."
+        },
+        "exitReasons": {
+          "title": "Exit reasons",
+          "group": "Reason",
+          "count": "Chosen",
+          "empty": "Not enough exit interviews in this period to show reasons.",
+          "keys": {
+            "compensation": "Pay and benefits",
+            "career_growth": "Career growth",
+            "management": "Management",
+            "work_life_balance": "Work and life balance",
+            "workload": "Workload",
+            "culture": "Culture",
+            "role_fit": "Fit with the role",
+            "relocation": "Moving away",
+            "family": "Family reasons",
+            "studies": "Studies",
+            "health": "Health",
+            "retirement": "Retirement",
+            "other": "Something else"
+          }
+        },
+        "requests": {
+          "title": "HR requests",
+          "group": "Request",
+          "count": "Requests",
+          "people": "People",
+          "empty": "No HR requests in this period.",
+          "keys": {
+            "letters": "Letters",
+            "data_changes": "Data changes",
+            "expenses": "Expense claims"
+          }
+        }
+      },
+      "security": {
+        "title": "Security trends",
+        "intro": "Security alerts over time, guest accounts, and the settings weaker than the recommended baseline.",
+        "denied": "You cannot open security trends",
+        "deniedHint": "Security trends need a package with advanced analytics and permission to view analytics or security for the whole organization.",
+        "empty": "Nothing to show yet",
+        "emptyHint": "Figures appear once alerts are raised or guests join.",
+        "note": "Counts only; open the security pages to act on an alert or a setting.",
+        "total": {
+          "alerts": "Alerts raised",
+          "openAlerts": "Alerts open now",
+          "guests": "Active guests",
+          "guestsAdded": "Guests added",
+          "weakerChecks": "Settings weaker than baseline",
+          "checks": "Settings checked"
+        },
+        "alertWeeks": {
+          "title": "Alerts by week",
+          "count": "Alerts",
+          "empty": "No alerts in this period.",
+          "trend": "Alerts"
+        },
+        "alertKinds": {
+          "title": "Alerts by kind",
+          "group": "Kind",
+          "count": "Alerts",
+          "empty": "No alerts in this period.",
+          "keys": {
+            "download_volume": "Unusual download volume",
+            "privilege_grant_out_of_hours": "Privileged role granted out of hours",
+            "network_blocked": "Requests blocked by network rules",
+            "api_token_reuse": "App token used twice",
+            "siem_failing": "SIEM destination failing",
+            "guest_confidential_access": "Guest opened a Confidential item",
+            "api_denied_burst": "Many refused calls from an app",
+            "api_volume_spike": "Unusual call volume from an app",
+            "platform_access": "Platform operator opened access"
+          }
+        },
+        "guestWeeks": {
+          "title": "Guests added by week",
+          "count": "Guests",
+          "empty": "No guests were added in this period.",
+          "trend": "Guests added"
+        },
+        "weakerChecks": {
+          "title": "Settings weaker than baseline",
+          "group": "Setting",
+          "empty": "Every setting meets the recommended baseline.",
+          "keys": {
+            "sso_configured": "Single sign-on",
+            "mfa_required": "Multi-factor sign-in required",
+            "ip_rules": "Network rules",
+            "admin_area_rule": "Network rules for administration",
+            "step_up_window": "Fresh sign-in for sensitive actions",
+            "idle_timeout": "Sign out after inactivity",
+            "absolute_timeout": "Longest session",
+            "dev_sign_in_absent": "No development sign-in",
+            "no_platform_access": "No platform operator access open"
+          }
+        }
+      }
     }
   },
   "design_system": {
