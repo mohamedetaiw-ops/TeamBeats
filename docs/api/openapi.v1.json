@@ -25447,6 +25447,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "unit",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {

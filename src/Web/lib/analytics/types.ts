@@ -308,6 +308,12 @@ export type SearchGapsView = {
   topQueries: SearchQueryRow[];
   canAddBestBet: boolean;
   canWriteArticle: boolean;
+  unitId: string | null;
+  unitNames: Record<string, string> | null;
+  refined: number;
+  /** By the searcher's unit at search time; units under five people fold into "other" (counts null when hidden). */
+  units: { key: string; names: Record<string, string> | null; searches: number | null; people: number | null; zeroResults: number | null; clicks: number | null }[];
+  refinements: { from: string; to: string; searches: number; people: number }[];
 };
 
 /**

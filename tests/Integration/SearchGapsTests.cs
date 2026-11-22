@@ -82,4 +82,58 @@ public sealed class SearchGapsTests(TenantWorld world)
         await world.SetCapabilityAsync(t, TeamBeats.Entitlements.Contracts.Capabilities.AnalyticsAdvanced, new { enabled = false });
         Assert.Equal(HttpStatusCode.Forbidden, (await t["admin"].Client.GetAsync(Gaps)).StatusCode);
     }
+    [Fact]
+    public async Task Searches_split_by_unit_and_refinements_five_people_share_are_counted()
+    {
+        var t = await world.CreateTenantAsync("sgu-" + Guid.NewGuid().ToString("N")[..8], "workplace_plus");
+        var plantA = await world.CreateUnitAsync(t, "PlantA", null, "department");
+        await world.CreateUnitAsync(t, "PlantB", null, "department");
+        await world.CreateUnitAsync(t, "PlantC", null, "department");
+        foreach (var (unit, count) in new[] { ("PlantA", 5), ("PlantB", 2), ("PlantC", 5) })
+        {
+            for (var i = 1; i <= count; i++)
+            {
+                var name = $"{unit}{i}";
+                await world.SeedUserAsync(t, name, MembershipTypes.Employee);
+                await world.AddMembershipAsync(t, name, unit);
+                if (unit == "PlantA")
+                {
+                    // A misspelled search without a click, then the corrected one: a refinement.
+                    await SearchAsync(t[name].Client, "lave form");
+                    await SearchAsync(t[name].Client, "leave form");
+                }
+                else
+                {
+                    await SearchAsync(t[name].Client, "parking");
+                }
+            }
+        }
+
+        var view = await OkAsync(t["admin"].Client.GetAsync(Gaps));
+        Assert.Equal(17, view.GetProperty("searches").GetInt32());
+        Assert.Equal(5, view.GetProperty("refined").GetInt32());
+        var refinement = Assert.Single(view.GetProperty("refinements").EnumerateArray());
+        Assert.Equal("lave form", refinement.GetProperty("from").GetString());
+        Assert.Equal("leave form", refinement.GetProperty("to").GetString());
+        Assert.Equal(5, refinement.GetProperty("people").GetInt32());
+        // Plant A shows; Plant B has two people, so it folds into Other with Plant C, the next smallest.
+        var units = view.GetProperty("units").EnumerateArray().ToArray();
+        Assert.Equal([plantA.ToString(), "other"], units.Select(u => u.GetProperty("key").GetString()!).ToArray());
+        Assert.Equal(10, units[0].GetProperty("searches").GetInt32());
+        Assert.Equal(5, units[0].GetProperty("people").GetInt32());
+        Assert.Equal(7, units[1].GetProperty("searches").GetInt32());
+        Assert.Equal(JsonValueKind.Null, units[1].GetProperty("people").ValueKind);
+
+        // Filtered to Plant A: only its searches.
+        var a = await OkAsync(t["admin"].Client.GetAsync($"{Gaps}?unit={plantA}"));
+        Assert.Equal(10, a.GetProperty("searches").GetInt32());
+        Assert.Equal(plantA, a.GetProperty("unitId").GetGuid());
+        Assert.NotEqual(JsonValueKind.Null, a.GetProperty("unitNames").ValueKind);
+        Assert.DoesNotContain("parking", Queries(a, "topQueries"));
+        Assert.Equal(HttpStatusCode.NotFound, (await t["admin"].Client.GetAsync($"{Gaps}?unit={Guid.NewGuid()}")).StatusCode);
+
+        // The unit filter is a report filter of the search dashboard.
+        Assert.Equal(HttpStatusCode.Created, (await t["admin"].Client.PostAsJsonAsync("/api/v1/analytics/schedules",
+            new { definition = new { dashboard = ReportDashboards.Search, filters = new { unitId = plantA } }, cadence = ReportCadences.Weekly })).StatusCode);
+    }
 }
