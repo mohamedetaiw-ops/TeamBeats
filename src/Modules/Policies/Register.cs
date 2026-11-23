@@ -462,6 +462,38 @@ public sealed class PolicyRegister(
         return await GetAsync(id, ct);
     }
 
+    /// <summary>
+    /// Marks a policy as required at onboarding, or not (FR-017), for compliance officers. Journeys whose attestation
+    /// step opens later ask for it; steps already open keep what they asked for.
+    /// </summary>
+    public async Task<PolicyView> SetOnboardingAsync(Guid id, OnboardingRequest request, CancellationToken ct)
+    {
+        var policy = await VisibleAsync(id, forUpdate: true, ct);
+        if (!await ManagesAsync(policy, ct))
+        {
+            throw AppException.Denied();
+        }
+        if (policy.Status == PolicyStatuses.Retired)
+        {
+            throw AppException.Conflict("conflict.policies.retired");
+        }
+        var errors = new ValidationErrors();
+        if (request.Required is null)
+        {
+            errors.Add("required", "validation.policies.onboarding_required");
+        }
+        errors.ThrowIfAny();
+        var required = request.Required!.Value;
+        if (required != policy.OnboardingRequired)
+        {
+            await session.ExecAsync("update policies.policy set onboarding_required = @required, updated_at = @now, row_version = row_version + 1 where id = @id",
+                new { id, required, now = clock.UtcNow }, ct);
+            await audit.WriteAsync(new AuditEntry(AuditActions.PolicyChanged, Securables.Policy, id.ToString(), TargetOrgUnitId: policy.OrgUnitId,
+                Changes: new { before = new { policy.OnboardingRequired }, after = new { onboardingRequired = required } }), ct);
+        }
+        return await GetAsync(id, ct);
+    }
+
     /// <summary>Retires a policy (compliance officers): it leaves My policies and new campaigns; its versions stay as the record.</summary>
     public async Task<PolicyView> RetireAsync(Guid id, CancellationToken ct)
     {

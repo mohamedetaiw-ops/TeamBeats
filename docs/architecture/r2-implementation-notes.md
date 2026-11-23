@@ -2168,3 +2168,9 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - Sharing (`PUT /evidence-packs/{id}/share`): only the requester, only a ready pack, only to an active space they own (such as the spec 029 guest space of an audit), until the end of a day from today to one year ahead, in the tenant's time zone. The space's readers, guests included, list the shared packs with `GET /evidence-packs?spaceId=` (page `/policies/evidence?space=`) and download them until the share ends; they never see where else it is shared or change it. Sending a null space stops sharing.
 - Defaults where the spec is silent: a pack lists only the packs a person asked for (no shared view of other officers' packs); packs and their files are kept until the tenant is offboarded, with no deletion by people yet; a pack is built once and is not refreshed.
 
+## Onboarding attestations (spec 025 R2, T018; FR-017)
+
+- The attestation step of a spec 022 onboarding journey (built with spec 022 T019) asks the joiner, through `IPolicyObligations`, to accept every policy in force flagged "onboarding required" that applies to them. Each becomes an attestation task outside any campaign, in the inbox and on My policies; one attestation to the version in force settles it, and the step closes when nothing is owed. A step with nothing to ask is skipped; a cancelled journey cancels what is still owed. Without `policy.core` nothing is asked.
+- The flag is set when a policy is created and now also from the policy page (`PUT /api/v1/policies/{id}/onboarding` with `{ required }`), for compliance officers of the policy's scope, not on a retired policy, audited as `policy.changed` with the flag before and after.
+- Default where the spec is silent: changing the flag affects attestation steps that open later; steps already open keep what they asked for.
+

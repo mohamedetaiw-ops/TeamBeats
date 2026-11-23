@@ -2725,5 +2725,6 @@
   "policies.evidence.pdf.csv.detail": "Detail",
   "policies.evidence.pdf.outcome.minor_update": "Minor update",
   "policies.evidence.pdf.outcome.major_revision": "Major revision",
-  "policies.evidence.pdf.outcome.revised": "Revised"
+  "policies.evidence.pdf.outcome.revised": "Revised",
+  "validation.policies.onboarding_required": "Choose whether the policy is required at onboarding."
 }

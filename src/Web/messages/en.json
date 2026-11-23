@@ -5695,6 +5695,14 @@
       "notShared": "Not shared",
       "until": "Until",
       "share": "Save sharing"
+    },
+    "onboarding": {
+      "title": "Onboarding",
+      "required": "Required at onboarding",
+      "hint": "New joiners are asked to accept it in the attestation step of their onboarding journey. Steps already open keep what they asked for.",
+      "on": "New joiners will be asked to accept this policy.",
+      "off": "New joiners will no longer be asked to accept this policy.",
+      "failed": "That did not work. Try again."
     }
   },
   "ai": {

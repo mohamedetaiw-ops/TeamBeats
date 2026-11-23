@@ -153,6 +153,9 @@ public sealed record PolicyTraining(Guid CourseId, bool BeforeAttestation);
 
 public sealed record TrainingRequest(Guid? CourseId, bool BeforeAttestation);
 
+/// <summary>Whether new joiners attest to the policy in their onboarding journey (spec 025 FR-017).</summary>
+public sealed record OnboardingRequest(bool? Required);
+
 public sealed record PolicyListItem(
     Guid Id,
     string Code,

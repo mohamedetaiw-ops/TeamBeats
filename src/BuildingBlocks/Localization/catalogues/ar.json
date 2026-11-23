@@ -2725,5 +2725,6 @@
   "policies.evidence.pdf.csv.detail": "التفاصيل",
   "policies.evidence.pdf.outcome.minor_update": "تحديث بسيط",
   "policies.evidence.pdf.outcome.major_revision": "مراجعة جوهرية",
-  "policies.evidence.pdf.outcome.revised": "عدلت"
+  "policies.evidence.pdf.outcome.revised": "عدلت",
+  "validation.policies.onboarding_required": "اختر هل السياسة مطلوبة عند التعيين."
 }
