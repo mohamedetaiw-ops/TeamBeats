@@ -441,3 +441,9 @@
   padding-inline-start: var(--tb-space-md);
   color: var(--tb-color-state-danger);
 }
+
+/* Resizable regions (spec 032 R2 FR-007): the width control sits under the region heading. */
+.builder-region-width {
+  max-inline-size: 24rem;
+  margin-block-end: var(--tb-space-sm);
+}

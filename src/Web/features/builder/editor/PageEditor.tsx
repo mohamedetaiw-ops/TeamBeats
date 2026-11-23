@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import type { CatalogueTemplate, Finding, ImpactReport, PageApprovalState, PageDefinition, PageSubmission, PageView } from "@/lib/experience/builder-types";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
+import { Slider } from "@/components/ui/Slider";
 import { useDragHandle, type Drop, type DragTargets } from "@/lib/experience/drag";
 import * as model from "./model";
 import { ImpactDialog } from "./ImpactDialog";
@@ -457,6 +458,26 @@ export function PageEditor({
               <h2 id={headingId}>{regionName(region.id)}</h2>
               {policy ? <span className="builder-template-description">{t("limits", { min: String(policy.minPlacements), max: String(policy.maxPlacements) })}</span> : null}
             </div>
+            {(() => {
+              // Resizable regions (spec 032 R2 FR-007): the layout says how far; the neighbour in the row takes the difference.
+              const layoutRegion = page.layoutRegions?.find((r) => r.id === region.id);
+              const range = layoutRegion && page.layoutRegions ? model.resizeRange(draft, page.layoutRegions, region.id) : null;
+              if (!layoutRegion || !range || !page.layoutRegions) return null;
+              const regions = page.layoutRegions;
+              return (
+                <div className="builder-region-width">
+                  <Slider
+                    label={t("width", { region: regionName(region.id) })}
+                    min={range.min}
+                    max={range.max}
+                    value={model.spanOf(draft, layoutRegion)}
+                    format={(v) => t("columns", { count: String(v) })}
+                    onValueChange={(v) => edit(model.resize(draft, regions, region.id, v), null, t("resized", { region: regionName(region.id), count: String(v) }))}
+                    data-testid={`builder-width-${region.id}`}
+                  />
+                </div>
+              );
+            })()}
             {region.placements.length === 0 ? <p className="builder-template-description">{t("emptyRegion")}</p> : null}
             <ol className="builder-placements">
               {region.placements.map((p) => {

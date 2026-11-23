@@ -2788,5 +2788,7 @@
   "validation.page.fragment_id_too_long": "Shorten this placement's id so the fragment's components fit within 40 characters.",
   "builder.fragments.name": "Fragment",
   "builder.fragments.description": "A shared set of components. Changes to it show on every page that places it.",
-  "validation.template.document_format": "This is not a TeamBeats template document, or it is from a version this platform cannot read."
+  "validation.template.document_format": "This is not a TeamBeats template document, or it is from a version this platform cannot read.",
+  "validation.page.region_span_invalid": "This region cannot be that wide or that narrow in this layout.",
+  "validation.page.region_span_overlap": "The regions in this row must together fill 12 columns, without overlapping."
 }

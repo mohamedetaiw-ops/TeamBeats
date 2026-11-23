@@ -4,7 +4,8 @@ using TeamBeats.Persistence;
 namespace TeamBeats.Modules.Experience.Catalogue;
 
 /// <summary>A layout region: its column span at full width and its section mode (spec 032 FR-004, FR-008).</summary>
-public sealed record LayoutRegion(string Id, int Span, string Section);
+/// <param name="MinSpan">How narrow an editor may make the region (R2 FR-007); with <paramref name="MaxSpan"/> left out, the region keeps its span.</param>
+public sealed record LayoutRegion(string Id, int Span, string Section, int? MinSpan = null, int? MaxSpan = null);
 
 /// <summary>One of the 10 baseline layouts (FR-006). <c>Fallback</c> names how regions collapse at narrow widths (FR-013).</summary>
 public sealed record LayoutDefinition(string Id, string Version, string NameKey, IReadOnlyList<LayoutRegion> Regions, string Fallback);

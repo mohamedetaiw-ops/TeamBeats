@@ -45,7 +45,7 @@ public sealed record TemplateChangeView(PageDefinition Draft, IReadOnlyList<Unpl
 /// region policies, both of the version the page records, which the chooser may no longer offer.</param>
 public sealed record PageView(Guid Id, string Slug, Guid? OrgUnitId, string TemplateId, string TemplateVersion, int? CurrentRelease,
     string ETag, PageDefinition Draft, IReadOnlyList<Finding> Findings, string? NewerTemplateVersion = null, bool TemplateDeprecated = false,
-    string? TemplateName = null, IReadOnlyList<TemplateRegion>? TemplateRegions = null);
+    string? TemplateName = null, IReadOnlyList<TemplateRegion>? TemplateRegions = null, IReadOnlyList<LayoutRegion>? LayoutRegions = null);
 
 public sealed record ReleaseView(int Release, DateTimeOffset PublishedAt, Guid PublishedBy, string? Reason, int? RollbackOf);
 
@@ -156,7 +156,6 @@ public sealed partial class PageService(
         {
             throw AppException.Validation("templateId", "validation.page.template_unknown");
         }
-
         var taken = await session.ScalarAsync<Guid?>("select id from experience.page where slug = @s", new { s = request.Slug }, ct);
         if (taken is not null)
         {
@@ -217,6 +216,7 @@ public sealed partial class PageService(
             TemplateDeprecated = recorded?.State == TemplateStates.Deprecated,
             TemplateName = recorded is null ? null : tenantTemplates.NameOf(recorded, locale.Locale),
             TemplateRegions = recorded?.Regions,
+            LayoutRegions = recorded is null ? null : catalogue.Layouts[recorded.Layout].Regions,
         };
     }
 
@@ -363,7 +363,9 @@ public sealed partial class PageService(
 
         var chosenVariant = variant ?? (template.Variants.Contains(current.Variant) ? current.Variant : template.Variants[0]);
         var definition = new PageDefinition(new TemplateRef(template.Id, template.Version), new LayoutRef(layout.Id, layout.Version), chosenVariant,
-            layout.Regions.Select(r => new PageRegion(r.Id, targets[r.Id])).ToList());
+            layout.Regions.Select(r => new PageRegion(r.Id, targets[r.Id])).ToList(),
+            // Region widths stay when the layout does (R2 T029); another layout starts from its own widths.
+            current.Layout?.Id == layout.Id ? current.Spans : null);
         return (definition, unplaced);
     }
 
@@ -501,7 +503,8 @@ public sealed partial class PageService(
         {
             throw AppException.Validation("region", "validation.page.region_unknown");
         }
-        var span = regionId is null ? 12 : catalogue.Layouts[template.Layout].Regions.First(r => r.Id == regionId).Span;
+        var (_, pickerDraft) = await DraftAsync(id, ct);
+        var span = regionId is null ? 12 : RegionSpans.Apply(catalogue.Layouts[template.Layout], pickerDraft).Regions.First(r => r.Id == regionId).Span;
         var availability = await AvailabilityAsync(page.OrgUnitId, ct);
         var items = new List<PickerItem>();
         foreach (var m in registry.All.Where(m => m.State != ComponentStates.Retired))
@@ -577,7 +580,7 @@ public sealed partial class PageService(
         var shown = previewLocale is { } l && Primitives.Locales.IsSupported(l) ? l : locale.Locale;
         draft = (await fragments.ExpandAsync(draft, page.OrgUnitId, ct)).Definition;
         var template = await templates.GetAsync(draft.Template, ct);
-        var layout = catalogue.Layouts[template.Layout];
+        var layout = RegionSpans.Apply(catalogue.Layouts[template.Layout], draft);
         var availability = await AvailabilityAsync(page.OrgUnitId, ct);
         var known = new Dictionary<string, string>(StringComparer.Ordinal)
         {
@@ -650,7 +653,7 @@ public sealed partial class PageService(
         // A fragment shows its current version on every page that places it (R2 T027); the release keeps only the reference.
         snapshot = snapshot with { Definition = (await fragments.ExpandAsync(snapshot.Definition, page.OrgUnitId, ct)).Definition };
         var template = await templates.GetAsync(snapshot.Definition.Template, ct);
-        var layout = catalogue.Layouts[template.Layout];
+        var layout = RegionSpans.Apply(catalogue.Layouts[template.Layout], snapshot.Definition);
         var availability = await AvailabilityAsync(page.OrgUnitId, ct, viewer: true);
         var known = new Dictionary<string, string>(StringComparer.Ordinal)
         {

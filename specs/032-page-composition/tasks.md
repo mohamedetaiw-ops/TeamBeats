@@ -50,7 +50,7 @@ R2 covers User Story 6 approval, impact and scheduling, User Story 7 independent
 - [x] T026 [US6 scenario 6] Edit conflicts: a second save gets both versions and a merge or overwrite choice; nothing lost
 - [x] T027 Fragments (FR-045): save a section or region pattern as a governed fragment with owner, scope and version; apply to new pages as references, never copied component code; tests for scope and another tenant
 - [x] T028 Template import and export (FR-022): documented JSON with structure and policies and no secrets, tenant IDs or personal data; import validates as a new draft
-- [ ] T029 Resizable regions (FR-007): editors resize regions within declared constraints, persisted, never overlapping, by pointer and keyboard
+- [x] T029 Resizable regions (FR-007): editors resize regions within declared constraints, persisted, never overlapping, by pointer and keyboard
 - [ ] T030 Feature controls (`feature_control.manage`): tenant and scope switches for components and templates as versioned configuration, read by the picker and the renderer
 - [ ] T031 [US7] Independent component deployment (FR-033): a registered package version is deployable and updatable without rebuilding page definitions, migration hooks run on upgrade, pages that do not use it are untouched
 - [ ] T032 Builder pages for approval, schedule, impact, fragments and import, in `ar` and `en`, RTL; OpenAPI, R2 implementation notes, e2e with axe
