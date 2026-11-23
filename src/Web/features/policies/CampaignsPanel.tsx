@@ -164,6 +164,11 @@ export function CampaignsPanel({
               <p data-testid="campaign-counts">
                 {t("counts", { members: c.counts.members, attested: c.counts.attested, open: c.counts.open, overdue: c.counts.overdue })}
               </p>
+              {c.counts.paper ? (
+                <p className="policies-meta" data-testid="campaign-paper">
+                  {t("paperCount", { count: c.counts.paper })}
+                </p>
+              ) : null}
               {c.check ? (
                 <p className="policies-meta" data-testid="campaign-check">
                   {t("checkSummary", { pass: c.check.passPercent, attempts: c.check.attempts, questions: c.check.questions })}

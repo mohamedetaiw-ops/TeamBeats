@@ -35,7 +35,7 @@ export type PolicyReading = { policy: PolicySummary; version: VersionView; super
 
 export type RouteStep = { names?: Names | null; approvers?: string[] | null; complianceOfficers?: boolean };
 
-export type PolicyRights = { manage: boolean; edit: boolean; review: boolean; history: boolean; compliance: boolean; ask: boolean; analytics: boolean; comprehension?: boolean; exemptions?: boolean; controls?: boolean };
+export type PolicyRights = { manage: boolean; edit: boolean; review: boolean; history: boolean; compliance: boolean; ask: boolean; analytics: boolean; comprehension?: boolean; exemptions?: boolean; controls?: boolean; paper?: boolean };
 
 export type RegisterRights = { create: boolean; exemptions?: boolean; evidence?: boolean };
 
@@ -195,7 +195,7 @@ export type CommentView = {
   resolvedBy: PolicyPerson | null;
 };
 
-export type CampaignCounts = { members: number; attested: number; open: number; overdue: number; leftAudience: number };
+export type CampaignCounts = { members: number; attested: number; open: number; overdue: number; leftAudience: number; paper?: number };
 
 export type CampaignView = {
   id: string;
@@ -343,5 +343,21 @@ export type ControlPoliciesView = {
 };
 
 export const controlsHref = (id: string) => `/policies/${encodeURIComponent(id)}/controls`;
+export const paperHref = (id: string) => `/policies/${encodeURIComponent(id)}/paper`;
+
+/** A paper attestation import (spec 025 section 14): the scanned forms, and once the CSV ran, what it imported and refused by line. */
+export type PaperImportView = {
+  id: string;
+  policyId: string;
+  importedBy: PolicyPerson;
+  createdAt: string;
+  scanName: string;
+  scanType: string;
+  scanSize: number;
+  status: "draft" | "completed";
+  completedAt: string | null;
+  imported: number;
+  rejected: { line: number; key: string; message: string | null }[];
+};
 export const controlPoliciesHref = (framework: string, code: string) =>
   `/policies/controls?framework=${encodeURIComponent(framework)}&code=${encodeURIComponent(code)}`;

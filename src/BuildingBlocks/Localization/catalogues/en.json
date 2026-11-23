@@ -2726,5 +2726,20 @@
   "policies.evidence.pdf.outcome.minor_update": "Minor update",
   "policies.evidence.pdf.outcome.major_revision": "Major revision",
   "policies.evidence.pdf.outcome.revised": "Revised",
-  "validation.policies.onboarding_required": "Choose whether the policy is required at onboarding."
+  "validation.policies.onboarding_required": "Choose whether the policy is required at onboarding.",
+  "validation.policies.paper_scan_name": "Give the scanned file a name.",
+  "validation.policies.paper_scan_type": "Attach the scanned forms as a PDF, PNG or JPEG file.",
+  "validation.policies.paper_scan_size": "The scanned file can be at most 20 MB.",
+  "validation.policies.paper_scan_infected": "The scanned file was refused because it contains malware.",
+  "validation.policies.paper_scan_unchecked": "The scanned file could not be checked for malware. Try again later.",
+  "validation.policies.paper_header": "The CSV needs the columns email and attested_on, and may have version.",
+  "validation.policies.paper_rows": "The CSV needs between 1 and 2,000 lines.",
+  "validation.policies.paper_person": "No active person has this email.",
+  "validation.policies.paper_version": "This version of the policy was never in force.",
+  "validation.policies.paper_date": "The date must be yyyy-mm-dd, not in the future and not before the version came into force.",
+  "validation.policies.paper_audience": "The policy does not apply to this person.",
+  "validation.policies.paper_duplicate": "This person and version appear more than once.",
+  "validation.policies.paper_already": "This person already attested to this version.",
+  "conflict.policies.paper_not_in_force": "Paper attestations can be imported only for a policy in force.",
+  "conflict.policies.paper_import_done": "This import is already completed."
 }

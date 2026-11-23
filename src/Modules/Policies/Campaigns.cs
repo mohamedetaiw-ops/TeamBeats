@@ -124,9 +124,10 @@ public sealed class PolicyCampaigns(
         (await session.QuerySingleOrDefaultAsync(
             """
             select count(*)::int, count(*) filter (where status = 'attested')::int, count(*) filter (where status = 'open')::int,
-              count(*) filter (where status = 'overdue')::int, count(*) filter (where status = 'left_audience')::int
+              count(*) filter (where status = 'overdue')::int, count(*) filter (where status = 'left_audience')::int,
+              (select count(*) from policies.attestation a where a.campaign_id = @campaignId and a.source = 'paper')::int
             from policies.campaign_member where campaign_id = @campaignId
-            """, new { campaignId }, r => new CampaignCounts(r.GetInt32(0), r.GetInt32(1), r.GetInt32(2), r.GetInt32(3), r.GetInt32(4)), ct))!;
+            """, new { campaignId }, r => new CampaignCounts(r.GetInt32(0), r.GetInt32(1), r.GetInt32(2), r.GetInt32(3), r.GetInt32(4), r.GetInt32(5)), ct))!;
 
     private async Task<CampaignView> ViewAsync(CampaignRow c, CancellationToken ct) =>
         new(c.Id, c.PolicyId, c.Version, c.Audience, c.Deadline, c.Text, c.ReminderDays, c.LateJoinerDays, c.Excluded, c.Status, await register.PersonAsync(c.LaunchedBy, ct),

@@ -5224,7 +5224,8 @@
       "reviewsOverdue": "Scheduled review (overdue)",
       "questions": "Comprehension questions",
       "exemptions": "Exemptions",
-      "controls": "Controls"
+      "controls": "Controls",
+      "paper": "Paper attestations"
     },
     "create": {
       "title": "New policy",
@@ -5344,7 +5345,8 @@
       "attempts": "Attempts",
       "drawn": "Questions per attempt",
       "drawnHint": "Leave empty to ask every question of the bank.",
-      "checkSummary": "Comprehension check: {questions, plural, one {# question} other {# questions}}, pass mark {pass}%, {attempts, plural, one {# attempt} other {# attempts}}"
+      "checkSummary": "Comprehension check: {questions, plural, one {# question} other {# questions}}, pass mark {pass}%, {attempts, plural, one {# attempt} other {# attempts}}",
+      "paperCount": "{count, plural, =1 {1 attested on paper} other {# attested on paper}}"
     },
     "compliance": {
       "register": "Policies",
@@ -5703,6 +5705,33 @@
       "on": "New joiners will be asked to accept this policy.",
       "off": "New joiners will no longer be asked to accept this policy.",
       "failed": "That did not work. Try again."
+    },
+    "paper": {
+      "register": "Policies",
+      "title": "Paper attestations",
+      "heading": "Paper attestations for {name}",
+      "description": "Import attestations people signed on paper, with the scanned forms. They are recorded as paper and counted apart from online attestations.",
+      "newTitle": "Import signed forms",
+      "intro": "Attach the scanned forms, then a CSV with one line per person: email, attested_on (yyyy-mm-dd) and, if not the version in force, version.",
+      "scan": "Scanned forms",
+      "scanHint": "PDF, PNG or JPEG, up to 20 MB.",
+      "csv": "CSV of signatures",
+      "csvHint": "Columns email, attested_on and optionally version; up to 2,000 lines.",
+      "chooseBoth": "Choose the scanned forms and the CSV.",
+      "import": "Import",
+      "busy": "Importing",
+      "failed": "That did not work. Try again.",
+      "listTitle": "Imports",
+      "none": "No paper attestations have been imported.",
+      "importedBy": "Imported by {name} on {date}",
+      "statuses": {
+        "draft": "Waiting for the CSV",
+        "completed": "Completed"
+      },
+      "counts": "{imported, plural, =1 {1 attestation imported} other {# attestations imported}}, {rejected, plural, =0 {no line refused} =1 {1 line refused} other {# lines refused}}",
+      "rejectedLabel": "Refused lines",
+      "line": "Line {line}: {reason}",
+      "openScan": "Open {name}"
     }
   },
   "ai": {

@@ -116,7 +116,7 @@ public sealed record ScheduledVersion(Guid Id, int Number, DateTimeOffset Effect
 /// force and the package includes the assistant and policy Q&amp;A.
 /// </summary>
 public sealed record PolicyRights(bool Manage, bool Edit, bool Review, bool History, bool Compliance, bool Ask = false, bool Analytics = false, bool Comprehension = false,
-    bool Exemptions = false, bool Controls = false);
+    bool Exemptions = false, bool Controls = false, bool Paper = false);
 
 /// <summary>What the current user may do in the register: create policies where they hold <c>policy.manage</c>, and open the exemption register.</summary>
 public sealed record RegisterRights(bool Create, bool Exemptions = false, bool Evidence = false);
@@ -235,7 +235,8 @@ public sealed record CampaignRequest(
     ContentAudience? Audience,
     CheckSettings? Check = null);
 
-public sealed record CampaignCounts(int Members, int Attested, int Open, int Overdue, int LeftAudience);
+/// <summary>How a campaign stands; <paramref name="Paper"/> counts the attested members whose attestation was imported from paper.</summary>
+public sealed record CampaignCounts(int Members, int Attested, int Open, int Overdue, int LeftAudience, int Paper = 0);
 
 public sealed record CampaignView(
     Guid Id,
