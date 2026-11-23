@@ -208,11 +208,19 @@ public sealed record RankedItem(string Source, Guid ItemId);
 /// </summary>
 public interface ISearchAnalyticsFeed
 {
-    Task<SearchQueryReport> ReportAsync(DateTimeOffset from, DateTimeOffset to, string? locale, CancellationToken ct = default);
+    /// <summary>With <paramref name="units"/>, only searches by people whose primary unit at search time was one of them.</summary>
+    Task<SearchQueryReport> ReportAsync(DateTimeOffset from, DateTimeOffset to, string? locale, CancellationToken ct = default, IReadOnlyCollection<Guid>? units = null);
 }
+
+/// <summary>Searches per primary unit of the searcher at search time (null: no unit), with the distinct people, for the minimum group size.</summary>
+public sealed record SearchUnitRow(Guid? UnitId, int Searches, int People, int ZeroResults, int Clicks);
+
+/// <summary>A query people refined into another (spec 021 section 2): searched within five minutes of the first, which got no click. Five people or more.</summary>
+public sealed record SearchRefinementRow(string From, string To, int Searches, int People);
 
 public sealed record SearchQueryRow(string Query, int Searches, int People, int ZeroResults, int Clicks);
 
 public sealed record SearchQueryReport(int Searches, int ZeroResults, int Clicked, double ClickThrough, bool QueryTextHidden, IReadOnlyList<SearchQueryRow> TopQueries,
-    IReadOnlyList<SearchQueryRow> ZeroResultQueries, IReadOnlyList<SearchQueryRow> NoClickQueries);
+    IReadOnlyList<SearchQueryRow> ZeroResultQueries, IReadOnlyList<SearchQueryRow> NoClickQueries, int Refined = 0,
+    IReadOnlyList<SearchUnitRow>? Units = null, IReadOnlyList<SearchRefinementRow>? Refinements = null);
 

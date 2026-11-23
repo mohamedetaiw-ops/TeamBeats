@@ -10,13 +10,17 @@ import { ReportActions } from "@/features/analytics/ReportActions";
 import "@/features/analytics/analytics.css";
 
 /** Search gaps (spec 021 US3) for the last 30 days. The API needs analytics.advanced and tenant wide analytics.view, search.manage or kb.edit. */
-export default async function SearchGapsPage({ searchParams }: { searchParams: Promise<{ locale?: string }> }) {
+export default async function SearchGapsPage({ searchParams }: { searchParams: Promise<{ locale?: string; unit?: string }> }) {
   const me = await apiGet<Me>("/api/v1/me");
   if (!me.ok) {
     redirect("/signin");
   }
-  const { locale } = await searchParams;
-  const view = await apiGet<SearchGapsView>(`/api/v1/analytics/search${locale ? `?locale=${encodeURIComponent(locale)}` : ""}`);
+  const { locale, unit } = await searchParams;
+  const params = new URLSearchParams();
+  if (locale) params.set("locale", locale);
+  if (unit) params.set("unit", unit);
+  const query = params.toString();
+  const view = await apiGet<SearchGapsView>(`/api/v1/analytics/search${query ? `?${query}` : ""}`);
   const t = await getTranslations("analytics.search");
   return (
     <>
@@ -26,7 +30,7 @@ export default async function SearchGapsPage({ searchParams }: { searchParams: P
           title={t("title")}
           description={t("intro")}
           icon="search"
-          actions={view.ok ? <ReportActions definition={{ dashboard: "search", filters: view.data.locale ? { locale: view.data.locale } : null }} /> : undefined}
+          actions={view.ok ? <ReportActions definition={{ dashboard: "search", filters: view.data.locale || view.data.unitId ? { locale: view.data.locale ?? undefined, unitId: view.data.unitId ?? undefined } : null }} /> : undefined}
         />
         {view.ok ? (
           <SearchGapsDashboard view={view.data} locales={me.data.tenant.enabledLocales} />

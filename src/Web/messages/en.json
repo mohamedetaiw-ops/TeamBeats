@@ -8194,13 +8194,32 @@
         "people": "People",
         "zeroResults": "No results",
         "clicks": "Clicks",
-        "actions": "Next step"
+        "actions": "Next step",
+        "unit": "Unit",
+        "from": "First search",
+        "to": "Changed to"
       },
       "bestBet": "Add a best bet",
       "bestBetFor": "Add a best bet for {query}",
       "article": "Write an article",
       "articleFor": "Write an article for {query}",
-      "privacyNote": "A search is listed only when at least {size} people made it, and never when it looks like personal data such as an email address or ID number."
+      "privacyNote": "A search is listed only when at least {size} people made it, and never when it looks like personal data such as an email address or ID number.",
+      "refined": "Refined searches",
+      "unitFilter": "Searches by people in {unit} and the units under it.",
+      "allUnits": "Show all units",
+      "units": {
+        "title": "Searches by unit",
+        "hint": "By the unit people belonged to when they searched. Open a unit to see its searches only.",
+        "none": "No unit",
+        "other": "Other (units under {size} people)",
+        "notCounted": "Not counted",
+        "hidden": "Hidden"
+      },
+      "refinements": {
+        "title": "Searches people changed",
+        "hint": "A search with no click followed within five minutes by a search with other words. Common pairs show which words people expect to work.",
+        "empty": "No change of words was made by {size} or more people."
+      }
     },
     "areas": {
       "workspace": "Analytics",

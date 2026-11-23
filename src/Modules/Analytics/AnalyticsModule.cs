@@ -109,8 +109,8 @@ public static class AnalyticsModule
         analytics.MapGet("/ai-usage", async (DateOnly? from, DateOnly? to, AiUsageAnalytics usage, CancellationToken ct) =>
             Results.Ok(await usage.GetAsync(from, to, ct)));
         // Search gaps (spec 021 US3, FR-007): from the spec 012 query feed, five people or more, no personal data.
-        analytics.MapGet("/search", async (DateOnly? from, DateOnly? to, string? locale, SearchGaps gaps, CancellationToken ct) =>
-            Results.Ok(await gaps.GetAsync(from, to, locale, ct)));
+        analytics.MapGet("/search", async (DateOnly? from, DateOnly? to, string? locale, Guid? unit, SearchGaps gaps, CancellationToken ct) =>
+            Results.Ok(await gaps.GetAsync(from, to, locale, ct, unit)));
         // Knowledge, engagement, HR and security trends (spec 021 section 2, FR-002): read from their owners, minimum group size.
         analytics.MapGet("/knowledge", async (DateOnly? from, DateOnly? to, AreaDashboards areas, CancellationToken ct) =>
             Results.Ok(await areas.KnowledgeAsync(from, to, ct)));

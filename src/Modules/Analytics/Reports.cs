@@ -131,8 +131,8 @@ public sealed class ReportDefinitions(IServiceProvider services)
         {
             errors.Add("definition.metric", "validation.analytics.metric");
         }
-        // The search dashboard filters by locale only (spec 021 US3); others take dates only.
-        var filters = d.Dashboard == ReportDashboards.Search && d.Filters is not null ? d.Filters with { Locale = null } : d.Filters;
+        // The search dashboard filters by locale and unit (spec 021 US3, T021); others take dates only.
+        var filters = d.Dashboard == ReportDashboards.Search && d.Filters is not null ? d.Filters with { Locale = null, UnitId = null } : d.Filters;
         if (d.Dashboard != ReportDashboards.Overview && (d.Metric is not null || d.GroupBy is not null || HasNonDateFilter(filters)))
         {
             errors.Add("definition.filters", "validation.analytics.filter");
@@ -162,7 +162,7 @@ public sealed class ReportDefinitions(IServiceProvider services)
             ReportDashboards.Experience => await services.GetRequiredService<ExperienceAnalytics>().GetAsync(from, to, ct),
             ReportDashboards.Sentiment => await services.GetRequiredService<SentimentAnalytics>().GetAsync(from, to, ct),
             ReportDashboards.AiUsage => await services.GetRequiredService<AiUsageAnalytics>().GetAsync(from, to, ct),
-            ReportDashboards.Search => await services.GetRequiredService<SearchGaps>().GetAsync(from, to, d.Filters?.Locale, ct),
+            ReportDashboards.Search => await services.GetRequiredService<SearchGaps>().GetAsync(from, to, d.Filters?.Locale, ct, d.Filters?.UnitId),
             ReportDashboards.Knowledge => await services.GetRequiredService<AreaDashboards>().KnowledgeAsync(from, to, ct),
             ReportDashboards.Engagement => await services.GetRequiredService<AreaDashboards>().EngagementAsync(from, to, ct),
             ReportDashboards.Hr => await services.GetRequiredService<AreaDashboards>().HrAsync(from, to, ct),
