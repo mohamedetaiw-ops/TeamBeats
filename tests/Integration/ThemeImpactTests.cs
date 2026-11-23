@@ -139,4 +139,38 @@ public sealed class ThemeImpactTests(TenantWorld world)
         await OkAsync(plain["admin"].Client.PutAsJsonAsync($"{Brands}/{brand}/draft", new { name = "Plain", tokens = new Dictionary<string, object> { ["radius.md"] = Token("3px") } }));
         Assert.Equal(HttpStatusCode.Forbidden, (await plain["admin"].Client.GetAsync($"{Brands}/{brand}/draft/impact")).StatusCode);
     }
+
+    [Fact]
+    public async Task An_editor_previews_a_brand_as_an_organization_with_the_draft_or_the_version_in_force()
+    {
+        var (t, group, _, _, _) = await FreshAsync();
+        var client = t["manager"].Client;
+        string Radius(JsonElement p) => p.GetProperty("variants").GetProperty("light.comfortable").GetProperty("--tb-radius-md").GetString()!;
+
+        var plant = await OkAsync(client.GetAsync($"{Brands}/{group}/preview?scope={t.Unit("Plant")}"));
+        Assert.Equal("draft", plant.GetProperty("source").GetString());
+        Assert.True(plant.GetProperty("inherits").GetBoolean());
+        Assert.Equal("Plant", plant.GetProperty("scopeNames").GetProperty("en").GetString());
+        // Gulf's override wins at Plant; the draft's accent reaches it; both modes and densities come back.
+        Assert.Equal("9px", Radius(plant));
+        Assert.Equal("#0f766e", plant.GetProperty("variants").GetProperty("light.comfortable").GetProperty("--tb-color-accent-base").GetString());
+        Assert.Equal(4, plant.GetProperty("variants").EnumerateObject().Count());
+        Assert.Equal(JsonValueKind.Array, plant.GetProperty("findings").ValueKind);
+
+        Assert.Equal("4px", Radius(await OkAsync(client.GetAsync($"{Brands}/{group}/preview"))));
+        var current = await OkAsync(client.GetAsync($"{Brands}/{group}/preview?source=current"));
+        Assert.Equal("current", current.GetProperty("source").GetString());
+        Assert.Equal("12px", Radius(current));
+
+        // An organization on another brand shows its own theme, marked as not using this brand.
+        var africa = await OkAsync(client.GetAsync($"{Brands}/{group}/preview?scope={t.Unit("Africa")}"));
+        Assert.False(africa.GetProperty("inherits").GetBoolean());
+        Assert.Equal("20px", Radius(africa));
+
+        Assert.Equal("validation.theme.preview_source", await KeyAsync(await client.GetAsync($"{Brands}/{group}/preview?source=other")));
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"{Brands}/{group}/preview?scope={Guid.NewGuid()}")).StatusCode);
+        await world.SeedUserAsync(t, "employee", MembershipTypes.Employee);
+        Assert.Equal(HttpStatusCode.Forbidden, (await t["employee"].Client.GetAsync($"{Brands}/{group}/preview")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await world.B["admin"].Client.GetAsync($"{Brands}/{group}/preview")).StatusCode);
+    }
 }

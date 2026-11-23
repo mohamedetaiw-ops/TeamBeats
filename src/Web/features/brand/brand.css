@@ -453,3 +453,119 @@
 .brand-impact .brand-preview-grid {
   grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
 }
+
+/* Theme preview as an organization (spec 033 R2 T016): a sample shell and page at a chosen device width. */
+.brand-previewer {
+  display: grid;
+  gap: var(--tb-space-lg);
+}
+
+.brand-previewer-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--tb-space-md);
+}
+
+.brand-stage {
+  overflow-x: auto;
+  padding: var(--tb-space-md);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-sunken);
+}
+
+.brand-stage-frame {
+  margin-inline: auto;
+  overflow: hidden;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-base);
+  color: var(--tb-color-text-primary);
+  font-family: var(--tb-font-family-latin);
+  font-size: var(--tb-font-size-md);
+  line-height: var(--tb-font-line-height-body);
+  box-shadow: var(--tb-shadow-sm);
+}
+
+.brand-stage-frame:lang(ar) {
+  font-family: var(--tb-font-family-arabic);
+}
+
+.brand-stage-frame[data-mode="dark"] {
+  color-scheme: dark;
+}
+
+.brand-stage[data-device="phone"] .brand-stage-frame {
+  inline-size: 22.5rem;
+}
+
+.brand-stage[data-device="tablet"] .brand-stage-frame {
+  inline-size: 48rem;
+}
+
+.brand-stage[data-device="desktop"] .brand-stage-frame {
+  inline-size: 80rem;
+}
+
+.brand-stage-shell {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-sm) var(--tb-space-md);
+  background: var(--tb-color-shell-background);
+  color: var(--tb-color-shell-text);
+}
+
+.brand-stage-title {
+  font-weight: var(--tb-font-weight-bold);
+}
+
+.brand-stage-nav {
+  display: flex;
+  gap: var(--tb-space-md);
+}
+
+.brand-stage-nav [aria-current="page"] {
+  box-shadow: inset 0 calc(-1 * var(--tb-border-width-thick)) 0 currentcolor;
+}
+
+.brand-stage-page {
+  display: grid;
+  gap: var(--tb-space-md);
+  padding: var(--tb-space-lg);
+}
+
+.brand-stage-page p {
+  margin: 0;
+}
+
+.brand-stage-heading {
+  margin: 0;
+  font-size: var(--tb-font-size-xl);
+  line-height: var(--tb-font-line-height-heading);
+}
+
+.brand-stage-secondary {
+  color: var(--tb-color-text-secondary);
+}
+
+.brand-stage-card {
+  display: grid;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-md);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+}
+
+.brand-stage-link {
+  color: var(--tb-color-link);
+  text-decoration: underline;
+}
+
+.brand-stage-states {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+}

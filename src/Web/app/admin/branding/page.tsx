@@ -7,6 +7,7 @@ import { BrandManager, type PreviewSample } from "@/features/brand/BrandManager"
 import { ThemeLifecycle } from "@/features/brand/ThemeLifecycle";
 import "@/features/brand/brand.css";
 import { AdminHeader } from "@/components/shell/AdminHeader";
+import { ButtonLink } from "@/components/ui/Button";
 
 const sampleKeys = ["shell", "navHome", "navNews", "heading", "body", "secondary", "link", "primary", "secondaryAction", "success", "warning", "danger"] as const;
 
@@ -48,7 +49,15 @@ export default async function BrandingPage({ searchParams }: { searchParams: Pro
   const t = await getTranslations("brand");
   return (
     <>
-      <AdminHeader section="branding" description={t("intro")} />
+      <AdminHeader
+        section="branding"
+        description={t("intro")}
+        actions={
+          <ButtonLink href={`/admin/branding/preview?brand=${encodeURIComponent(brand.data.id)}`} variant="secondary" icon="eye">
+            {t("previewPage.open")}
+          </ButtonLink>
+        }
+      />
       <BrandManager
         key={brand.data.id}
         schema={schema.data}

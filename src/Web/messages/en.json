@@ -1780,7 +1780,43 @@
       "tenant": "The whole organization"
     },
     "saveDraft": "Save draft",
-    "draftSaved": "Draft saved. Employees still see the version in force."
+    "draftSaved": "Draft saved. Employees still see the version in force.",
+    "previewPage": {
+      "title": "Preview {brand}",
+      "intro": "See the brand on a sample shell, page and components as one organization sees it, in each mode, language and device width.",
+      "back": "Back to the brand",
+      "controls": "Preview settings",
+      "organization": "Organization",
+      "wholeOrganization": "Whole organization",
+      "source": "Version",
+      "sources": {
+        "draft": "Draft",
+        "current": "In force"
+      },
+      "mode": "Mode",
+      "density": "Density",
+      "language": "Language",
+      "languages": {
+        "en": "English",
+        "ar": "Arabic"
+      },
+      "device": "Device",
+      "devices": {
+        "phone": "Phone",
+        "tablet": "Tablet",
+        "desktop": "Desktop"
+      },
+      "failedTitle": "The preview did not load",
+      "failed": "Try again in a moment.",
+      "otherBrandTitle": "This organization uses another brand",
+      "otherBrand": "{scope} uses another brand, so you see its own theme. Changes to this brand do not reach it.",
+      "loading": "Loading the preview…",
+      "captionDraft": "The draft as {scope} would see it once published.",
+      "captionCurrent": "The version in force as {scope} sees it now.",
+      "frameLabel": "Sample page for {scope}, {mode}, {device}",
+      "sampleNav": "Sample navigation",
+      "open": "Preview as an organization"
+    }
   },
   "ui": {
     "state": {
