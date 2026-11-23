@@ -1,6 +1,6 @@
-# Spec 025 evidence (R1)
+# Spec 025 evidence (R1 and R2)
 
-The spec stays Approved, not Implemented, until its R2 parts are built: fixed attestation cycles (the second half of FR-008) and controlled document policies (the second half of FR-003). Defaults, deviations and gaps of each R1 slice are in the spec 025 sections of `docs/architecture/r1-implementation-notes.md`.
+R1 and the R2 scope (User Stories 5 to 8, FR-012 to FR-017, the AI change summary, paper import, the long leave pause and the manager dashboard) are built. The spec stays Approved, not Implemented, until the two parts left from R1 are built: fixed attestation cycles (the second half of FR-008, T022) and controlled document policies (the second half of FR-003, T023). R3 (change impact analysis with AI, regulator change feeds) is not started. Defaults, deviations and gaps of each slice are in the spec 025 sections of `docs/architecture/r1-implementation-notes.md` and `docs/architecture/r2-implementation-notes.md`.
 
 | Requirement | Status | Evidence |
 |---|---|---|
