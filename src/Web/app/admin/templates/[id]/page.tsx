@@ -6,6 +6,7 @@ import { getCatalogue, getTemplate, listUnits } from "@/lib/experience/client";
 import { templateName, unitName } from "@/lib/experience/builder-types";
 import { LayoutPreview } from "@/features/builder/LayoutPreview";
 import { TemplateDesigner } from "@/features/templates/TemplateDesigner";
+import { ExportTemplate } from "@/features/templates/TemplateTransfer";
 import "@/features/builder/builder.css";
 
 /**
@@ -35,9 +36,12 @@ export default async function TemplatePage({ params }: { params: Promise<{ id: s
     <>
       <div className="builder-heading">
         <h1>{templateName(template.data.latest, locale)}</h1>
-        <Link className="button button-secondary" href="/admin/templates">
-          {t("back")}
-        </Link>
+        <div className="button-row">
+          <ExportTemplate templateId={template.data.id} />
+          <Link className="button button-secondary" href="/admin/templates">
+            {t("back")}
+          </Link>
+        </div>
       </div>
       <dl className="builder-facts">
         <dt>{t("id")}</dt>

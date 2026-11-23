@@ -53,4 +53,4 @@ R2 covers User Story 6 approval, impact and scheduling, User Story 7 independent
 - [x] T029 Resizable regions (FR-007): editors resize regions within declared constraints, persisted, never overlapping, by pointer and keyboard
 - [x] T030 Feature controls (`feature_control.manage`): tenant and scope switches for components and templates as versioned configuration, read by the picker and the renderer
 - [x] T031 [US7] Independent component deployment (FR-033): a registered package version is deployable and updatable without rebuilding page definitions, migration hooks run on upgrade, pages that do not use it are untouched
-- [ ] T032 Builder pages for approval, schedule, impact, fragments and import, in `ar` and `en`, RTL; OpenAPI, R2 implementation notes, e2e with axe
+- [x] T032 Builder pages for approval, schedule, impact, fragments and import, in `ar` and `en`, RTL; OpenAPI, R2 implementation notes, e2e with axe

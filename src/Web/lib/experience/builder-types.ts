@@ -202,3 +202,47 @@ export type PageSchedule = {
 };
 
 export type PageScheduleState = { timeZone: string; current: PageSchedule | null };
+
+/** An approval route for pages at a scope (spec 032 R2 T023, FR-051): the nearest route up the org tree applies. */
+export type PageRoute = { id: string; orgUnitId: string | null; approverIds: string[]; updatedBy: string; updatedAt: string };
+
+/** A governed fragment (R2 T027, FR-045): a reusable group of placements that every page placing it shows as it is now. */
+export type Fragment = {
+  id: string;
+  key: string;
+  reference: string;
+  names: Record<string, string>;
+  orgUnitId: string | null;
+  ownerId: string;
+  currentVersion: number;
+  placements: DraftPlacement[];
+  archivedAt: string | null;
+  createdAt: string;
+};
+export type FragmentVersion = { version: number; note: string | null; createdBy: string; createdAt: string; placements: DraftPlacement[] };
+export type FragmentImpact = { fragmentId: string; key: string; pageCount: number; pages: { id: string; slug: string; orgUnitId: string | null }[] };
+
+/** A feature control (R2 T030, FR-057): a component or template switched on or off for a scope. */
+export type FeatureControl = {
+  id: string;
+  subjectKind: "component" | "template";
+  subjectId: string;
+  orgUnitId: string | null;
+  audienceId: string | null;
+  enabled: boolean;
+  version: number;
+  changedBy: string;
+  changedAt: string;
+};
+export type FeatureControlVersion = { version: number; enabled: boolean | null; changedBy: string; changedAt: string };
+export type ComponentChoice = { componentId: string; enabled: boolean; name: string | null };
+export type AudienceRuleSummary = { id: string; labels: Record<string, string> };
+
+/** Component upgrades a tenant may deploy to its live pages (R2 T031, FR-033). */
+export type ComponentUpgradeOption = { componentId: string; name: string; fromMajor: number; from: string; to: string; deployed: boolean };
+export type ComponentDeployment = { componentId: string; from: string; to: string; deployedBy: string; deployedAt: string };
+export type ComponentDeployments = { deployed: ComponentDeployment[]; available: ComponentUpgradeOption[] };
+export type ComponentUpgradeResult = { from: string; to: string; upgraded: string[]; blocked: { pageId: string; placementId: string; reason: string }[] };
+
+/** A kept draft revision (R2 T026): the last 50 saves of a page's draft. */
+export type DraftRevision = { revision: number; updatedBy: string; updatedAt: string };

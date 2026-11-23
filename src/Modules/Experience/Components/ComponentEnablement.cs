@@ -8,11 +8,12 @@ namespace TeamBeats.Modules.Experience.Components;
 
 public sealed record EnablementRequest(bool Enabled);
 
-public sealed record EnablementView(string ComponentId, bool Enabled);
+/// <param name="Name">The component's name in the caller's language (R2 T032 admin screens).</param>
+public sealed record EnablementView(string ComponentId, bool Enabled, string? Name = null);
 
 /// <summary>Tenant choices about platform components (spec 032 section 7). A component with no stored choice is enabled.</summary>
 public sealed class ComponentEnablement(IDbSession session, ITenantContext context, IAuthorizationService authz, ComponentRegistry registry,
-    IAuditWriter audit, IClock clock)
+    IAuditWriter audit, IClock clock, TeamBeats.Localization.ILocalizer localizer, TeamBeats.Localization.RequestLocale locale)
 {
     public async Task<IReadOnlySet<string>> DisabledAsync(CancellationToken ct) =>
         (await session.QueryAsync("select component_id from experience.component_enablement where not enabled", null,
@@ -22,7 +23,9 @@ public sealed class ComponentEnablement(IDbSession session, ITenantContext conte
     {
         await authz.DemandAsync(Permissions.ComponentEnable, AuthzTarget.Tenant, ct);
         var disabled = await DisabledAsync(ct);
-        return registry.All.Select(m => m.Id).Distinct().Select(id => new EnablementView(id, !disabled.Contains(id))).ToList();
+        // The newest manifest names the component; every major shares the id the switch turns off.
+        return registry.All.GroupBy(m => m.Id, StringComparer.Ordinal).Select(g => g.OrderByDescending(m => System.Version.Parse(m.Version)).First())
+            .Select(m => new EnablementView(m.Id, !disabled.Contains(m.Id), localizer.Get(m.Display.NameKey, locale.Locale))).ToList();
     }
 
     public async Task<EnablementView> SetAsync(string componentId, bool enabled, CancellationToken ct)

@@ -557,6 +557,9 @@ public sealed class PageCompositionTests(TenantWorld world)
         Assert.Empty(figure.GetProperty("props").EnumerateObject());
         var reloaded = JsonNode.Parse(await t["admin"].Client.GetStringAsync($"/api/v1/experience/pages/{page["id"]}"))!;
         Assert.Contains(reloaded["findings"]!.AsArray(), f => f!["code"]!.GetValue<string>() == "validation.page.component_disabled");
+        // The list names each component in the caller's language (R2 T032 feature control screen).
+        var listed = await t["admin"].Client.GetFromJsonAsync<JsonElement>("/api/v1/experience/components");
+        Assert.All(listed.EnumerateArray(), c => Assert.False(string.IsNullOrWhiteSpace(c.GetProperty("name").GetString())));
         var on = await t["admin"].Client.PutAsJsonAsync("/api/v1/experience/components/reference.alpha.kpi/enablement", new { enabled = true });
         Assert.True(on.IsSuccessStatusCode);
         await world.Database.AssertAuditedAsync(t.Id, AuditActions.ComponentEnabled, "reference.alpha.kpi");
