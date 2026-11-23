@@ -11,11 +11,14 @@ namespace TeamBeats.Modules.Experience.Components;
 /// permissions here: the component's own API authorizes every call (spec 032 FR-027).
 /// </summary>
 public sealed class ComponentAvailability(IAuthorizationService authz, IEntitlementService entitlements, ComponentRegistry registry,
-    ComponentEnablement enablement)
+    ComponentEnablement enablement, FeatureControls controls)
 {
-    public async Task<Func<ComponentManifest, Availability>> ForScopeAsync(Guid? orgUnitId, CancellationToken ct, bool viewer = false)
+    /// <param name="inAudience">At render, whether the viewer is in an audience rule, for feature controls set per audience (R2 T030).</param>
+    public async Task<Func<ComponentManifest, Availability>> ForScopeAsync(Guid? orgUnitId, CancellationToken ct, bool viewer = false,
+        Func<Guid, bool>? inAudience = null)
     {
         var disabled = await enablement.DisabledAsync(ct);
+        var switchedOff = await controls.OffAsync(FeatureControlSubjects.Component, orgUnitId, ct, inAudience);
         var capabilities = new Dictionary<string, bool>(StringComparer.Ordinal);
         var permissions = new Dictionary<string, bool>(StringComparer.Ordinal);
         var target = orgUnitId is { } u ? AuthzTarget.OrgUnit(u) : AuthzTarget.Tenant;
@@ -34,7 +37,7 @@ public sealed class ComponentAvailability(IAuthorizationService authz, IEntitlem
             }
         }
         return m =>
-            disabled.Contains(m.Id) ? Availability.Disabled
+            disabled.Contains(m.Id) || switchedOff(m.Id) ? Availability.Disabled
             : m.Requires.Capabilities.Any(c => !capabilities[c]) ? Availability.NotEntitled
             : !viewer && m.Requires.Permissions.Any(p => !permissions[p]) ? Availability.NotPermitted
             : Availability.Available;
