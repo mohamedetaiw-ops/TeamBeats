@@ -2771,5 +2771,21 @@
   "notifications.template.experience.page_schedule_failed.body": "{page} was not published at its time because of problems on the page. The release in force stays.",
   "conflict.page.merge_structure": "You and the other editor both changed the template, layout or look of this page. Choose one version.",
   "conflict.page.merge_base_gone": "The version you started from is no longer kept, so the two cannot be merged. Choose one version.",
-  "validation.page.merge_base": "Send the version you started from to merge."
+  "validation.page.merge_base": "Send the version you started from to merge.",
+  "validation.fragment.key_invalid": "Use 3 to 40 lowercase letters, digits or hyphens, starting with a letter.",
+  "validation.fragment.names_invalid": "Give the fragment a name of up to 120 characters in a supported language.",
+  "validation.fragment.note_too_long": "Keep the note to 500 characters.",
+  "validation.fragment.placements_count": "A fragment holds between 1 and 12 components.",
+  "validation.fragment.placement_id_invalid": "Each component in a fragment needs its own short id: up to 12 lowercase letters, digits or hyphens.",
+  "validation.fragment.nested": "A fragment cannot hold another fragment.",
+  "validation.fragment.audience": "Audience rules go on the page that places the fragment, not inside it.",
+  "validation.fragment.invalid": "The fragment has a component that cannot be used here.",
+  "conflict.fragment.key_taken": "Another fragment already uses this key.",
+  "conflict.fragment.archived": "This fragment is archived and cannot change.",
+  "validation.page.fragment_not_entitled": "Fragments are not part of your package, so this one will not show.",
+  "validation.page.fragment_unknown": "This fragment no longer exists or was archived. Remove it from the page.",
+  "validation.page.fragment_out_of_scope": "This fragment belongs to another part of the organization and cannot be placed on this page.",
+  "validation.page.fragment_id_too_long": "Shorten this placement's id so the fragment's components fit within 40 characters.",
+  "builder.fragments.name": "Fragment",
+  "builder.fragments.description": "A shared set of components. Changes to it show on every page that places it."
 }

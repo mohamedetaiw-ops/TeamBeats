@@ -23,6 +23,13 @@ function withRegions(draft: PageDefinition, change: (regions: DraftPlacement[][]
 /** A placement id the validator accepts and the page does not use yet: lowercase letters, digits and hyphens. */
 export function newPlacementId(draft: PageDefinition, componentRef: string): string {
   const used = new Set(draft.regions.flatMap((r) => r.placements.map((p) => p.id)));
+  // A fragment's components show as "<id>-<inner id>", so its reference keeps a shorter id (spec 032 R2 T027).
+  if (componentRef.startsWith("fragment:")) {
+    const key = componentRef.slice("fragment:".length).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 20) || "fragment";
+    for (let n = 1; ; n++) {
+      if (!used.has(`${key}-${n}`)) return `${key}-${n}`;
+    }
+  }
   const base = (componentRef.split("@")[0]!.split(".").pop() ?? "item").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 30) || "item";
   for (let n = 1; ; n++) {
     const id = `${base}-${n}`;

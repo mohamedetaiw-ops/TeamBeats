@@ -2771,5 +2771,21 @@
   "notifications.template.experience.page_schedule_failed.body": "لم تُنشر {page} في موعدها بسبب مشكلات في الصفحة، ويبقى الإصدار الحالي.",
   "conflict.page.merge_structure": "غيّرتَ أنت والمحرر الآخر قالب الصفحة أو تخطيطها أو مظهرها. اختر إحدى النسختين.",
   "conflict.page.merge_base_gone": "لم تعد النسخة التي بدأت منها محفوظة، فلا يمكن دمج النسختين. اختر إحداهما.",
-  "validation.page.merge_base": "أرسل النسخة التي بدأت منها لإجراء الدمج."
+  "validation.page.merge_base": "أرسل النسخة التي بدأت منها لإجراء الدمج.",
+  "validation.fragment.key_invalid": "استخدم من 3 إلى 40 حرفًا لاتينيًا صغيرًا أو رقمًا أو شرطة، يبدأ بحرف.",
+  "validation.fragment.names_invalid": "أعطِ الجزء اسمًا لا يزيد على 120 حرفًا بلغة مدعومة.",
+  "validation.fragment.note_too_long": "اجعل الملاحظة في حدود 500 حرف.",
+  "validation.fragment.placements_count": "يضم الجزء من مكوّن واحد إلى 12 مكوّنًا.",
+  "validation.fragment.placement_id_invalid": "يحتاج كل مكوّن في الجزء إلى معرّف قصير خاص به: حتى 12 حرفًا لاتينيًا صغيرًا أو رقمًا أو شرطة.",
+  "validation.fragment.nested": "لا يمكن أن يضم الجزء جزءًا آخر.",
+  "validation.fragment.audience": "توضع قواعد الجمهور على الصفحة التي تضع الجزء، لا داخله.",
+  "validation.fragment.invalid": "يحتوي الجزء على مكوّن لا يمكن استخدامه هنا.",
+  "conflict.fragment.key_taken": "هذا المفتاح مستخدم لجزء آخر.",
+  "conflict.fragment.archived": "هذا الجزء مؤرشف ولا يمكن تغييره.",
+  "validation.page.fragment_not_entitled": "الأجزاء ليست ضمن باقتك، لذلك لن يظهر هذا الجزء.",
+  "validation.page.fragment_unknown": "هذا الجزء لم يعد موجودًا أو أُرشف. أزله من الصفحة.",
+  "validation.page.fragment_out_of_scope": "هذا الجزء تابع لجزء آخر من المؤسسة ولا يمكن وضعه في هذه الصفحة.",
+  "validation.page.fragment_id_too_long": "اختصر معرّف هذا الموضع حتى تتسع مكوّنات الجزء ضمن 40 حرفًا.",
+  "builder.fragments.name": "جزء مشترك",
+  "builder.fragments.description": "مجموعة مشتركة من المكوّنات. تظهر تغييراتها في كل صفحة تضعها."
 }

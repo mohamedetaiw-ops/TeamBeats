@@ -41,6 +41,7 @@ public static class ExperienceModule
         services.AddScoped<Templates.TemplateService>();
         services.AddScoped<PageService>();
         services.AddScoped<Pages.PageRoutes>();
+        services.AddScoped<Pages.Fragments>();
         services.AddScoped<Pages.ImpactReports>();
         services.AddScoped<Pages.PageSchedules>();
         services.AddScoped<Pages.PageApprovals>();
@@ -218,6 +219,36 @@ public static class ExperienceModule
 
         x.MapGet("/pages/{id:guid}/draft/revisions/{revision:int}", async (Guid id, int revision, PageService pages, CancellationToken ct) =>
             Results.Ok(await pages.RevisionAsync(id, revision, ct)));
+
+        // Governed fragments (R2 T027, FR-045).
+        x.MapGet("/fragments", async (Fragments fragments, CancellationToken ct) => Results.Ok(await fragments.ListAsync(ct)));
+
+        x.MapPost("/fragments", async (CreateFragmentRequest request, Fragments fragments, IDbSession session, CancellationToken ct) =>
+        {
+            var fragment = await fragments.CreateAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/experience/fragments/{fragment.Id}", fragment);
+        });
+
+        x.MapGet("/fragments/{id:guid}", async (Guid id, Fragments fragments, CancellationToken ct) => Results.Ok(await fragments.GetAsync(id, ct)));
+
+        x.MapPut("/fragments/{id:guid}", async (Guid id, UpdateFragmentRequest request, Fragments fragments, IDbSession session, CancellationToken ct) =>
+        {
+            var fragment = await fragments.UpdateAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(fragment);
+        });
+
+        x.MapDelete("/fragments/{id:guid}", async (Guid id, Fragments fragments, IDbSession session, CancellationToken ct) =>
+        {
+            await fragments.ArchiveAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        x.MapGet("/fragments/{id:guid}/versions", async (Guid id, Fragments fragments, CancellationToken ct) => Results.Ok(await fragments.VersionsAsync(id, ct)));
+
+        x.MapGet("/fragments/{id:guid}/impact", async (Guid id, Fragments fragments, CancellationToken ct) => Results.Ok(await fragments.ImpactAsync(id, ct)));
 
         x.MapGet("/page-routes", async (PageRoutes routes, CancellationToken ct) => Results.Ok(await routes.ListAsync(ct)));
 

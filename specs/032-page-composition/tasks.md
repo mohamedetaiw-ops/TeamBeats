@@ -48,7 +48,7 @@ R2 covers User Story 6 approval, impact and scheduling, User Story 7 independent
 - [x] T024 [US6 scenario 2] Impact reports: before a shared layout, global page area or template change is published, the affected organizations, audiences, pages and the count of personal layouts touched, with cancel; also used by theme publishing in spec 033
 - [x] T025 [US6 scenario 4] Scheduled releases: go live and expire at tenant-local times; validation again at go-live, a failed release does not go live, the publisher is notified and the current release stays; tests with the clock
 - [x] T026 [US6 scenario 6] Edit conflicts: a second save gets both versions and a merge or overwrite choice; nothing lost
-- [ ] T027 Fragments (FR-045): save a section or region pattern as a governed fragment with owner, scope and version; apply to new pages as references, never copied component code; tests for scope and another tenant
+- [x] T027 Fragments (FR-045): save a section or region pattern as a governed fragment with owner, scope and version; apply to new pages as references, never copied component code; tests for scope and another tenant
 - [ ] T028 Template import and export (FR-022): documented JSON with structure and policies and no secrets, tenant IDs or personal data; import validates as a new draft
 - [ ] T029 Resizable regions (FR-007): editors resize regions within declared constraints, persisted, never overlapping, by pointer and keyboard
 - [ ] T030 Feature controls (`feature_control.manage`): tenant and scope switches for components and templates as versioned configuration, read by the picker and the renderer
