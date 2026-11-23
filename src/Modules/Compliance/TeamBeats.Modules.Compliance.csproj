@@ -11,6 +11,7 @@
     <ProjectReference Include="../Tenancy.Contracts/TeamBeats.Modules.Tenancy.Contracts.csproj" />
     <ProjectReference Include="../Documents.Contracts/TeamBeats.Modules.Documents.Contracts.csproj" />
     <ProjectReference Include="../Policies.Contracts/TeamBeats.Modules.Policies.Contracts.csproj" />
+    <ProjectReference Include="../Compliance.Contracts/TeamBeats.Modules.Compliance.Contracts.csproj" />
     <ProjectReference Include="../Spaces.Contracts/TeamBeats.Modules.Spaces.Contracts.csproj" />
   </ItemGroup>
   <ItemGroup>

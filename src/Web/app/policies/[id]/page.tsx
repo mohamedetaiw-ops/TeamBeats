@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
-import { campaignsHref, complianceHref, editHref, exemptionsHref, nameIn, policyHref, questionsHref, reviewHref, reviewsHref, shownLocale, type MyAttestation, type PolicyReading, type PolicyView, type VersionHistoryItem } from "@/lib/policies/types";
+import { campaignsHref, complianceHref, controlsHref, editHref, exemptionsHref, nameIn, policyHref, questionsHref, reviewHref, reviewsHref, shownLocale, type MyAttestation, type PolicyReading, type PolicyView, type VersionHistoryItem } from "@/lib/policies/types";
 import { Header } from "@/components/shell/Header";
 import { StateView } from "@/components/ui/StateView";
 import { PoliciesNav } from "@/features/policies/PoliciesNav";
@@ -51,6 +51,7 @@ export default async function PolicyPage({ params, searchParams }: { params: Pro
     p.rights.history && p.currentVersion ? { href: reviewsHref(p.id), label: tm(p.reviewState === "overdue" ? "reviewsOverdue" : "reviews") } : null,
     p.rights.compliance && p.currentVersion ? { href: complianceHref(p.id), label: tm("compliance") } : null,
     p.rights.exemptions ? { href: exemptionsHref(p.id), label: tm("exemptions") } : null,
+    p.rights.controls ? { href: controlsHref(p.id), label: tm("controls") } : null,
     p.rights.analytics ? { href: `${policyHref(p.id)}/analytics`, label: tm("analytics") } : null,
   ].filter((a): a is { href: string; label: string } => a !== null);
   return (

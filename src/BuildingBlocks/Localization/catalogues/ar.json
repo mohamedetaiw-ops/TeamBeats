@@ -2668,5 +2668,7 @@
   "notifications.template.policies.exemption_expiring.title": "ينتهي إعفاء خلال 14 يومًا",
   "notifications.template.policies.exemption_expiring.body": "عند انتهائه تنطبق السياسة كاملة من جديد. اطلب إعفاء جديدًا إن كنت لا تزال بحاجة إليه.",
   "notifications.template.policies.exemption_expired.title": "انتهى إعفاء",
-  "notifications.template.policies.exemption_expired.body": "مر تاريخ الانتهاء وأُغلق الإعفاء. تنطبق السياسة كاملة من جديد."
+  "notifications.template.policies.exemption_expired.body": "مر تاريخ الانتهاء وأُغلق الإعفاء. تنطبق السياسة كاملة من جديد.",
+  "validation.policies.too_many_controls": "اربط السياسة بـ 100 ضابط على الأكثر.",
+  "validation.policies.control_unknown": "اختر الضوابط من مكتبة الضوابط."
 }

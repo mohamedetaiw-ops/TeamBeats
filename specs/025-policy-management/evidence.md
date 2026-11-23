@@ -1,6 +1,6 @@
 # Spec 025 evidence (R1)
 
-The spec stays Approved, not Implemented, until its R2 parts are built: control mapping and evidence packs (US8, FR-015, FR-016), onboarding attestation (FR-017), fixed attestation cycles (the second half of FR-008) and controlled document policies (the second half of FR-003). Defaults, deviations and gaps of each R1 slice are in the spec 025 sections of `docs/architecture/r1-implementation-notes.md`.
+The spec stays Approved, not Implemented, until its R2 parts are built: evidence packs (US8, FR-016), onboarding attestation (FR-017), fixed attestation cycles (the second half of FR-008) and controlled document policies (the second half of FR-003). Defaults, deviations and gaps of each R1 slice are in the spec 025 sections of `docs/architecture/r1-implementation-notes.md`.
 
 | Requirement | Status | Evidence |
 |---|---|---|
@@ -15,6 +15,7 @@ The spec stays Approved, not Implemented, until its R2 parts are built: control 
 | FR-012 scheduled reviews with four outcomes, overdue tracking | Met | `PolicyReviewTests` (all three), `policy-authoring.spec.ts` (answer a scheduled review, en and ar, axe) |
 | FR-013 comprehension checks with question banks, pass marks, attempts, accessible delivery | Met | `PolicyCheckTests` (both), `policy-checks.spec.ts` (keyboard, axe, en and ar) |
 | FR-014 exemptions with request, route, scope, reason, expiry and reminders | Met | `PolicyExemptionTests` (all three), `policy-exemptions.spec.ts` (en and ar, axe) |
+| FR-015 mapping to controls and regulation clauses of the spec 026 library | Met | `PolicyControlTests` (both), `policy-controls.spec.ts` (en and ar, axe) |
 | FR-009 completion by unit, location, manager and person within scope | Met | `PolicyComplianceTests` (both) |
 | FR-010 assistant answers only from readable versions in force, cites clauses, says when nothing covers it | Met | `PolicyQuestionTests.The_assistant_cites_the_policy_clause_in_force_names_each_policy_that_applies_and_answers_nothing_else`, `AssistantPromptTests.Policy_passages_are_cited_by_title_version_and_clause_and_conflicts_are_left_to_the_owner` |
 | FR-011 policy-scoped Q&A on each policy page | Met for the policy itself | `PolicyQuestionTests.Ask_about_this_policy_keeps_the_conversation_to_that_policy_for_readers_only`, `policies.spec.ts` (en and ar, axe); linked documents come with controlled document policies |

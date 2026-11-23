@@ -5222,7 +5222,8 @@
       "reviews": "المراجعة الدورية",
       "reviewsOverdue": "المراجعة الدورية (متأخرة)",
       "questions": "أسئلة الفهم",
-      "exemptions": "الإعفاءات"
+      "exemptions": "الإعفاءات",
+      "controls": "الضوابط"
     },
     "create": {
       "title": "سياسة جديدة",
@@ -5610,6 +5611,47 @@
         "expired": "المنتهية"
       },
       "policyName": "{code} {name}"
+    },
+    "controls": {
+      "register": "السياسات",
+      "title": "الضوابط",
+      "heading": "ضوابط {name}",
+      "description": "الضوابط وبنود الأنظمة التي تحققها هذه السياسة من مكتبة الضوابط. افتح ضابطًا لترى كل السياسات المرتبطة به.",
+      "mapped": "الضوابط المرتبطة",
+      "none": "لم تُربط أي ضوابط بعد.",
+      "unknown": "لم يعد في المكتبة",
+      "codeLabel": "{code} {title}",
+      "frameworkLabel": "{name} {version}",
+      "controlLabel": "{framework}: {code} {title}",
+      "editTitle": "غيّر الربط",
+      "editIntro": "اختر إطارًا وضابطًا وأضفه ثم احفظ. أزل ما لم يعد ينطبق.",
+      "framework": "الإطار",
+      "control": "الضابط",
+      "add": "أضف ضابطًا",
+      "remove": "أزل {code}",
+      "noneChosen": "لم تُختر أي ضوابط.",
+      "save": "احفظ الربط",
+      "busy": "جارٍ الحفظ",
+      "saved": "تم حفظ الربط.",
+      "failed": "حدث خطأ. حاول مرة أخرى.",
+      "policies": "السياسات المرتبطة بهذا الضابط",
+      "noPolicies": "لا توجد سياسة تستطيع رؤيتها مرتبطة بهذا الضابط.",
+      "policy": "السياسة",
+      "status": "الحالة",
+      "inForce": "سارية",
+      "nextReview": "المراجعة القادمة",
+      "never": "غير محدد",
+      "notInForce": "ليست سارية بعد",
+      "version": "الإصدار {number} منذ {date}",
+      "reviewOverdue": "المراجعة متأخرة",
+      "policyName": "{code} {name}",
+      "statuses": {
+        "draft": "مسودة",
+        "in_review": "قيد المراجعة",
+        "approved": "معتمدة",
+        "published": "منشورة",
+        "retired": "متقاعدة"
+      }
     }
   },
   "ai": {

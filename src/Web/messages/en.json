@@ -5222,7 +5222,8 @@
       "reviews": "Scheduled review",
       "reviewsOverdue": "Scheduled review (overdue)",
       "questions": "Comprehension questions",
-      "exemptions": "Exemptions"
+      "exemptions": "Exemptions",
+      "controls": "Controls"
     },
     "create": {
       "title": "New policy",
@@ -5610,6 +5611,47 @@
         "expired": "Ended"
       },
       "policyName": "{code} {name}"
+    },
+    "controls": {
+      "register": "Policies",
+      "title": "Controls",
+      "heading": "Controls for {name}",
+      "description": "The controls and regulation clauses this policy meets, from the control library. Open a control to see every policy mapped to it.",
+      "mapped": "Mapped controls",
+      "none": "No controls mapped yet.",
+      "unknown": "No longer in the library",
+      "codeLabel": "{code} {title}",
+      "frameworkLabel": "{name} {version}",
+      "controlLabel": "{framework}: {code} {title}",
+      "editTitle": "Change the mapping",
+      "editIntro": "Choose a framework and a control, add it, then save. Remove what no longer applies.",
+      "framework": "Framework",
+      "control": "Control",
+      "add": "Add control",
+      "remove": "Remove {code}",
+      "noneChosen": "No controls chosen.",
+      "save": "Save mapping",
+      "busy": "Saving",
+      "saved": "Mapping saved.",
+      "failed": "Something went wrong. Try again.",
+      "policies": "Policies mapped to this control",
+      "noPolicies": "No policy you can see is mapped to this control.",
+      "policy": "Policy",
+      "status": "Status",
+      "inForce": "In force",
+      "nextReview": "Next review",
+      "never": "Not set",
+      "notInForce": "Not in force yet",
+      "version": "Version {number} since {date}",
+      "reviewOverdue": "Review overdue",
+      "policyName": "{code} {name}",
+      "statuses": {
+        "draft": "Draft",
+        "in_review": "In review",
+        "approved": "Approved",
+        "published": "Published",
+        "retired": "Retired"
+      }
     }
   },
   "ai": {

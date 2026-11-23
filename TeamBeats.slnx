@@ -149,6 +149,9 @@
   <Folder Name="/src/Modules/Spaces/">
     <Project Path="src/Modules/Spaces/TeamBeats.Modules.Spaces.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Compliance.Contracts/">
+    <Project Path="src/Modules/Compliance.Contracts/TeamBeats.Modules.Compliance.Contracts.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Spaces.Contracts/">
     <Project Path="src/Modules/Spaces.Contracts/TeamBeats.Modules.Spaces.Contracts.csproj" />
   </Folder>
