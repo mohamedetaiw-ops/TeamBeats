@@ -75,7 +75,16 @@ public interface IDocumentReferences
 {
     /// <summary>The version in force when the caller may read the document and it has passed the malware scan; otherwise null.</summary>
     Task<DocumentReference?> ReadableAsync(Guid documentId, CancellationToken ct = default);
+
+    /// <summary>
+    /// A controlled document's released version in force with the text extracted from it (spec 025 FR-003: a policy kept
+    /// as a signed PDF), when the caller may read it, it passed the malware scan and its text could be read; otherwise null.
+    /// </summary>
+    Task<ControlledDocumentText?> ControlledAsync(Guid documentId, CancellationToken ct = default);
 }
+
+/// <summary>A controlled document's version in force, its document number, the text extracted from its file and the reader page.</summary>
+public sealed record ControlledDocumentText(DocumentReference Reference, string? Number, string Text, string Link);
 
 /// <summary>
 /// The document library of a project or team space (spec 029 FR-006). The space is the library's audience: the space

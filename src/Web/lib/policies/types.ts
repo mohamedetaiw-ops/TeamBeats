@@ -25,7 +25,11 @@ export type VersionView = {
   approvedAt: string | null;
   supersededAt: string | null;
   updatedAt: string;
+  /** The controlled document this version is kept as (FR-003), with its reader page. */
+  document?: PolicyDocumentSource | null;
 };
+
+export type PolicyDocumentSource = { documentId: string; versionId: string; name: string; number: string | null; label: string; fileName: string; link: string };
 
 export type PolicyStatus = "draft" | "in_review" | "approved" | "published" | "retired";
 
@@ -35,7 +39,7 @@ export type PolicyReading = { policy: PolicySummary; version: VersionView; super
 
 export type RouteStep = { names?: Names | null; approvers?: string[] | null; complianceOfficers?: boolean };
 
-export type PolicyRights = { manage: boolean; edit: boolean; review: boolean; history: boolean; compliance: boolean; ask: boolean; analytics: boolean; comprehension?: boolean; exemptions?: boolean; controls?: boolean; paper?: boolean; pause?: boolean; cycle?: boolean };
+export type PolicyRights = { manage: boolean; edit: boolean; review: boolean; history: boolean; compliance: boolean; ask: boolean; analytics: boolean; comprehension?: boolean; exemptions?: boolean; controls?: boolean; paper?: boolean; pause?: boolean; cycle?: boolean; document?: boolean };
 
 export type RegisterRights = { create: boolean; exemptions?: boolean; evidence?: boolean; team?: boolean };
 

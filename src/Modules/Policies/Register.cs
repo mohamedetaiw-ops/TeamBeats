@@ -80,17 +80,18 @@ internal sealed record VersionRow(
     DateTimeOffset? SubmittedAt,
     DateTimeOffset? ApprovedAt,
     DateTimeOffset? SupersededAt,
-    DateTimeOffset UpdatedAt)
+    DateTimeOffset UpdatedAt,
+    PolicyDocumentSource? Document = null)
 {
     public const string Columns =
         "id, policy_id, number, state, locales, titles::text, clauses::text, material, change_note, editors, approvals::text, instance_id, requested_effective_from, " +
-        "effective_from, submitted_by, submitted_at, approved_at, superseded_at, updated_at";
+        "effective_from, submitted_by, submitted_at, approved_at, superseded_at, updated_at, document::text";
 
     public static VersionRow Read(NpgsqlDataReader r) => new(r.GetGuid(0), r.GetGuid(1), r.Get<int?>("number"), r.GetString(3), [.. r.GetFieldValue<string[]>(4)],
         PolicyJson.Read<Dictionary<string, string>>(r.GetString(5)), PolicyJson.Read<List<StoredClause>>(r.GetString(6)), r.GetBoolean(7), r.Get<string>("change_note"),
         r.GetFieldValue<Guid[]>(9), PolicyJson.Read<List<StoredApproval>>(r.GetString(10)), r.Get<Guid?>("instance_id"), r.Get<DateTimeOffset?>("requested_effective_from"),
         r.Get<DateTimeOffset?>("effective_from"), r.Get<Guid?>("submitted_by"), r.Get<DateTimeOffset?>("submitted_at"), r.Get<DateTimeOffset?>("approved_at"),
-        r.Get<DateTimeOffset?>("superseded_at"), r.GetFieldValue<DateTimeOffset>(18));
+        r.Get<DateTimeOffset?>("superseded_at"), r.GetFieldValue<DateTimeOffset>(18), r.Get<string>("document") is { } document ? PolicyJson.Read<PolicyDocumentSource>(document) : null);
 }
 
 /// <summary>
@@ -250,7 +251,7 @@ public sealed class PolicyRegister(
 
     internal async Task<VersionView> VersionViewAsync(VersionRow v, CancellationToken ct) =>
         new(v.Id, v.Number, v.State, v.Locales, v.Titles, ClauseRules.Views(v.Clauses), v.Material, v.ChangeNote, await ApprovalsAsync(v.Approvals, ct),
-            v.RequestedEffectiveFrom, v.EffectiveFrom, v.SubmittedAt, v.ApprovedAt, v.SupersededAt, v.UpdatedAt);
+            v.RequestedEffectiveFrom, v.EffectiveFrom, v.SubmittedAt, v.ApprovedAt, v.SupersededAt, v.UpdatedAt, v.Document);
 
     internal async Task<PolicySummary> SummaryAsync(PolicyRow p, CancellationToken ct) =>
         new(p.Id, p.Code, p.Names, p.CategoryId, p.Status, p.Classification, await PersonAsync(p.Owner, ct));
@@ -557,7 +558,8 @@ public sealed class PolicyRegister(
                 await entitlements.IsEnabledAsync(Capabilities.PolicyEvidence, ct),
                 manage && policy.CurrentVersion is not null && policy.Status != PolicyStatuses.Retired && await entitlements.IsEnabledAsync(Capabilities.PolicyCampaigns, ct),
                 history,
-                history && policy.Status != PolicyStatuses.Retired && await entitlements.IsEnabledAsync(Capabilities.PolicyCampaigns, ct)),
+                history && policy.Status != PolicyStatuses.Retired && await entitlements.IsEnabledAsync(Capabilities.PolicyCampaigns, ct),
+                (edit || manage) && policy.Status != PolicyStatuses.Retired && await entitlements.IsEnabledAsync(Capabilities.DocsControlled, ct)),
             policy.CreatedAt, policy.UpdatedAt, policy.OnboardingRequired,
             policy.CourseId is { } course ? new PolicyTraining(course, policy.TrainingFirst) : null, policy.ReviewWindowDays,
             manage || history ? PolicyReviews.StateOf(policy, await ReviewedAsync(policy, ct), clock.UtcNow) : null,

@@ -2746,5 +2746,10 @@
   "validation.policies.pause_reason": "اذكر سببًا لا يتجاوز 500 حرف.",
   "conflict.policies.pause_not_owed": "لا يوجد ما يقر به هذا الشخص في هذه الحملة.",
   "conflict.policies.already_paused": "موعد هذا الشخص متوقف من قبل.",
-  "validation.policies.cycle_months": "اختر دورة من 1 إلى 60 شهرًا، أو بلا دورة."
+  "validation.policies.cycle_months": "اختر دورة من 1 إلى 60 شهرًا، أو بلا دورة.",
+  "validation.policies.document": "اختر مستندًا خاضعًا للرقابة يمكنك قراءته، صادرًا ومفحوصًا، ونصه قابل للقراءة.",
+  "validation.policies.document_clauses": "السياسة المحفوظة كمستند خاضع للرقابة تأخذ بنودها من المستند، فاترك البنود فارغة.",
+  "validation.policies.document_locale": "للسياسة المحفوظة كمستند خاضع للرقابة لغة واحدة: اكتب العنوان بتلك اللغة فقط.",
+  "validation.policies.document_text": "نص المستند فارغ أو أطول من أن يكون سياسة.",
+  "conflict.policies.document_changed": "للمستند الخاضع للرقابة إصدار أحدث. احفظ المسودة مرة أخرى لاستخدامه، ثم أرسلها."
 }

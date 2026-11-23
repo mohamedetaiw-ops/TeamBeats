@@ -34647,6 +34647,13 @@
               "null",
               "string"
             ]
+          },
+          "documentId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
           }
         }
       },

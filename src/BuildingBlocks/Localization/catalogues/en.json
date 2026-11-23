@@ -2746,5 +2746,10 @@
   "validation.policies.pause_reason": "Give a reason of at most 500 characters.",
   "conflict.policies.pause_not_owed": "This person has nothing to attest in this campaign.",
   "conflict.policies.already_paused": "This person's deadline is already paused.",
-  "validation.policies.cycle_months": "Choose a cycle from 1 to 60 months, or none."
+  "validation.policies.cycle_months": "Choose a cycle from 1 to 60 months, or none.",
+  "validation.policies.document": "Choose a controlled document you can read, released and scanned, with text that can be read.",
+  "validation.policies.document_clauses": "A policy kept as a controlled document takes its clauses from the document, so leave the clauses out.",
+  "validation.policies.document_locale": "A policy kept as a controlled document has one language: give the title in that language only.",
+  "validation.policies.document_text": "The document's text is empty or too long for a policy.",
+  "conflict.policies.document_changed": "The controlled document has a newer release. Save the draft again to use it, then submit."
 }

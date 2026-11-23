@@ -1,12 +1,12 @@
 # Spec 025 evidence (R1 and R2)
 
-R1 and the R2 scope (User Stories 5 to 8, FR-012 to FR-017, the AI change summary, paper import, the long leave pause and the manager dashboard) are built. The spec stays Approved, not Implemented, until the last part left from R1 is built: controlled document policies (the second half of FR-003, T023). Fixed attestation cycles (FR-008, T022) are built. R3 (change impact analysis with AI, regulator change feeds) is not started. Defaults, deviations and gaps of each slice are in the spec 025 sections of `docs/architecture/r1-implementation-notes.md` and `docs/architecture/r2-implementation-notes.md`.
+R1 and the R2 scope (User Stories 5 to 8, FR-012 to FR-017, the AI change summary, paper import, the long leave pause and the manager dashboard) are built, and so are the two parts left from R1: fixed attestation cycles (FR-008, T022) and controlled document policies (the second half of FR-003, T023). R3 (change impact analysis with AI, regulator change feeds) is not started. Defaults, deviations and gaps of each slice are in the spec 025 sections of `docs/architecture/r1-implementation-notes.md` and `docs/architecture/r2-implementation-notes.md`.
 
 | Requirement | Status | Evidence |
 |---|---|---|
 | FR-001 register per tenant, filterable, managed with `policy.manage` | Met | `PolicyApprovalTests.The_register_checks_its_entries_and_only_compliance_officers_change_them`, `policy-authoring.spec.ts` |
 | FR-002 lifecycle, audited transitions, published versions read only | Met | `PolicyApprovalTests.A_version_runs_its_route_with_compare_and_comments_then_the_next_takes_effect_on_its_date_and_supersedes_the_last` |
-| FR-003 structured pages with numbered, linkable clauses | Met for structured pages | `PolicyRulesTests.Clauses_are_numbered_from_their_order_and_levels`, `New_clauses_get_keys_and_anchors_that_follow_the_key`, `policies.spec.ts`; controlled document policies are a later slice |
+| FR-003 structured pages with numbered, linkable clauses, or a controlled document | Met | `PolicyRulesTests.Clauses_are_numbered_from_their_order_and_levels`, `New_clauses_get_keys_and_anchors_that_follow_the_key`, `policies.spec.ts`; controlled documents: `PolicyDocumentTests` (both), `policy-document.spec.ts` (en and ar, axe) |
 | FR-004 routes on the engine, inbox tasks, clause comments, no self approval | Met | `PolicyApprovalTests.A_version_runs_its_route_...`, `Owners_editors_and_submitters_never_approve_and_every_language_is_approved_together` |
 | FR-005 binding language, variants approved together | Met | `PolicyApprovalTests.Owners_editors_and_submitters_never_approve_and_every_language_is_approved_together`, `PolicyRulesTests.A_version_is_complete_only_with_every_clause_in_every_locale_and_the_binding_one` |
 | FR-006 campaigns with audience, deadline, text, reminders, escalation, late joiners, leavers, exclusions | Met | `PolicyCampaignTests` (all) |

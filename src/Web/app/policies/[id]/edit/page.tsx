@@ -45,7 +45,7 @@ export default async function EditPolicyPage({ params }: { params: Promise<{ id:
       />
       <main id="main" className="page policies-page">
         <PageHeader title={t("heading", { name })} icon="policy" nav={<PoliciesNav current={null} />} />
-        <DraftEditor policyId={p.id} initial={initial} locales={me.data.tenant.enabledLocales} />
+        <DraftEditor policyId={p.id} initial={initial} locales={me.data.tenant.enabledLocales} documents={p.rights.document ?? false} />
       </main>
     </>
   );

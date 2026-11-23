@@ -170,6 +170,51 @@ public static partial class ClauseRules
         return (locales, titles, clauses);
     }
 
+    public const int MaxDocumentTitleLength = 120;
+
+    /// <summary>
+    /// The clauses of a policy kept as a controlled document (FR-003): one per paragraph of the extracted text, blank lines
+    /// apart, joined into longer clauses past <see cref="MaxClauses"/>. A short first line over more text is the clause title, otherwise the start of its text; its
+    /// key follows its position, so compare and anchors follow the document from one release to the next.
+    /// </summary>
+    internal static List<StoredClause> FromText(string text, string locale)
+    {
+        var paragraphs = BlankLines().Split(text.Replace("\r\n", "\n", StringComparison.Ordinal))
+            .Select(p => p.Split('\n').Select(l => Spaces().Replace(l, " ").Trim()).Where(l => l.Length > 0).ToList()).Where(p => p.Count > 0).ToList();
+        var size = Math.Max(1, (int)Math.Ceiling(paragraphs.Count / (double)MaxClauses));
+        var clauses = new List<StoredClause>();
+        for (var i = 0; i * size < paragraphs.Count; i++)
+        {
+            var group = paragraphs.Skip(i * size).Take(size).ToList();
+            var lines = group[0];
+            string title;
+            List<string> texts;
+            // A short first line over more text is the paragraph's heading; otherwise the title is the start of the text.
+            if (lines.Count > 1 && lines[0].Length <= MaxDocumentTitleLength)
+            {
+                title = lines[0];
+                texts = [string.Join(' ', lines.Skip(1)), .. group.Skip(1).Select(g => string.Join(' ', g))];
+            }
+            else
+            {
+                var first = string.Join(' ', lines);
+                var cut = first.Length <= MaxDocumentTitleLength ? first.Length : first.LastIndexOf(' ', MaxDocumentTitleLength) is var space and > 40 ? space : MaxDocumentTitleLength;
+                title = cut == first.Length ? first : first[..cut] + "…";
+                texts = group.Select(g => string.Join(' ', g)).ToList();
+            }
+            var body = new BodyDocument(texts.Select(g => new Block(BlockTypes.Paragraph, [new Inline(g)])).ToList());
+            clauses.Add(new StoredClause($"doc{i + 1:D4}", 1, new Dictionary<string, string>(StringComparer.Ordinal) { [locale] = title },
+                new Dictionary<string, BodyDocument>(StringComparer.Ordinal) { [locale] = body }));
+        }
+        return clauses;
+    }
+
+    [GeneratedRegex(@"\n\s*\n")]
+    private static partial Regex BlankLines();
+
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex Spaces();
+
     /// <summary>
     /// A version may go for approval only when every clause has its title and body in every locale, so all language
     /// variants are approved together (FR-005), and the binding language, when set, is one of them.

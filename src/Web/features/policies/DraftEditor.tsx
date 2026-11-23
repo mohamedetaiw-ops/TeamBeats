@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { BodyDocument } from "@/lib/content/types";
 import { problemMessages } from "@/lib/notifications/types";
-import { policyHref, type Names, type VersionView } from "@/lib/policies/types";
+import { policyHref, type Names, type PolicyDocumentSource, type VersionView } from "@/lib/policies/types";
 import { Button } from "@/components/ui/Button";
 import { BlockEditor } from "@/features/content/editor/BlockEditor";
 import "./policies.css";
@@ -22,9 +22,22 @@ const make = (c: Omit<Clause, "uid">): Clause => ({ ...c, uid: ++sequence });
  * The policy editor (spec 025 US1, FR-003): the title and numbered clauses in each language of the tenant, with levels
  * 1 to 3 that give the numbering, the material or minor flag and a change note. Clauses keep their key when moved, so
  * their anchors and comments follow them. Saving and submitting go to the API, which checks completeness and refuses
- * changes while the version is in review.
+ * changes while the version is in review. Where the API offers it, the version can instead be kept as a released
+ * controlled document: the API takes its clauses from the document's text, in the language of the title tab.
  */
-export function DraftEditor({ policyId, initial, locales }: { policyId: string; initial: VersionView | null; locales: string[] }) {
+const guid = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+
+export function DraftEditor({
+  policyId,
+  initial,
+  locales,
+  documents = false,
+}: {
+  policyId: string;
+  initial: VersionView | null;
+  locales: string[];
+  documents?: boolean;
+}) {
   const t = useTranslations("policies.editor");
   const ids = useId();
   const router = useRouter();
@@ -41,6 +54,10 @@ export function DraftEditor({ policyId, initial, locales }: { policyId: string; 
   const [busy, setBusy] = useState<"save" | "submit" | "withdraw" | null>(null);
   const [messages, setMessages] = useState<string[]>([]);
   const [saved, setSaved] = useState(false);
+  const [linked, setLinked] = useState<PolicyDocumentSource | null>(initial?.document ?? null);
+  const [source, setSource] = useState<"clauses" | "document">(initial?.document ? "document" : "clauses");
+  const [reference, setReference] = useState(initial?.document?.documentId ?? "");
+  const fromDocument = source === "document";
   const locked = initial?.state === "in_review";
 
   const update = (uid: number, patch: Partial<Clause>) => setClauses((list) => list.map((c) => (c.uid === uid ? { ...c, ...patch } : c)));
@@ -72,6 +89,21 @@ export function DraftEditor({ policyId, initial, locales }: { policyId: string; 
   }
 
   async function save(): Promise<boolean> {
+    if (fromDocument) {
+      // The ID, or a link that holds it; the API checks the document and reads its text.
+      const documentId = guid.exec(reference)?.[0] ?? reference.trim();
+      const response = await call("draft", "PUT", {
+        titles: { [tab]: titles[tab] ?? "" },
+        documentId,
+        material,
+        changeNote: changeNote.trim() || null,
+      });
+      if (!response) return false;
+      const version = (await response.json()) as VersionView;
+      setLinked(version.document ?? null);
+      setClauses(version.clauses.map((c) => make({ key: c.key, level: c.level, titles: c.titles, bodies: c.bodies })));
+      return true;
+    }
     const response = await call("draft", "PUT", {
       titles,
       clauses: clauses.map((c) => ({ key: c.key, level: c.level, titles: c.titles, bodies: c.bodies })),
@@ -114,6 +146,43 @@ export function DraftEditor({ policyId, initial, locales }: { policyId: string; 
           {t("inReview")}
         </p>
       ) : null}
+      {documents || initial?.document ? (
+        <fieldset className="policies-card" disabled={locked}>
+          <legend>{t("source.legend")}</legend>
+          <label className="policies-check">
+            <input type="radio" name={`${ids}-source`} checked={!fromDocument} onChange={() => setSource("clauses")} />
+            {t("source.clauses")}
+          </label>
+          <label className="policies-check">
+            <input type="radio" name={`${ids}-source`} checked={fromDocument} onChange={() => setSource("document")} />
+            {t("source.document")}
+          </label>
+          {fromDocument ? (
+            <>
+              <div className="field">
+                <label htmlFor={`${ids}-document`}>{t("source.reference")}</label>
+                <input
+                  id={`${ids}-document`}
+                  value={reference}
+                  onChange={(e) => setReference(e.target.value)}
+                  aria-describedby={`${ids}-document-hint`}
+                  dir="ltr"
+                  maxLength={500}
+                />
+                <p id={`${ids}-document-hint`} className="policies-meta">
+                  {t("source.hint", { language: t(`language.${tab}`) })}
+                </p>
+              </div>
+              {linked ? (
+                <p className="policies-meta" role="status" data-testid="policy-document-source">
+                  {t("source.linked", { number: linked.number ?? "", name: linked.name, label: linked.label, clauses: clauses.length })}{" "}
+                  <a href={linked.link}>{t("source.open")}</a>
+                </p>
+              ) : null}
+            </>
+          ) : null}
+        </fieldset>
+      ) : null}
       <div role="tablist" aria-label={t("languages")} className="ui-tablist">
         {locales.map((l) => (
           <button
@@ -149,6 +218,7 @@ export function DraftEditor({ policyId, initial, locales }: { policyId: string; 
             disabled={locked}
           />
         </div>
+        {fromDocument ? null : (
         <ol className="policies-list" aria-label={t("clauses")}>
           {clauses.map((c, i) => (
             <li key={c.uid} className="policies-clause-editor" data-level={c.level}>
@@ -200,7 +270,8 @@ export function DraftEditor({ policyId, initial, locales }: { policyId: string; 
             </li>
           ))}
         </ol>
-        {!locked ? (
+        )}
+        {!locked && !fromDocument ? (
           <div className="button-row">
             <Button type="button" onClick={() => setClauses((list) => [...list, make({ key: null, level: 1, titles: {}, bodies: {} })])}>
               {t("add")}
