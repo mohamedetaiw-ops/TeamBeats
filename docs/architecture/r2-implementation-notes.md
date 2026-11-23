@@ -2376,3 +2376,9 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - Fix made on the way: an organization scope of another tenant now answers not found before the package check on every theme scope route, so a tenant without organization branding no longer learns that the organization exists elsewhere.
 - Gaps: no shipped component reads an extension yet; they are available to custom components and page styles through the CSS contract. Assets used inside pages and documents are not part of the drift report, only brand slots.
 
+## Experience impact of an organization move (spec 033 R2, T023; US5, FR-025)
+
+- `GET /experience/move-impact/{orgUnitId}?parentId=` (no parent for the top of the tree) answers, before a move, what changes for the organization: how many organizations move with it, the brand in effect before and after, the locks it starts and stops inheriting (its own locks move with it), the theme values that change in any mode, how many organization pages of its old parents stop reaching it and of its new parents start, and the organization menus it loses and gains. A page an old parent shared on purpose with the organization, one below it or one of its new parents keeps reaching it and is not counted. It needs `org.manage` at the organization and at the new parent (or the tenant), as the move itself; an organization the caller may not manage is not found. Moving under itself or below answers `validation.org.cycle`.
+- The move dialog of the organization screen shows the report for each new place chosen, before the move is confirmed. Nothing is copied or changed by the report; after the move the organization inherits from its new parents only.
+- Default where the spec is silent: templates are a tenant library (spec 032), so they never change with a move and are not listed.
+

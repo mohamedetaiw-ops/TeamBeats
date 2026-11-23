@@ -358,7 +358,27 @@
         "membershipsEnd": "End their memberships",
         "membershipsMove": "Move them to another unit",
         "moveMembershipsTo": "Move members to",
-        "pick": "Choose a unit"
+        "pick": "Choose a unit",
+        "impact": {
+          "checking": "Checking what the move changes…",
+          "title": "What changes for {name}",
+          "units": "Organizations moving",
+          "unitsValue": "{count, plural, one {# organization} other {# organizations}}",
+          "brand": "Brand",
+          "brandSame": "Stays {brand}",
+          "brandChange": "{before} becomes {after}",
+          "tokens": "Theme values",
+          "tokensValue": "{count, plural, =0 {None change} one {# changes} other {# change}}",
+          "locksGained": "Newly locked by the new parents",
+          "locksLost": "No longer locked",
+          "pages": "Organization pages",
+          "pagesValue": "{lost, plural, =0 {None stop} one {# stops} other {# stop}} reaching it, {gained, plural, =0 {none start} one {# starts} other {# start}}",
+          "menusLost": "Menus it loses",
+          "menusGained": "Menus it gains",
+          "none": "None",
+          "separator": ", ",
+          "private": "Nothing is copied: pages and settings of the old parents stop reaching it, unless they were shared with it."
+        }
       },
       "directory": {
         "open": "Map from the directory",

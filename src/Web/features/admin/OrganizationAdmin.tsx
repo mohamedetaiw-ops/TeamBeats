@@ -449,11 +449,72 @@ function MoveForm({ unit, units, name, busy, onClose, onSubmit }: {
   }
   const options = units.filter((u) => u.status === "active" && !below.has(u.id));
   const [parent, setParent] = useState(unit.parentId ?? "");
+  const [impact, setImpact] = useState<{ parent: string; report: MoveImpact | null } | null>(null);
+
+  // What the move changes for the unit's people (spec 033 US5), asked of the API for each new parent chosen.
+  async function choose(next: string) {
+    setParent(next);
+    if (next === (unit.parentId ?? "")) {
+      setImpact(null);
+      return;
+    }
+    setImpact({ parent: next, report: null });
+    const response = await fetch(`/api/v1/experience/move-impact/${unit.id}${next ? `?parentId=${next}` : ""}`, { cache: "no-store" });
+    const report = response.ok ? ((await response.json()) as MoveImpact) : null;
+    setImpact((current) => (current?.parent === next ? { parent: next, report } : current));
+  }
+
   return (
     <FormDialog title={t("form.move", { name: name(unit) })} busy={busy} onClose={onClose} submitLabel={t("form.moveSubmit")} onSubmit={() => onSubmit(parent || null)}>
       <p className="admin-meta">{t("form.moveHint")}</p>
-      <SelectField label={t("form.newParent")} name="parent" value={parent} onChange={(e) => setParent(e.target.value)} options={[{ value: "", label: t("unit.top") }, ...options.map((u) => ({ value: u.id, label: name(u) }))]} />
+      <SelectField label={t("form.newParent")} name="parent" value={parent} onChange={(e) => void choose(e.target.value)} options={[{ value: "", label: t("unit.top") }, ...options.map((u) => ({ value: u.id, label: name(u) }))]} />
+      {impact ? <MoveImpactSummary report={impact.report} unitName={name(unit)} /> : null}
     </FormDialog>
+  );
+}
+
+type MoveImpact = {
+  units: number;
+  theme: { before: { name: string }; after: { name: string }; locksGained: string[]; locksLost: string[]; tokensChanged: number };
+  pagesLost: number;
+  pagesGained: number;
+  menusLost: { id: string; names: Record<string, string> }[];
+  menusGained: { id: string; names: Record<string, string> }[];
+};
+
+function MoveImpactSummary({ report, unitName }: { report: MoveImpact | null; unitName: string }) {
+  const ti = useTranslations("admin.org.form.impact");
+  const locale = useLocale();
+  if (!report) {
+    return (
+      <p className="admin-meta" role="status">
+        {ti("checking")}
+      </p>
+    );
+  }
+  const names = (list: { names: Record<string, string> }[]) => list.map((m) => m.names[locale] ?? m.names.en ?? "").join(ti("separator"));
+  const theme = report.theme;
+  return (
+    <section aria-labelledby="move-impact-title" data-testid="move-impact" role="status">
+      <h3 id="move-impact-title">{ti("title", { name: unitName })}</h3>
+      <FactList
+        facts={[
+          { key: "units", label: ti("units"), value: ti("unitsValue", { count: report.units }) },
+          {
+            key: "brand",
+            label: ti("brand"),
+            value: theme.before.name === theme.after.name ? ti("brandSame", { brand: theme.after.name }) : ti("brandChange", { before: theme.before.name, after: theme.after.name }),
+          },
+          { key: "tokens", label: ti("tokens"), value: ti("tokensValue", { count: theme.tokensChanged }) },
+          { key: "locksGained", label: ti("locksGained"), value: theme.locksGained.length > 0 ? theme.locksGained.join(ti("separator")) : ti("none") },
+          { key: "locksLost", label: ti("locksLost"), value: theme.locksLost.length > 0 ? theme.locksLost.join(ti("separator")) : ti("none") },
+          { key: "pages", label: ti("pages"), value: ti("pagesValue", { lost: report.pagesLost, gained: report.pagesGained }) },
+          { key: "menusLost", label: ti("menusLost"), value: report.menusLost.length > 0 ? names(report.menusLost) : ti("none") },
+          { key: "menusGained", label: ti("menusGained"), value: report.menusGained.length > 0 ? names(report.menusGained) : ti("none") },
+        ]}
+      />
+      <p className="admin-meta">{ti("private")}</p>
+    </section>
   );
 }
 
