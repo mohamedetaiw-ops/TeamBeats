@@ -2726,5 +2726,20 @@
   "policies.evidence.pdf.outcome.minor_update": "تحديث بسيط",
   "policies.evidence.pdf.outcome.major_revision": "مراجعة جوهرية",
   "policies.evidence.pdf.outcome.revised": "عدلت",
-  "validation.policies.onboarding_required": "اختر هل السياسة مطلوبة عند التعيين."
+  "validation.policies.onboarding_required": "اختر هل السياسة مطلوبة عند التعيين.",
+  "validation.policies.paper_scan_name": "أعط الملف الممسوح اسمًا.",
+  "validation.policies.paper_scan_type": "أرفق النماذج الممسوحة كملف PDF أو PNG أو JPEG.",
+  "validation.policies.paper_scan_size": "لا يتجاوز الملف الممسوح 20 ميجابايت.",
+  "validation.policies.paper_scan_infected": "رفض الملف الممسوح لأنه يحتوي على برمجية خبيثة.",
+  "validation.policies.paper_scan_unchecked": "تعذر فحص الملف الممسوح. حاول لاحقًا.",
+  "validation.policies.paper_header": "يحتاج ملف CSV إلى العمودين email وattested_on، ويمكن أن يضم version.",
+  "validation.policies.paper_rows": "يحتاج ملف CSV إلى سطر واحد حتى 2000 سطر.",
+  "validation.policies.paper_person": "لا يوجد شخص نشط بهذا البريد.",
+  "validation.policies.paper_version": "هذا الإصدار من السياسة لم يكن ساريًا قط.",
+  "validation.policies.paper_date": "يكون التاريخ بالصيغة yyyy-mm-dd، وليس في المستقبل، ولا قبل سريان الإصدار.",
+  "validation.policies.paper_audience": "السياسة لا تنطبق على هذا الشخص.",
+  "validation.policies.paper_duplicate": "يتكرر هذا الشخص وهذا الإصدار أكثر من مرة.",
+  "validation.policies.paper_already": "أقر هذا الشخص بهذا الإصدار من قبل.",
+  "conflict.policies.paper_not_in_force": "لا تستورد الإقرارات الورقية إلا لسياسة سارية.",
+  "conflict.policies.paper_import_done": "اكتمل هذا الاستيراد من قبل."
 }

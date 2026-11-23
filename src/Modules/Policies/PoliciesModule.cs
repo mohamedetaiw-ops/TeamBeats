@@ -30,6 +30,7 @@ public static class PoliciesModule
         services.AddScoped<PolicyExemptions>();
         services.AddScoped<PolicyControls>();
         services.AddScoped<PolicyEvidence>();
+        services.AddScoped<PaperAttestations>();
         services.AddMessageHandler<EvidencePackRequested, PolicyEvidence>("policies.evidence_pack");
         services.AddScoped<ExemptionTaskSource>();
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<ExemptionTaskSource>());
@@ -216,6 +217,31 @@ public static class PoliciesModule
             return Results.Ok(view);
         });
 
+        root.MapGet("/{id:guid}/paper-imports", async (Guid id, PaperAttestations paper, CancellationToken ct) => Results.Ok(await paper.ListAsync(id, ct)));
+
+        root.MapPost("/{id:guid}/paper-imports", async (Guid id, string? name, HttpRequest http, PaperAttestations paper, IDbSession session, CancellationToken ct) =>
+        {
+            var data = await ReadLimitedAsync(http.Body, PaperAttestations.MaxScanBytes, "validation.policies.paper_scan_size", ct);
+            var view = await paper.AttachScanAsync(id, name, http.ContentType, data, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/policies/{id}/paper-imports/{view.Id}", view);
+        }).DisableAntiforgery();
+
+        root.MapPost("/{id:guid}/paper-imports/{importId:guid}/rows", async (Guid id, Guid importId, HttpRequest http, PaperAttestations paper, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var data = await ReadLimitedAsync(http.Body, 2 * 1024 * 1024, "validation.policies.paper_rows", ct);
+            var view = await paper.ImportAsync(id, importId, System.Text.Encoding.UTF8.GetString(data), ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        }).DisableAntiforgery();
+
+        root.MapGet("/{id:guid}/paper-imports/{importId:guid}/scan", async (Guid id, Guid importId, PaperAttestations paper, CancellationToken ct) =>
+        {
+            var (content, type, name) = await paper.ScanAsync(id, importId, ct);
+            return Results.File(content, type, name);
+        });
+
         root.MapPost("/evidence-packs", async (EvidencePackRequest request, PolicyEvidence evidence, IDbSession session, CancellationToken ct) =>
         {
             var view = await evidence.RequestAsync(request, ct);
@@ -331,5 +357,20 @@ public static class PoliciesModule
 
         app.MapPolicyPublicEndpoints();
         return app;
+    }
+
+    private static async Task<byte[]> ReadLimitedAsync(Stream body, int max, string tooLargeKey, CancellationToken ct)
+    {
+        var buffer = new byte[max + 1];
+        int read, total = 0;
+        while ((read = await body.ReadAsync(buffer.AsMemory(total, buffer.Length - total), ct)) > 0)
+        {
+            total += read;
+            if (total > max)
+            {
+                throw Primitives.AppException.Validation("file", tooLargeKey);
+            }
+        }
+        return buffer[..total];
     }
 }

@@ -550,7 +550,8 @@ public sealed class PolicyRegister(
                 history && policy.CurrentVersion is not null && await entitlements.IsEnabledAsync(Capabilities.AnalyticsCore, ct),
                 (edit || manage) && policy.Status != PolicyStatuses.Retired && await entitlements.IsEnabledAsync(Capabilities.PolicyComprehension, ct),
                 policy.CurrentVersion is not null && await entitlements.IsEnabledAsync(Capabilities.PolicyExemptions, ct),
-                await entitlements.IsEnabledAsync(Capabilities.PolicyEvidence, ct)),
+                await entitlements.IsEnabledAsync(Capabilities.PolicyEvidence, ct),
+                manage && policy.CurrentVersion is not null && policy.Status != PolicyStatuses.Retired && await entitlements.IsEnabledAsync(Capabilities.PolicyCampaigns, ct)),
             policy.CreatedAt, policy.UpdatedAt, policy.OnboardingRequired,
             policy.CourseId is { } course ? new PolicyTraining(course, policy.TrainingFirst) : null, policy.ReviewWindowDays,
             manage || history ? PolicyReviews.StateOf(policy, await ReviewedAsync(policy, ct), clock.UtcNow) : null);
