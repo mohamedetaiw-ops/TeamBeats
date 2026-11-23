@@ -40,4 +40,9 @@ R2 covers User Stories 5 to 8, FR-014 to FR-017, the AI change summary for appro
 - [x] T018 Onboarding attestations (FR-017): policies flagged "onboarding required" create attestation tasks through the spec 022 onboarding journey
 - [x] T019 Paper attestation import (section 14): CSV import with source "paper", the importer recorded and the scan attached, reported apart from online attestations; never a bulk "mark as attested"
 - [x] T020 AI change summary between versions for approvers through the AI Gateway, labelled as AI-generated, beside the compare view; manager dashboard of the team's attestation and exemption status with the minimum group size where analytics applies; long leave deadline pause with a reason
-- [ ] T021 OpenAPI, R2 implementation notes, e2e with axe in `ar` and `en`, spec evidence
+- [x] T021 OpenAPI, R2 implementation notes, e2e with axe in `ar` and `en`, spec evidence
+
+## Left from R1
+
+- [ ] T022 Fixed attestation cycles (FR-008): a cycle per policy (for example 12 months) that launches a new campaign for the version in force when the last one is that old, with the policy's campaign defaults
+- [ ] T023 Controlled document policies (FR-003): a policy kept as a signed PDF in a spec 011 controlled document, with the text extracted for reading, attestation and Q&A
