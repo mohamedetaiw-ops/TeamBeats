@@ -185,7 +185,12 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.getByTestId("placement-kpi-2").focus();
       await page.keyboard.press("Delete");
       await expect(saveState).toHaveText(msg(locale, "builder.editor.save.conflict"));
-      await page.getByRole("button", { name: msg(locale, "builder.editor.keepMine") }).click();
+      await expect(page.getByRole("button", { name: msg(locale, "builder.editor.keepMine") })).toBeVisible();
+      await expectAccessible(page, testInfo, `page-builder-conflict-${locale}`);
+      // Merging keeps both: their save and this deletion (spec 032 R2 T026).
+      await page.getByRole("button", { name: msg(locale, "builder.editor.mergeBoth") }).click();
+      await expect(announcer).toHaveText(msg(locale, "builder.editor.merged"));
+      await expect(page.getByTestId("placement-kpi-2")).toHaveCount(0);
       await expect(saveState).toHaveText(msg(locale, "builder.editor.save.saved"));
 
       // Publish, and the page renders for employees.

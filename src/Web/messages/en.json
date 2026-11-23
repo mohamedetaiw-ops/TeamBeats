@@ -2406,7 +2406,13 @@
         "withdrawn": "Submission withdrawn.",
         "returned": "Returned by the approver: {comment}",
         "failed": "That did not work. Try again."
-      }
+      },
+      "conflictAt": "Their version was saved on {when}.",
+      "mergeBoth": "Merge both versions",
+      "merging": "Merging",
+      "merged": "Both versions merged. Check the page, then it saves.",
+      "mergedWithConflicts": "Both versions merged. {count} items were changed by both of you; their version was kept for those.",
+      "mergeFailed": "These versions cannot be merged. Keep yours or use theirs; the other stays in the page history."
     },
     "picker": {
       "title": "Add a component to {region}",

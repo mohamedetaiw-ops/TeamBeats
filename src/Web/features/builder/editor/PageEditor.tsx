@@ -92,7 +92,7 @@ export function PageEditor({
   const [saved, setSaved] = useState<PageDefinition>(page.draft);
   const [state, setState] = useState<SaveState>(restored ? "unsaved" : "saved");
   const [findings, setFindings] = useState<Finding[]>(page.findings);
-  const [conflict, setConflict] = useState<{ etag: string; current: PageDefinition } | null>(null);
+  const [conflict, setConflict] = useState<{ etag: string; current: PageDefinition; base: string; at?: string } | null>(null);
   const [picker, setPicker] = useState<string | null>(null);
   const [menu, setMenu] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
@@ -105,6 +105,7 @@ export function PageEditor({
   const [published, setPublished] = useState<number | null>(page.currentRelease);
   const [pending, setPending] = useState<PageSubmission | null>(approval?.pending ?? null);
   const [impact, setImpact] = useState<ImpactReport | null>(null);
+  const [merging, setMerging] = useState(false);
   const etag = useRef(restored?.etag ?? page.eTag);
   const focusAfter = useRef<string | null>(null);
   const cards = useRef(new Map<string, HTMLElement>());
@@ -146,9 +147,9 @@ export function PageEditor({
         return;
       }
       writeBackup(key, { etag: ifMatch, draft: definition });
-      const problem = (await response.json().catch(() => ({}))) as { findings?: Finding[]; etag?: string; current?: PageDefinition };
+      const problem = (await response.json().catch(() => ({}))) as { findings?: Finding[]; etag?: string; current?: PageDefinition; currentAt?: string };
       if (response.status === 409 && problem.etag && problem.current) {
-        setConflict({ etag: problem.etag, current: problem.current });
+        setConflict({ etag: problem.etag, current: problem.current, base: ifMatch, at: problem.currentAt });
         setState("conflict");
       } else if (response.status === 422 && problem.findings) {
         setFindings(problem.findings);
@@ -318,6 +319,36 @@ export function PageEditor({
     }
   }
 
+  /**
+   * Merges this editor's version into the one saved meanwhile (spec 032 R2 T026). The server compares both with the version
+   * this editor started from; the result opens here unsaved over the stored version, and autosave keeps it.
+   */
+  async function merge() {
+    if (!conflict) return;
+    setMerging(true);
+    try {
+      const response = await fetch(`/api/v1/experience/pages/${page.id}/draft/merge`, {
+        method: "POST",
+        headers: { "content-type": "application/json", "if-match": conflict.base },
+        body: JSON.stringify({ definition: draft }),
+      });
+      if (!response.ok) {
+        setAnnouncement(t("mergeFailed"));
+        return;
+      }
+      const result = (await response.json()) as { definition: PageDefinition; eTag: string; conflicts: { placementId: string; kind: string }[] };
+      etag.current = result.eTag;
+      setSaved(conflict.current);
+      setConflict(null);
+      setState("unsaved");
+      edit(result.definition, null, result.conflicts.length > 0 ? t("mergedWithConflicts", { count: String(result.conflicts.length) }) : t("merged"));
+    } catch {
+      setAnnouncement(t("mergeFailed"));
+    } finally {
+      setMerging(false);
+    }
+  }
+
   async function withdraw() {
     setPublishing(true);
     try {
@@ -370,9 +401,17 @@ export function PageEditor({
       {conflict ? (
         <div className="builder-conflict" role="alert">
           <p>{t("conflict")}</p>
+          {conflict.at ? (
+            <p className="builder-template-description">
+              {t("conflictAt", { when: new Intl.DateTimeFormat(uiLocale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(conflict.at)) })}
+            </p>
+          ) : null}
           <div className="builder-actions">
+            <Button variant="primary" busy={merging} busyLabel={t("merging")} onClick={() => void merge()}>
+              {t("mergeBoth")}
+            </Button>
             <Button
-              variant="primary"
+              variant="secondary"
               onClick={() => {
                 etag.current = conflict.etag;
                 setConflict(null);

@@ -2768,5 +2768,8 @@
   "conflict.page.scheduled": "لهذه الصفحة إصدار مجدول بالفعل. ألغه أولا.",
   "conflict.page.not_scheduled": "لا يوجد إصدار مجدول لهذه الصفحة.",
   "notifications.template.experience.page_schedule_failed.title": "لم تُنشر صفحة مجدولة",
-  "notifications.template.experience.page_schedule_failed.body": "لم تُنشر {page} في موعدها بسبب مشكلات في الصفحة، ويبقى الإصدار الحالي."
+  "notifications.template.experience.page_schedule_failed.body": "لم تُنشر {page} في موعدها بسبب مشكلات في الصفحة، ويبقى الإصدار الحالي.",
+  "conflict.page.merge_structure": "غيّرتَ أنت والمحرر الآخر قالب الصفحة أو تخطيطها أو مظهرها. اختر إحدى النسختين.",
+  "conflict.page.merge_base_gone": "لم تعد النسخة التي بدأت منها محفوظة، فلا يمكن دمج النسختين. اختر إحداهما.",
+  "validation.page.merge_base": "أرسل النسخة التي بدأت منها لإجراء الدمج."
 }

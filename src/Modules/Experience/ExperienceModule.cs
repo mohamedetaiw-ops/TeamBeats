@@ -211,6 +211,14 @@ public static class ExperienceModule
             return Results.NoContent();
         });
 
+        x.MapPost("/pages/{id:guid}/draft/merge", async (Guid id, MergeRequest request, HttpRequest http, PageService pages, CancellationToken ct) =>
+            Results.Ok(await pages.MergeAsync(id, http.Headers.IfMatch.ToString() is { Length: > 0 } m ? m : null, request, ct)));
+
+        x.MapGet("/pages/{id:guid}/draft/revisions", async (Guid id, PageService pages, CancellationToken ct) => Results.Ok(await pages.RevisionsAsync(id, ct)));
+
+        x.MapGet("/pages/{id:guid}/draft/revisions/{revision:int}", async (Guid id, int revision, PageService pages, CancellationToken ct) =>
+            Results.Ok(await pages.RevisionAsync(id, revision, ct)));
+
         x.MapGet("/page-routes", async (PageRoutes routes, CancellationToken ct) => Results.Ok(await routes.ListAsync(ct)));
 
         x.MapPut("/page-routes", async (PageRouteRequest request, PageRoutes routes, IDbSession session, CancellationToken ct) =>
