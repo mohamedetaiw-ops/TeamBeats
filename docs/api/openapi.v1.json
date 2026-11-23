@@ -5612,6 +5612,36 @@
         }
       }
     },
+    "/api/v1/experience/brands/{id}/draft/impact": {
+      "get": {
+        "tags": [
+          "Experience: themes"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/experience/brands/{id}/releases": {
       "get": {
         "tags": [

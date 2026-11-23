@@ -65,6 +65,7 @@ export default async function BrandingPage({ searchParams }: { searchParams: Pro
           releases={releases.data}
           schedule={schedule.ok ? schedule.data : null}
           approval={approval.ok ? approval.data : null}
+          samples={{ ltr: await sample("en"), rtl: await sample("ar") }}
         />
       ) : null}
     </>

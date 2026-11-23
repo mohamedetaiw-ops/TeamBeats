@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import type { ImpactReport } from "@/lib/experience/builder-types";
 import { Button } from "@/components/ui/Button";
@@ -20,8 +21,11 @@ export function ImpactDialog({
   busy,
   onCancel,
   onConfirm,
+  children,
 }: {
   report: ImpactReport;
+  /** What only this kind of artifact reports, such as a theme's overridden values and child preview (spec 033 T015). */
+  children?: ReactNode;
   /** Under an approval route the confirmation submits rather than publishes. */
   submit: boolean;
   busy: boolean;
@@ -73,6 +77,7 @@ export function ImpactDialog({
             {t("touched", { count: String(report.personalLayoutsTouched) })}
           </p>
         ) : null}
+        {children}
       </div>
     </Dialog>
   );

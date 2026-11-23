@@ -2813,5 +2813,6 @@
   "notifications.template.experience.theme_returned.title": "أُعيد تغيير المظهر",
   "notifications.template.experience.theme_returned.body": "أُعيد التغيير على {brand}: {comment}",
   "notifications.template.experience.theme_schedule_failed.title": "لم يُنشر مظهر مجدول",
-  "notifications.template.experience.theme_schedule_failed.body": "لم يُنشر {brand} في موعده بسبب مشكلات في التباين، ويبقى الإصدار الحالي."
+  "notifications.template.experience.theme_schedule_failed.body": "لم يُنشر {brand} في موعده بسبب مشكلات في التباين، ويبقى الإصدار الحالي.",
+  "validation.theme.preview_scope": "اختر نطاقًا يستخدم هذه الهوية"
 }

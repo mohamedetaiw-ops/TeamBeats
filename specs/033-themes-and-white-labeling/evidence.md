@@ -1,6 +1,6 @@
 # Spec 033 evidence (R1)
 
-The spec stays Approved, not Implemented. R1 builds the token engine and resolver, tenant brands, org overrides, brand assets, light and dark modes, typography by script, contrast validation, scopes, locks, the effective configuration trace and stable IDs. Still open in R1: screens for org overrides and locks (the API holds them), the experience impact preview before an org unit move (US5), and the compact density choice in the web app, which waits for the spec 008 personal mode setting. R2 so far: the theme draft, approval, schedule and rollback (FR-012, T014). Not built yet: high contrast mode, impact analysis (FR-024), preview as organization (FR-023), the starter wizard (FR-027), custom domains (FR-010), token export (FR-014), the drift report (FR-015 in full), localized branding (FR-028) and reviewed token extensions (FR-013 in full). The spec 033 sections of `docs/architecture/r1-implementation-notes.md` hold the defaults, deviations and gaps.
+The spec stays Approved, not Implemented. R1 builds the token engine and resolver, tenant brands, org overrides, brand assets, light and dark modes, typography by script, contrast validation, scopes, locks, the effective configuration trace and stable IDs. Still open in R1: screens for org overrides and locks (the API holds them), the experience impact preview before an org unit move (US5), and the compact density choice in the web app, which waits for the spec 008 personal mode setting. R2 so far: the theme draft, approval, schedule and rollback (FR-012, T014) and the theme impact report (FR-024, T015). Not built yet: high contrast mode, preview as organization (FR-023), the starter wizard (FR-027), custom domains (FR-010), token export (FR-014), the drift report (FR-015 in full), localized branding (FR-028) and reviewed token extensions (FR-013 in full). The spec 033 sections of `docs/architecture/r1-implementation-notes.md` hold the defaults, deviations and gaps.
 
 | Requirement | Status | Evidence |
 |---|---|---|
@@ -26,7 +26,7 @@ The spec stays Approved, not Implemented. R1 builds the token engine and resolve
 | FR-020 delegated administration per scope | Met for brands | `ThemeTests.Delegated_admins_cannot_reach_neighbouring_or_child_scopes_they_hold_no_grant_for`, `Brand_manager_edits_brands_but_publishing_a_brand_in_use_needs_theme_publish` |
 | FR-021, FR-022 page ownership and shared journeys | Spec 032 and R2 | See the spec 032 notes |
 | FR-023 preview as organization | R2 | Not built |
-| FR-024 descendants listed before a parent change | R2 | Not built |
+| FR-024 descendants listed before a parent change | Met for brand releases (R2 T015) | `ThemeImpactTests.The_report_lists_what_inherits_what_stops_it_and_what_overrides_it_with_a_child_preview`, `The_report_needs_a_draft_theme_publish_the_package_and_the_tenant`, `theme-lifecycle.spec.ts` (impact dialog with axe) |
 | FR-025 org unit move impact | Partly met | The resolver follows the new parent once the move is saved; the impact preview is open |
 | FR-026 immutable IDs | Met | Assignments, overrides and locks key on tenant and unit IDs; `ThemeTests.Two_sibling_units_render_their_own_brand_at_the_same_time` |
 | FR-027 starter wizard | R2 | Not built |

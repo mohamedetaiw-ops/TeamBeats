@@ -5,7 +5,7 @@ import { hostOrigin } from "../support/stack";
 
 /**
  * Spec 033 R2 T014: publishing a brand. The administrator keeps a draft that employees do not see, publishes it with a
- * reason, finds every version with how it went live, and rolls back to an earlier one. In English and Arabic, with axe.
+ * reason after its impact report (T015), finds every version with how it went live, and rolls back to an earlier one. In English and Arabic, with axe.
  */
 for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
   test.describe(`theme lifecycle in ${locale}`, () => {
@@ -13,7 +13,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
     let tenant: TestTenant;
 
     test.beforeAll(async () => {
-      tenant = await createTenant(`thl-${locale}`, locale);
+      tenant = await createTenant(`thl-${locale}`, locale, "enterprise_gov");
     });
 
     test("keep a draft, publish it with a reason and roll back", async ({ page }, testInfo) => {
@@ -39,6 +39,12 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
 
       await lifecycle.getByLabel(msg(locale, "brand.lifecycle.reason")).fill("Softer corners");
       await lifecycle.getByRole("button", { name: msg(locale, "brand.lifecycle.publish") }).click();
+      // The impact report comes first (T015): what the draft reaches and a preview of a scope using it.
+      const dialog = page.getByRole("dialog");
+      await expect(dialog.getByTestId("theme-impact")).toBeVisible();
+      await expect(dialog.locator("figure.brand-preview")).toHaveCount(2);
+      await expectAccessible(page, testInfo, `theme-impact-${locale}`);
+      await dialog.getByRole("button", { name: msg(locale, "builder.impact.publish") }).click();
       await expect(lifecycle.getByTestId("theme-result")).toHaveText(msg(locale, "brand.lifecycle.published"));
       const releases = lifecycle.getByTestId("theme-releases").getByRole("listitem");
       await expect(releases).toHaveCount(2);

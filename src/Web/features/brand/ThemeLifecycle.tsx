@@ -3,7 +3,9 @@
 import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import type { BrandApprovalState, BrandDraft, BrandRelease, BrandScheduleState } from "@/lib/brand/types";
+import type { BrandApprovalState, BrandDraft, BrandImpact, BrandRelease, BrandScheduleState } from "@/lib/brand/types";
+import { ImpactDialog } from "@/features/builder/editor/ImpactDialog";
+import { BrandPreview, type PreviewSample } from "./BrandPreview";
 import { problemMessages } from "@/lib/notifications/types";
 import { Alert } from "@/components/ui/Alert";
 import { Badge } from "@/components/ui/Badge";
@@ -26,8 +28,10 @@ export function ThemeLifecycle({
   releases,
   schedule,
   approval,
+  samples,
 }: {
   brandId: string;
+  samples: { ltr: PreviewSample; rtl: PreviewSample };
   draft: BrandDraft;
   releases: BrandRelease[];
   schedule: BrandScheduleState | null;
@@ -41,6 +45,8 @@ export function ThemeLifecycle({
   const [goLive, setGoLive] = useState("");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Result>(null);
+  const [impact, setImpact] = useState<BrandImpact | null>(null);
+  const tTokens = useTranslations("brand");
   const base = `/api/v1/experience/brands/${brandId}`;
   const publish = approval?.publish ?? false;
   const pending = approval?.pending ?? null;
@@ -75,6 +81,32 @@ export function ThemeLifecycle({
   }
 
   const reasonValue = reason.trim() || null;
+  const named = (names: Record<string, string>) => names[locale] ?? names.en ?? Object.values(names)[0] ?? "";
+  const tokenName = (token: string) => (tTokens.has(`tokenNames.${token}`) ? tTokens(`tokenNames.${token}`) : token);
+
+  /** Shows what the draft reaches before it goes live; without impact reports in the package it publishes in one step. */
+  async function review() {
+    setBusy(true);
+    setResult(null);
+    try {
+      const response = await fetch(`${base}/draft/impact`, { cache: "no-store" });
+      if (response.ok) {
+        setImpact((await response.json()) as BrandImpact);
+        return;
+      }
+      if (response.status !== 403) {
+        const messages = await problemMessages(response);
+        setResult({ ok: false, messages: messages.length > 0 ? messages : [t("failed")] });
+        return;
+      }
+    } catch {
+      setResult({ ok: false, messages: [t("failed")] });
+      return;
+    } finally {
+      setBusy(false);
+    }
+    await send("/draft/publish", "POST", { reason: reasonValue }, t("published"));
+  }
 
   return (
     <section className="brand-section brand-lifecycle" aria-labelledby={titleId} data-testid="theme-lifecycle">
@@ -114,7 +146,7 @@ export function ThemeLifecycle({
           <FormField label={t("reason")} name="theme-reason" value={reason} maxLength={500} hint={t("reasonHint")} onChange={(e) => setReason(e.target.value)} />
           <div className="button-row">
             {publish ? (
-              <Button variant="primary" busy={busy} busyLabel={t("working")} onClick={() => void send("/draft/publish", "POST", { reason: reasonValue }, t("published"))}>
+              <Button variant="primary" busy={busy} busyLabel={t("working")} onClick={() => void review()}>
                 {t("publish")}
               </Button>
             ) : (
@@ -183,6 +215,51 @@ export function ThemeLifecycle({
           </div>
         ) : null}
       </div>
+
+      {impact ? (
+        <ImpactDialog
+          report={impact.report}
+          submit={false}
+          busy={busy}
+          onCancel={() => setImpact(null)}
+          onConfirm={() => void send("/draft/publish", "POST", { reason: reasonValue }, t("published")).then(() => setImpact(null))}
+        >
+          <div className="brand-impact" data-testid="theme-impact">
+            <p>
+              {t("impactChanges", { count: impact.changes.length })}{" "}
+              {impact.changes.map((c, i) => (
+                <span key={c}>
+                  {i > 0 ? t("separator") : null}
+                  <bdi>{tokenName(c)}</bdi>
+                </span>
+              ))}
+            </p>
+            {impact.excluded.length > 0 ? (
+              <p data-testid="theme-impact-excluded">{t("impactExcluded", { units: impact.excluded.map((u) => named(u.names)).join(t("separator")) })}</p>
+            ) : null}
+            {impact.overridden.length > 0 ? (
+              <ul className="brand-impact-list" data-testid="theme-impact-overridden">
+                {impact.overridden.map((o) => (
+                  <li key={`${o.scope}:${o.token}`}>
+                    {t("impactOverridden", { scope: o.scope === "tenant" ? t("tenant") : named(o.scopeNames), token: tokenName(o.token) })}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            <BrandPreview
+              headingId={`${titleId}-impact-preview`}
+              title={t("impactPreview", { scope: impact.previewScope === "tenant" ? t("tenant") : named(impact.previewNames) })}
+              preview={impact.preview}
+              logoUrl={null}
+              logoAlt=""
+              panes={[
+                { mode: "light", dir: "ltr", lang: "en", sample: samples.ltr, label: t("impactPane", { direction: tTokens("preview.ltr") }) },
+                { mode: "light", dir: "rtl", lang: "ar", sample: samples.rtl, label: t("impactPane", { direction: tTokens("preview.rtl") }) },
+              ]}
+            />
+          </div>
+        </ImpactDialog>
+      ) : null}
 
       <h3>{t("versions")}</h3>
       <ol className="brand-releases" data-testid="theme-releases">

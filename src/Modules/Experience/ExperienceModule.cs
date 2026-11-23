@@ -455,6 +455,9 @@ public static class ExperienceModule
             return Results.Ok(brand);
         });
 
+        x.MapGet("/brands/{id:guid}/draft/impact", async (Guid id, string? scope, ThemeService themes, ImpactReports impacts, CancellationToken ct) =>
+            Results.Ok(await themes.BrandImpactAsync(id, scope, impacts, ct)));
+
         x.MapGet("/brands/{id:guid}/releases", async (Guid id, ThemeService themes, CancellationToken ct) => Results.Ok(await themes.ReleasesAsync(id, ct)));
 
         x.MapPost("/brands/{id:guid}/revert", async (Guid id, RevertBrandRequest request, ThemeService themes, IDbSession session, CancellationToken ct) =>

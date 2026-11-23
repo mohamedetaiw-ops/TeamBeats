@@ -105,6 +105,20 @@ public sealed class ImpactReports(IDbSession session, IOrganizationHierarchy hie
     }
 
     /// <summary>
+    /// A brand release (spec 033 R2 T015): the caller has worked out which units inherit the brand and which pages they hold,
+    /// so the units are listed as given, without adding their subtrees, which may use another brand.
+    /// </summary>
+    internal async Task<ImpactReport> ForThemeAsync(bool tenantWide, IReadOnlyList<Guid> units, IReadOnlyList<(Guid Id, string Slug, Guid? Unit)> pages,
+        CancellationToken ct)
+    {
+        var ids = pages.Select(p => p.Id).ToArray();
+        var (layouts, _) = await LayoutsAsync(ids, _ => false, ct);
+        var rules = await PolicyRulesAsync(ids, ct);
+        return new ImpactReport(Artifacts.Theme, tenantWide, tenantWide ? 0 : units.Count, tenantWide ? [] : await NamedAsync(units, ct),
+            await AudiencesAsync(rules, ct), pages.Count, pages.Take(ListLimit).Select(p => new ImpactPage(p.Id, p.Slug, p.Unit)).ToList(), layouts, 0);
+    }
+
+    /// <summary>
     /// A template release or a theme reaches pages without changing their arrangement: a page keeps its template version until
     /// its editor changes it, and a theme changes how pages look. So no personal layout is touched; the count shows how many
     /// people's layouts sit on the pages reached.
