@@ -36,6 +36,9 @@ public static class BuiltInRoleDefinitions
         new(BuiltInRoles.PagePublisher, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PageView, P.PageEdit, P.PagePublish, P.PageApprove]),
         // Themes (spec 033) and, from spec 011 R2 US5, the brand asset portal.
         new(BuiltInRoles.BrandManager, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.ThemeEdit, P.PeopleView, P.AssetsManage, P.AssetsView]),
+        // Spec 033 R2 T019: delegated experience administration of one organization's brand and navigation.
+        new(BuiltInRoles.BrandPublisher, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.ThemeEdit, P.ThemePublish]),
+        new(BuiltInRoles.NavigationEditor, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.NavigationEdit]),
         new(BuiltInRoles.HrOfficer, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.HrCalendarManage, P.HrIntegrationManage, P.HrManage, P.PeopleView, P.PeopleHrView]),
         new(BuiltInRoles.FinanceOfficer, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PeopleView, P.FinanceProcess]),
         new(BuiltInRoles.AgentDesigner, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.AgentDesign, P.AgentView, P.EvalDesign]),
