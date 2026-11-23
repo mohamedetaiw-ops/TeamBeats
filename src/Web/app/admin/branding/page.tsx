@@ -2,8 +2,9 @@ import { notFound } from "next/navigation";
 import { createTranslator } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { apiGet, type NavigationSection } from "@/lib/api";
-import { checkBrand, getBrand, getTokenSchema, listBrands } from "@/lib/brand/client";
+import { checkBrand, getBrand, getBrandApproval, getBrandDraft, getBrandReleases, getBrandSchedule, getTokenSchema, listBrands } from "@/lib/brand/client";
 import { BrandManager, type PreviewSample } from "@/features/brand/BrandManager";
+import { ThemeLifecycle } from "@/features/brand/ThemeLifecycle";
 import "@/features/brand/brand.css";
 import { AdminHeader } from "@/components/shell/AdminHeader";
 
@@ -17,7 +18,7 @@ async function sample(locale: "en" | "ar"): Promise<PreviewSample> {
 }
 
 /**
- * Brand manager (spec 033 T011): token groups, the contrast table, brand assets and a live preview in light and dark,
+ * Brand manager (spec 033 T011) and publishing (R2 T014: draft, approval, schedule, rollback): token groups, the contrast table, brand assets and a live preview in light and dark,
  * left to right and right to left. The section appears only when the API lists it, and every call is authorized again
  * by the API; the page itself decides nothing about access.
  */
@@ -37,7 +38,13 @@ export default async function BrandingPage({ searchParams }: { searchParams: Pro
   if (!brand.ok) {
     notFound();
   }
-  const check = await checkBrand(brand.data);
+  const [check, draft, releases, schedule, approval] = await Promise.all([
+    checkBrand(brand.data),
+    getBrandDraft(chosen.id),
+    getBrandReleases(chosen.id),
+    getBrandSchedule(chosen.id),
+    getBrandApproval(chosen.id),
+  ]);
   const t = await getTranslations("brand");
   return (
     <>
@@ -47,9 +54,19 @@ export default async function BrandingPage({ searchParams }: { searchParams: Pro
         schema={schema.data}
         brands={brands.data}
         brand={brand.data}
+        draft={draft.ok ? draft.data : null}
         initialPreview={check.ok ? check.data.preview : null}
         samples={{ ltr: await sample("en"), rtl: await sample("ar") }}
       />
+      {draft.ok && releases.ok ? (
+        <ThemeLifecycle
+          brandId={brand.data.id}
+          draft={draft.data}
+          releases={releases.data}
+          schedule={schedule.ok ? schedule.data : null}
+          approval={approval.ok ? approval.data : null}
+        />
+      ) : null}
     </>
   );
 }

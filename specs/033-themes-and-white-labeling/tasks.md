@@ -33,7 +33,7 @@ Depends on 032 (`Experience` module), 001 (tenant logo and color), 002 (org hier
 
 R2 covers User Stories 2, 6, 7 and 8, US3 scenario 3 and US4 delegation and sharing.
 
-- [ ] T014 [US2] Theme lifecycle: draft, submit, approval route (spec 024 engine, spec 016 inbox), schedule, publish, versioned releases and revert that keeps placements and personal layouts; invisible to employees until published; tests
+- [x] T014 [US2] Theme lifecycle: draft, submit, approval route (spec 024 engine, spec 016 inbox), schedule, publish, versioned releases and revert that keeps placements and personal layouts; invisible to employees until published; tests
 - [ ] T015 [US2 scenario 4] Theme impact report from the spec 032 impact service: inheriting scopes, pages, audience variants and overridden values, with a preview of a representative child scope and cancel
 - [ ] T016 [US2 scenario 1] Preview on the standard shell, sample templates and sample components in light, dark and high contrast, at three viewports, in LTR and RTL, with the contrast and state checks; preview as an organization
 - [ ] T017 High contrast mode: a platform high contrast token set used when the brand defines none, chosen by the person or by `prefers-contrast: more` and forced colors; every design (Beats, Atlas, Pulse, Studio) passes contrast checks in it

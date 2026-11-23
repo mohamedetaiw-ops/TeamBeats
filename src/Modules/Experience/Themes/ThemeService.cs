@@ -64,7 +64,9 @@ public sealed partial class ThemeService(
     IOutbox outbox,
     TenantObjectStorage storage,
     IMemoryCache cache,
-    ILogger<ThemeService> logger)
+    ILogger<ThemeService> logger,
+    IClock clock,
+    Modules.Notifications.Contracts.INotificationSender notifications)
 {
     public const string TenantScope = "tenant";
     private const string NoScope = "00000000-0000-0000-0000-000000000000";
@@ -121,11 +123,16 @@ public sealed partial class ThemeService(
         await session.ExecAsync("insert into experience.brand (tenant_id, id, name, current_version) values (@t, @id, @name, 1)",
             new { t = context.RequireTenant(), id, name = request.Name!.Trim() }, ct);
         await InsertVersionAsync(id, 1, tokens, assets, request.StrictContrast, context.ActorId, ct);
+        await InsertReleaseAsync(id, 1, context.ActorId, "direct", null, null, ct);
         await PublishedAsync(id, 1, null, ct);
         return View((await BrandAsync(id, null, ct))!, findings);
     }
 
-    /// <summary>R1 publishes on save: every update is a new immutable version (drafts and approval are R2).</summary>
+    /// <summary>
+    /// Publishes on save: the update is the next immutable version at once (R1). Since R2 the brand manager saves a draft and
+    /// publishes, schedules or submits it (ThemeService.Lifecycle); this stays for API clients and needs theme.publish when the
+    /// brand is in use.
+    /// </summary>
     public async Task<BrandView> UpdateBrandAsync(Guid id, BrandRequest request, CancellationToken ct)
     {
         await authz.DemandAsync(Permissions.ThemeEdit, AuthzTarget.Tenant, ct);
@@ -148,6 +155,7 @@ public sealed partial class ThemeService(
         await InsertVersionAsync(id, version, tokens, assets, request.StrictContrast, context.ActorId, ct);
         await session.ExecAsync("update experience.brand set name = @name, current_version = @v where id = @id",
             new { id, v = version, name = request.Name!.Trim() }, ct);
+        await InsertReleaseAsync(id, version, context.ActorId, "direct", null, null, ct);
         await PublishedAsync(id, version, current, ct);
         return View((await BrandAsync(id, null, ct))!, findings);
     }
@@ -564,10 +572,10 @@ public sealed partial class ThemeService(
             """,
             new { t = context.RequireTenant(), id, v = version, tokens = Jsonb.From(tokens), assets = Jsonb.From(assets), strict, a = actor }, ct);
 
-    private async Task PublishedAsync(Guid id, int version, int? previous, CancellationToken ct)
+    private async Task PublishedAsync(Guid id, int version, int? previous, CancellationToken ct, string how = "direct", string? reason = null)
     {
         await audit.WriteAsync(new AuditEntry(AuditActions.ThemePublished, "brand", id.ToString(),
-            Changes: new { brand = id, version, previousVersion = previous, scope = TenantScope }), ct);
+            Changes: new { brand = id, version, previousVersion = previous, scope = TenantScope, how, reason }), ct);
         await outbox.EnqueueAsync(new ThemePublished(id, version), ct);
         await BumpAsync(ct);
     }

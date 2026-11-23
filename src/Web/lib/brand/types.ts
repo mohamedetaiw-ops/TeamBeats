@@ -55,3 +55,62 @@ export type BrandCheck = { findings: ContrastFinding[]; preview: Record<string, 
 export type AssetView = { reference: string; url: string; contentType: string; bytes: number };
 
 export type ProblemErrors = Record<string, { key: string; message: string }[]>;
+
+/** The brand's working draft, or the version in force when there is none (spec 033 R2 T014). */
+export type BrandDraft = {
+  brandId: string;
+  name: string;
+  tokens: Record<string, TokenValue>;
+  assets: Record<string, string>;
+  strictContrast: boolean;
+  baseVersion: number;
+  currentVersion: number;
+  hasDraft: boolean;
+  stale: boolean;
+  updatedBy: string | null;
+  updatedAt: string | null;
+  findings: ContrastFinding[];
+};
+
+export type BrandRelease = {
+  version: number;
+  current: boolean;
+  publishedBy: string | null;
+  publishedAt: string;
+  reason: string | null;
+  rollbackOf: number | null;
+  how: "direct" | "approved" | "scheduled" | "reverted" | null;
+};
+
+export type BrandSchedule = {
+  id: string;
+  status: "scheduled" | "live" | "failed" | "cancelled";
+  goLiveAt: string;
+  timeZone: string;
+  reason: string | null;
+  scheduledBy: string;
+  scheduledAt: string;
+  version: number | null;
+  failure: string | null;
+};
+
+export type BrandScheduleState = { timeZone: string; current: BrandSchedule | null };
+
+export type BrandSubmission = {
+  id: string;
+  brandId: string;
+  name: string;
+  status: "pending" | "approved" | "returned" | "withdrawn";
+  baseVersion: number;
+  submittedBy: string;
+  submittedAt: string;
+  reason: string | null;
+  decidedAt: string | null;
+  comment: string | null;
+  version: number | null;
+  changes: { token: string; change: "added" | "removed" | "changed" }[];
+  assetChanges: string[];
+  decide: boolean;
+};
+
+export type BrandApprovalState = { publish: boolean; pending: BrandSubmission | null; last: BrandSubmission | null };

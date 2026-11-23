@@ -9,7 +9,7 @@ namespace TeamBeats.Modules.Experience.Pages;
 
 /// <summary>
 /// Every 30 seconds, for every active tenant in its own scope and transaction: puts scheduled page releases live and ends
-/// due expiries (spec 032 R2 T025), so a release goes live within a minute of its time. Runs as the system actor. Hosted
+/// due expiries (spec 032 R2 T025), and scheduled theme versions (spec 033 R2 T014), so a release goes live within a minute of its time. Runs as the system actor. Hosted
 /// by the worker, and by the development host when <c>Experience:Schedule:InProcess</c> is true.
 /// </summary>
 public sealed class PageScheduleWorker(IServiceScopeFactory scopes, IClock clock, ILogger<PageScheduleWorker> logger) : BackgroundService
@@ -49,6 +49,8 @@ public sealed class PageScheduleWorker(IServiceScopeFactory scopes, IClock clock
                 context.SetTenant(tenant.Id);
                 context.SetActor(ActorType.System, null);
                 await scope.ServiceProvider.GetRequiredService<PageSchedules>().RunDueAsync(now, 200, ct);
+                // Scheduled theme versions go live on the same tick (spec 033 R2 T014).
+                await scope.ServiceProvider.GetRequiredService<Themes.ThemeService>().RunDueSchedulesAsync(now, 200, ct);
                 await scope.ServiceProvider.GetRequiredService<IDbSession>().CommitAsync(ct);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)

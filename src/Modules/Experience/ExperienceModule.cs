@@ -51,6 +51,8 @@ public static class ExperienceModule
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, Pages.PageApprovals>("experience.page_waiting");
         services.AddScoped<Telemetry.PageTelemetry>();
         services.AddScoped<ThemeService>();
+        services.AddScoped<ThemeApprovals>();
+        services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<ThemeApprovals>());
         services.AddScoped<AppManifest>();
         services.AddSingleton<Offline.OfflineKeySource>();
         services.AddScoped<Offline.OfflineBundles>();
@@ -423,6 +425,76 @@ public static class ExperienceModule
 
         x.MapPost("/brands/{id:guid}/check", async (Guid id, BrandRequest request, ThemeService themes, CancellationToken ct) =>
             Results.Ok(await themes.CheckBrandAsync(id, request, ct)));
+
+        // Theme lifecycle (spec 033 R2 T014): the working draft, publishing, approval, scheduling and rollback.
+        x.MapGet("/brands/{id:guid}/draft", async (Guid id, ThemeService themes, IDbSession session, CancellationToken ct) =>
+        {
+            var draft = await themes.GetDraftAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(draft);
+        });
+
+        x.MapPut("/brands/{id:guid}/draft", async (Guid id, BrandRequest request, ThemeService themes, IDbSession session, CancellationToken ct) =>
+        {
+            var draft = await themes.SaveDraftAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(draft);
+        });
+
+        x.MapDelete("/brands/{id:guid}/draft", async (Guid id, ThemeService themes, IDbSession session, CancellationToken ct) =>
+        {
+            await themes.DiscardDraftAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        x.MapPost("/brands/{id:guid}/draft/publish", async (Guid id, PublishBrandRequest? request, ThemeService themes, IDbSession session, CancellationToken ct) =>
+        {
+            var brand = await themes.PublishDraftAsync(id, request ?? new PublishBrandRequest(null), ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(brand);
+        });
+
+        x.MapGet("/brands/{id:guid}/releases", async (Guid id, ThemeService themes, CancellationToken ct) => Results.Ok(await themes.ReleasesAsync(id, ct)));
+
+        x.MapPost("/brands/{id:guid}/revert", async (Guid id, RevertBrandRequest request, ThemeService themes, IDbSession session, CancellationToken ct) =>
+        {
+            var brand = await themes.RevertAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(brand);
+        });
+
+        x.MapGet("/brands/{id:guid}/schedule", async (Guid id, ThemeService themes, CancellationToken ct) => Results.Ok(await themes.ScheduleStateAsync(id, ct)));
+
+        x.MapPut("/brands/{id:guid}/schedule", async (Guid id, ScheduleBrandRequest request, ThemeService themes, IDbSession session, CancellationToken ct) =>
+        {
+            var state = await themes.ScheduleAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(state);
+        });
+
+        x.MapDelete("/brands/{id:guid}/schedule", async (Guid id, ThemeService themes, IDbSession session, CancellationToken ct) =>
+        {
+            await themes.CancelScheduleAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        x.MapGet("/brands/{id:guid}/approval", async (Guid id, ThemeApprovals approvals, CancellationToken ct) => Results.Ok(await approvals.StateAsync(id, ct)));
+
+        x.MapPost("/brands/{id:guid}/submit", async (Guid id, SubmitBrandRequest? request, ThemeApprovals approvals, IDbSession session, CancellationToken ct) =>
+        {
+            var submission = await approvals.SubmitAsync(id, request ?? new SubmitBrandRequest(null), ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(submission);
+        });
+
+        x.MapPost("/brands/{id:guid}/withdraw", async (Guid id, ThemeApprovals approvals, IDbSession session, CancellationToken ct) =>
+        {
+            await approvals.WithdrawAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
 
         // The token schema with platform defaults and allowed modes, so editors never hard-code token rules (spec 033 T011).
         x.MapGet("/tokens", () => Results.Ok(new

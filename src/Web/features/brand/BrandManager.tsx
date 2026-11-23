@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import type {
   AssetView,
   BrandCheck,
+  BrandDraft,
   BrandSummary,
   BrandView,
   ContrastFinding,
@@ -41,24 +42,41 @@ export function BrandManager({
   schema,
   brands,
   brand,
+  draft,
   initialPreview,
   samples,
 }: {
   schema: TokenSchema;
   brands: BrandSummary[];
   brand: BrandView;
+  /** The kept draft, which the editor opens on; null when the person may not read drafts. */
+  draft: BrandDraft | null;
   initialPreview: BrandCheck["preview"] | null;
   samples: { ltr: PreviewSample; rtl: PreviewSample };
 }) {
   const t = useTranslations("brand");
   const locale = useLocale();
   const router = useRouter();
-  const [name, setName] = useState(brand.name);
-  const [tokens, setTokens] = useState<Record<string, TokenValue>>(brand.tokens);
-  const [assets, setAssets] = useState<Record<string, string>>(brand.assets);
+  const start = draft?.hasDraft ? draft : null;
+  const [name, setName] = useState(start?.name ?? brand.name);
+  const [tokens, setTokens] = useState<Record<string, TokenValue>>(start?.tokens ?? brand.tokens);
+  const [assets, setAssets] = useState<Record<string, string>>(start?.assets ?? brand.assets);
+  // Draft images are shown only once uploaded again in this session; the saved ones keep their URLs.
   const [assetUrls, setAssetUrls] = useState<Record<string, string>>(brand.assetUrls);
-  const [strict, setStrict] = useState(brand.strictContrast);
-  const [findings, setFindings] = useState<ContrastFinding[]>(brand.findings);
+  const [strict, setStrict] = useState(start?.strictContrast ?? brand.strictContrast);
+  const [findings, setFindings] = useState<ContrastFinding[]>(start?.findings ?? brand.findings);
+  // When the version in force or the draft changes on the server (publish, approval, revert, discard), the fields follow it.
+  const source = `${brand.version}:${draft?.hasDraft ? (draft.updatedAt ?? "") : "none"}`;
+  const [shown, setShown] = useState(source);
+  if (shown !== source) {
+    setShown(source);
+    setName(start?.name ?? brand.name);
+    setTokens(start?.tokens ?? brand.tokens);
+    setAssets(start?.assets ?? brand.assets);
+    setAssetUrls(brand.assetUrls);
+    setStrict(start?.strictContrast ?? brand.strictContrast);
+    setFindings(start?.findings ?? brand.findings);
+  }
   const [preview, setPreview] = useState(initialPreview);
   const [errors, setErrors] = useState<ProblemErrors>({});
   const [status, setStatus] = useState<Status>({ kind: "idle" });
@@ -147,9 +165,9 @@ export function BrandManager({
     scheduleCheck(next, strict);
   }
 
-  async function save() {
+  async function save(asDraft = false) {
     setStatus({ kind: "saving" });
-    const response = await fetch(`/api/v1/experience/brands/${brand.id}`, {
+    const response = await fetch(`/api/v1/experience/brands/${brand.id}${asDraft ? "/draft" : ""}`, {
       method: "PUT",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ name, tokens, assets, strictContrast: strict }),
@@ -157,7 +175,11 @@ export function BrandManager({
     const body = (await response.json().catch(() => null)) as
       | (Partial<BrandView> & { errors?: ProblemErrors; findings?: ContrastFinding[]; detail?: string })
       | null;
-    if (response.ok) {
+    if (response.ok && asDraft) {
+      setErrors({});
+      setStatus({ kind: "saved", message: t("draftSaved") });
+      router.refresh();
+    } else if (response.ok) {
       setErrors({});
       setStatus({ kind: "saved", message: t("saved", { version: body?.version ?? brand.version + 1 }) });
       router.refresh();
@@ -280,6 +302,11 @@ export function BrandManager({
           <Button variant="primary" onClick={() => void save()} busy={status.kind === "saving"} busyLabel={t("saving")}>
             {t("save")}
           </Button>
+          {draft ? (
+            <Button variant="secondary" onClick={() => void save(true)} disabled={status.kind === "saving"}>
+              {t("saveDraft")}
+            </Button>
+          ) : null}
           <Badge>{t("version", { version: brand.version })}</Badge>
           <p className={`brand-status ${status.kind === "saved" ? "notice" : "field-error"}`} role="status" data-testid="brand-status">
             {status.message ?? ""}
