@@ -35,7 +35,7 @@ export type PolicyReading = { policy: PolicySummary; version: VersionView; super
 
 export type RouteStep = { names?: Names | null; approvers?: string[] | null; complianceOfficers?: boolean };
 
-export type PolicyRights = { manage: boolean; edit: boolean; review: boolean; history: boolean; compliance: boolean; ask: boolean; analytics: boolean; comprehension?: boolean; exemptions?: boolean };
+export type PolicyRights = { manage: boolean; edit: boolean; review: boolean; history: boolean; compliance: boolean; ask: boolean; analytics: boolean; comprehension?: boolean; exemptions?: boolean; controls?: boolean };
 
 export type RegisterRights = { create: boolean; exemptions?: boolean };
 
@@ -300,3 +300,25 @@ export const reviewsHref = (id: string) => `/policies/${encodeURIComponent(id)}/
 export const campaignsHref = (id: string) => `/policies/${encodeURIComponent(id)}/campaigns`;
 export const complianceHref = (id: string) => `/policies/${encodeURIComponent(id)}/compliance`;
 export const personComplianceHref = (userId: string) => `/policies/compliance/people/${encodeURIComponent(userId)}`;
+
+export type MappedControl = {
+  framework: string;
+  frameworkVersion: string | null;
+  frameworkNames: Names | null;
+  code: string;
+  titles: Names | null;
+  known: boolean;
+};
+
+export type PolicyControlsView = { policy: PolicySummary; controls: MappedControl[]; canEdit: boolean };
+
+export type LibraryFramework = { key: string; version: string; names: Names; controls: { code: string; titles: Names }[] };
+
+export type ControlPoliciesView = {
+  control: MappedControl;
+  policies: { policy: PolicySummary; currentVersion: number | null; effectiveFrom: string | null; nextReviewAt: string | null; reviewState: string | null }[];
+};
+
+export const controlsHref = (id: string) => `/policies/${encodeURIComponent(id)}/controls`;
+export const controlPoliciesHref = (framework: string, code: string) =>
+  `/policies/controls?framework=${encodeURIComponent(framework)}&code=${encodeURIComponent(code)}`;

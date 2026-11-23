@@ -116,7 +116,7 @@ public sealed record ScheduledVersion(Guid Id, int Number, DateTimeOffset Effect
 /// force and the package includes the assistant and policy Q&amp;A.
 /// </summary>
 public sealed record PolicyRights(bool Manage, bool Edit, bool Review, bool History, bool Compliance, bool Ask = false, bool Analytics = false, bool Comprehension = false,
-    bool Exemptions = false);
+    bool Exemptions = false, bool Controls = false);
 
 /// <summary>What the current user may do in the register: create policies where they hold <c>policy.manage</c>, and open the exemption register.</summary>
 public sealed record RegisterRights(bool Create, bool Exemptions = false);

@@ -80,6 +80,9 @@ public sealed partial class ComplianceLibrary(IDbSession session, ITenantContext
                 JsonSerializer.Deserialize<List<StoredControl>>(r.GetString(4), JsonDefaults.Options)!.Select(c => new FrameworkControl(c.Code, c.Titles)).ToList(),
                 false, r.GetGuid(0), r.GetInt32(5)), ct);
 
+    /// <summary>Every framework, platform then tenant, with no permission or package check: for <see cref="ControlLibraryReader"/>.</summary>
+    internal async Task<IReadOnlyList<Framework>> AllAsync(CancellationToken ct) => Platform.Concat(await TenantAsync(ct)).ToList();
+
     /// <summary>A framework by key, platform or tenant, or null.</summary>
     internal async Task<Framework?> FindAsync(string key, CancellationToken ct) =>
         Platform.FirstOrDefault(f => f.Key == key) ?? (await TenantAsync(ct)).FirstOrDefault(f => f.Key == key);
@@ -190,4 +193,12 @@ public sealed partial class ComplianceLibrary(IDbSession session, ITenantContext
             Changes: new { key = current.Key, from = current.Version, to = version, controls = controls.Count }), ct);
         return new Framework(current.Key, version, names, controls.Select(c => new FrameworkControl(c.Code, c.Titles)).ToList(), false, id, current.Revision + 1);
     }
+}
+
+/// <summary>The control library for other modules (spec 025 FR-015): the platform frameworks and the tenant's own.</summary>
+public sealed class ControlLibraryReader(ComplianceLibrary library) : TeamBeats.Modules.Compliance.Contracts.IControlLibrary
+{
+    public async Task<IReadOnlyList<TeamBeats.Modules.Compliance.Contracts.ControlFrameworkInfo>> FrameworksAsync(CancellationToken ct = default) =>
+        (await library.AllAsync(ct)).Select(f => new TeamBeats.Modules.Compliance.Contracts.ControlFrameworkInfo(f.Key, f.Version, f.Names, f.Platform,
+            f.Controls.Select(c => new TeamBeats.Modules.Compliance.Contracts.ControlInfo(c.Code, c.Titles)).ToList())).ToList();
 }

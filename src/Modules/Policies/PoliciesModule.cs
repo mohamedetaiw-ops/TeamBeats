@@ -28,6 +28,7 @@ public static class PoliciesModule
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, PolicyTaskSource>("policies.notify_approval");
         services.AddScoped<PolicyChecks>();
         services.AddScoped<PolicyExemptions>();
+        services.AddScoped<PolicyControls>();
         services.AddScoped<ExemptionTaskSource>();
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<ExemptionTaskSource>());
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, ExemptionTaskSource>("policies.notify_exemption");
@@ -188,6 +189,20 @@ public static class PoliciesModule
             IDbSession session, CancellationToken ct) =>
         {
             var view = await checks.ResetAsync(id, campaignId, userId, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapGet("/control-library", async (PolicyControls controls, CancellationToken ct) => Results.Ok(await controls.LibraryAsync(ct)));
+
+        root.MapGet("/by-control", async (string? framework, string? code, PolicyControls controls, CancellationToken ct) =>
+            Results.Ok(await controls.ForControlAsync(framework, code, ct)));
+
+        root.MapGet("/{id:guid}/controls", async (Guid id, PolicyControls controls, CancellationToken ct) => Results.Ok(await controls.ListAsync(id, ct)));
+
+        root.MapPut("/{id:guid}/controls", async (Guid id, PolicyControlsRequest request, PolicyControls controls, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await controls.SaveAsync(id, request, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });

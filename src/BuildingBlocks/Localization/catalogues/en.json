@@ -2668,5 +2668,7 @@
   "notifications.template.policies.exemption_expiring.title": "An exemption ends in 14 days",
   "notifications.template.policies.exemption_expiring.body": "When it ends the policy applies in full again. Ask for a new exemption if you still need one.",
   "notifications.template.policies.exemption_expired.title": "An exemption has ended",
-  "notifications.template.policies.exemption_expired.body": "The end date passed and the exemption closed. The policy applies in full again."
+  "notifications.template.policies.exemption_expired.body": "The end date passed and the exemption closed. The policy applies in full again.",
+  "validation.policies.too_many_controls": "Map at most 100 controls to a policy.",
+  "validation.policies.control_unknown": "Choose controls from the control library."
 }

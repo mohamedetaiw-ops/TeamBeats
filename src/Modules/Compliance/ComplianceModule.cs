@@ -15,6 +15,7 @@ public static class ComplianceModule
     public static IServiceCollection AddComplianceModule(this IServiceCollection services)
     {
         services.AddScoped<ComplianceLibrary>();
+        services.AddScoped<Contracts.IControlLibrary, ControlLibraryReader>();
         services.AddScoped<ComplianceProjects>();
         return services;
     }
