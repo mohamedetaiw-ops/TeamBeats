@@ -61,3 +61,6 @@ public sealed record EvaluationRetrievalGateDecided(Guid ChangeId, string Result
 
 /// <summary>A judged query set metric in one locale: the mean over <paramref name="Queries"/> queries, with the index in force and with the change.</summary>
 public sealed record RankingScore(string Metric, string Locale, double Live, double Proposed, int Queries);
+
+/// <summary>A production run was sampled (spec 034 US7): the worker scores it after the person's request has ended.</summary>
+public sealed record ProductionSampleCaptured(Guid SampleId) : TeamBeats.Primitives.IIntegrationEvent;

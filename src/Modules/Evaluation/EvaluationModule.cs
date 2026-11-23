@@ -42,6 +42,13 @@ public static class EvaluationModule
         services.AddScoped<RetrievalGates>();
         services.AddScoped<ResultsService>();
         services.AddScoped<CalibrationService>();
+        services.AddScoped<ProductionPolicyService>();
+        services.AddScoped<ProductionResults>();
+        services.AddScoped<ProductionRetention>();
+        services.AddScoped<ProductionSampler>();
+        services.RemoveAll<Agents.Contracts.IProductionSampler>();
+        services.AddScoped<Agents.Contracts.IProductionSampler>(sp => sp.GetRequiredService<ProductionSampler>());
+        services.AddMessageHandler<ProductionSampleCaptured, ProductionScorer>("evaluation.production");
         services.AddMessageHandler<CalibrationRequested, CalibrationRunner>("evaluation.calibration");
         services.AddMessageHandler<EvaluationRunRequested, EvaluationRunner>("evaluation.run");
         services.AddMessageHandler<AiGateway.Contracts.AiModelRouteChangeProposed, RouteGateStarter>("evaluation.route_gate");
@@ -172,6 +179,24 @@ public static class EvaluationModule
             return Results.Created($"/api/v1/evaluation/calibration/runs/{view.Id}", view);
         });
         root.MapGet("/calibration/runs/{id:guid}", async (Guid id, CalibrationService calibration, CancellationToken ct) => Results.Ok(await calibration.GetAsync(id, ct)));
+
+        // Continuous production evaluation (R2 T018, US7): the tenant's sampling policy, each person's own opt-out and an agent's production results.
+        root.MapGet("/production/policy", async (ProductionPolicyService policies, CancellationToken ct) => Results.Ok(await policies.GetAsync(ct)));
+        root.MapPut("/production/policy", async (ProductionPolicyRequest request, ProductionPolicyService policies, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await policies.SaveAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+        root.MapGet("/production/opt-out", async (ProductionPolicyService policies, CancellationToken ct) => Results.Ok(await policies.OptOutAsync(ct)));
+        root.MapPut("/production/opt-out", async (ProductionOptOutRequest request, ProductionPolicyService policies, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await policies.SetOptOutAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+        root.MapGet("/agents/{agentId:guid}/production", async (Guid agentId, ProductionResults results, CancellationToken ct) =>
+            Results.Ok(await results.ForAgentAsync(agentId, ct)));
 
         root.MapGet("/gates", async (Guid agentId, int version, GateService gates, CancellationToken ct) => Results.Ok(await gates.GetAsync(agentId, version, ct)));
         root.MapPost("/gates/{runId:guid}/override", async (Guid runId, GateOverrideRequest request, GateService gates, IDbSession session, CancellationToken ct) =>

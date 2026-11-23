@@ -62,6 +62,7 @@ public sealed class WorkerProgram
         builder.Services.AddHostedService<TeamBeats.Modules.Analytics.SentimentWorker>();
         builder.Services.AddHostedService<TeamBeats.Modules.Search.SearchBootstrapWorker>();
         builder.Services.AddHostedService<TeamBeats.Modules.Search.SavedSearchWorker>();
+        builder.Services.AddHostedService<TeamBeats.Modules.Evaluation.ProductionRetentionWorker>();
         builder.Services.AddHostedService<AssistantRetentionService>();
         builder.Services.AddHostedService<AgentBriefingService>();
         builder.Services.AddHostedService<AgentRunResumeService>();
