@@ -188,3 +188,11 @@
   padding: 0;
   list-style: none;
 }
+
+/* One answer of a comprehension question in the bank editor (spec 025 US6). */
+.policies-option {
+  display: grid;
+  gap: var(--tb-space-xs);
+  padding-block-start: var(--tb-space-sm);
+  border-block-start: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}

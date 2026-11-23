@@ -1,6 +1,6 @@
 # Spec 025 evidence (R1)
 
-The spec stays Approved, not Implemented, until its R2 parts are built: comprehension checks (US6, FR-013), exemptions (US7, FR-014), control mapping and evidence packs (US8, FR-015, FR-016), onboarding attestation (FR-017), fixed attestation cycles (the second half of FR-008) and controlled document policies (the second half of FR-003). Defaults, deviations and gaps of each R1 slice are in the spec 025 sections of `docs/architecture/r1-implementation-notes.md`.
+The spec stays Approved, not Implemented, until its R2 parts are built: exemptions (US7, FR-014), control mapping and evidence packs (US8, FR-015, FR-016), onboarding attestation (FR-017), fixed attestation cycles (the second half of FR-008) and controlled document policies (the second half of FR-003). Defaults, deviations and gaps of each R1 slice are in the spec 025 sections of `docs/architecture/r1-implementation-notes.md`.
 
 | Requirement | Status | Evidence |
 |---|---|---|
@@ -13,6 +13,7 @@ The spec stays Approved, not Implemented, until its R2 parts are built: comprehe
 | FR-007 immutable attestation with hash, no delegation | Met | `PolicyCampaignTests.A_campaign_asks_its_audience_and_each_attestation_is_a_fixed_record_...`, `PolicyRulesTests.The_attestation_hash_is_sha256_hex`; the comprehension result comes with US6 (R2) |
 | FR-008 re-attestation on material change | Met for material change | `PolicyCampaignTests.Late_joiners_get_their_own_due_date_leavers_are_marked_and_a_material_revision_leaves_the_choice_to_compliance`; fixed cycles are R2 |
 | FR-012 scheduled reviews with four outcomes, overdue tracking | Met | `PolicyReviewTests` (all three), `policy-authoring.spec.ts` (answer a scheduled review, en and ar, axe) |
+| FR-013 comprehension checks with question banks, pass marks, attempts, accessible delivery | Met | `PolicyCheckTests` (both), `policy-checks.spec.ts` (keyboard, axe, en and ar) |
 | FR-009 completion by unit, location, manager and person within scope | Met | `PolicyComplianceTests` (both) |
 | FR-010 assistant answers only from readable versions in force, cites clauses, says when nothing covers it | Met | `PolicyQuestionTests.The_assistant_cites_the_policy_clause_in_force_names_each_policy_that_applies_and_answers_nothing_else`, `AssistantPromptTests.Policy_passages_are_cited_by_title_version_and_clause_and_conflicts_are_left_to_the_owner` |
 | FR-011 policy-scoped Q&A on each policy page | Met for the policy itself | `PolicyQuestionTests.Ask_about_this_policy_keeps_the_conversation_to_that_policy_for_readers_only`, `policies.spec.ts` (en and ar, axe); linked documents come with controlled document policies |

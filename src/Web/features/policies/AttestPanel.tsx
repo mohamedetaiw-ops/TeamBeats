@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { problemMessages } from "@/lib/notifications/types";
-import { nameIn, type AttestationView, type MyAttestation } from "@/lib/policies/types";
+import { checkHref, nameIn, type AttestationView, type MyAttestation } from "@/lib/policies/types";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { courseHref } from "@/lib/learning";
 import "./policies.css";
@@ -81,6 +81,16 @@ export function AttestPanel({ policyId, initial, locale }: { policyId: string; i
           </ButtonLink>
         </div>
       ) : null}
+      {state.check && !state.check.passed ? (
+        <div className="notice" role="note" data-testid="attest-check">
+          <p>{t(state.check.needsFollowUp ? "checkFollowUp" : "checkFirst", { pass: state.check.passPercent, left: Math.max(0, state.check.attempts - state.check.used) })}</p>
+          {state.check.needsFollowUp ? null : (
+            <ButtonLink size="sm" href={checkHref(policyId)} icon="check">
+              {t("takeCheck")}
+            </ButtonLink>
+          )}
+        </div>
+      ) : null}
       <blockquote>
         <bdi>{nameIn(due.text, locale)}</bdi>
       </blockquote>
@@ -96,7 +106,7 @@ export function AttestPanel({ policyId, initial, locale }: { policyId: string; i
         </div>
       ) : null}
       <div className="button-row">
-        <Button type="submit" variant="primary" busy={busy} busyLabel={t("busy")} disabled={Boolean(state.trainingFirst)}>
+        <Button type="submit" variant="primary" busy={busy} busyLabel={t("busy")} disabled={Boolean(state.trainingFirst) || Boolean(state.check && !state.check.passed)}>
           {t("submit")}
         </Button>
       </div>

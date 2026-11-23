@@ -26,6 +26,7 @@ public static class PoliciesModule
         services.AddScoped<PolicyTaskSource>();
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<PolicyTaskSource>());
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, PolicyTaskSource>("policies.notify_approval");
+        services.AddScoped<PolicyChecks>();
         services.AddScoped<PolicyCampaigns>();
         services.AddScoped<PolicyReviews>();
         services.AddScoped<Workflow.Contracts.IPersonalTaskSource>(sp => sp.GetRequiredService<PolicyReviews>());
@@ -139,6 +140,50 @@ public static class PoliciesModule
             IDbSession session, CancellationToken ct) =>
         {
             var view = await approvals.ResolveCommentAsync(id, versionId, commentId, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapGet("/{id:guid}/drafts/{versionId:guid}/questions", async (Guid id, Guid versionId, PolicyChecks checks, CancellationToken ct) =>
+            Results.Ok(await checks.QuestionsAsync(id, versionId, ct)));
+
+        root.MapPut("/{id:guid}/drafts/{versionId:guid}/questions", async (Guid id, Guid versionId, CheckQuestionsRequest request, PolicyChecks checks, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var view = await checks.SaveQuestionsAsync(id, versionId, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapGet("/{id:guid}/check", async (Guid id, PolicyChecks checks, CancellationToken ct) => Results.Ok(await checks.MineAsync(id, ct)));
+
+        root.MapPost("/{id:guid}/check/start", async (Guid id, PolicyChecks checks, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await checks.StartAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapPost("/{id:guid}/check/{attemptId:guid}/answers", async (Guid id, Guid attemptId, CheckAnswersRequest request, PolicyChecks checks, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var result = await checks.AnswerAsync(id, attemptId, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(result);
+        });
+
+        root.MapGet("/{id:guid}/campaigns/{campaignId:guid}/checks/{userId:guid}", async (Guid id, Guid campaignId, Guid userId, PolicyChecks checks, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var view = await checks.MemberViewAsync(id, campaignId, userId, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapPost("/{id:guid}/campaigns/{campaignId:guid}/checks/{userId:guid}/reset", async (Guid id, Guid campaignId, Guid userId, PolicyChecks checks,
+            IDbSession session, CancellationToken ct) =>
+        {
+            var view = await checks.ResetAsync(id, campaignId, userId, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });

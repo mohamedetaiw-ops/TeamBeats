@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
-import { campaignsHref, complianceHref, editHref, nameIn, policyHref, reviewHref, reviewsHref, shownLocale, type MyAttestation, type PolicyReading, type PolicyView, type VersionHistoryItem } from "@/lib/policies/types";
+import { campaignsHref, complianceHref, editHref, nameIn, policyHref, questionsHref, reviewHref, reviewsHref, shownLocale, type MyAttestation, type PolicyReading, type PolicyView, type VersionHistoryItem } from "@/lib/policies/types";
 import { Header } from "@/components/shell/Header";
 import { StateView } from "@/components/ui/StateView";
 import { PoliciesNav } from "@/features/policies/PoliciesNav";
@@ -47,6 +47,7 @@ export default async function PolicyPage({ params, searchParams }: { params: Pro
       : null,
     p.working?.state === "in_review" && (p.rights.review || p.rights.edit || p.rights.manage) ? { href: reviewHref(p.id), label: tm("review") } : null,
     p.rights.history ? { href: campaignsHref(p.id), label: tm("campaigns") } : null,
+    p.rights.comprehension && (p.working || p.currentVersion) ? { href: questionsHref(p.id), label: tm("questions") } : null,
     p.rights.history && p.currentVersion ? { href: reviewsHref(p.id), label: tm(p.reviewState === "overdue" ? "reviewsOverdue" : "reviews") } : null,
     p.rights.compliance && p.currentVersion ? { href: complianceHref(p.id), label: tm("compliance") } : null,
     p.rights.analytics ? { href: `${policyHref(p.id)}/analytics`, label: tm("analytics") } : null,

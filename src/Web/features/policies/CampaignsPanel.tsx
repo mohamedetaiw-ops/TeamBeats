@@ -5,6 +5,7 @@ import { useId, useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { problemMessages } from "@/lib/notifications/types";
 import { complianceHref, type CampaignView } from "@/lib/policies/types";
+import { Checkbox } from "@/components/ui/Checkbox";
 import { Button } from "@/components/ui/Button";
 import "./policies.css";
 
@@ -18,11 +19,14 @@ export function CampaignsPanel({
   initial,
   canLaunch,
   focus,
+  canCheck = false,
 }: {
   policyId: string;
   initial: CampaignView[];
   canLaunch: boolean;
   focus: string | null;
+  /** The package has comprehension checks and the person may write them (spec 025 US6). */
+  canCheck?: boolean;
 }) {
   const t = useTranslations("policies.campaigns");
   const format = useFormatter();
@@ -31,6 +35,10 @@ export function CampaignsPanel({
   const [deadline, setDeadline] = useState("");
   const [reminders, setReminders] = useState("");
   const [lateDays, setLateDays] = useState("");
+  const [withCheck, setWithCheck] = useState(false);
+  const [passMark, setPassMark] = useState("80");
+  const [attempts, setAttempts] = useState("3");
+  const [drawn, setDrawn] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [messages, setMessages] = useState<string[]>([]);
   const [status, setStatus] = useState<string | null>(null);
@@ -75,6 +83,7 @@ export function CampaignsPanel({
                 deadline: deadline || null,
                 reminderDays: reminders.trim() ? days : null,
                 lateJoinerDays: lateDays.trim() ? Number(lateDays) : null,
+                check: withCheck ? { passPercent: Number(passMark) || null, attempts: Number(attempts) || null, questions: drawn.trim() ? Number(drawn) : null } : null,
               },
               (c) => {
                 setCampaigns((all) => [c, ...all]);
@@ -96,6 +105,28 @@ export function CampaignsPanel({
             <label htmlFor={`${ids}-late`}>{t("lateDays")}</label>
             <input id={`${ids}-late`} type="number" min={1} max={90} value={lateDays} onChange={(e) => setLateDays(e.target.value)} dir="ltr" placeholder="14" />
           </div>
+          {canCheck ? (
+            <>
+              <Checkbox label={t("check")} hint={t("checkHint")} name="campaignCheck" checked={withCheck} onChange={(e) => setWithCheck(e.target.checked)} />
+              {withCheck ? (
+                <>
+                  <div className="field">
+                    <label htmlFor={`${ids}-pass`}>{t("passMark")}</label>
+                    <input id={`${ids}-pass`} type="number" min={1} max={100} value={passMark} onChange={(e) => setPassMark(e.target.value)} dir="ltr" />
+                  </div>
+                  <div className="field">
+                    <label htmlFor={`${ids}-attempts`}>{t("attempts")}</label>
+                    <input id={`${ids}-attempts`} type="number" min={1} max={10} value={attempts} onChange={(e) => setAttempts(e.target.value)} dir="ltr" />
+                  </div>
+                  <div className="field">
+                    <label htmlFor={`${ids}-drawn`}>{t("drawn")}</label>
+                    <input id={`${ids}-drawn`} type="number" min={1} max={50} value={drawn} onChange={(e) => setDrawn(e.target.value)} dir="ltr" aria-describedby={`${ids}-drawn-hint`} />
+                    <p id={`${ids}-drawn-hint`} className="field-hint">{t("drawnHint")}</p>
+                  </div>
+                </>
+              ) : null}
+            </>
+          ) : null}
           <p className="policies-meta">{t("defaults")}</p>
           <div className="button-row">
             <Button type="submit" variant="primary" busy={busy === "launch"} busyLabel={t("busy")}>
@@ -133,6 +164,11 @@ export function CampaignsPanel({
               <p data-testid="campaign-counts">
                 {t("counts", { members: c.counts.members, attested: c.counts.attested, open: c.counts.open, overdue: c.counts.overdue })}
               </p>
+              {c.check ? (
+                <p className="policies-meta" data-testid="campaign-check">
+                  {t("checkSummary", { pass: c.check.passPercent, attempts: c.check.attempts, questions: c.check.questions })}
+                </p>
+              ) : null}
               <div className="button-row">
                 <Link href={`${complianceHref(policyId)}?campaign=${encodeURIComponent(c.id)}`}>{t("compliance")}</Link>
                 {c.status === "open" && canLaunch ? (

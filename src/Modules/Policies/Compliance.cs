@@ -40,7 +40,7 @@ public sealed class PolicyCompliance(
         public string Scope => Coverage.WholeTenant ? ComplianceScopes.Tenant : Coverage.Any ? ComplianceScopes.Units : ComplianceScopes.Reports;
     }
 
-    private sealed record Member(Guid UserId, string Status, DateTimeOffset DueAt, DateTimeOffset? AttestedAt, DateTimeOffset? LeftAt);
+    private sealed record Member(Guid UserId, string Status, DateTimeOffset DueAt, DateTimeOffset? AttestedAt, DateTimeOffset? LeftAt, bool FollowUp = false);
 
     /// <summary>A member with where they sit: primary unit and its path from the root, location and manager.</summary>
     private sealed record Placed(Member Member, Guid? Unit, IReadOnlyList<Guid> Path, string? Location, Guid? Manager);
@@ -101,9 +101,9 @@ public sealed class PolicyCompliance(
             return (policy, viewer, null, all, []);
         }
         var members = await session.QueryAsync(
-            "select user_id, status, due_at, attested_at, left_at from policies.campaign_member where campaign_id = @c",
+            "select user_id, status, due_at, attested_at, left_at, follow_up_at is not null from policies.campaign_member where campaign_id = @c",
             new { c = campaign.Id }, r => new Member(r.GetGuid(0), r.GetString(1), r.GetFieldValue<DateTimeOffset>(2), r.Get<DateTimeOffset?>("attested_at"),
-                r.Get<DateTimeOffset?>("left_at")), ct);
+                r.Get<DateTimeOffset?>("left_at"), r.GetBoolean(5)), ct);
         var memberships = await MembershipsAsync(ct);
         var visible = members.Where(m => Sees(viewer, memberships, m.UserId)).ToList();
         var units = visible.Select(m => memberships.Primary(m.UserId)).OfType<Guid>().Distinct().ToList();
@@ -259,7 +259,7 @@ public sealed class PolicyCompliance(
         foreach (var p in filtered.Skip(skip).Take(take))
         {
             page.Add(new CompliancePerson(await register.PersonAsync(p.Member.UserId, ct), p.Unit, NoneKey(p.Location), p.Manager, p.Member.Status, p.Member.DueAt,
-                p.Member.AttestedAt, p.Member.LeftAt));
+                p.Member.AttestedAt, p.Member.LeftAt, p.Member.FollowUp && p.Member.Status is MemberStatuses.Open or MemberStatuses.Overdue));
         }
         return new CompliancePeople(page, filtered.Count, skip, take);
     }

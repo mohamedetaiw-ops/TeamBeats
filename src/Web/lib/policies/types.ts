@@ -35,7 +35,7 @@ export type PolicyReading = { policy: PolicySummary; version: VersionView; super
 
 export type RouteStep = { names?: Names | null; approvers?: string[] | null; complianceOfficers?: boolean };
 
-export type PolicyRights = { manage: boolean; edit: boolean; review: boolean; history: boolean; compliance: boolean; ask: boolean; analytics: boolean };
+export type PolicyRights = { manage: boolean; edit: boolean; review: boolean; history: boolean; compliance: boolean; ask: boolean; analytics: boolean; comprehension?: boolean };
 
 export type RegisterRights = { create: boolean };
 
@@ -133,7 +133,25 @@ export type VersionHistoryItem = {
 export type AttestationDue = { campaignId: string | null; version: number; dueAt: string; overdue: boolean; text: Names };
 
 /** What the person owes; trainingFirst names a linked course to complete before attesting (spec 028 US4). */
-export type MyAttestation = { due: AttestationDue | null; lastVersion: number | null; lastAt: string | null; trainingFirst?: string | null };
+export type MyAttestation = { due: AttestationDue | null; lastVersion: number | null; lastAt: string | null; trainingFirst?: string | null; check?: CheckDue | null };
+
+/** A campaign's comprehension check as the person has done it (spec 025 US6). */
+export type CheckDue = { campaignId: string; passPercent: number; attempts: number; used: number; passed: boolean; needsFollowUp: boolean };
+
+export type CheckOption = { key: string; texts: Names };
+
+export type CheckQuestion = { id: string; position: number; clauseKey: string; clauseNumber: string | null; prompts: Names; options: CheckOption[]; multiple: boolean; correct: string[] | null };
+
+export type CheckQuestions = { versionId: string; number: number | null; state: string; locked: boolean; questions: CheckQuestion[] };
+
+export type RereadClause = { key: string; anchor: string; number: string; titles: Names };
+
+export type CheckResult = { attemptId: string; attempt: number; correct: number; total: number; score: number; passed: boolean; attemptsLeft: number; needsFollowUp: boolean; reread: RereadClause[] };
+
+export type CheckState = { policyId: string; version: number; due: CheckDue; current: { id: string; attempt: number; questions: CheckQuestion[] } | null; last: CheckResult | null };
+
+export const checkHref = (id: string) => `/policies/${encodeURIComponent(id)}/check`;
+export const questionsHref = (id: string) => `/policies/${encodeURIComponent(id)}/questions`;
 
 export type MyPolicyItem = {
   policy: PolicySummary;
@@ -193,6 +211,7 @@ export type CampaignView = {
   launchedAt: string;
   closedAt: string | null;
   counts: CampaignCounts;
+  check?: { passPercent: number; attempts: number; questions: number } | null;
 };
 
 export type ComplianceCampaign = { id: string; version: number; deadline: string; status: string };
@@ -233,6 +252,8 @@ export type CompliancePerson = {
   dueAt: string;
   attestedAt: string | null;
   leftAt: string | null;
+  /** Failed every attempt of the campaign's comprehension check (spec 025 US6). */
+  needsFollowUp?: boolean;
 };
 
 export type CompliancePeople = { items: CompliancePerson[]; total: number; offset: number; limit: number };
