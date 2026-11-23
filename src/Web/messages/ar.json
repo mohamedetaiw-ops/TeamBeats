@@ -1483,7 +1483,8 @@
       "light": "فاتح",
       "dark": "داكن",
       "comfortable": "مريح",
-      "compact": "مضغوط"
+      "compact": "مضغوط",
+      "high_contrast": "تباين عالٍ"
     },
     "groups": {
       "color": "الألوان",
@@ -2053,7 +2054,8 @@
         "label": "المظهر",
         "system": "حسب الجهاز",
         "light": "فاتح",
-        "dark": "داكن"
+        "dark": "داكن",
+        "high_contrast": "تباين عالٍ"
       },
       "density": {
         "label": "الكثافة",

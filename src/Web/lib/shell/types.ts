@@ -93,3 +93,8 @@ export type CommandItem = { key: string; href: string; icon: string };
 
 /** A help hint or short tour for the current page, in the viewer's language (spec 008 FR-020). */
 export type HelpItem = { key: string; kind: "hint" | "tour"; path: string; title: string; body: string | null; steps: { title: string; body: string }[]; dismissed: boolean };
+
+/** The theme mode a mode preference asks for (spec 008, spec 033 R2 T017): system follows the device, including its contrast setting. */
+export function themeMode(mode: string | undefined): "system" | "light" | "dark" | "high_contrast" {
+  return mode === "light" || mode === "dark" || mode === "high_contrast" ? mode : "system";
+}

@@ -91,7 +91,7 @@ public sealed partial class PersonalizationService(
     /// </summary>
     public static readonly IReadOnlyList<PreferenceSetting> PreferenceSchema =
     [
-        new("mode", ["system", "light", "dark"], "light", CrossDevice),
+        new("mode", ["system", "light", "dark", "high_contrast"], "light", CrossDevice),
         new("density", ["comfortable", "compact"], "comfortable", DeviceSpecific),
         new("motion", ["system", "reduced"], "system", CrossDevice),
         new("text_scale", ["100", "125", "150", "200"], "100", DeviceSpecific),

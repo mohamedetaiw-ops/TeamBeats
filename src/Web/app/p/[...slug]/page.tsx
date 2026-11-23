@@ -1,3 +1,4 @@
+import { themeMode } from "@/lib/shell/types";
 import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
@@ -29,7 +30,7 @@ export default async function PublishedPage({ params }: { params: Promise<{ slug
   return (
     <>
       {scoped?.ok ? (
-        <ThemeLinks variants={scoped.data.variants} density={prefs.density === "compact" ? "compact" : "comfortable"} mode={prefs.mode === "light" || prefs.mode === "dark" ? prefs.mode : "system"} />
+        <ThemeLinks variants={scoped.data.variants} density={prefs.density === "compact" ? "compact" : "comfortable"} mode={themeMode(prefs.mode)} />
       ) : null}
       <Header me={me.data} favorite={{ path: "/p/" + slug.map(decodeURIComponent).join("/").toLowerCase() }} />
       <main id="main">

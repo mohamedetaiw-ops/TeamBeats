@@ -1,3 +1,4 @@
+import { themeMode } from "@/lib/shell/types";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
@@ -81,7 +82,7 @@ async function HomePage({ me, page, views, current }: { me: Me; page: RenderedPa
   return (
     <>
       {scoped?.ok ? (
-        <ThemeLinks variants={scoped.data.variants} density={prefs.density === "compact" ? "compact" : "comfortable"} mode={prefs.mode === "light" || prefs.mode === "dark" ? prefs.mode : "system"} />
+        <ThemeLinks variants={scoped.data.variants} density={prefs.density === "compact" ? "compact" : "comfortable"} mode={themeMode(prefs.mode)} />
       ) : null}
       <Header me={me} />
       <main id="main">

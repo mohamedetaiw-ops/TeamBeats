@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/Switch";
 import { useShellPanel } from "@/lib/shell/panel";
 
 const options: Record<PreferenceKey, string[]> = {
-  mode: ["system", "light", "dark"],
+  mode: ["system", "light", "dark", "high_contrast"],
   density: ["comfortable", "compact"],
   motion: ["system", "reduced"],
   text_scale: ["100", "125", "150", "200"],

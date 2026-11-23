@@ -154,7 +154,7 @@ public sealed class ThemeImpactTests(TenantWorld world)
         // Gulf's override wins at Plant; the draft's accent reaches it; both modes and densities come back.
         Assert.Equal("9px", Radius(plant));
         Assert.Equal("#0f766e", plant.GetProperty("variants").GetProperty("light.comfortable").GetProperty("--tb-color-accent-base").GetString());
-        Assert.Equal(4, plant.GetProperty("variants").EnumerateObject().Count());
+        Assert.Equal(6, plant.GetProperty("variants").EnumerateObject().Count());
         Assert.Equal(JsonValueKind.Array, plant.GetProperty("findings").ValueKind);
 
         Assert.Equal("4px", Radius(await OkAsync(client.GetAsync($"{Brands}/{group}/preview"))));

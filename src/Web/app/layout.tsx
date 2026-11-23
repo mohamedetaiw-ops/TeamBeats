@@ -1,3 +1,4 @@
+import { themeMode } from "@/lib/shell/types";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { getLocale, getMessages, getTimeZone, getTranslations } from "next-intl/server";
@@ -58,7 +59,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   // always comes later in the head and wins. Signed-out pages get no theme and keep the platform tokens.
   const [theme, prefs, messages, timeZone] = await Promise.all([getTenantTheme(), getPreferences(), getMessages(), getTimeZone()]);
   const density = prefs.density === "compact" ? "compact" : "comfortable";
-  const mode = prefs.mode === "light" || prefs.mode === "dark" ? prefs.mode : "system";
+  const mode = themeMode(prefs.mode);
   // Text size scales the root font, so every rem-based size follows (spec 008 preferences, WCAG 1.4.4).
   // The design (spec 036) picks the structural variant of the shell; the rest of the design arrives as tokens.
   const design = designOf(theme.ok ? theme.data.variants : []);

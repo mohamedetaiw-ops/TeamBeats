@@ -1,3 +1,4 @@
+import { themeMode } from "@/lib/shell/types";
 import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
@@ -31,7 +32,7 @@ export default async function DraftPreview({ params, searchParams }: { params: P
   return (
     <>
       {scoped?.ok ? (
-        <ThemeLinks variants={scoped.data.variants} density={prefs.density === "compact" ? "compact" : "comfortable"} mode={prefs.mode === "light" || prefs.mode === "dark" ? prefs.mode : "system"} />
+        <ThemeLinks variants={scoped.data.variants} density={prefs.density === "compact" ? "compact" : "comfortable"} mode={themeMode(prefs.mode)} />
       ) : null}
       <main id="main" lang={shown} dir={isLocale(shown) ? direction(shown) : "ltr"}>
         <PageRenderer page={page.data} tabsLabel={t("panels")} tabLabel={(n) => t("panel", { number: n })} />
