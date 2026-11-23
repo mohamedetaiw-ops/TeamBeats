@@ -63,8 +63,13 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await main.getByRole("link", { name: course }).click();
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(course);
 
-      await page.getByRole("button", { name: m("learning.player.enrol") }).click();
+      const enrol = page.getByRole("button", { name: m("learning.player.enrol") });
       const quiz = page.getByRole("group", { name: m("learning.player.quiz.question", { number: 1, prompt: question }) });
+      // A click before the player has hydrated does nothing, so enrolling is tried again until the quiz shows.
+      await expect(async () => {
+        if (await enrol.isVisible()) await enrol.click({ timeout: 2_000 });
+        await expect(quiz).toBeVisible({ timeout: 3_000 });
+      }).toPass({ timeout: 30_000 });
       await quiz.getByLabel(right).check();
       await expectAccessible(page, testInfo, `learning-player-${locale}`);
       await page.getByRole("button", { name: m("learning.player.quiz.submit") }).click();

@@ -465,6 +465,71 @@
         "editFor": "Edit the delegation for {person}",
         "separator": ", ",
         "unknown": "Not available to you"
+      },
+      "starter": {
+        "open": "Starter wizard",
+        "breadcrumb": "Starter wizard location",
+        "title": "Starter wizard",
+        "description": "Give a new organization its brand, navigation and first pages in one go.",
+        "organizationTitle": "New organization",
+        "intro": "Everything the wizard makes stays a draft until you publish it, and each part stays editable on its own.",
+        "organization": "Organization",
+        "chooseOrganization": "Choose an organization",
+        "formTitle": "Set up the organization",
+        "fromBrand": "Start from brand",
+        "fromBrandHint": "Its colors, type and images are copied into a new brand for this organization.",
+        "platformDefaults": "TeamBeats defaults",
+        "design": "Design",
+        "designs": {
+          "beats": "Beats",
+          "atlas": "Atlas",
+          "pulse": "Pulse",
+          "studio": "Studio"
+        },
+        "designHints": {
+          "beats": "Warm and modern, soft rounded cards.",
+          "atlas": "Formal and institutional, square corners.",
+          "pulse": "Bold and editorial, pill buttons.",
+          "studio": "Clean and neutral, hairline borders."
+        },
+        "navigation": "Navigation pattern",
+        "navigationPatterns": {
+          "rail": "Icon rail",
+          "top": "Top bar",
+          "sidebar": "Labelled sidebar"
+        },
+        "language": "Language",
+        "languageHint": "The brand title and menu labels are written in this language first. You can add the other language later.",
+        "languages": {
+          "en": "English",
+          "ar": "Arabic"
+        },
+        "pages": "Starter pages",
+        "pagesHint": "Choose up to eight templates. Each one becomes a draft page owned by the organization, with an entry in its menu.",
+        "pageTitle": "Menu label for {template}",
+        "pageSlug": "Address for {template}",
+        "admin": "Organization administrator",
+        "adminHint": "This person gets the organization's pages, brand and navigation, and nothing elsewhere.",
+        "adminSelf": "Keep it with me",
+        "draftNote": "Nothing changes for people in the organization until you publish.",
+        "create": "Create the starter",
+        "created": "The starter was created as a draft.",
+        "madeTitle": "What the wizard made",
+        "madeDraft": "This is a draft. People in the organization do not see it yet.",
+        "madePublished": "Published. People in the organization see this brand, menu and pages.",
+        "state": {
+          "draft": "Draft",
+          "published": "Published"
+        },
+        "page": "Page",
+        "pageState": "State",
+        "actions": "Actions",
+        "pagePublished": "Published",
+        "pageDraft": "Draft",
+        "editPage": "Edit page",
+        "editBrand": "Edit brand",
+        "publish": "Publish the starter",
+        "publishedDone": "The starter is published."
       }
     },
     "users": {

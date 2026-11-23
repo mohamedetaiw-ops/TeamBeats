@@ -387,6 +387,9 @@ public sealed partial class PageService(
         return await ValidateAsync(page, draft, ValidationMode.Publish, ct);
     }
 
+    /// <summary>Whether pages owned at this scope go live only through an approval route (R2 T023).</summary>
+    public async Task<bool> NeedsApprovalAsync(Guid? orgUnitId, CancellationToken ct) => await routes.ForPageAsync(orgUnitId, ct) is not null;
+
     public async Task<ReleaseView> PublishAsync(Guid id, PublishRequest request, CancellationToken ct)
     {
         await entitlements.DemandAsync(Capabilities.ExperiencePageBuilder, ct);
