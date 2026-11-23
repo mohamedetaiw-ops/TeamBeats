@@ -22,6 +22,7 @@ public sealed class PolicyCompliance(
     ITenantContext context,
     PolicyRegister register,
     PolicyCampaigns campaigns,
+    PolicyExemptions exemptions,
     IEntitlementService entitlements,
     IAuthorizationService authz,
     IOrganizationHierarchy hierarchy,
@@ -255,11 +256,14 @@ public sealed class PolicyCompliance(
             .OrderBy(p => StatusOrder(p.Member.Status)).ThenBy(p => p.Member.DueAt).ThenBy(p => p.Member.UserId).ToList();
         var skip = offset ?? 0;
         var take = limit ?? PageDefault;
+        var covers = await exemptions.ActiveOnAsync(id, ct);
         var page = new List<CompliancePerson>();
         foreach (var p in filtered.Skip(skip).Take(take))
         {
+            // A person's own exemption, or one for any unit above their primary unit, the latest end date first.
+            var exempt = covers.Where(c => c.Subject == p.Member.UserId || (c.UnitId is { } u && p.Path.Contains(u))).Select(c => (DateOnly?)c.EndsOn).Max();
             page.Add(new CompliancePerson(await register.PersonAsync(p.Member.UserId, ct), p.Unit, NoneKey(p.Location), p.Manager, p.Member.Status, p.Member.DueAt,
-                p.Member.AttestedAt, p.Member.LeftAt, p.Member.FollowUp && p.Member.Status is MemberStatuses.Open or MemberStatuses.Overdue));
+                p.Member.AttestedAt, p.Member.LeftAt, p.Member.FollowUp && p.Member.Status is MemberStatuses.Open or MemberStatuses.Overdue, exempt));
         }
         return new CompliancePeople(page, filtered.Count, skip, take);
     }
@@ -273,7 +277,7 @@ public sealed class PolicyCompliance(
         {
             throw AppException.NotFound();
         }
-        return new PersonCompliance(await register.PersonAsync(userId, ct), await campaigns.PoliciesOfAsync(userId, ct));
+        return new PersonCompliance(await register.PersonAsync(userId, ct), await campaigns.PoliciesOfAsync(userId, ct), await exemptions.CoveringAsync(userId, ct));
     }
 
     /// <summary>

@@ -3583,7 +3583,9 @@
       "bookingRequest": "طلب حجز",
       "aiAction": "إجراء من تطبيق ذكاء اصطناعي",
       "agentAccess": "طلب الوصول إلى وكيل",
-      "assetAccess": "الوصول إلى أصول العلامة التجارية"
+      "assetAccess": "الوصول إلى أصول العلامة التجارية",
+      "policyReview": "مراجعة سياسة",
+      "policyExemption": "إعفاء من سياسة"
     },
     "delegation": {
       "none": "لا يوجد تفويض. موافقاتك تبقى معك.",
@@ -5096,7 +5098,8 @@
     "nav": {
       "label": "السياسات",
       "my": "سياساتي",
-      "register": "سجل السياسات"
+      "register": "سجل السياسات",
+      "exemptions": "الإعفاءات"
     },
     "status": {
       "draft": "مسودة",
@@ -5218,7 +5221,8 @@
       "analytics": "التحليلات",
       "reviews": "المراجعة الدورية",
       "reviewsOverdue": "المراجعة الدورية (متأخرة)",
-      "questions": "أسئلة الفهم"
+      "questions": "أسئلة الفهم",
+      "exemptions": "الإعفاءات"
     },
     "create": {
       "title": "سياسة جديدة",
@@ -5402,7 +5406,8 @@
       "next": "التالي",
       "showing": "{from} إلى {to} من {total}",
       "failed": "تعذر تحميل الأشخاص. حاول مرة أخرى.",
-      "needsFollowUp": "يحتاج إلى متابعة"
+      "needsFollowUp": "يحتاج إلى متابعة",
+      "exemptUntil": "معفى حتى {date}"
     },
     "person": {
       "register": "السياسات",
@@ -5414,7 +5419,12 @@
       "due": "الإصدار {number} مستحق قبل {date}",
       "overdue": "الإصدار {number} متأخر منذ {date}",
       "accepted": "أقرّ بالإصدار {number} في {date}",
-      "notAsked": "لم يُطلب منه الإقرار بعد"
+      "notAsked": "لم يُطلب منه الإقرار بعد",
+      "exemptions": "الإعفاءات",
+      "exemptionScope": "يشمل",
+      "exemptionEnds": "ينتهي",
+      "exemptionPerson": "هذا الشخص",
+      "exemptionUnit": "كل من في {unit}"
     },
     "training": {
       "title": "التدريب المرتبط",
@@ -5540,6 +5550,66 @@
         "en": "الإنجليزية",
         "ar": "العربية"
       }
+    },
+    "exemptions": {
+      "register": "السياسات",
+      "title": "الإعفاءات",
+      "heading": "الإعفاءات من {name}",
+      "description": "اطلب إعفاءك من هذه السياسة لمدة محددة مع ذكر السبب. يقرر مالك السياسة أولًا ثم فريق الامتثال.",
+      "requestTitle": "اطلب إعفاء",
+      "requestIntro": "اذكر لماذا لا يمكن تطبيق السياسة عليك حاليًا وحتى متى. ينتهي الإعفاء تلقائيًا في ذلك التاريخ.",
+      "for": "لمن الطلب",
+      "forMe": "لي",
+      "forPerson": "لشخص آخر",
+      "forUnit": "لوحدة كاملة",
+      "forUnitHint": "كل من في الوحدة والوحدات التابعة لها.",
+      "person": "الشخص",
+      "unit": "الوحدة",
+      "choosePerson": "اختر الشخص أولًا.",
+      "reason": "السبب",
+      "reasonHint": "حتى 2000 حرف. يقرؤه المالك وفريق الامتثال.",
+      "endsOn": "آخر يوم في الإعفاء",
+      "endsOnHint": "من اليوم وخلال سنة واحدة.",
+      "submit": "أرسل الطلب",
+      "busy": "جارٍ الإرسال",
+      "failed": "حدث خطأ. حاول مرة أخرى.",
+      "asked": "تم إرسال طلبك. يقرر مالك السياسة أولًا ثم فريق الامتثال.",
+      "all": "كل الإعفاءات",
+      "mine": "طلباتك وإعفاءاتك",
+      "none": "لا توجد إعفاءات بعد.",
+      "policy": "السياسة",
+      "who": "لمن",
+      "ends": "ينتهي",
+      "status": "الحالة",
+      "decision": "القرار",
+      "unitScope": "كل من في {unit}",
+      "askedBy": "طلبه {name} في {date}",
+      "decidedBy": "{name} في {date}",
+      "noDecision": "لم يُتخذ قرار بعد",
+      "withdraw": "اسحب",
+      "withdrawQuestion": "هل تسحب هذا الطلب؟ سيخرج من صندوق المعتمدين.",
+      "withdrawConfirm": "اسحب الطلب",
+      "cancel": "أبقِه",
+      "statuses": {
+        "pending": "بانتظار القرار",
+        "approved": "موافق عليه",
+        "rejected": "غير موافق عليه",
+        "withdrawn": "مسحوب",
+        "expired": "منتهٍ"
+      },
+      "registerTitle": "سجل الإعفاءات",
+      "registerDescription": "الإعفاءات من السياسات التي تديرها، مع من تشمل والسبب ومن وافق ومتى تنتهي.",
+      "registerEmpty": "لا توجد إعفاءات مطابقة.",
+      "filter": "اعرض",
+      "filters": {
+        "live": "المعلقة والموافق عليها",
+        "pending": "المعلقة",
+        "approved": "الموافق عليها",
+        "rejected": "غير الموافق عليها",
+        "withdrawn": "المسحوبة",
+        "expired": "المنتهية"
+      },
+      "policyName": "{code} {name}"
     }
   },
   "ai": {

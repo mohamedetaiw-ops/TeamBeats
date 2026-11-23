@@ -21,6 +21,12 @@ public sealed record PolicyReviewDue(Guid PolicyId, int Version, DateTimeOffset 
 /// <summary>A campaign member's due date passed without an attestation.</summary>
 public sealed record AttestationOverdue(Guid PolicyId, int Version, Guid CampaignId, Guid UserId) : IIntegrationEvent;
 
+/// <summary>An exemption came into the register (spec 025 US7): for a person, or for a unit and its subtree, until <paramref name="EndsAt"/>.</summary>
+public sealed record ExemptionApproved(Guid PolicyId, Guid ExemptionId, string Scope, Guid? UserId, Guid? OrgUnitId, DateTimeOffset EndsAt) : IIntegrationEvent;
+
+/// <summary>An exemption reached its end date and closed on its own (spec 025 US7 scenario 3).</summary>
+public sealed record ExemptionExpired(Guid PolicyId, Guid ExemptionId, string Scope, Guid? UserId, Guid? OrgUnitId) : IIntegrationEvent;
+
 /// <summary>
 /// Onboarding attestations (spec 025 FR-017, spec 022 FR-015). The onboarding journey asks a new joiner to attest to
 /// every published policy flagged "onboarding required" that applies to them; each becomes the person's own attestation

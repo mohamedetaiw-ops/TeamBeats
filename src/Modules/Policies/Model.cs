@@ -115,10 +115,11 @@ public sealed record ScheduledVersion(Guid Id, int Number, DateTimeOffset Effect
 /// What the current user may do on a policy. <paramref name="Ask"/> offers "Ask about this policy" (FR-011): a version is in
 /// force and the package includes the assistant and policy Q&amp;A.
 /// </summary>
-public sealed record PolicyRights(bool Manage, bool Edit, bool Review, bool History, bool Compliance, bool Ask = false, bool Analytics = false, bool Comprehension = false);
+public sealed record PolicyRights(bool Manage, bool Edit, bool Review, bool History, bool Compliance, bool Ask = false, bool Analytics = false, bool Comprehension = false,
+    bool Exemptions = false);
 
-/// <summary>What the current user may do in the register: create policies where they hold <c>policy.manage</c>.</summary>
-public sealed record RegisterRights(bool Create);
+/// <summary>What the current user may do in the register: create policies where they hold <c>policy.manage</c>, and open the exemption register.</summary>
+public sealed record RegisterRights(bool Create, bool Exemptions = false);
 
 public sealed record PolicyView(
     Guid Id,
@@ -298,14 +299,17 @@ public sealed record ComplianceView(
     IReadOnlyList<ComplianceGroup> ByLocation,
     IReadOnlyList<ComplianceGroup> ByManager);
 
-/// <summary>A person in the compliance view. <paramref name="NeedsFollowUp"/>: they failed every attempt of the campaign's comprehension check (US6 scenario 2).</summary>
+/// <summary>
+/// A person in the compliance view. <paramref name="NeedsFollowUp"/>: they failed every attempt of the campaign's comprehension check (US6 scenario 2).
+/// <paramref name="ExemptUntil"/>: the last day of an approved exemption that covers them (US7 scenario 2).
+/// </summary>
 public sealed record CompliancePerson(PolicyPerson Person, Guid? UnitId, string? Location, Guid? ManagerId, string Status, DateTimeOffset DueAt, DateTimeOffset? AttestedAt,
-    DateTimeOffset? LeftAt, bool NeedsFollowUp = false);
+    DateTimeOffset? LeftAt, bool NeedsFollowUp = false, DateOnly? ExemptUntil = null);
 
 public sealed record CompliancePeople(IReadOnlyList<CompliancePerson> Items, int Total, int Offset, int Limit);
 
 /// <summary>The per-person view (US3 scenario 2): every policy that applies to them with the last version attested and when.</summary>
-public sealed record PersonCompliance(PolicyPerson Person, IReadOnlyList<MyPolicyItem> Policies);
+public sealed record PersonCompliance(PolicyPerson Person, IReadOnlyList<MyPolicyItem> Policies, IReadOnlyList<ExemptionView>? Exemptions = null);
 
 public sealed record ComplianceRemindRequest(Guid? CampaignId, IReadOnlyList<Guid>? UserIds);
 

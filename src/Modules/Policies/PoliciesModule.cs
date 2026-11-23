@@ -27,6 +27,10 @@ public static class PoliciesModule
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<PolicyTaskSource>());
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, PolicyTaskSource>("policies.notify_approval");
         services.AddScoped<PolicyChecks>();
+        services.AddScoped<PolicyExemptions>();
+        services.AddScoped<ExemptionTaskSource>();
+        services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<ExemptionTaskSource>());
+        services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, ExemptionTaskSource>("policies.notify_exemption");
         services.AddScoped<PolicyCampaigns>();
         services.AddScoped<PolicyReviews>();
         services.AddScoped<Workflow.Contracts.IPersonalTaskSource>(sp => sp.GetRequiredService<PolicyReviews>());
@@ -184,6 +188,25 @@ public static class PoliciesModule
             IDbSession session, CancellationToken ct) =>
         {
             var view = await checks.ResetAsync(id, campaignId, userId, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapGet("/exemptions", async (string? status, PolicyExemptions exemptions, CancellationToken ct) => Results.Ok(await exemptions.RegisterAsync(status, ct)));
+
+        root.MapGet("/{id:guid}/exemptions", async (Guid id, PolicyExemptions exemptions, CancellationToken ct) => Results.Ok(await exemptions.ListAsync(id, ct)));
+
+        root.MapPost("/{id:guid}/exemptions", async (Guid id, ExemptionRequest request, PolicyExemptions exemptions, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await exemptions.RequestAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/policies/{id}/exemptions/{view.Id}", view);
+        });
+
+        root.MapPost("/{id:guid}/exemptions/{exemptionId:guid}/withdraw", async (Guid id, Guid exemptionId, PolicyExemptions exemptions, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var view = await exemptions.WithdrawAsync(id, exemptionId, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });

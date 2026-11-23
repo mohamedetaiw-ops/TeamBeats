@@ -35,9 +35,9 @@ export type PolicyReading = { policy: PolicySummary; version: VersionView; super
 
 export type RouteStep = { names?: Names | null; approvers?: string[] | null; complianceOfficers?: boolean };
 
-export type PolicyRights = { manage: boolean; edit: boolean; review: boolean; history: boolean; compliance: boolean; ask: boolean; analytics: boolean; comprehension?: boolean };
+export type PolicyRights = { manage: boolean; edit: boolean; review: boolean; history: boolean; compliance: boolean; ask: boolean; analytics: boolean; comprehension?: boolean; exemptions?: boolean };
 
-export type RegisterRights = { create: boolean };
+export type RegisterRights = { create: boolean; exemptions?: boolean };
 
 export type PolicyView = {
   id: string;
@@ -254,11 +254,45 @@ export type CompliancePerson = {
   leftAt: string | null;
   /** Failed every attempt of the campaign's comprehension check (spec 025 US6). */
   needsFollowUp?: boolean;
+  /** The last day of an approved exemption that covers the person (spec 025 US7). */
+  exemptUntil?: string | null;
 };
 
 export type CompliancePeople = { items: CompliancePerson[]; total: number; offset: number; limit: number };
 
-export type PersonCompliance = { person: PolicyPerson; policies: MyPolicyItem[] };
+export type PersonCompliance = { person: PolicyPerson; policies: MyPolicyItem[]; exemptions?: ExemptionView[] | null };
+
+export type ExemptionStatus = "pending" | "approved" | "rejected" | "withdrawn" | "expired";
+
+export type ExemptionView = {
+  id: string;
+  policy: PolicySummary;
+  version: number | null;
+  scope: "person" | "unit";
+  person: PolicyPerson | null;
+  unitId: string | null;
+  unitNames: Names | null;
+  reason: string;
+  endsOn: string;
+  endsAt: string;
+  status: ExemptionStatus;
+  requestedBy: PolicyPerson;
+  requestedAt: string;
+  approvals: { step: string; approver: PolicyPerson; onBehalfOf: PolicyPerson | null; at: string }[];
+  decidedBy: PolicyPerson | null;
+  decidedAt: string | null;
+  closedAt: string | null;
+  canWithdraw: boolean;
+};
+
+export type PolicyExemptionsView = {
+  policy: PolicySummary;
+  items: ExemptionView[];
+  rights: { request: boolean; requestFor: boolean; seesAll: boolean };
+};
+
+export const exemptionsHref = (id: string) => `/policies/${encodeURIComponent(id)}/exemptions`;
+export const exemptionRegisterHref = "/policies/exemptions";
 
 export const editHref = (id: string) => `/policies/${encodeURIComponent(id)}/edit`;
 export const reviewHref = (id: string) => `/policies/${encodeURIComponent(id)}/review`;

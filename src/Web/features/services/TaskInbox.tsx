@@ -21,6 +21,8 @@ const sourceIcons: Record<string, IconName> = {
   content_retire: "news",
   policy_approval: "policy",
   policy_attestation: "policy",
+  policy_review: "policy",
+  policy_exemption: "policy",
   agent_review: "spark",
   agent_prepared: "spark",
   eval_follow_up: "spark",
@@ -107,6 +109,10 @@ export function TaskInbox({ items, meId, units }: { items: InboxItem[]; meId: st
         return t("policyApproval");
       case "policy_attestation":
         return t("policyAttestation");
+      case "policy_review":
+        return t("policyReview");
+      case "policy_exemption":
+        return t("policyExemption");
       case "agent_review":
         return t("agentReview");
       case "agent_prepared":
