@@ -64,6 +64,40 @@ export type PolicyView = {
   onboardingRequired: boolean;
   /** The training course linked to the policy (spec 028 US4), and whether attesting waits for it. */
   training?: { courseId: string; beforeAttestation: boolean } | null;
+  /** Days before the review date when the owner gets the review task (spec 025 US5). */
+  reviewWindowDays?: number;
+  /** Where the policy stands with its review date, for the owner and compliance officers. */
+  reviewState?: ReviewState | null;
+};
+
+/** Where a policy in force stands with its review date (spec 025 US5); the API works it out. */
+export type ReviewState = "open" | "due_soon" | "overdue";
+
+export type ReviewOutcome = "no_change" | "minor_update" | "major_revision" | "retire" | "revised";
+
+export type ReviewView = {
+  id: string;
+  version: number;
+  dueAt: string;
+  openedAt: string;
+  overdueAt: string | null;
+  outcome: ReviewOutcome | null;
+  note: string | null;
+  reviewer: PolicyPerson | null;
+  completedAt: string | null;
+  draftVersionId: string | null;
+  nextReviewAt: string | null;
+};
+
+export type ReviewsView = {
+  policy: PolicySummary;
+  reviewMonths: number;
+  windowDays: number;
+  nextReviewAt: string | null;
+  state: ReviewState | null;
+  open: ReviewView | null;
+  history: ReviewView[];
+  rights: { complete: boolean; retire: boolean; revise: boolean };
 };
 
 export type PolicyListItem = {
@@ -79,6 +113,7 @@ export type PolicyListItem = {
   effectiveFrom: string | null;
   nextReviewAt: string | null;
   workingState: string | null;
+  reviewState?: ReviewState | null;
 };
 
 export type CategoryView = { id: string; names: Names };
@@ -206,6 +241,7 @@ export type PersonCompliance = { person: PolicyPerson; policies: MyPolicyItem[] 
 
 export const editHref = (id: string) => `/policies/${encodeURIComponent(id)}/edit`;
 export const reviewHref = (id: string) => `/policies/${encodeURIComponent(id)}/review`;
+export const reviewsHref = (id: string) => `/policies/${encodeURIComponent(id)}/reviews`;
 export const campaignsHref = (id: string) => `/policies/${encodeURIComponent(id)}/campaigns`;
 export const complianceHref = (id: string) => `/policies/${encodeURIComponent(id)}/compliance`;
 export const personComplianceHref = (userId: string) => `/policies/compliance/people/${encodeURIComponent(userId)}`;

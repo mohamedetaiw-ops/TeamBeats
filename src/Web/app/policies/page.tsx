@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
-import { nameIn, policyHref, type PolicyListItem, type RegisterRights } from "@/lib/policies/types";
+import { nameIn, policyHref, reviewsHref, type PolicyListItem, type RegisterRights } from "@/lib/policies/types";
 import { Header } from "@/components/shell/Header";
 import { Alert } from "@/components/ui/Alert";
 import { StateView } from "@/components/ui/StateView";
@@ -44,9 +44,9 @@ export default async function PolicyRegisterPage({ searchParams }: { searchParam
     return next.size > 0 ? `/policies?${next}` : "/policies";
   };
   const rows = list.ok ? list.data : [];
-  // What needs attention comes before the full list (DLS-109): policies in force whose review date has passed.
-  const today = new Date().toISOString();
-  const overdue = rows.filter((p) => p.status === "published" && p.nextReviewAt !== null && p.nextReviewAt < today);
+  // What needs attention comes before the full list (DLS-109, FR-021): reviews overdue or due within 30 days, as the API says.
+  const attention = rows.filter((p) => p.reviewState === "overdue" || p.reviewState === "due_soon");
+  const overdue = attention.filter((p) => p.reviewState === "overdue");
   // A column where every row says the same steps back: the value is said once above the table (DLS-109).
   const first = rows.length > 1 ? rows[0] : undefined;
   const oneStatus = first && rows.every((p) => p.status === first.status && !p.workingState) ? first.status : null;
@@ -98,15 +98,15 @@ export default async function PolicyRegisterPage({ searchParams }: { searchParam
           <StateView kind="empty" title={t("empty")} message="" />
         ) : (
           <>
-          {overdue.length > 0 ? (
-            <Alert tone="warning" title={t("overdue", { count: overdue.length })}>
+          {attention.length > 0 ? (
+            <Alert tone="warning" title={overdue.length > 0 ? t("overdue", { count: overdue.length }) : t("dueSoon", { count: attention.length })}>
               <ul className="policies-attention" data-testid="policy-attention">
-                {overdue.slice(0, 3).map((p) => (
+                {attention.slice(0, 3).map((p) => (
                   <li key={p.id}>
-                    <Link href={policyHref(p.id)}>
+                    <Link href={reviewsHref(p.id)}>
                       <bdi>{nameIn(p.names, locale)}</bdi>
                     </Link>
-                    <span className="policies-meta"> · {t("reviewWas", { date: date(p.nextReviewAt) })}</span>
+                    <span className="policies-meta"> · {t(p.reviewState === "overdue" ? "reviewWas" : "reviewDue", { date: date(p.nextReviewAt) })}</span>
                   </li>
                 ))}
               </ul>
@@ -152,10 +152,10 @@ export default async function PolicyRegisterPage({ searchParams }: { searchParam
                     <td data-priority="low" data-label={t("effective")}>{date(p.effectiveFrom)}</td>
                     <td data-label={t("review")}>
                       {date(p.nextReviewAt)}
-                      {overdue.includes(p) ? (
+                      {p.reviewState ? (
                         <>
                           {" "}
-                          <Badge tone="warning">{t("late")}</Badge>
+                          <Badge tone={p.reviewState === "overdue" ? "warning" : "info"}>{t(`reviewState.${p.reviewState}`)}</Badge>
                         </>
                       ) : null}
                     </td>

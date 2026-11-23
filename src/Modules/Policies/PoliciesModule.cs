@@ -27,6 +27,9 @@ public static class PoliciesModule
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<PolicyTaskSource>());
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, PolicyTaskSource>("policies.notify_approval");
         services.AddScoped<PolicyCampaigns>();
+        services.AddScoped<PolicyReviews>();
+        services.AddScoped<Workflow.Contracts.IPersonalTaskSource>(sp => sp.GetRequiredService<PolicyReviews>());
+        services.AddMessageHandler<Contracts.PolicyPublished, PolicyReviews>("policies.review_revised");
         services.AddScoped<Content.Contracts.IOfflineSource, PolicyOfflineSource>();
         services.AddScoped<PolicyCompliance>();
         services.AddScoped<Contracts.IPolicyObligations, PolicyObligations>();
@@ -136,6 +139,16 @@ public static class PoliciesModule
             IDbSession session, CancellationToken ct) =>
         {
             var view = await approvals.ResolveCommentAsync(id, versionId, commentId, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapGet("/{id:guid}/reviews", async (Guid id, PolicyReviews reviews, CancellationToken ct) => Results.Ok(await reviews.ListAsync(id, ct)));
+
+        root.MapPost("/{id:guid}/reviews/{reviewId:guid}/complete", async (Guid id, Guid reviewId, ReviewRequest request, PolicyReviews reviews, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var view = await reviews.CompleteAsync(id, reviewId, request, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });

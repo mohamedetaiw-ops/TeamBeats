@@ -3,12 +3,14 @@ import { expect, expectAccessible, signInWithDevForm, test } from "../support/fi
 import { msg, type LaunchLocale } from "../support/messages";
 import { createTenant, type TestTenant } from "../support/platform";
 import { hostOrigin } from "../support/stack";
+import { tenantApi, tenantApiAs } from "../support/pages";
 
 /**
  * Spec 025 T011 (second part): a compliance officer creates a policy and writes two clauses in both languages; a second
  * compliance officer opens the approval from the inbox, comments on a clause and approves it; the first launches the
  * attestation campaign and follows it in the compliance view down to one person. In English and Arabic, with axe on
- * every screen.
+ * every screen. Spec 025 T013: the scheduled review of a policy in force opens in the owner's inbox, the owner records
+ * "no change" from the review page with the keyboard, and the review history shows it.
  */
 for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
   test.describe(`policy authoring in ${locale}`, () => {
@@ -99,6 +101,50 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.waitForURL(/\/policies\/compliance\/people\/[0-9a-f-]{36}$/);
       await expect(page.getByTestId("person-policies").getByRole("link", { name: names[locale] })).toBeVisible();
       await expectAccessible(page, testInfo, `policy-person-${locale}`);
+    });
+
+    test("answer a scheduled review from the inbox", async ({ page }, testInfo) => {
+      // The policy maintenance worker runs once a minute, so the review can take up to a minute to open.
+      test.setTimeout(180_000);
+      // A policy in force with a one-month cycle, so its 60-day review window is open at once.
+      const admin = await tenantApi(tenant);
+      const created = await admin.post("/api/v1/policies", { data: { code: "TRV-01", names: { en: "Travel", ar: "السفر" }, reviewMonths: 1, reviewWindowDays: 60 } });
+      expect(created.ok(), await created.text()).toBe(true);
+      const id = ((await created.json()) as { id: string }).id;
+      const body = (text: string) => ({ blocks: [{ type: "paragraph", children: [{ text }] }] });
+      const draft = await admin.put(`/api/v1/policies/${id}/draft`, {
+        data: { titles: { en: "Travel", ar: "السفر" }, clauses: [{ level: 1, titles: { en: "Booking", ar: "الحجز" }, bodies: { en: body("Book early."), ar: body("احجز مبكرًا.") } }] },
+      });
+      expect(draft.ok(), await draft.text()).toBe(true);
+      expect((await admin.post(`/api/v1/policies/${id}/submit`, { data: {} })).ok()).toBe(true);
+      const rana = await tenantApiAs(tenant, `rana@${tenant.key}.example`);
+      const tasks = (await (await rana.get("/api/v1/tasks")).json()) as { source: string; taskId: string }[];
+      const approval = tasks.find((t) => t.source === "policy_approval");
+      expect(approval).toBeDefined();
+      expect((await rana.post(`/api/v1/tasks/${approval!.taskId}/decision`, { data: { outcome: "approve" } })).ok()).toBe(true);
+      await rana.dispose();
+      // The maintenance worker opens the review within a minute.
+      await expect
+        .poll(async () => ((await (await admin.get(`/api/v1/policies/${id}/reviews`)).json()) as { open: unknown }).open !== null, { timeout: 90_000, intervals: [2_000] })
+        .toBe(true);
+      await admin.dispose();
+
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/tasks`);
+      await page.getByTestId("task-inbox").getByRole("link", { name: locale === "ar" ? "السفر" : "Travel" }).click();
+      await page.waitForURL(/\/reviews$/);
+      await expect(page.getByTestId("review-open")).toBeVisible();
+      await expectAccessible(page, testInfo, `policy-scheduled-review-${locale}`);
+      const noChange = page.getByRole("radio", { name: m("policies.reviews.outcomes.no_change") });
+      await noChange.focus();
+      await page.keyboard.press("Space");
+      await expect(noChange).toBeChecked();
+      await page.getByLabel(m("policies.reviews.note")).fill(locale === "ar" ? "ما زالت صحيحة." : "Still right.");
+      await page.getByRole("button", { name: m("policies.reviews.submit") }).click();
+      await expect(page.getByTestId("review-done").getByRole("status")).toBeVisible();
+      await expect(page.getByTestId("review-history").locator("tbody tr")).toHaveCount(1);
+      await expect(page.getByTestId("review-history")).toContainText(m("policies.reviews.outcomes.no_change"));
+      await expectAccessible(page, testInfo, `policy-scheduled-review-done-${locale}`);
     });
   });
 }

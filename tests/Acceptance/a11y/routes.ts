@@ -224,6 +224,7 @@ export const routes: readonly Route[] = [
   { path: "/policies/[id]/compliance", tier: "detail" },
   { path: "/policies/[id]/edit", tier: "detail" },
   { path: "/policies/[id]/review", tier: "detail" },
+  { path: "/policies/[id]/reviews", tier: "detail" },
   { path: "/policies/[id]/versions/[number]", tier: "detail" },
   { path: "/policies/compliance/people/[userId]", tier: "detail" },
   { path: "/policies/my", tier: "other" },

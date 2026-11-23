@@ -154,6 +154,32 @@ public sealed class PolicyApprovals(
     }
 
     /// <summary>
+    /// Starts a revision from a review outcome (US5 scenario 3): a draft copied from the version in force, marked
+    /// material for a major revision, which the owner edits and submits to the policy's route. A working version that
+    /// already exists is kept and returned.
+    /// </summary>
+    internal async Task<Guid> StartRevisionAsync(PolicyRow policy, bool material, CancellationToken ct)
+    {
+        if (await register.WorkingAsync(policy.Id, forUpdate: true, ct) is { } working)
+        {
+            return working.Id;
+        }
+        var user = context.RequireUser();
+        var id = Ids.New();
+        var now = clock.UtcNow;
+        await session.ExecAsync(
+            """
+            insert into policies.policy_version (tenant_id, id, policy_id, state, locales, titles, clauses, material, change_note, editors, created_at, updated_at)
+            select platform.current_tenant_id(), @id, policy_id, 'draft', locales, titles, clauses, @material, null, array[@user], @now, @now
+            from policies.policy_version where policy_id = @policy and number = @number
+            """, new { id, policy = policy.Id, number = policy.CurrentVersion, material, user, now }, ct);
+        await register.RefreshStatusAsync(policy.Id, ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.PolicyDraftSaved, Securables.Policy, policy.Id.ToString(), TargetOrgUnitId: policy.OrgUnitId,
+            Changes: new { version = id, from = policy.CurrentVersion, material, review = true }), ct);
+        return id;
+    }
+
+    /// <summary>
     /// Submits the draft (US1 scenario 1). Every clause must be complete in every locale so the variants are approved
     /// together; the effective date is today or later, in the tenant's time zone.
     /// </summary>

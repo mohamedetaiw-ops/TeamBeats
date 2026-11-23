@@ -444,6 +444,7 @@ public static class AuditActions
     public const string PolicyCampaignClosed = "policy.campaign_closed";
     public const string PolicyAttested = "policy.attested";
     public const string PolicyTrainingLinked = "policy.training_linked";
+    public const string PolicyReviewCompleted = "policy.review_completed";
 
     // 013
     public const string AiPolicyChanged = "ai.policy_changed";
@@ -656,7 +657,7 @@ public static class AuditActions
         DocConnectedUploaded, DocConnectedRenamed, DocConnectedSettings, DocConnectedRemoved, DocLabelMapped,
         AssetCollectionCreated, AssetCollectionChanged, AssetUploaded, AssetChanged, AssetExpired, AssetAccessRequested, AssetAccessDecided,
         PolicyCreated, PolicyChanged, PolicyDraftSaved, PolicySubmitted, PolicyWithdrawn, PolicyApproved, PolicyReturned, PolicyPublished, PolicySuperseded,
-        PolicyRetired, PolicyCampaignLaunched, PolicyCampaignReminded, PolicyCampaignClosed, PolicyAttested, PolicyTrainingLinked,
+        PolicyRetired, PolicyCampaignLaunched, PolicyCampaignReminded, PolicyCampaignClosed, PolicyAttested, PolicyTrainingLinked, PolicyReviewCompleted,
         AiPolicyChanged, AiRouteChangeProposed, AiRouteChangeOverridden, AiRouteChangeApplied, AiRouteChangeRejected, AiCatalogueChanged, AiLoggingWindowOpened, AiLoggingWindowClosed,
         SearchBestBetChanged, SearchSynonymsChanged, SearchRetrievalChangeProposed, SearchRetrievalChangeDecided, SearchRetrievalChangeOverridden,
         SearchRetrievalChangeCancelled, SearchFederatedChanged, SearchAiSummaryChanged, SearchQueryTextChanged,

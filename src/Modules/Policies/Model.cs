@@ -50,7 +50,8 @@ public sealed record PolicyRequest(
     IReadOnlyList<RouteStepSetting>? Route,
     int? ReviewMonths,
     IReadOnlyList<Guid>? Related,
-    bool? OnboardingRequired = null);
+    bool? OnboardingRequired = null,
+    int? ReviewWindowDays = null);
 
 public sealed record CategoryRequest(IReadOnlyDictionary<string, string>? Names);
 
@@ -142,7 +143,9 @@ public sealed record PolicyView(
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
     bool OnboardingRequired,
-    PolicyTraining? Training = null);
+    PolicyTraining? Training = null,
+    int ReviewWindowDays = PolicyReviews.DefaultWindowDays,
+    string? ReviewState = null);
 
 /// <summary>The training course linked to a policy (spec 028 US4), and whether attesting waits for its completion.</summary>
 public sealed record PolicyTraining(Guid CourseId, bool BeforeAttestation);
@@ -161,7 +164,8 @@ public sealed record PolicyListItem(
     int? CurrentVersion,
     DateTimeOffset? EffectiveFrom,
     DateTimeOffset? NextReviewAt,
-    string? WorkingState);
+    string? WorkingState,
+    string? ReviewState = null);
 
 public sealed record VersionHistoryItem(Guid Id, int Number, string State, bool Material, string? ChangeNote, DateTimeOffset? EffectiveFrom, DateTimeOffset? SupersededAt,
     IReadOnlyList<ApprovalView> Approvals);

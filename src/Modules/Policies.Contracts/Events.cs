@@ -15,6 +15,9 @@ public sealed record PolicySuperseded(Guid PolicyId, int Version, int By) : IInt
 /// <summary>A person attested to a version (spec 025 FR-007).</summary>
 public sealed record PolicyAttested(Guid PolicyId, int Version, Guid UserId, Guid? CampaignId, string Channel) : IIntegrationEvent;
 
+/// <summary>The review window of a policy opened and its owner has the review task (spec 025 US5).</summary>
+public sealed record PolicyReviewDue(Guid PolicyId, int Version, DateTimeOffset DueAt, Guid OwnerId) : IIntegrationEvent;
+
 /// <summary>A campaign member's due date passed without an attestation.</summary>
 public sealed record AttestationOverdue(Guid PolicyId, int Version, Guid CampaignId, Guid UserId) : IIntegrationEvent;
 
