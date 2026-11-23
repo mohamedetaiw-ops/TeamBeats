@@ -8168,7 +8168,11 @@
     "tabs": {
       "agents": "Agents",
       "calibration": "Judge calibration",
-      "settings": "Settings"
+      "settings": "Settings",
+      "production": "Production",
+      "review": "Review queue",
+      "outcomes": "Outcomes",
+      "units": "By unit"
     },
     "untitled": "Untitled",
     "none": "None",
@@ -8219,7 +8223,8 @@
     "trigger": {
       "manual": "Started by a person",
       "gate": "Release gate",
-      "route": "Model route check"
+      "route": "Model route check",
+      "comparison": "Online comparison"
     },
     "caseStatus": {
       "pending": "Waiting",
@@ -8253,7 +8258,8 @@
       "platform": "Platform",
       "tenant": "Organization wide",
       "agent": "This agent",
-      "calibration": "Judge calibration"
+      "calibration": "Judge calibration",
+      "org": "Organization unit"
     },
     "classification": {
       "public": "Public",
@@ -8332,7 +8338,9 @@
       "compare_a": "First run",
       "compare_b": "Second run",
       "compareButton": "Compare",
-      "runOption": "Version {version}, {when}"
+      "runOption": "Version {version}, {when}",
+      "production": "Production quality",
+      "comparisons": "Online comparisons"
     },
     "start": {
       "version": "Version to evaluate",
@@ -8517,7 +8525,8 @@
         "edit": "Editing",
         "import": "Import"
       },
-      "created": "Created"
+      "created": "Created",
+      "backUnit": "Back to the unit's settings"
     },
     "calibration": {
       "title": "Judge calibration",
@@ -8567,6 +8576,223 @@
       "intro": "The assistant's platform suites check grounded answers with citations, the answer language and resistance to instructions hidden in passages, in each of your organization's languages. A change to the assistant's model route runs them first.",
       "start": "Evaluate the assistant",
       "noRuns": "The assistant has not been evaluated yet."
+    },
+    "production": {
+      "title": "Production evaluation",
+      "policy": "Sampling policy",
+      "intro": "Score a share of live agent runs in the background, so you see quality in real use and not only on test sets. People can opt out where you allow it.",
+      "unavailable": "Production evaluation is not part of your package.",
+      "enabled": "Sample live runs",
+      "enabledHint": "When this is off, no live run is sampled or scored.",
+      "rate": "Share of runs sampled (%)",
+      "cap": "Most samples a day",
+      "retention": "Days to keep sampled content",
+      "retentionHint": "Scores are kept. The question, answer and steps are removed after this many days, and 0 keeps no content at all.",
+      "save": "Save policy",
+      "saved": "The policy is saved."
+    },
+    "productionView": {
+      "back": "Back to the dashboard",
+      "unavailable": "Production scores are not available to you here.",
+      "summary": "Last {days} days",
+      "counts": "{samples} runs sampled, {scored} scored.",
+      "latency": "Latency (95th percentile)",
+      "tokens": "Average tokens",
+      "denials": "Policy denials",
+      "noScores": "No scores yet in this window.",
+      "value": "Score",
+      "samples": "Samples",
+      "recent": "Recent samples",
+      "noSamples": "No runs have been sampled yet.",
+      "sampledAt": "Sampled",
+      "mode": "Scoring",
+      "outcome": "Result",
+      "scores": "Scores",
+      "queued": "Waiting to be scored",
+      "modes": {
+        "full": "Full",
+        "deterministic": "Checks only",
+        "metadata": "Run details only"
+      }
+    },
+    "drift": {
+      "title": "Drift alerts",
+      "intro": "An alert opens when a metric in one language falls below its baseline or threshold over {days} days, with at least {samples} scored samples.",
+      "none": "No drift found.",
+      "alertTitle": "{metric} in {language}",
+      "statuses": {
+        "open": "Open",
+        "resolved": "Resolved"
+      },
+      "values": "Now {value} against a baseline of {baseline} and a threshold of {threshold}, over {samples} samples.",
+      "models": "Models used:",
+      "examples": "{count, plural, one {# example run is attached.} other {# example runs are attached.}}",
+      "routing": "Review model routing"
+    },
+    "comparisons": {
+      "intro": "Send a share of people to a challenger version or model and compare it with the version in force on live runs. The AI Policy Administrator approves it once its gate passes.",
+      "propose": "Propose a comparison",
+      "proposeHint": "The champion is version {version}, the version in force.",
+      "kind": "Challenger",
+      "kinds": {
+        "version": "Another version",
+        "model": "Another model"
+      },
+      "challengerVersion": "Version",
+      "challengerModel": "Model",
+      "modelHint": "A model name from the AI gateway catalogue, as written there.",
+      "share": "Share of people (%)",
+      "purpose": "Purpose",
+      "proposeAction": "Propose",
+      "proposed": "The comparison is proposed.",
+      "unavailable": "Online comparisons are not part of your package.",
+      "title": "Comparisons",
+      "empty": "No comparisons yet.",
+      "titleModel": "Version {version} against model {model}",
+      "titleVersion": "Version {champion} against version {challenger}",
+      "statuses": {
+        "proposed": "Proposed",
+        "running": "Running",
+        "stopped": "Stopped",
+        "rejected": "Rejected"
+      },
+      "shareValue": "{share} of people",
+      "gate": "Gate:",
+      "stopReasons": {
+        "stopped": "Stopped by a person.",
+        "withdrawn": "Withdrawn before it started.",
+        "champion_changed": "Stopped because another version came into force."
+      },
+      "note": "Decision note: {note}",
+      "armsCaption": "Scores per arm on sampled live runs",
+      "armSamples": "{arm} ({samples} samples)",
+      "arms": {
+        "champion": "Champion",
+        "challenger": "Challenger"
+      },
+      "latency": "Latency (95th percentile)",
+      "denials": "Policy denials",
+      "decisionNote": "Note",
+      "approve": "Approve",
+      "reject": "Reject",
+      "approved": "The comparison is running.",
+      "rejected": "The comparison is rejected.",
+      "stop": "Stop",
+      "withdraw": "Withdraw",
+      "stoppedDone": "The comparison has ended."
+    },
+    "review": {
+      "title": "Review queue",
+      "intro": "Live runs flagged for a low score, negative feedback, an uncertain judge or a policy denial. Your verdicts correct the scores and can add the case to a dataset or a calibration set.",
+      "unavailable": "The review queue is not part of your package.",
+      "filter": "Show",
+      "statuses": {
+        "open": "To review",
+        "reviewed": "Reviewed"
+      },
+      "empty": {
+        "open": "Nothing to review.",
+        "reviewed": "Nothing reviewed yet."
+      },
+      "agent": "Agent",
+      "reasons": "Flagged for",
+      "flagged": "Flagged",
+      "reviewedAt": "Reviewed",
+      "reason": {
+        "low_score": "Low score",
+        "negative_feedback": "Negative feedback",
+        "judge_uncertain": "Uncertain judge",
+        "policy_denial": "Policy denial"
+      },
+      "back": "Back to the queue",
+      "item": "Flagged run",
+      "scores": "Scores of the run",
+      "content": "What happened",
+      "question": "Question",
+      "answer": "Answer",
+      "evidence": "Evidence",
+      "steps": "Steps",
+      "withheld": {
+        "not_retained": "The content of this run is no longer kept.",
+        "not_permitted": "You may not see the content of this run."
+      },
+      "verdicts": "Verdicts",
+      "noJudged": "No metric of this run was judged.",
+      "judge": "Judge",
+      "reviewer": "Your verdict",
+      "verdictFor": "Your verdict for {metric}",
+      "overturned": "Changed",
+      "note": "Note",
+      "decide": "Save verdicts",
+      "decided": "Your verdicts are saved.",
+      "noteValue": "Note: {note}",
+      "promotedTo": "Added to a dataset as version {version}.",
+      "promote": "Add to a dataset",
+      "promoteHint": "The texts are redacted again before they are kept as a case.",
+      "noDatasets": "This agent has no dataset yet.",
+      "dataset": "Dataset",
+      "input": "Question for the case",
+      "expected": "Expected answer",
+      "expectedHint": "Leave empty to keep the agent's answer when every verdict passed.",
+      "promoteAction": "Add case",
+      "promoted": "The case is added."
+    },
+    "outcomes": {
+      "title": "Business outcomes",
+      "intro": "How often each agent completes its task, escalates or resolves it without help, and the hours it saves against the time the task took before.",
+      "unavailable": "Business outcomes are not part of your package.",
+      "window": "Period",
+      "days": "{days} days",
+      "withheldHint": "Figures for fewer than {size} people are withheld. Showing the last {days} days.",
+      "empty": "No agents to show.",
+      "agent": "Agent",
+      "baseline": "Baseline",
+      "runs": "Runs",
+      "completion": "Completed",
+      "escalation": "Escalated",
+      "resolved": "Resolved without help",
+      "hoursSaved": "Hours saved",
+      "minutesValue": "{minutes} minutes",
+      "noBaseline": "No baseline",
+      "withheld": "Withheld: too few people",
+      "edit": "Set baseline for {agent}",
+      "editTitle": "Baseline for {agent}",
+      "editHint": "Name the task the agent replaces and the minutes it took a person before.",
+      "taskName": "Task in {language}",
+      "minutes": "Minutes per task",
+      "save": "Save baseline",
+      "remove": "Remove baseline",
+      "cancel": "Cancel",
+      "saved": "The baseline is saved.",
+      "removed": "The baseline is removed."
+    },
+    "units": {
+      "title": "Evaluation by unit",
+      "intro": "A unit can set thresholds stricter than the levels above it and add its own datasets to the runs of its agents.",
+      "noUnits": "There are no organization units.",
+      "choose": "Units",
+      "editing": "Settings of {unit}",
+      "hidden": "You may not see this unit's settings.",
+      "unavailable": "Settings by unit are not part of your package.",
+      "above": "Levels above",
+      "noAbove": "No unit above sets anything.",
+      "aboveValue": "sets {rules} rules and {datasets} datasets",
+      "rules": "Rules in force",
+      "thresholdFrom": "Threshold set by",
+      "severityFrom": "Severity set by",
+      "own": "This unit's rules",
+      "ownHint": "Thresholds are percentages. A rule may only be stricter than the levels above.",
+      "datasets": "Unit datasets",
+      "datasetsHint": "Chosen datasets run for every agent in this unit and the units below it.",
+      "noDatasets": "This unit has no datasets yet.",
+      "datasetsUsed": "Datasets in use",
+      "openDataset": "Open",
+      "nameEn": "New dataset name in English",
+      "nameAr": "New dataset name in Arabic",
+      "createDataset": "Create dataset",
+      "save": "Save unit settings",
+      "saved": "The unit settings are saved.",
+      "created": "The dataset is created. Open it to add cases."
     }
   },
   "analytics": {
@@ -11667,6 +11893,13 @@
       "resetQuestion": "Reset appearance on every device and every page you arranged? Favorites and recent visits stay.",
       "resetConfirm": "Reset",
       "cancel": "Cancel"
+    },
+    "evaluation": {
+      "title": "AI evaluation",
+      "hint": "Your organization scores a share of live AI agent runs to check their quality.",
+      "optOut": "Keep my runs out of quality checks",
+      "optOutHint": "When this is on, your conversations with AI agents are never sampled for evaluation.",
+      "failed": "That did not work. Try again."
     }
   },
   "hr_integration": {

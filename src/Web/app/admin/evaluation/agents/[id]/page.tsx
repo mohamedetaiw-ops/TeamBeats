@@ -47,6 +47,8 @@ export default async function EvaluationDashboardPage({ params }: { params: Prom
       <div className="agents">
         <p className="agents-row">
           <Link href={`/admin/evaluation/agents/${d.agentId}/suite`}>{t("dashboard.suite")}</Link>
+          <Link href={`/admin/evaluation/agents/${d.agentId}/production`}>{t("dashboard.production")}</Link>
+          <Link href={`/admin/evaluation/agents/${d.agentId}/comparisons`}>{t("dashboard.comparisons")}</Link>
           <Link href={`/admin/agents/${d.agentId}`}>{t("dashboard.agent")}</Link>
         </p>
         <section className="agents-section" aria-labelledby="eval-summary">

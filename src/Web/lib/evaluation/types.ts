@@ -239,6 +239,163 @@ export type CalibrationLabel = {
   labelledAt: string;
 };
 
+/* R2 views (spec 034 T018 to T023). */
+
+export type ProductionPolicyView = { available: boolean; enabled: boolean; ratePercent: number; dailyCap: number; retentionDays: number; updatedAt: string | null; canEdit: boolean };
+
+export type ProductionOptOutView = { available: boolean; optedOut: boolean };
+
+export type ProductionMetric = { key: string; locale: string; value: number | null; samples: number };
+
+export type RunStep = { n: number; kind: string; tool: string | null; decision: string; reason: string | null };
+
+export type ProductionContent = { question: string; answer: string | null; evidence: string; steps: RunStep[]; escalation: string | null };
+
+export type ProductionSample = {
+  id: string;
+  agentRunId: string;
+  agentVersion: number;
+  language: string;
+  classification: string;
+  mode: string;
+  status: string;
+  runStatus: string;
+  outcome: string | null;
+  latencyMs: number;
+  tokens: number;
+  toolCalls: number;
+  denials: number;
+  metrics: Record<string, CaseMetric>;
+  sampledAt: string;
+  scoredAt: string | null;
+  content: ProductionContent | null;
+  contentExpiresAt: string | null;
+};
+
+export type ProductionSummary = {
+  agentId: string;
+  windowDays: number;
+  samples: number;
+  scored: number;
+  metrics: ProductionMetric[];
+  latencyP95Ms: number | null;
+  averageTokens: number | null;
+  denials: number;
+  recent: ProductionSample[];
+};
+
+export type DriftAlert = {
+  id: string;
+  agentVersion: number;
+  metric: string;
+  locale: string;
+  baseline: number | null;
+  threshold: number | null;
+  value: number;
+  samples: number;
+  examples: string[];
+  models: string[];
+  status: string;
+  detectedAt: string;
+  updatedAt: string;
+  resolvedAt: string | null;
+};
+
+export type DriftView = { agentId: string; windowDays: number; minSamples: number; margin: number; alerts: DriftAlert[]; routingLink: string };
+
+export type ArmResult = { arm: string; samples: number; metrics: ProductionMetric[]; latencyP95Ms: number | null; averageTokens: number | null; denials: number };
+
+export type Comparison = {
+  id: string;
+  agentId: string;
+  kind: string;
+  championVersion: number;
+  challengerVersion: number;
+  challengerModel: string | null;
+  sharePercent: number;
+  status: string;
+  purpose: string | null;
+  gateStatus: string;
+  gateRunId: string | null;
+  proposedAt: string;
+  decidedAt: string | null;
+  decisionNote: string | null;
+  startedAt: string | null;
+  stoppedAt: string | null;
+  stopReason: string | null;
+  arms: ArmResult[];
+  canDecide: boolean;
+  canStop: boolean;
+};
+
+export type ComparisonsView = { agentId: string; available: boolean; canPropose: boolean; comparisons: Comparison[] };
+
+export type ReviewItemSummary = {
+  id: string;
+  agentId: string;
+  agentName: Localized | null;
+  agentVersion: number;
+  language: string;
+  reasons: string[];
+  status: string;
+  createdAt: string;
+  reviewedAt: string | null;
+};
+
+export type ReviewQueueView = { available: boolean; items: ReviewItemSummary[] };
+
+export type StoredVerdict = { verdict: string; score: number; reason: string | null };
+
+export type ReviewItemView = ReviewItemSummary & {
+  sampleId: string;
+  classification: string;
+  mode: string;
+  outcome: string | null;
+  metrics: Record<string, CaseMetric>;
+  judge: Record<string, StoredVerdict>;
+  verdicts: Record<string, { judge: string; reviewer: string }>;
+  note: string | null;
+  content: ProductionContent | null;
+  contentWithheld: string | null;
+  promotedDatasetId: string | null;
+  promotedVersion: number | null;
+  datasets: DatasetSummary[];
+  canPromote: boolean;
+};
+
+export type OutcomeBaseline = { taskNames: Localized; minutes: number; updatedAt: string };
+
+export type AgentOutcome = {
+  agentId: string;
+  agentName: Localized | null;
+  baseline: OutcomeBaseline | null;
+  withheld: boolean;
+  runs: number | null;
+  completionRate: number | null;
+  escalationRate: number | null;
+  resolvedWithoutHelpRate: number | null;
+  hoursSaved: number | null;
+};
+
+export type OutcomesView = { available: boolean; days: number; minGroupSize: number; agents: AgentOutcome[]; canEdit: boolean };
+
+export type UnitLevel = { unitId: string; unitNames: Localized | null; version: number; metrics: SuiteMetric[]; datasetCount: number };
+
+export type UnitSettingsView = {
+  unitId: string;
+  available: boolean;
+  version: number;
+  metrics: SuiteMetric[];
+  datasets: string[];
+  ownDatasets: DatasetSummary[];
+  above: UnitLevel[];
+  rules: EffectiveRule[];
+  canEdit: boolean;
+  updatedAt: string | null;
+};
+
+export const REVIEW_VERDICTS = ["pass", "fail"] as const;
+
 /** Every metric value is a share of cases, or for latency and cost the increase over the baseline, so it reads as a percentage. */
 export const LOCALES = ["en", "ar"] as const;
 export const SEVERITIES = ["warning", "blocking", "critical"] as const;

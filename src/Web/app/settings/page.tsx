@@ -12,6 +12,8 @@ import { PagesReset } from "@/features/shell/PagesReset";
 import { PreferencesData } from "@/features/shell/PreferencesData";
 import { PreferenceControls } from "@/features/shell/SettingsPanel";
 import { KioskBadgeSettings } from "@/features/kiosk/KioskBadgeSettings";
+import { ProductionOptOut } from "@/features/evaluation/ProductionOptOut";
+import type { ProductionOptOutView } from "@/lib/evaluation/types";
 import type { Badge } from "@/lib/kiosk";
 import "@/features/shell/preferences.css";
 
@@ -45,11 +47,13 @@ export default async function PreferencesPage() {
   }
   // The kiosk badge section shows only to someone who has a badge, in a package with kiosks.
   // Connected API apps show only where the package has the public API (spec 035 FR-029).
-  const [values, t, badge, connected] = await Promise.all([
+  // The evaluation opt-out shows only where the tenant samples live runs for evaluation (spec 034 US7).
+  const [values, t, badge, connected, evaluation] = await Promise.all([
     getPreferences(),
     getTranslations("preferences"),
     apiGet<Badge>("/api/v1/me/kiosk-badge"),
     apiGet<unknown[]>("/api/v1/me/connected-apps"),
+    apiGet<ProductionOptOutView>("/api/v1/evaluation/production/opt-out"),
   ]);
   const locales = me.data.tenant.enabledLocales.filter((l) => l === "ar" || l === "en");
   return (
@@ -83,6 +87,11 @@ export default async function PreferencesPage() {
         {badge.ok && badge.data.issued ? (
           <Section id="pref-kiosk" icon="lock" title={t("kiosk.title")} hint={t("kiosk.hint")}>
             <KioskBadgeSettings initial={badge.data} />
+          </Section>
+        ) : null}
+        {evaluation.ok && evaluation.data.available ? (
+          <Section id="pref-evaluation" icon="spark" title={t("evaluation.title")} hint={t("evaluation.hint")}>
+            <ProductionOptOut initial={evaluation.data} />
           </Section>
         ) : null}
         <Section id="pref-pages" icon="home" title={t("pages.title")} hint={t("pages.hint")}>
