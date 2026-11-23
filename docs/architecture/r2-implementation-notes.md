@@ -2182,3 +2182,10 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - Audited once per import as `policy.paper_imported` with the people, versions and days imported and the number refused. Campaign counts show how many attested on paper (`counts.paper`); the evidence pack CSV shows the source of each attestation. The scan opens for the people who manage the policy (`GET /paper-imports/{importId}/scan`).
 - Defaults where the spec is silent: people are matched by work email only; there is no undo of an import, as attestation records cannot be changed; the scan is kept as long as the attestations.
 
+
+## Long leave deadline pause (spec 025 R2, T020; edge cases)
+
+- Someone who runs a campaign (the policy owner or a person who manages the policy) pauses one member's deadline from the compliance view of the policy: `POST /api/v1/policies/{id}/campaigns/{campaignId}/members/{userId}/pause` with `until`, the last day away (from tomorrow up to 365 days ahead), and a reason of 1 to 500 characters. The policy view carries `rights.pause`.
+- Only members who still owe the attestation (open or overdue) in an open campaign can be paused, once at a time. The person is back at the start of the day after `until` in the tenant's time zone; the new deadline is that moment plus the time they still had when paused, none when already overdue. An overdue member is open again and their reminders start over.
+- While paused, the scheduled reminders, overdue marking and manager escalation, the campaign's manual reminder and the compliance view's reminder all pass the person by. The compliance people list shows `pausedUntil` while the pause lasts; the reason is kept on the campaign member and in the audit entry `policy.attestation_paused` (with the old and new deadline), never shown to the person or their manager.
+- Defaults where the spec is silent: the pause is available wherever campaigns run, including the single campaign of Workplace; a pause cannot be shortened or lifted early (pausing again is refused while one lasts); the person can still attest while paused.

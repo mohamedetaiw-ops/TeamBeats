@@ -5411,7 +5411,19 @@
       "showing": "{from} إلى {to} من {total}",
       "failed": "تعذر تحميل الأشخاص. حاول مرة أخرى.",
       "needsFollowUp": "يحتاج إلى متابعة",
-      "exemptUntil": "معفى حتى {date}"
+      "exemptUntil": "معفى حتى {date}",
+      "pausedUntil": "موقوف حتى {date}",
+      "pause": "إيقاف الموعد",
+      "pauseTitle": "إيقاف الموعد النهائي لـ {name}",
+      "pauseIntro": "للإجازات الطويلة. يتأخر الموعد النهائي بقدر مدة الغياب، ولا يُرسل أي تذكير أو إشعار تأخر حتى العودة.",
+      "pauseUntil": "غائب حتى",
+      "pauseUntilHint": "آخر يوم في الإجازة، خلال عام.",
+      "pauseReason": "السبب",
+      "pauseReasonHint": "يبقى لدى الامتثال، ولا يظهر للشخص أو لمديره.",
+      "pauseSubmit": "إيقاف",
+      "pauseCancel": "إلغاء",
+      "pauseBusy": "جارٍ الإيقاف",
+      "pauseFailed": "تعذر إيقاف الموعد النهائي. حاول مرة أخرى."
     },
     "person": {
       "register": "السياسات",

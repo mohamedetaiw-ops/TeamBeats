@@ -2741,5 +2741,9 @@
   "validation.policies.paper_duplicate": "This person and version appear more than once.",
   "validation.policies.paper_already": "This person already attested to this version.",
   "conflict.policies.paper_not_in_force": "Paper attestations can be imported only for a policy in force.",
-  "conflict.policies.paper_import_done": "This import is already completed."
+  "conflict.policies.paper_import_done": "This import is already completed.",
+  "validation.policies.pause_until": "Choose the day the person is back, from tomorrow up to one year ahead.",
+  "validation.policies.pause_reason": "Give a reason of at most 500 characters.",
+  "conflict.policies.pause_not_owed": "This person has nothing to attest in this campaign.",
+  "conflict.policies.already_paused": "This person's deadline is already paused."
 }
