@@ -2412,7 +2412,10 @@
       "merging": "Merging",
       "merged": "Both versions merged. Check the page, then it saves.",
       "mergedWithConflicts": "Both versions merged. {count} items were changed by both of you; their version was kept for those.",
-      "mergeFailed": "These versions cannot be merged. Keep yours or use theirs; the other stays in the page history."
+      "mergeFailed": "These versions cannot be merged. Keep yours or use theirs; the other stays in the page history.",
+      "width": "Width of {region}",
+      "columns": "{count} of 12 columns",
+      "resized": "{region} is now {count} of 12 columns wide."
     },
     "picker": {
       "title": "Add a component to {region}",

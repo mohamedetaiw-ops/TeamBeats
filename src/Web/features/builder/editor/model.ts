@@ -1,4 +1,4 @@
-import type { DraftPlacement, PageDefinition, PropertySchema } from "@/lib/experience/builder-types";
+import type { DraftPlacement, LayoutRegion, PageDefinition, PropertySchema } from "@/lib/experience/builder-types";
 
 export type { PickerItem, PropertySchema } from "@/lib/experience/builder-types";
 
@@ -137,4 +137,61 @@ export function redo(history: History): History {
   const next = history.future[0];
   if (!next) return history;
   return { past: [...history.past, history.present], present: next, future: history.future.slice(1) };
+}
+
+/** The layout's rows as the renderer and the server draw them: consecutive regions of one section while their widths fit 12. */
+export function layoutRows(regions: LayoutRegion[]): LayoutRegion[][] {
+  const rows: LayoutRegion[][] = [];
+  let used = 0;
+  for (const region of regions) {
+    const last = rows.at(-1);
+    if (last && last[0]!.section === region.section && used + region.span <= 12) {
+      last.push(region);
+      used += region.span;
+    } else {
+      rows.push([region]);
+      used = region.span;
+    }
+  }
+  return rows;
+}
+
+export const minSpan = (r: LayoutRegion) => r.minSpan ?? r.span;
+export const maxSpan = (r: LayoutRegion) => r.maxSpan ?? r.span;
+
+/** A region's width in the draft: the editor's choice, else the layout's. */
+export function spanOf(draft: PageDefinition, region: LayoutRegion): number {
+  return draft.spans?.[region.id] ?? region.span;
+}
+
+/**
+ * The range a region can take (spec 032 R2 FR-007): its own limits, narrowed so the neighbour that gives or takes the
+ * columns stays inside its limits too. Null when the region does not resize.
+ */
+export function resizeRange(draft: PageDefinition, regions: LayoutRegion[], id: string): { min: number; max: number } | null {
+  const row = layoutRows(regions).find((r) => r.some((x) => x.id === id));
+  const index = row?.findIndex((x) => x.id === id) ?? -1;
+  const region = row?.[index];
+  const neighbour = row?.[index + 1] ?? row?.[index - 1];
+  if (!row || !region || !neighbour || minSpan(region) >= maxSpan(region)) return null;
+  const both = spanOf(draft, region) + spanOf(draft, neighbour);
+  const min = Math.max(minSpan(region), both - maxSpan(neighbour));
+  const max = Math.min(maxSpan(region), both - minSpan(neighbour));
+  return min < max ? { min, max } : null;
+}
+
+/** Sets a region's width; the next region in its row (or the one before the last) takes the difference, so nothing overlaps. */
+export function resize(draft: PageDefinition, regions: LayoutRegion[], id: string, span: number): PageDefinition {
+  const range = resizeRange(draft, regions, id);
+  const row = layoutRows(regions).find((r) => r.some((x) => x.id === id))!;
+  if (!range) return draft;
+  const index = row.findIndex((x) => x.id === id);
+  const region = row[index]!;
+  const neighbour = (row[index + 1] ?? row[index - 1])!;
+  const next = Math.min(range.max, Math.max(range.min, span));
+  const both = spanOf(draft, region) + spanOf(draft, neighbour);
+  const spans = { ...(draft.spans ?? {}), [region.id]: next, [neighbour.id]: both - next };
+  // Widths back at the layout's are dropped, so an untouched page keeps no widths at all.
+  for (const r of regions) if (spans[r.id] === r.span) delete spans[r.id];
+  return { ...draft, spans: Object.keys(spans).length > 0 ? spans : null };
 }

@@ -16,7 +16,9 @@ public sealed record Placement(string Id, string ComponentRef, int? Span = null,
 public sealed record PageRegion(string Id, IReadOnlyList<Placement> Placements);
 
 /// <summary>The declarative page definition stored in drafts and releases.</summary>
-public sealed record PageDefinition(TemplateRef Template, LayoutRef Layout, string Variant, IReadOnlyList<PageRegion> Regions);
+/// <param name="Spans">Widths the editor chose for resizable regions, by region id (R2 FR-007); left out, each region has its layout width.</param>
+public sealed record PageDefinition(TemplateRef Template, LayoutRef Layout, string Variant, IReadOnlyList<PageRegion> Regions,
+    IReadOnlyDictionary<string, int>? Spans = null);
 
 /// <summary>One validation finding. Codes are resource keys; region and placement point to the offending part (FR-010).</summary>
 public sealed record Finding(string Code, string Severity, string? Region = null, string? Placement = null, string? Property = null, string? Message = null,
@@ -78,7 +80,11 @@ public static partial class PageValidator
 
         var regions = page.Regions ?? [];
         var policies = template.Regions.ToDictionary(r => r.Id, r => r.Policy, StringComparer.Ordinal);
-        var spans = layout.Regions.ToDictionary(r => r.Id, r => r.Span, StringComparer.Ordinal);
+        foreach (var (code, region) in RegionSpans.Findings(layout, page))
+        {
+            Block(code, region);
+        }
+        var spans = RegionSpans.Apply(layout, page).Regions.ToDictionary(r => r.Id, r => r.Span, StringComparer.Ordinal);
         foreach (var duplicate in regions.GroupBy(r => r.Id).Where(g => g.Count() > 1))
         {
             Block("region_duplicate", duplicate.Key);

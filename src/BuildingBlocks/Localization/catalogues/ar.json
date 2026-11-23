@@ -2788,5 +2788,7 @@
   "validation.page.fragment_id_too_long": "اختصر معرّف هذا الموضع حتى تتسع مكوّنات الجزء ضمن 40 حرفًا.",
   "builder.fragments.name": "جزء مشترك",
   "builder.fragments.description": "مجموعة مشتركة من المكوّنات. تظهر تغييراتها في كل صفحة تضعها.",
-  "validation.template.document_format": "هذا ليس مستند قالب من TeamBeats، أو أنه من إصدار لا تستطيع المنصة قراءته."
+  "validation.template.document_format": "هذا ليس مستند قالب من TeamBeats، أو أنه من إصدار لا تستطيع المنصة قراءته.",
+  "validation.page.region_span_invalid": "لا يمكن أن تكون هذه المنطقة بهذا العرض أو الضيق في هذا التخطيط.",
+  "validation.page.region_span_overlap": "يجب أن تملأ مناطق هذا الصف معًا 12 عمودًا دون تداخل."
 }

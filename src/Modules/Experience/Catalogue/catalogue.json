@@ -21,12 +21,16 @@
         {
           "id": "start",
           "span": 6,
-          "section": "contained"
+          "section": "contained",
+          "minSpan": 4,
+          "maxSpan": 8
         },
         {
           "id": "end",
           "span": 6,
-          "section": "contained"
+          "section": "contained",
+          "minSpan": 4,
+          "maxSpan": 8
         }
       ],
       "fallback": "stack"
@@ -39,12 +43,16 @@
         {
           "id": "aside",
           "span": 4,
-          "section": "contained"
+          "section": "contained",
+          "minSpan": 3,
+          "maxSpan": 5
         },
         {
           "id": "main",
           "span": 8,
-          "section": "contained"
+          "section": "contained",
+          "minSpan": 7,
+          "maxSpan": 9
         }
       ],
       "fallback": "stack"
@@ -57,17 +65,23 @@
         {
           "id": "start",
           "span": 4,
-          "section": "contained"
+          "section": "contained",
+          "minSpan": 3,
+          "maxSpan": 6
         },
         {
           "id": "middle",
           "span": 4,
-          "section": "contained"
+          "section": "contained",
+          "minSpan": 3,
+          "maxSpan": 6
         },
         {
           "id": "end",
           "span": 4,
-          "section": "contained"
+          "section": "contained",
+          "minSpan": 3,
+          "maxSpan": 6
         }
       ],
       "fallback": "two_then_stack"
@@ -80,12 +94,16 @@
         {
           "id": "sidebar",
           "span": 3,
-          "section": "contained"
+          "section": "contained",
+          "minSpan": 2,
+          "maxSpan": 4
         },
         {
           "id": "canvas",
           "span": 9,
-          "section": "contained"
+          "section": "contained",
+          "minSpan": 8,
+          "maxSpan": 10
         }
       ],
       "fallback": "stack"

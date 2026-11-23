@@ -34,7 +34,10 @@ public static class PageMerge
         var template = Pick(@base.Template, mine.Template, theirs.Template, Same);
         var layout = Pick(@base.Layout, mine.Layout, theirs.Layout, Same);
         var variant = Pick(@base.Variant, mine.Variant, theirs.Variant, (a, b) => a == b);
-        if (template is null || layout is null || variant is null)
+        // Region widths (R2 T029) merge as one choice, like the variant.
+        var spansAgree = SameSpans(mine.Spans, @base.Spans) || SameSpans(theirs.Spans, @base.Spans) || SameSpans(mine.Spans, theirs.Spans);
+        var spans = SameSpans(mine.Spans, @base.Spans) ? theirs.Spans : mine.Spans;
+        if (template is null || layout is null || variant is null || !spansAgree)
         {
             throw AppException.Conflict("conflict.page.merge_structure");
         }
@@ -107,7 +110,7 @@ public static class PageMerge
                 merged.Add(new PageRegion(region, list));
             }
         }
-        return (new PageDefinition(template, layout, variant, merged), conflicts);
+        return (new PageDefinition(template, layout, variant, merged, spans), conflicts);
     }
 
     private static T? Pick<T>(T @base, T mine, T theirs, Func<T?, T?, bool> same) where T : class =>
@@ -116,6 +119,9 @@ public static class PageMerge
     private static Dictionary<string, Spot> Index(PageDefinition definition) =>
         definition.Regions.SelectMany(r => r.Placements.Select((p, i) => new Spot(r.Id, p, i)))
             .GroupBy(s => s.Placement.Id, StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.First(), StringComparer.Ordinal);
+
+    private static bool SameSpans(IReadOnlyDictionary<string, int>? a, IReadOnlyDictionary<string, int>? b) =>
+        (a ?? new Dictionary<string, int>()).OrderBy(x => x.Key, StringComparer.Ordinal).SequenceEqual((b ?? new Dictionary<string, int>()).OrderBy(x => x.Key, StringComparer.Ordinal));
 
     private static bool Same(Spot? a, Spot? b) =>
         a is null ? b is null : b is not null && a.Region == b.Region && Same(a.Placement, b.Placement);
