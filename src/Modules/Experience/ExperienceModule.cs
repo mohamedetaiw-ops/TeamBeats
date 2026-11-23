@@ -101,6 +101,22 @@ public static class ExperienceModule
             return Results.Created($"/api/v1/experience/templates/{template.Id}", template);
         });
 
+        // Import and export (R2 T028, FR-022).
+        x.MapGet("/templates/{id}/export", async (string id, Templates.TemplateService templates, IDbSession session, CancellationToken ct) =>
+        {
+            var document = await templates.ExportAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(document);
+        });
+
+        x.MapPost("/templates/import", async (Templates.TemplateImportRequest request, Templates.TemplateService templates, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var template = await templates.ImportAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/experience/templates/{template.Id}", template);
+        });
+
         x.MapPut("/templates/{id}/draft", async (string id, Templates.TemplateDraftRequest request, Templates.TemplateService templates,
             IDbSession session, CancellationToken ct) =>
         {
