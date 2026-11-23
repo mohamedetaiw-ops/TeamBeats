@@ -230,9 +230,10 @@ public sealed partial class PageService(
         var (revision, current) = await DraftAsync(id, ct, forUpdate: true);
         if (ifMatch is null || ifMatch != ETag(revision))
         {
-            // Both versions are kept: the caller still has its own, and gets the stored one here (FR-042).
+            // Both versions are kept: the caller still has its own, and gets the stored one here with who saved it (FR-042).
+            var (by, at) = await DraftAuthorAsync(id, ct);
             throw new AppException(ProblemCodes.Conflict, 409, "conflict.page.draft_changed", null,
-                new Dictionary<string, object?> { ["etag"] = ETag(revision), ["current"] = current });
+                new Dictionary<string, object?> { ["etag"] = ETag(revision), ["current"] = current, ["currentBy"] = by, ["currentAt"] = at });
         }
         var findings = await ValidateAsync(page, request.Definition, ValidationMode.Save, ct);
         ThrowIfBlocking(findings);
