@@ -237,7 +237,7 @@ public static class Classifications
     public static string Highest(IEnumerable<string> values) => values.DefaultIfEmpty("internal").MaxBy(Rank)!;
 }
 
-/// <summary>Case rules (US2): input, a launch locale, at least one expectation, short tags, a severity and a classification.</summary>
+/// <summary>Case rules (US2): input, an offered locale, at least one expectation, short tags, a severity and a classification.</summary>
 public static partial class CaseRules
 {
     public const int MaxInput = 4000;
@@ -245,8 +245,21 @@ public static partial class CaseRules
     public const int MaxTags = 10;
     public const int MaxCases = 2000;
 
-    /// <summary>R1 datasets are in Arabic and English (US2 scenario 6).</summary>
+    /// <summary>The launch locales (US1 scenario 6): every tenant may write cases, names and baselines in Arabic and English.</summary>
     public static readonly IReadOnlyList<string> Locales = ["en", "ar"];
+
+    /// <summary>Locales offered from R2 (spec 007) to tenants that have enabled them.</summary>
+    public static readonly IReadOnlyList<string> Later = ["fr", "ur", "hi"];
+
+    /// <summary>Every locale a case may be in, launch locales first.</summary>
+    public static readonly IReadOnlyList<string> All = [.. Locales, .. Later];
+
+    /// <summary>The case locales offered to a tenant: the launch locales and the later locales it has enabled (US1 scenario 6).</summary>
+    public static IReadOnlyList<string> Offered(IEnumerable<string> enabled)
+    {
+        var on = enabled.ToHashSet(StringComparer.Ordinal);
+        return [.. Locales, .. Later.Where(on.Contains)];
+    }
 
     [GeneratedRegex("^[a-z0-9_-]{1,40}$")]
     private static partial Regex TagPattern();
@@ -256,8 +269,9 @@ public static partial class CaseRules
     private static partial Regex ToolPattern();
 
     /// <summary>Checks one case and returns it normalized, or null with errors added under <paramref name="at"/>.</summary>
-    public static CaseInput? Check(CaseInput? c, string at, ValidationErrors errors)
+    public static CaseInput? Check(CaseInput? c, string at, ValidationErrors errors, IReadOnlyCollection<string>? locales = null)
     {
+        locales ??= Locales;
         var before = errors.Count;
         if (c is null)
         {
@@ -269,7 +283,7 @@ public static partial class CaseRules
         {
             errors.Add($"{at}.input", "validation.eval.case_input");
         }
-        if (c.Locale is null || !Locales.Contains(c.Locale))
+        if (c.Locale is null || !locales.Contains(c.Locale))
         {
             errors.Add($"{at}.locale", "validation.eval.case_locale");
         }

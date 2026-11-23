@@ -2437,3 +2437,11 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - Default: the organization level needs `ai.evals.advanced` (section 9 lists organization datasets under advanced evaluation). Without it the settings read as unavailable, saving and making business datasets are refused, and runs and suites ignore any saved unit settings, so a package downgrade falls back to the platform, tenant and agent levels.
 - Pages are T025.
 
+## French, Urdu and Hindi evaluation cases (spec 034 R2, T024; US1 scenario 6)
+
+- Cases may be in French, Urdu and Hindi when the tenant has enabled that locale (spec 007); Arabic and English stay offered to every tenant. The rule holds for edits, imports (row by row) and cases promoted from the review queue, and a dataset view lists the locales offered so the editor shows them. Dataset, persona and baseline names stay in Arabic and English, the launch-complete locales.
+- Every platform suite, the mandatory safety suites, the template suites and the assistant suites, now carries its cases in all five locales, the same cases in each, and each suite moved up one version, so earlier results show as made against an older suite. Urdu cases are written right to left in the data; numbers stay in Western digits as in the other locales.
+- An assistant run tests every locale the tenant has enabled. An agent run tests the agent's languages, and agent definitions allow only Arabic and English until spec 020 extends them, so the French, Urdu and Hindi platform cases of the agent suites run once an agent can answer in those languages (gap recorded, no rule invented).
+- Calibration labels stay in Arabic and English: production samples come from agents, which answer only in those languages.
+- The run table accepts the new locales (migration `evaluation/0015`).
+

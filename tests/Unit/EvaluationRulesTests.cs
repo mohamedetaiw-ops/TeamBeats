@@ -96,7 +96,7 @@ public sealed class EvaluationRulesTests
     }
 
     [Fact]
-    public void Platform_suites_cover_the_mandatory_safety_suites_and_every_launch_template_in_both_languages()
+    public void Platform_suites_cover_the_mandatory_safety_suites_and_every_launch_template_in_every_language()
     {
         var mandatory = PlatformSuites.All.Where(s => s.Mandatory).Select(s => s.Key).Order().ToList();
         Assert.Equal(["safety.data_classification", "safety.permission_isolation", "safety.prompt_injection", "safety.tool_parameters", "safety.unsafe_actions"], mandatory);
@@ -107,14 +107,30 @@ public sealed class EvaluationRulesTests
         foreach (var suite in PlatformSuites.All)
         {
             Assert.False(ThresholdRules.Check(suite.Metrics, EvalLevels.Platform, PlatformOnly, true).Any, suite.Key);
-            Assert.Equal(["ar", "en"], suite.Cases.Select(c => c.Locale).Distinct().Order());
+            // Every suite has its cases in all five locales (R2 T024), the same cases in each.
+            Assert.Equal(["ar", "en", "fr", "hi", "ur"], suite.Cases.Select(c => c.Locale).Distinct().Order());
+            var perLocale = suite.Cases.GroupBy(c => c.Locale).Select(g => g.Count()).Distinct();
+            Assert.Single(perLocale);
             foreach (var c in suite.Cases)
             {
                 var errors = new ValidationErrors();
-                Assert.NotNull(CaseRules.Check(new CaseInput(c.Input, c.Locale, null, c.Expect, c.Tags, c.Severity, null), suite.Key, errors));
+                Assert.NotNull(CaseRules.Check(new CaseInput(c.Input, c.Locale, null, c.Expect, c.Tags, c.Severity, null), suite.Key, errors, CaseRules.All));
             }
         }
         Assert.Equal(6, PlatformSuites.For("hr_assistant").Count);
         Assert.Equal(5, PlatformSuites.For(null).Count);
+    }
+
+    [Fact]
+    public void French_Urdu_and_Hindi_cases_are_offered_only_to_tenants_that_enabled_them()
+    {
+        Assert.Equal(["en", "ar"], CaseRules.Offered(["en", "ar"]));
+        Assert.Equal(["en", "ar", "fr", "hi"], CaseRules.Offered(["en", "hi", "fr"]));
+        var french = new CaseInput("Combien de jours de congé ai-je ?", "fr", null, new CaseExpectations(Refusal: true), null, null, null);
+        var errors = new ValidationErrors();
+        Assert.Null(CaseRules.Check(french, "c", errors));
+        Assert.Contains(("c.locale", "validation.eval.case_locale"), errors.Entries);
+        Assert.NotNull(CaseRules.Check(french, "c", new ValidationErrors(), CaseRules.Offered(["en", "fr"])));
+        Assert.Null(CaseRules.Check(french with { Locale = "de" }, "c", new ValidationErrors(), CaseRules.All));
     }
 }

@@ -96,7 +96,7 @@ public sealed class EvaluationAssistantTests(TenantWorld world)
         Assert.Equal(EvalCapabilities.Assistant, run.GetProperty("capability").GetString());
         Assert.Equal(JsonValueKind.Null, run.GetProperty("agentId").ValueKind);
         var suites = PlatformSuites.ForAssistant();
-        Assert.Equal(suites.Sum(s => s.Cases.Count), run.GetProperty("total").GetInt32());
+        Assert.Equal(suites.Sum(s => s.Cases.Count(c => c.Locale is "en" or "ar")), run.GetProperty("total").GetInt32());
         Assert.Equal(suites.Select(s => s.Key).Order(), started.GetProperty("suites").EnumerateArray().Select(s => s.GetProperty("key").GetString()!).Order());
         Assert.True(started.GetProperty("canCancel").GetBoolean());
         Assert.Equal(HttpStatusCode.Conflict, (await StartAsync(t, "aip")).StatusCode);
@@ -148,5 +148,18 @@ public sealed class EvaluationAssistantTests(TenantWorld world)
         Assert.Equal(HttpStatusCode.Created, (await StartAsync(t, "aip")).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound,
             (await t["aip"].Client.PostAsJsonAsync($"{Eval}/gates/{id}/override", new { reason = "An assistant run has no agent version." })).StatusCode);
+    }
+
+    [Fact]
+    public async Task French_Urdu_and_Hindi_cases_run_for_a_tenant_that_enabled_those_languages()
+    {
+        var t = await FreshAsync(["en", "fr", "ur", "hi"]);
+        var started = await OkAsync(StartAsync(t, "aip"), HttpStatusCode.Created);
+        var id = started.GetProperty("run").GetProperty("id").GetGuid();
+        Assert.Equal(PlatformSuites.ForAssistant().Sum(s => s.Cases.Count(c => c.Locale != "ar")), started.GetProperty("run").GetProperty("total").GetInt32());
+        var cases = (await OkAsync(t["aip"].Client.GetAsync($"{Eval}/runs/{id}/cases"))).EnumerateArray().ToList();
+        Assert.Equal(["en", "fr", "hi", "ur"], cases.Select(c => c.GetProperty("locale").GetString()!).Distinct().Order());
+        var urdu = cases.First(c => c.GetProperty("locale").GetString() == "ur" && c.GetProperty("suite").GetString() == "assistant.grounded_answers");
+        Assert.NotEmpty(urdu.GetProperty("context").EnumerateArray());
     }
 }

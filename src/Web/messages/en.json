@@ -8181,7 +8181,10 @@
     "suiteOwn": "This agent's suite",
     "locales": {
       "en": "English",
-      "ar": "Arabic"
+      "ar": "Arabic",
+      "fr": "French",
+      "ur": "Urdu",
+      "hi": "Hindi"
     },
     "agentStatus": {
       "draft": "Draft",
