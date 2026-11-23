@@ -1,6 +1,7 @@
 using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Entitlements.Contracts;
+using TeamBeats.Modules.Analytics.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
 using TeamBeats.TenantContext;
@@ -25,7 +26,7 @@ internal sealed record AnalyticsPolicy(bool Nonessential, int RawRetentionMonths
 }
 
 public sealed class AnalyticsPolicies(IDbSession session, ITenantContext context, IAuthorizationService authz, IEntitlementService entitlements,
-    IAuditWriter audit, IClock clock)
+    IAuditWriter audit, IClock clock) : IAnalyticsPrivacy
 {
     public const string AuditTarget = "analytics_policy";
     public const int MinRetentionMonths = 3;
@@ -47,6 +48,8 @@ public sealed class AnalyticsPolicies(IDbSession session, ITenantContext context
         _cached = rows.Count == 0 ? AnalyticsPolicy.Default : rows[0];
         return _cached;
     }
+
+    public async Task<int> MinGroupSizeAsync(CancellationToken ct = default) => (await GetAsync(ct)).MinGroupSize;
 
     private async Task<bool> MayReadAsync(CancellationToken ct) =>
         (await authz.CheckAsync(Permissions.AnalyticsView, AuthzTarget.Tenant, ct)).Allowed || await MayChangeAsync(ct);

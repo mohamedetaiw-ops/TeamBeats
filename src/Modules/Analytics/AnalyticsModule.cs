@@ -20,6 +20,7 @@ public static class AnalyticsModule
     public static IServiceCollection AddAnalyticsModule(this IServiceCollection services)
     {
         services.AddScoped<AnalyticsPolicies>();
+        services.AddScoped<IAnalyticsPrivacy>(sp => sp.GetRequiredService<AnalyticsPolicies>());
         services.AddScoped<Pseudonyms>();
         services.AddScoped<IAnalyticsPseudonyms>(sp => sp.GetRequiredService<Pseudonyms>());
         services.AddScoped<AnalyticsWriter>();

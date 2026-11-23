@@ -387,6 +387,15 @@ public interface IAnalyticsPseudonyms
     Task<string> KeyAsync(Guid userId, CancellationToken ct = default);
 }
 
+/// <summary>
+/// The tenant's analytics privacy settings other modules aggregate by (spec 021 FR-004): the minimum group size below which
+/// a figure about people is not shown. No permission check; the figure is not sensitive.
+/// </summary>
+public interface IAnalyticsPrivacy
+{
+    Task<int> MinGroupSizeAsync(CancellationToken ct = default);
+}
+
 /// <summary>The kinds of free text sentiment is worked out from (spec 021 US8).</summary>
 public static class AnalyticsTextSources
 {

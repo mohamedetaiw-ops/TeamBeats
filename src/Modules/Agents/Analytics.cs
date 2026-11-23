@@ -292,3 +292,29 @@ public sealed class AssistantKnowledgeFigures(IDbSession session) : IAssistantKn
         return new AssistantKnowledgeSummary(totals.Questions, totals.People, totals.Unanswered, totals.UnansweredPeople, weeks, outcomes, cited);
     }
 }
+
+/// <summary>Business outcome figures of agents (spec 034 FR-027), counted as <see cref="AgentAnalytics"/> counts runs and escalations.</summary>
+public sealed class AgentOutcomes(IDbSession session) : IAgentOutcomeFigures
+{
+    public async Task<IReadOnlyList<AgentOutcomeFigure>> ForAgentsAsync(IReadOnlyCollection<Guid> agentIds, DateTimeOffset from, DateTimeOffset to, CancellationToken ct = default)
+    {
+        if (agentIds.Count == 0)
+        {
+            return [];
+        }
+        var escalated = AgentAnalytics.Escalated;
+        return await session.QueryAsync(
+            """
+            select r.agent_id, count(*), count(distinct r.user_id),
+              count(*) filter (where r.status = 'completed' and r.outcome = 'answered'),
+              count(*) filter (where r.outcome = any(@escalated)),
+              count(*) filter (where r.status = 'completed' and r.outcome = 'answered'
+                and not exists (select 1 from agents.run_approval a where a.run_id = r.id)
+                and not exists (select 1 from agents.turn t join agents.feedback f on f.turn_id = t.id where t.run_id = r.id and not f.helpful))
+            from agents.run r
+            where r.agent_id = any(@ids) and r.mode = 'run' and r.status in ('completed', 'stopped', 'failed') and r.created_at >= @from and r.created_at < @to
+            group by 1
+            """, new { ids = agentIds.ToArray(), escalated, from, to },
+            r => new AgentOutcomeFigure(r.GetGuid(0), r.GetInt64(1), r.GetInt64(2), r.GetInt64(3), r.GetInt64(4), r.GetInt64(5)), ct);
+    }
+}

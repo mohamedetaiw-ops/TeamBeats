@@ -49,6 +49,7 @@ public static class EvaluationModule
         services.AddScoped<DriftAlerts>();
         services.AddScoped<ReviewService>();
         services.AddScoped<ComparisonService>();
+        services.AddScoped<OutcomeService>();
         services.AddScoped<ComparisonArmAllocator>();
         services.RemoveAll<Agents.Contracts.IAgentArmAllocator>();
         services.AddScoped<Agents.Contracts.IAgentArmAllocator>(sp => sp.GetRequiredService<ComparisonArmAllocator>());
@@ -228,6 +229,16 @@ public static class EvaluationModule
         root.MapPost("/comparisons/{id:guid}/stop", async (Guid id, ComparisonService comparisons, IDbSession session, CancellationToken ct) =>
         {
             var view = await comparisons.StopAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        // Business outcomes (R2 T022, US9 scenario 1): per agent against the tenant's baselines, with the minimum group size.
+        root.MapGet("/outcomes", async (int? days, OutcomeService outcomes, CancellationToken ct) => Results.Ok(await outcomes.GetAsync(days, ct)));
+        root.MapPut("/outcomes/baselines/{agentId:guid}", async (Guid agentId, OutcomeBaselineRequest request, OutcomeService outcomes, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var view = await outcomes.SetBaselineAsync(agentId, request, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });
