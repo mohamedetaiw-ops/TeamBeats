@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Localization;
+using TeamBeats.Messaging;
 using TeamBeats.Modules.Experience.Catalogue;
 using TeamBeats.Modules.Experience.Components;
 using TeamBeats.Modules.Experience.Contracts;
@@ -39,6 +40,10 @@ public static class ExperienceModule
         services.AddScoped<Templates.TemplateStore>();
         services.AddScoped<Templates.TemplateService>();
         services.AddScoped<PageService>();
+        services.AddScoped<Pages.PageRoutes>();
+        services.AddScoped<Pages.PageApprovals>();
+        services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<Pages.PageApprovals>());
+        services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, Pages.PageApprovals>("experience.page_waiting");
         services.AddScoped<Telemetry.PageTelemetry>();
         services.AddScoped<ThemeService>();
         services.AddScoped<AppManifest>();
@@ -176,6 +181,42 @@ public static class ExperienceModule
             await session.CommitAsync(ct);
             return Results.Ok(release);
         });
+
+        // Approval routes and submissions (R2 T023, FR-051).
+        x.MapGet("/page-routes", async (PageRoutes routes, CancellationToken ct) => Results.Ok(await routes.ListAsync(ct)));
+
+        x.MapPut("/page-routes", async (PageRouteRequest request, PageRoutes routes, IDbSession session, CancellationToken ct) =>
+        {
+            var route = await routes.SetAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(route);
+        });
+
+        x.MapDelete("/page-routes/{routeId:guid}", async (Guid routeId, PageRoutes routes, IDbSession session, CancellationToken ct) =>
+        {
+            await routes.RemoveAsync(routeId, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        x.MapGet("/pages/{id:guid}/approval", async (Guid id, PageApprovals approvals, CancellationToken ct) => Results.Ok(await approvals.StateAsync(id, ct)));
+
+        x.MapPost("/pages/{id:guid}/submit", async (Guid id, SubmitPageRequest? request, PageApprovals approvals, IDbSession session, CancellationToken ct) =>
+        {
+            var submission = await approvals.SubmitAsync(id, request ?? new SubmitPageRequest(null), ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(submission);
+        });
+
+        x.MapPost("/pages/{id:guid}/withdraw", async (Guid id, PageApprovals approvals, IDbSession session, CancellationToken ct) =>
+        {
+            await approvals.WithdrawAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        x.MapGet("/pages/{id:guid}/approval/preview", async (Guid id, string? locale, PageApprovals approvals, CancellationToken ct) =>
+            Results.Ok(await approvals.PreviewAsync(id, locale, ct)));
 
         x.MapGet("/pages/{id:guid}/releases", async (Guid id, PageService pages, CancellationToken ct) => Results.Ok(await pages.ReleasesAsync(id, ct)));
 

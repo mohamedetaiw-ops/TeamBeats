@@ -404,3 +404,20 @@
 .builder-region[data-drop="inside"] {
   outline: var(--tb-border-width-thin) solid var(--tb-color-accent-base);
 }
+
+/* Page approval (spec 032 R2 T023): the placements a submission changes. */
+.builder-change-list {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.builder-change-list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs);
+  align-items: center;
+  overflow-wrap: anywhere;
+}

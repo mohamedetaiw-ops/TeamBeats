@@ -211,6 +211,7 @@ export const routes: readonly Route[] = [
   { path: "/notifications/preferences", tier: "other" },
   { path: "/offline", tier: "other", public: true },
   { path: "/p/[...slug]", tier: "detail" },
+  { path: "/page-approvals/[id]", tier: "detail" },
   { path: "/payslips", tier: "other" },
   { path: "/people", tier: "primary" },
   { path: "/people/[id]", tier: "detail" },

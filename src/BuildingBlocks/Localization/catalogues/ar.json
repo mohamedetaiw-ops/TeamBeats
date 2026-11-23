@@ -2751,5 +2751,16 @@
   "validation.policies.document_clauses": "السياسة المحفوظة كمستند خاضع للرقابة تأخذ بنودها من المستند، فاترك البنود فارغة.",
   "validation.policies.document_locale": "للسياسة المحفوظة كمستند خاضع للرقابة لغة واحدة: اكتب العنوان بتلك اللغة فقط.",
   "validation.policies.document_text": "نص المستند فارغ أو أطول من أن يكون سياسة.",
-  "conflict.policies.document_changed": "للمستند الخاضع للرقابة إصدار أحدث. احفظ المسودة مرة أخرى لاستخدامه، ثم أرسلها."
+  "conflict.policies.document_changed": "للمستند الخاضع للرقابة إصدار أحدث. احفظ المسودة مرة أخرى لاستخدامه، ثم أرسلها.",
+  "conflict.page.approval_required": "تُنشر هذه الصفحة عبر الاعتماد. أرسلها للاعتماد بدلًا من ذلك",
+  "conflict.page.no_route": "لا يشمل هذه الصفحة أي مسار اعتماد، لذا تُنشر مباشرة",
+  "conflict.page.in_approval": "هذه الصفحة بانتظار الاعتماد بالفعل",
+  "validation.page.route_approvers": "اختر 20 معتمدًا على الأكثر من الأعضاء النشطين",
+  "experience.task.page_approval": "اعتماد صفحة: {page}",
+  "notifications.template.experience.page_waiting.title": "صفحة بانتظار اعتمادك",
+  "notifications.template.experience.page_waiting.body": "أُرسلت {page} للاعتماد.",
+  "notifications.template.experience.page_approved.title": "صفحتك منشورة الآن",
+  "notifications.template.experience.page_approved.body": "اعتُمدت {page} ونُشرت.",
+  "notifications.template.experience.page_returned.title": "أُعيدت صفحتك",
+  "notifications.template.experience.page_returned.body": "أُعيدت {page}: {comment}"
 }

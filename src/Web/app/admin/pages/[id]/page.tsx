@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { apiGet, type Me, type NavigationSection } from "@/lib/api";
-import { getCatalogue, getPage, listPickerItems, listUnits } from "@/lib/experience/client";
+import { getApproval, getCatalogue, getPage, listPickerItems, listUnits } from "@/lib/experience/client";
 import { pagePath, unitName } from "@/lib/experience/builder-types";
 import { LayoutPreview } from "@/features/builder/LayoutPreview";
 import { EditorMount } from "@/features/builder/editor/EditorMount";
@@ -19,7 +19,14 @@ export default async function BuilderPage({ params }: { params: Promise<{ id: st
   if (!nav.ok || !nav.data.some((s) => s.key === "pages")) {
     notFound();
   }
-  const [page, catalogue, units, items, me] = await Promise.all([getPage(id), getCatalogue(), listUnits(), listPickerItems(id), apiGet<Me>("/api/v1/me")]);
+  const [page, catalogue, units, items, me, approval] = await Promise.all([
+    getPage(id),
+    getCatalogue(),
+    listUnits(),
+    listPickerItems(id),
+    apiGet<Me>("/api/v1/me"),
+    getApproval(id),
+  ]);
   if (!page.ok || !catalogue.ok || !items.ok || !me.ok) {
     notFound();
   }
@@ -72,6 +79,7 @@ export default async function BuilderPage({ params }: { params: Promise<{ id: st
         tenantId={me.data.tenant.id}
         locales={me.data.tenant.enabledLocales}
         catalogueItems={items.data}
+        approval={approval.ok ? approval.data : null}
       />
     </>
   );

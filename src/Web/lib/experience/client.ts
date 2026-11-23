@@ -2,7 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { apiGet, type ApiResult } from "@/lib/api";
 import type { EffectiveTheme, RenderedPage } from "./types";
-import type { Catalogue, OrgUnit, PageSummary, PageView, PickerItem, TenantTemplate } from "./builder-types";
+import type { Catalogue, OrgUnit, PageApprovalState, PageSummary, PageView, PickerItem, TenantTemplate } from "./builder-types";
 
 /** Effective configuration of the latest release for the signed-in viewer (spec 032 FR-002). */
 export function renderPage(slug: string): Promise<ApiResult<RenderedPage>> {
@@ -45,6 +45,16 @@ export function listPickerItems(pageId: string): Promise<ApiResult<PickerItem[]>
 /** The saved draft drawn for the builder's preview in one language (spec 032 T018). Not found outside the editor's scope. */
 export function previewPage(id: string, locale: string): Promise<ApiResult<RenderedPage>> {
   return apiGet<RenderedPage>(`/api/v1/experience/pages/${encodeURIComponent(id)}/preview?locale=${encodeURIComponent(locale)}`);
+}
+
+/** Whether the page goes live through approval and its submissions (spec 032 R2 T023); refused without approval routes. */
+export function getApproval(id: string): Promise<ApiResult<PageApprovalState>> {
+  return apiGet<PageApprovalState>(`/api/v1/experience/pages/${encodeURIComponent(id)}/approval`);
+}
+
+/** The waiting submission rendered as it would go live, for its approver. */
+export function previewSubmission(id: string, locale: string): Promise<ApiResult<RenderedPage>> {
+  return apiGet<RenderedPage>(`/api/v1/experience/pages/${encodeURIComponent(id)}/approval/preview?locale=${encodeURIComponent(locale)}`);
 }
 
 /** Tenant templates, for template designers (spec 032 US5). Refused without template rights for the whole organization. */

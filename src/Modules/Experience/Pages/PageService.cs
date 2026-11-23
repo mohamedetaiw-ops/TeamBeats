@@ -118,7 +118,8 @@ public sealed partial class PageService(
     Personalization.HomeDefaults homeDefaults,
     ILocalizer localizer,
     RequestLocale locale,
-    ITenantSettingsReader tenantSettings)
+    ITenantSettingsReader tenantSettings,
+    PageRoutes routes)
 {
     private sealed record PageRow(Guid Id, Guid? OrgUnitId, string Slug, string TemplateId, string TemplateVersion, int? CurrentRelease);
 
@@ -376,6 +377,11 @@ public sealed partial class PageService(
     {
         await entitlements.DemandAsync(Capabilities.ExperiencePageBuilder, ct);
         var page = await EditableAsync(id, Permissions.PagePublish, ct, audited: true);
+        // Where an approval route applies (R2 T023), a page goes live only through an approved submission.
+        if (await routes.ForPageAsync(page.OrgUnitId, ct) is not null)
+        {
+            throw AppException.Conflict("conflict.page.approval_required");
+        }
         var (_, draft) = await DraftAsync(id, ct);
         var findings = await ValidateAsync(page, draft, ValidationMode.Publish, ct);
         ThrowIfBlocking(findings);
@@ -552,6 +558,12 @@ public sealed partial class PageService(
         await entitlements.DemandAsync(Capabilities.ExperiencePageBuilder, ct);
         var page = await EditableAsync(id, Permissions.PageEdit, ct);
         var (_, draft) = await DraftAsync(id, ct);
+        return await PreviewOfAsync(page, draft, previewLocale, ct);
+    }
+
+    /// <summary>Renders a definition of a page the caller may see in the builder: the draft, or a submission for its approver.</summary>
+    private async Task<RenderedPage> PreviewOfAsync(PageRow page, PageDefinition draft, string? previewLocale, CancellationToken ct)
+    {
         var shown = previewLocale is { } l && Primitives.Locales.IsSupported(l) ? l : locale.Locale;
         var template = await templates.GetAsync(draft.Template, ct);
         var layout = catalogue.Layouts[template.Layout];

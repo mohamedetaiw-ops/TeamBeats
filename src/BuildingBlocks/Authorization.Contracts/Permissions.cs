@@ -50,6 +50,7 @@ public static class Permissions
     public const string PageView = "page.view";
     public const string PageEdit = "page.edit";
     public const string PagePublish = "page.publish";
+    public const string PageApprove = "page.approve";
     public const string TemplateEdit = "template.edit";
     public const string TemplateDistribute = "template.distribute";
     public const string ComponentEnable = "component.enable";
@@ -233,7 +234,7 @@ public static class Permissions
         EntitlementsView,
         AuditView, AuditExport, AuditRetentionManage,
         ContentView, ContentEdit, ContentPublish, WorkflowDesign, WorkflowApprove, ProcessOperate, ProcessAnalyze, DecisionDesign, IntegrationManage, IntegrationOperate, AiPolicyManage, AiPolicyView,
-        PageView, PageEdit, PagePublish, TemplateEdit, TemplateDistribute, ComponentEnable, ConfigHistoryView,
+        PageView, PageEdit, PagePublish, PageApprove, TemplateEdit, TemplateDistribute, ComponentEnable, ConfigHistoryView,
         ThemeEdit, ThemePublish, ConfigLockManage,
         ShellEdit, NavigationEdit, HelpEdit, PersonalizationPolicy, PersonalLayoutEdit,
         NotificationsManage,

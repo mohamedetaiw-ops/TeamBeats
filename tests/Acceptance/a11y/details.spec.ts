@@ -67,6 +67,7 @@ const finders: Finder[] = [
 const sameRecord: Record<string, string> = {
   "/content/read/[id]": "/content/items/[id]",
   "/preview/pages/[id]": "/admin/pages/[id]",
+  "/page-approvals/[id]": "/admin/pages/[id]",
   "/attendance/people/[userId]": "/admin/users/[id]",
   "/policies/compliance/people/[userId]": "/admin/users/[id]",
   "/admin/evaluation/agents/[id]": "/admin/agents/[id]",

@@ -2751,5 +2751,16 @@
   "validation.policies.document_clauses": "A policy kept as a controlled document takes its clauses from the document, so leave the clauses out.",
   "validation.policies.document_locale": "A policy kept as a controlled document has one language: give the title in that language only.",
   "validation.policies.document_text": "The document's text is empty or too long for a policy.",
-  "conflict.policies.document_changed": "The controlled document has a newer release. Save the draft again to use it, then submit."
+  "conflict.policies.document_changed": "The controlled document has a newer release. Save the draft again to use it, then submit.",
+  "conflict.page.approval_required": "This page goes live through approval. Submit it for approval instead",
+  "conflict.page.no_route": "No approval route covers this page, so it is published directly",
+  "conflict.page.in_approval": "This page is already waiting for approval",
+  "validation.page.route_approvers": "Choose up to 20 approvers who are active members",
+  "experience.task.page_approval": "Page approval: {page}",
+  "notifications.template.experience.page_waiting.title": "A page is waiting for your approval",
+  "notifications.template.experience.page_waiting.body": "{page} was submitted for approval.",
+  "notifications.template.experience.page_approved.title": "Your page is live",
+  "notifications.template.experience.page_approved.body": "{page} was approved and published.",
+  "notifications.template.experience.page_returned.title": "Your page was returned",
+  "notifications.template.experience.page_returned.body": "{page} was returned: {comment}"
 }

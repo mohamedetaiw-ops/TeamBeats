@@ -44,7 +44,7 @@ Depends on 002 (org units), 004 (authorization), 005 (entitlements), 006 (audit)
 
 R2 covers User Story 6 approval, impact and scheduling, User Story 7 independent deployment, and FR-007, FR-022, FR-033 and FR-045. Approval routes run on the spec 024 engine and land in the spec 016 inbox, as for agent approvals.
 
-- [ ] T023 [US6 scenario 1] Approval routes for pages: a route per site or scope (`page.approve`), submit for approval with a visual and structural diff for the approver, approve or return with a comment, an editor never approves their own change; inbox task source; tests including a scoped approver of another organization
+- [x] T023 [US6 scenario 1] Approval routes for pages: a route per site or scope (`page.approve`), submit for approval with a visual and structural diff for the approver, approve or return with a comment, an editor never approves their own change; inbox task source; tests including a scoped approver of another organization
 - [ ] T024 [US6 scenario 2] Impact reports: before a shared layout, global page area or template change is published, the affected organizations, audiences, pages and the count of personal layouts touched, with cancel; also used by theme publishing in spec 033
 - [ ] T025 [US6 scenario 4] Scheduled releases: go live and expire at tenant-local times; validation again at go-live, a failed release does not go live, the publisher is notified and the current release stays; tests with the clock
 - [ ] T026 [US6 scenario 6] Edit conflicts: a second save gets both versions and a merge or overwrite choice; nothing lost
