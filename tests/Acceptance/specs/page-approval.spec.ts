@@ -42,7 +42,17 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.goto(`${origin}/admin/pages/${pageId}`);
       await expect(page.getByText(m("builder.editor.approval.required"))).toBeVisible();
-      await page.getByRole("button", { name: m("builder.editor.approval.submit") }).click();
+      // The impact report comes first (T024): cancel keeps the page as it is, confirming submits.
+      const submit = page.getByRole("button", { name: m("builder.editor.approval.submit") });
+      await submit.click();
+      const dialog = page.getByRole("dialog");
+      await expect(dialog.getByTestId("builder-impact")).toContainText(m("builder.impact.tenantWide"));
+      await expectAccessible(page, testInfo, `page-impact-${locale}`);
+      await dialog.getByRole("button", { name: m("builder.impact.cancel") }).first().click();
+      await expect(dialog).toBeHidden();
+      await expect(page.getByTestId("builder-pending")).toBeHidden();
+      await submit.click();
+      await dialog.getByRole("button", { name: m("builder.impact.submit") }).click();
       await expect(page.getByTestId("builder-pending")).toBeVisible();
       await expectAccessible(page, testInfo, `page-approval-pending-${locale}`);
 

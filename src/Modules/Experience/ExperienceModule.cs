@@ -41,6 +41,7 @@ public static class ExperienceModule
         services.AddScoped<Templates.TemplateService>();
         services.AddScoped<PageService>();
         services.AddScoped<Pages.PageRoutes>();
+        services.AddScoped<Pages.ImpactReports>();
         services.AddScoped<Pages.PageApprovals>();
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<Pages.PageApprovals>());
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, Pages.PageApprovals>("experience.page_waiting");
@@ -183,6 +184,15 @@ public static class ExperienceModule
         });
 
         // Approval routes and submissions (R2 T023, FR-051).
+        x.MapGet("/pages/{id:guid}/impact", async (Guid id, PageService pages, ImpactReports impacts, CancellationToken ct) =>
+            Results.Ok(await pages.ImpactAsync(id, impacts, ct)));
+
+        x.MapGet("/templates/{id}/impact", async (string id, Templates.TemplateService templates, ImpactReports impacts, CancellationToken ct) =>
+            Results.Ok(await templates.ImpactAsync(id, impacts, ct)));
+
+        x.MapGet("/brand-assignments/{scope}/impact", async (string scope, ThemeService themes, ImpactReports impacts, CancellationToken ct) =>
+            Results.Ok(await themes.ImpactAsync(scope, impacts, ct)));
+
         x.MapGet("/page-routes", async (PageRoutes routes, CancellationToken ct) => Results.Ok(await routes.ListAsync(ct)));
 
         x.MapPut("/page-routes", async (PageRouteRequest request, PageRoutes routes, IDbSession session, CancellationToken ct) =>

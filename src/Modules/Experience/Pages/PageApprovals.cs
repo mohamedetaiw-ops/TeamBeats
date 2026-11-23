@@ -28,7 +28,8 @@ public sealed record PageSubmissionView(Guid Id, Guid PageId, string Slug, strin
 
 /// <param name="Required">An approval route applies to the page, so it goes live only through a submission.</param>
 /// <param name="Pending">The submission waiting for a decision, if any; <paramref name="Last"/> is the latest decided one.</param>
-public sealed record PageApprovalState(bool Required, PageSubmissionView? Pending, PageSubmissionView? Last);
+/// <param name="Impact">Whether the package shows an impact report before publishing or submitting (spec 032 R2 T024).</param>
+public sealed record PageApprovalState(bool Required, PageSubmissionView? Pending, PageSubmissionView? Last, bool Impact = false);
 
 /// <summary>
 /// Page approval (spec 032 R2 T023, US6 scenario 1, FR-051). Where an approval route applies, an editor submits the draft:
@@ -107,7 +108,8 @@ public sealed class PageApprovals(
         var pending = await PendingAsync(pageId, false, ct);
         var last = await session.QuerySingleOrDefaultAsync(SubmissionSelect + " where page_id = @pageId and status <> 'pending' order by submitted_at desc limit 1",
             new { pageId }, Read, ct);
-        return new PageApprovalState(required, pending is null ? null : await ViewAsync(pending, page, ct), last is null ? null : await ViewAsync(last, page, ct));
+        return new PageApprovalState(required, pending is null ? null : await ViewAsync(pending, page, ct), last is null ? null : await ViewAsync(last, page, ct),
+            await entitlements.IsEnabledAsync(Capabilities.ExperienceApprovalRoutes, ct));
     }
 
     /// <summary>

@@ -2469,6 +2469,24 @@
       "preview": "As it would go live",
       "previewFrame": "Preview of the submitted page",
       "decide": "Your decision"
+    },
+    "impact": {
+      "title": "Before this goes live",
+      "intro": "This is what the release reaches. Cancel to keep things as they are.",
+      "units": "Organizations ({count})",
+      "tenantWide": "The whole organization",
+      "audiences": "Audiences",
+      "everyone": "Everyone who sees the page",
+      "pages": "Pages ({count})",
+      "layouts": "Personal layouts",
+      "layoutsValue": "{total} on these pages, {touched} touched",
+      "touched": "{count} people arranged parts this release removes. They will see those changes set aside.",
+      "more": "and {count} more",
+      "separator": ", ",
+      "cancel": "Cancel",
+      "publish": "Publish",
+      "submit": "Submit for approval",
+      "working": "Working"
     }
   },
   "templates": {
