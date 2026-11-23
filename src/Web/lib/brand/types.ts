@@ -125,3 +125,13 @@ export type BrandImpact = {
   previewNames: Record<string, string>;
   preview: Record<string, Record<string, string>>;
 };
+
+/** A brand as one organization sees it (spec 033 R2 T016), with the draft or the version in force. */
+export type BrandScopePreview = {
+  scope: string;
+  scopeNames: Record<string, string>;
+  source: "draft" | "current";
+  inherits: boolean;
+  variants: Record<string, Record<string, string>>;
+  findings: ContrastFinding[];
+};

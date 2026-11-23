@@ -58,5 +58,30 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(releases.first()).toContainText(msg(locale, "brand.lifecycle.how.reverted"));
       await expect(radius).toHaveValue("");
     });
+
+    test("preview the brand as an organization on each mode, language and device", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/admin/branding`);
+      await page.getByRole("link", { name: msg(locale, "brand.previewPage.open") }).click();
+      await page.waitForURL(/\/admin\/branding\/preview/);
+      const frame = page.getByTestId("theme-preview-frame");
+      await expect(frame).toBeVisible();
+      await expect(frame).toHaveAttribute("dir", locale === "ar" ? "rtl" : "ltr");
+      const other = locale === "ar" ? "en" : "ar";
+      // Choices are made again until the controls have hydrated and keep them.
+      await expect(async () => {
+        await page.getByRole("radiogroup", { name: msg(locale, "brand.previewPage.language") }).getByRole("radio", { name: msg(locale, `brand.previewPage.languages.${other}`), exact: true }).check();
+        await expect(frame).toHaveAttribute("dir", other === "ar" ? "rtl" : "ltr", { timeout: 1_000 });
+      }).toPass();
+      await page.getByRole("radiogroup", { name: msg(locale, "brand.previewPage.mode") }).getByRole("radio", { name: msg(locale, "brand.modes.dark"), exact: true }).check();
+      await expect(frame).toHaveAttribute("data-mode", "dark");
+      await page.getByRole("radiogroup", { name: msg(locale, "brand.previewPage.device") }).getByRole("radio", { name: msg(locale, "brand.previewPage.devices.phone"), exact: true }).check();
+      await expect(page.locator(".brand-stage")).toHaveAttribute("data-device", "phone");
+      await page.getByRole("radiogroup", { name: msg(locale, "brand.previewPage.source") }).getByRole("radio", { name: msg(locale, "brand.previewPage.sources.current"), exact: true }).check();
+      await expect(page.getByTestId("theme-preview-caption")).toHaveText(
+        msg(locale, "brand.previewPage.captionCurrent", { scope: msg(locale, "brand.previewPage.wholeOrganization") }),
+      );
+      await expectAccessible(page, testInfo, `theme-preview-${locale}`);
+    });
   });
 }

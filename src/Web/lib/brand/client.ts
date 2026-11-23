@@ -1,6 +1,6 @@
 import "server-only";
 import { apiGet, apiPost, type ApiResult } from "@/lib/api";
-import type { BrandApprovalState, BrandCheck, BrandDraft, BrandRelease, BrandScheduleState, BrandSummary, BrandView, TokenSchema } from "./types";
+import type { BrandApprovalState, BrandCheck, BrandScopePreview, BrandDraft, BrandRelease, BrandScheduleState, BrandSummary, BrandView, TokenSchema } from "./types";
 
 export const getTokenSchema = (): Promise<ApiResult<TokenSchema>> => apiGet<TokenSchema>("/api/v1/experience/tokens");
 
@@ -25,3 +25,5 @@ export const getBrandReleases = (id: string): Promise<ApiResult<BrandRelease[]>>
 export const getBrandSchedule = (id: string): Promise<ApiResult<BrandScheduleState>> => apiGet<BrandScheduleState>(`${brandPath(id)}/schedule`);
 
 export const getBrandApproval = (id: string): Promise<ApiResult<BrandApprovalState>> => apiGet<BrandApprovalState>(`${brandPath(id)}/approval`);
+
+export const getBrandPreview = (id: string): Promise<ApiResult<BrandScopePreview>> => apiGet<BrandScopePreview>(`${brandPath(id)}/preview`);
