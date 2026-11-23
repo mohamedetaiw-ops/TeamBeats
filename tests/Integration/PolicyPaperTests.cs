@@ -111,8 +111,10 @@ public sealed class PolicyPaperTests(TenantWorld world)
 
         // The header is checked as a whole; each line on its own.
         Assert.Contains("validation.policies.paper_header", await ErrorKeysAsync(await RowsAsync(t["co"].Client, aup, import, "name,date\nAli,2026-01-01\n")));
-        var today = DateTime.UtcNow.ToString("yyyy-MM-dd");
-        var tomorrow = DateTime.UtcNow.AddDays(2).ToString("yyyy-MM-dd");
+        // The tenant's date (Asia/Dubai): the server checks the signing day in the tenant's time zone, which runs ahead of UTC.
+        var local = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTime.UtcNow, "Asia/Dubai");
+        var today = local.ToString("yyyy-MM-dd");
+        var tomorrow = local.AddDays(2).ToString("yyyy-MM-dd");
         var csv = new StringBuilder("email,attested_on,version\n")
             .Append(Email(t, "ali")).Append(',').Append(today).Append(",\n")
             .Append(Email(t, "eman")).Append(',').Append(tomorrow).Append(",\n")

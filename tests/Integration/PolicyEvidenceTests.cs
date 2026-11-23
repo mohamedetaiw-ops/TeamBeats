@@ -78,11 +78,14 @@ public sealed class PolicyEvidenceTests(TenantWorld world)
         return id;
     }
 
-    private static string Today => DateOnly.FromDateTime(DateTime.UtcNow).ToString("yyyy-MM-dd");
+    /// <summary>The tenant's date (Asia/Dubai): the server reads days in the tenant's time zone, which runs ahead of UTC.</summary>
+    private static DateOnly TenantToday => DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTime.UtcNow, "Asia/Dubai"));
 
-    private static string DaysAgo(int days) => DateOnly.FromDateTime(DateTime.UtcNow).AddDays(-days).ToString("yyyy-MM-dd");
+    private static string Today => TenantToday.ToString("yyyy-MM-dd");
 
-    private static string InDays(int days) => DateOnly.FromDateTime(DateTime.UtcNow).AddDays(days).ToString("yyyy-MM-dd");
+    private static string DaysAgo(int days) => TenantToday.AddDays(-days).ToString("yyyy-MM-dd");
+
+    private static string InDays(int days) => TenantToday.AddDays(days).ToString("yyyy-MM-dd");
 
     private static async Task<string> TextAsync(HttpClient client, string url)
     {
