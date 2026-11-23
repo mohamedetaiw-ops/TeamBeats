@@ -115,7 +115,7 @@ public sealed record ScheduledVersion(Guid Id, int Number, DateTimeOffset Effect
 /// What the current user may do on a policy. <paramref name="Ask"/> offers "Ask about this policy" (FR-011): a version is in
 /// force and the package includes the assistant and policy Q&amp;A.
 /// </summary>
-public sealed record PolicyRights(bool Manage, bool Edit, bool Review, bool History, bool Compliance, bool Ask = false, bool Analytics = false);
+public sealed record PolicyRights(bool Manage, bool Edit, bool Review, bool History, bool Compliance, bool Ask = false, bool Analytics = false, bool Comprehension = false);
 
 /// <summary>What the current user may do in the register: create policies where they hold <c>policy.manage</c>.</summary>
 public sealed record RegisterRights(bool Create);
@@ -228,7 +228,8 @@ public sealed record CampaignRequest(
     IReadOnlyList<int>? ReminderDays,
     int? LateJoinerDays,
     IReadOnlyList<string>? ExcludedMembershipTypes,
-    ContentAudience? Audience);
+    ContentAudience? Audience,
+    CheckSettings? Check = null);
 
 public sealed record CampaignCounts(int Members, int Attested, int Open, int Overdue, int LeftAudience);
 
@@ -246,7 +247,8 @@ public sealed record CampaignView(
     PolicyPerson LaunchedBy,
     DateTimeOffset LaunchedAt,
     DateTimeOffset? ClosedAt,
-    CampaignCounts Counts);
+    CampaignCounts Counts,
+    CampaignCheck? Check = null);
 
 public sealed record AttestRequest(Guid? CampaignId, string? Locale, string? Channel);
 
@@ -258,7 +260,7 @@ public sealed record AttestationDue(Guid? CampaignId, int Version, DateTimeOffse
 
 /// <summary>The current user's attestation state for one policy, for the policy page.</summary>
 /// <summary>What the person owes on a policy. <paramref name="TrainingFirst"/> names the course to complete before attesting.</summary>
-public sealed record MyAttestation(AttestationDue? Due, int? LastVersion, DateTimeOffset? LastAt, Guid? TrainingFirst = null);
+public sealed record MyAttestation(AttestationDue? Due, int? LastVersion, DateTimeOffset? LastAt, Guid? TrainingFirst = null, CheckDue? Check = null);
 
 /// <summary>One line of My policies: action needed when <see cref="Due"/> is set, accepted when the last attestation is for the version in force.</summary>
 public sealed record MyPolicyItem(PolicySummary Policy, int? CurrentVersion, DateTimeOffset? EffectiveFrom, AttestationDue? Due, int? AttestedVersion, DateTimeOffset? AttestedAt);
@@ -296,8 +298,9 @@ public sealed record ComplianceView(
     IReadOnlyList<ComplianceGroup> ByLocation,
     IReadOnlyList<ComplianceGroup> ByManager);
 
+/// <summary>A person in the compliance view. <paramref name="NeedsFollowUp"/>: they failed every attempt of the campaign's comprehension check (US6 scenario 2).</summary>
 public sealed record CompliancePerson(PolicyPerson Person, Guid? UnitId, string? Location, Guid? ManagerId, string Status, DateTimeOffset DueAt, DateTimeOffset? AttestedAt,
-    DateTimeOffset? LeftAt);
+    DateTimeOffset? LeftAt, bool NeedsFollowUp = false);
 
 public sealed record CompliancePeople(IReadOnlyList<CompliancePerson> Items, int Total, int Offset, int Limit);
 

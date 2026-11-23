@@ -13,6 +13,7 @@ import {
   type PolicyView,
 } from "@/lib/policies/types";
 import { Header } from "@/components/shell/Header";
+import { Badge } from "@/components/ui/Badge";
 import { StateView } from "@/components/ui/StateView";
 import { PoliciesNav } from "@/features/policies/PoliciesNav";
 import { RemindButton } from "@/features/policies/RemindButton";
@@ -207,7 +208,15 @@ export default async function PolicyCompliancePage({ params, searchParams }: { p
                                   <bdi>{x.person.displayName}</bdi>
                                 </Link>
                               </th>
-                              <td>{t(`memberStatus.${x.status}`)}</td>
+                              <td>
+                                {t(`memberStatus.${x.status}`)}
+                                {x.needsFollowUp ? (
+                                  <>
+                                    {" "}
+                                    <Badge tone="warning">{t("needsFollowUp")}</Badge>
+                                  </>
+                                ) : null}
+                              </td>
                               <td>
                                 {format.dateTime(new Date(x.attestedAt ?? x.leftAt ?? x.dueAt), { dateStyle: "medium" })}
                               </td>

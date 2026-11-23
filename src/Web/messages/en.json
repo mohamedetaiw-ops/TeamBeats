@@ -5189,7 +5189,10 @@
       "failed": "Your attestation could not be saved. Try again.",
       "given": "You accepted version {number} on {date}.",
       "trainingFirst": "Complete the linked training course first. You can attest once it is done.",
-      "openTraining": "Open the course"
+      "openTraining": "Open the course",
+      "checkFirst": "Pass the comprehension check first. You need {pass}% and have {left, plural, one {# attempt} other {# attempts}} left.",
+      "checkFollowUp": "You used every attempt of the comprehension check. Your policy owner will follow up with you.",
+      "takeCheck": "Take the check"
     },
     "history": {
       "title": "Versions",
@@ -5214,7 +5217,8 @@
       "scheduled": "Version {number} is approved and comes into force on {date}.",
       "analytics": "Analytics",
       "reviews": "Scheduled review",
-      "reviewsOverdue": "Scheduled review (overdue)"
+      "reviewsOverdue": "Scheduled review (overdue)",
+      "questions": "Comprehension questions"
     },
     "create": {
       "title": "New policy",
@@ -5327,7 +5331,14 @@
       "remind": "Remind everyone who has not accepted",
       "reminded": "{count, plural, =0 {Nobody to remind.} one {Reminder sent to # person.} other {Reminders sent to # people.}}",
       "close": "Close campaign",
-      "closed": "Campaign closed."
+      "closed": "Campaign closed.",
+      "check": "Ask a comprehension check first",
+      "checkHint": "People answer questions from the policy's question bank before they can attest.",
+      "passMark": "Pass mark (%)",
+      "attempts": "Attempts",
+      "drawn": "Questions per attempt",
+      "drawnHint": "Leave empty to ask every question of the bank.",
+      "checkSummary": "Comprehension check: {questions, plural, one {# question} other {# questions}}, pass mark {pass}%, {attempts, plural, one {# attempt} other {# attempts}}"
     },
     "compliance": {
       "register": "Policies",
@@ -5390,7 +5401,8 @@
       "previous": "Previous",
       "next": "Next",
       "showing": "{from} to {to} of {total}",
-      "failed": "The people could not be loaded. Try again."
+      "failed": "The people could not be loaded. Try again.",
+      "needsFollowUp": "Needs follow-up"
     },
     "person": {
       "register": "Policies",
@@ -5476,6 +5488,57 @@
         "major_revision": "Recorded. A draft is ready for your revision.",
         "retire": "Recorded.",
         "revised": "Recorded."
+      }
+    },
+    "check": {
+      "register": "Policy register",
+      "title": "Comprehension check",
+      "heading": "Comprehension check: {name}",
+      "description": "Answer the questions to show you understood the policy. You need {pass}% to pass.",
+      "intro": "You need {pass}% to pass and have {attempts, plural, one {# attempt} other {# attempts}}.",
+      "attempt": "Attempt {number} of {of}",
+      "question": "{number}. {text}",
+      "several": "Choose every answer that is right.",
+      "answerAll": "Answer every question first.",
+      "submit": "Send answers",
+      "busy": "Sending",
+      "failed": "Your answers could not be sent. Try again.",
+      "passed": "You passed with {score}%",
+      "passedHint": "You can now attest to the policy.",
+      "notPassed": "You scored {score}%. You need {pass}%.",
+      "reread": "Reread these sections, then try again:",
+      "followUp": "You used every attempt. Your policy owner will follow up with you.",
+      "toAttest": "Go to the attestation",
+      "start": "Start the check",
+      "again": "Try again ({left, plural, one {# attempt left} other {# attempts left}})"
+    },
+    "questions": {
+      "register": "Policy register",
+      "title": "Comprehension questions",
+      "heading": "Comprehension questions: {name}",
+      "description": "Questions people answer before they attest, each linked to a clause.",
+      "noVersion": "Write a version of the policy first.",
+      "forVersion": "Questions for version {number}, the version in force.",
+      "forDraft": "Questions for the draft being written.",
+      "locked": "An open campaign asks these {count, plural, one {# question} other {# questions}}. Close it to change them.",
+      "none": "No questions yet.",
+      "question": "Question {number}",
+      "clause": "Clause it checks",
+      "prompt": "Question in {language}",
+      "multiple": "More than one answer is right",
+      "answer": "Answer {number} in {language}",
+      "right": "Answer {number} is right",
+      "removeAnswer": "Remove answer {number}",
+      "addAnswer": "Add an answer",
+      "remove": "Remove question {number}",
+      "add": "Add a question",
+      "save": "Save questions",
+      "busy": "Saving",
+      "saved": "Questions saved.",
+      "failed": "The questions could not be saved. Try again.",
+      "language": {
+        "en": "English",
+        "ar": "Arabic"
       }
     }
   },

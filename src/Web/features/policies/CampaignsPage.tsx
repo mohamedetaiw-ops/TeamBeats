@@ -37,7 +37,8 @@ export async function CampaignsPage({ id, focus }: { id: string; focus: string |
       />
       <main id="main" className="page policies-page">
         <PageHeader title={t("heading", { name })} icon="policy" nav={<PoliciesNav current={null} />} />
-        <CampaignsPanel policyId={p.id} initial={campaigns.data} canLaunch={p.currentVersion !== null && p.status !== "retired"} focus={focus} />
+        <CampaignsPanel policyId={p.id} initial={campaigns.data} canLaunch={p.currentVersion !== null && p.status !== "retired"} focus={focus}
+          canCheck={p.rights.comprehension ?? false} />
       </main>
     </>
   );

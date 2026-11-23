@@ -69,7 +69,8 @@ public sealed class PolicyCampaigns(
     IAuditWriter audit,
     IOutbox outbox,
     IClock clock,
-    ILearningObligations training)
+    ILearningObligations training,
+    PolicyChecks checks)
     : IPersonalTaskSource, IMessageHandler<AttestationNoticeBatch>, IMessageHandler<OrganizationMembershipChanged>, IMessageHandler<TenantMembershipDisabled>,
         IMessageHandler<PolicyPublished>
 {
@@ -129,7 +130,7 @@ public sealed class PolicyCampaigns(
 
     private async Task<CampaignView> ViewAsync(CampaignRow c, CancellationToken ct) =>
         new(c.Id, c.PolicyId, c.Version, c.Audience, c.Deadline, c.Text, c.ReminderDays, c.LateJoinerDays, c.Excluded, c.Status, await register.PersonAsync(c.LaunchedBy, ct),
-            c.LaunchedAt, c.ClosedAt, await CountsAsync(c.Id, ct));
+            c.LaunchedAt, c.ClosedAt, await CountsAsync(c.Id, ct), await checks.CampaignCheckAsync(c.Id, ct));
 
     /// <summary>Who a campaign asks: its audience, inside the policy's audience, active, and not of an excluded membership type.</summary>
     private async Task<HashSet<Guid>> TargetsAsync(PolicyRow policy, ContentAudience? narrowed, IReadOnlyCollection<string> excluded, CancellationToken ct)
@@ -214,6 +215,7 @@ public sealed class PolicyCampaigns(
             errors.Add("attestationText", "validation.policies.attestation_text");
         }
         audiences.Validate(request.Audience, "audience", errors);
+        var check = await checks.SettingsAsync(version, request.Check, errors, ct);
         errors.ThrowIfAny();
 
         var narrowed = request.Audience is { IsEveryone: false } requested ? requested : null;
@@ -225,12 +227,14 @@ public sealed class PolicyCampaigns(
         await session.ExecAsync(
             """
             insert into policies.campaign (tenant_id, id, policy_id, version, audience, deadline, attestation_text, reminder_days, late_joiner_days,
-              excluded_membership_types, status, launched_by, launched_at)
-            values (platform.current_tenant_id(), @campaignId, @id, @number, @audience, @deadline, @text, @reminders, @late, @excluded, 'open', @user, @now)
+              excluded_membership_types, status, launched_by, launched_at, check_pass_percent, check_attempts, check_questions)
+            values (platform.current_tenant_id(), @campaignId, @id, @number, @audience, @deadline, @text, @reminders, @late, @excluded, 'open', @user, @now,
+              @pass, @attempts, @questions)
             """,
             new
             {
                 campaignId, id, number, audience = new Jsonb(PolicyJson.Write(audience)), deadline, text = new Jsonb(PolicyJson.Write(text)), reminders, late, excluded, user, now,
+                pass = check?.PassPercent, attempts = check?.Attempts, questions = check?.Questions,
             }, ct);
         await session.ExecAsync(
             """
@@ -238,7 +242,7 @@ public sealed class PolicyCampaigns(
             select platform.current_tenant_id(), @campaignId, u, @now, @deadline, 'open' from unnest(@targets) u
             """, new { campaignId, targets, now, deadline }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.PolicyCampaignLaunched, Securables.Policy, id.ToString(), TargetOrgUnitId: policy.OrgUnitId,
-            Changes: new { campaign = campaignId, version = number, audience = targets.Length, deadline, reminders, lateJoinerDays = late, excluded }), ct);
+            Changes: new { campaign = campaignId, version = number, audience = targets.Length, deadline, reminders, lateJoinerDays = late, excluded, check }), ct);
         // The notices go out in batches of their own, so the members commit at once however large the audience.
         foreach (var chunk in targets.Chunk(NoticeBatch))
         {
@@ -369,7 +373,8 @@ public sealed class PolicyCampaigns(
         var owed = (await OwedAsync(user, policy.Id, ct)).FirstOrDefault();
         var last = await LastAttestationAsync(user, policy.Id, ct);
         return new MyAttestation(owed is null ? null : Due(owed), last?.Version, last?.At,
-            owed is null ? null : await TrainingFirstAsync(policy, owed.Version, user, ct));
+            owed is null ? null : await TrainingFirstAsync(policy, owed.Version, user, ct),
+            owed?.Campaign is { } c ? await checks.DueAsync(c.Id, user, ct) : null);
     }
 
     /// <summary>
@@ -478,6 +483,13 @@ public sealed class PolicyCampaigns(
         {
             throw AppException.Conflict("conflict.policies.training_first");
         }
+        // A campaign with a comprehension check takes the attestation only once the person passed it (US6).
+        object? comprehension = null;
+        if (campaign is not null && await checks.CampaignCheckAsync(campaign.Id, ct) is not null
+            && (comprehension = await checks.PassedAsync(campaign.Id, user, ct)) is null)
+        {
+            throw AppException.Conflict("conflict.policies.check_first");
+        }
         var channel = request.Channel ?? AttestationChannels.Web;
         var errors = new ValidationErrors();
         if (!AttestationChannels.Online.Contains(channel))
@@ -498,10 +510,15 @@ public sealed class PolicyCampaigns(
         var now = clock.UtcNow;
         var inserted = await session.ExecAsync(
             """
-            insert into policies.attestation (tenant_id, id, user_id, policy_id, version, campaign_id, attestation_text, locale, text_hash, channel, source, attested_at)
-            values (platform.current_tenant_id(), @attestationId, @user, @policy, @version, @campaign, @text, @locale, @hash, @channel, 'online', @now)
+            insert into policies.attestation (tenant_id, id, user_id, policy_id, version, campaign_id, attestation_text, locale, text_hash, channel, source, comprehension,
+              attested_at)
+            values (platform.current_tenant_id(), @attestationId, @user, @policy, @version, @campaign, @text, @locale, @hash, @channel, 'online', @comprehension, @now)
             on conflict do nothing
-            """, new { attestationId, user, policy = policy.Id, version = asked.Version, campaign = campaign?.Id, text, locale, hash, channel, now }, ct);
+            """, new
+            {
+                attestationId, user, policy = policy.Id, version = asked.Version, campaign = campaign?.Id, text, locale, hash, channel,
+                comprehension = comprehension is null ? null : new Jsonb(PolicyJson.Write(comprehension)), now,
+            }, ct);
         if (inserted == 0)
         {
             throw AppException.Conflict("conflict.policies.already_attested");
