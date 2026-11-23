@@ -5314,7 +5314,26 @@
       "resolvedBy": "Resolved by {name}",
       "decision": "Your decision",
       "busy": "Saving",
-      "failed": "The comment could not be saved. Try again."
+      "failed": "The comment could not be saved. Try again.",
+      "summary": {
+        "title": "What changes",
+        "intro": "Ask AI for a plain-language summary of what this version changes against the version in force. Every approver then reads the same one.",
+        "action": "Summarize the changes",
+        "busy": "Writing the summary…",
+        "failed": "The summary could not be made. Try again.",
+        "none": "No summary this time",
+        "aiGenerated": "AI-generated",
+        "points": "Changes by clause",
+        "check": "Written by AI from the clause texts. The compare view below is the record of what changed.",
+        "denial": {
+          "classification_blocked": "The AI policy does not allow this policy's text to be sent to a model.",
+          "provider_unavailable": "The AI provider is not available. Try again later.",
+          "quota_exhausted": "The AI quota is used up for now.",
+          "budget_exhausted": "The AI budget is used up for now.",
+          "not_in_package": "Your package does not include AI for this use.",
+          "other": "The AI gateway refused the request."
+        }
+      }
     },
     "campaigns": {
       "register": "Policies",

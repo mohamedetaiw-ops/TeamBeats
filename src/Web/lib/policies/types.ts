@@ -182,6 +182,13 @@ export function shownLocale(version: VersionView, locale: string, binding: strin
 
 export type ClauseChange = { key: string; change: "added" | "removed" | "changed" | "unchanged"; before: ClauseView | null; after: ClauseView | null };
 
+/** The AI change summary of a version in review (spec 025 section 11), always shown labelled as AI-generated. */
+export type ChangeSummaryView = {
+  outcome: "summarized" | "nothing_to_compare" | "policy_blocked" | "unavailable";
+  summary: { locale: string; summary: string; points: string[]; model: string; generatedAt: string; aiGenerated: boolean } | null;
+  denial?: string | null;
+};
+
 export type CompareView = { base: number | null; versionId: string; number: number | null; clauses: ClauseChange[]; titlesChanged: boolean };
 
 export type CommentView = {
