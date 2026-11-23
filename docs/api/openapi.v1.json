@@ -15825,6 +15825,18 @@
         }
       }
     },
+    "/api/v1/policies/team": {
+      "get": {
+        "tags": [
+          "Policies"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/engagement/communities": {
       "get": {
         "tags": [

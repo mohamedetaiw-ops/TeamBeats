@@ -370,6 +370,8 @@ public static class PoliciesModule
         root.MapGet("/compliance/people/{userId:guid}", async (Guid userId, PolicyCompliance compliance, CancellationToken ct) =>
             Results.Ok(await compliance.PersonAsync(userId, ct)));
 
+        root.MapGet("/team", async (PolicyCompliance compliance, CancellationToken ct) => Results.Ok(await compliance.TeamAsync(ct)));
+
         app.MapGet("/api/v1/me/policies", async (PolicyCampaigns campaigns, CancellationToken ct) => Results.Ok(await campaigns.MyPoliciesAsync(ct)))
             .RequireTenantUser().WithTags("Policies");
 

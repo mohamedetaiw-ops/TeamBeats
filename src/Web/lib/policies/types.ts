@@ -37,7 +37,24 @@ export type RouteStep = { names?: Names | null; approvers?: string[] | null; com
 
 export type PolicyRights = { manage: boolean; edit: boolean; review: boolean; history: boolean; compliance: boolean; ask: boolean; analytics: boolean; comprehension?: boolean; exemptions?: boolean; controls?: boolean; paper?: boolean; pause?: boolean };
 
-export type RegisterRights = { create: boolean; exemptions?: boolean; evidence?: boolean };
+export type RegisterRights = { create: boolean; exemptions?: boolean; evidence?: boolean; team?: boolean };
+
+/** One report who still owes an attestation, on the manager's team dashboard (spec 025 R2). */
+export type TeamMember = { person: PolicyPerson; direct: boolean; status: MemberStatus; dueAt: string; pausedUntil: string | null; exemptUntil: string | null };
+
+export type TeamPolicyStatus = {
+  policy: PolicySummary;
+  campaignId: string;
+  version: number;
+  deadline: string;
+  counts: ComplianceCounts;
+  paused: number;
+  exempt: number;
+  owing: TeamMember[];
+};
+
+/** A line manager's team across every open campaign (spec 025 R2 manager dashboards). */
+export type TeamDashboard = { reports: number; direct: number; policies: TeamPolicyStatus[] };
 
 export type PolicyView = {
   id: string;

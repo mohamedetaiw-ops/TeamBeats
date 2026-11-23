@@ -283,6 +283,64 @@ public sealed class PolicyCompliance(
     }
 
     /// <summary>
+    /// The team dashboard (spec 025 R2, manager dashboards): a line manager's direct and indirect reports in every open
+    /// campaign of a policy the manager can read, with the counts, the paused and exempt people and those who still owe
+    /// it. Line managers see each report by name (US3 scenario 4), so no group is hidden; comprehension answers and
+    /// exemption reasons stay with compliance. Without reports there is nothing to show.
+    /// </summary>
+    public async Task<TeamDashboard> TeamAsync(CancellationToken ct)
+    {
+        await entitlements.DemandAsync(Capabilities.PolicyCore, ct);
+        var me = context.RequireUser();
+        var reports = await reportingLine.AllReportsAsync(me, ct);
+        if (reports.Count == 0)
+        {
+            throw AppException.Denied();
+        }
+        var direct = (await reportingLine.DirectReportsAsync(me, ct)).ToHashSet();
+        var open = await session.QueryAsync($"select {CampaignRow.Columns} from policies.campaign where status = 'open' order by deadline, id", null, CampaignRow.Read, ct);
+        var ids = reports.ToArray();
+        var memberships = await MembershipsAsync(ct);
+        var units = ids.Select(memberships.Primary).OfType<Guid>().Distinct().ToList();
+        var paths = await hierarchy.GetPathsAsync(units, ct);
+        var now = clock.UtcNow;
+        var result = new List<TeamPolicyStatus>();
+        foreach (var campaign in open)
+        {
+            var members = await session.QueryAsync(
+                """
+                select user_id, status, due_at, attested_at, left_at, follow_up_at is not null, paused_until from policies.campaign_member
+                where campaign_id = @c and user_id = any(@ids)
+                """,
+                new { c = campaign.Id, ids }, r => new Member(r.GetGuid(0), r.GetString(1), r.GetFieldValue<DateTimeOffset>(2), r.Get<DateTimeOffset?>("attested_at"),
+                    r.Get<DateTimeOffset?>("left_at"), r.GetBoolean(5), r.Get<DateTimeOffset?>("paused_until")), ct);
+            if (members.Count == 0 || await register.RowAsync(campaign.PolicyId, false, ct) is not { } policy || !await register.ReadsPublishedAsync(policy, ct))
+            {
+                continue;
+            }
+            var placed = members.Select(m =>
+            {
+                var unit = memberships.Primary(m.UserId);
+                return new Placed(m, unit, unit is { } u && paths.TryGetValue(u, out var p) ? p : [], null, null);
+            }).ToList();
+            var covers = await exemptions.ActiveOnAsync(policy.Id, ct);
+            DateOnly? ExemptUntil(Placed p) =>
+                covers.Where(c => c.Subject == p.Member.UserId || (c.UnitId is { } u && p.Path.Contains(u))).Select(c => (DateOnly?)c.EndsOn).Max();
+            bool Paused(Member m) => m.PausedUntil > now && m.Status == MemberStatuses.Open;
+            var owing = new List<TeamMember>();
+            foreach (var p in placed.Where(p => p.Member.Status is MemberStatuses.Open or MemberStatuses.Overdue)
+                .OrderBy(p => StatusOrder(p.Member.Status)).ThenBy(p => p.Member.DueAt).ThenBy(p => p.Member.UserId))
+            {
+                owing.Add(new TeamMember(await register.PersonAsync(p.Member.UserId, ct), direct.Contains(p.Member.UserId), p.Member.Status, p.Member.DueAt,
+                    Paused(p.Member) ? p.Member.PausedUntil : null, ExemptUntil(p)));
+            }
+            result.Add(new TeamPolicyStatus(await register.SummaryAsync(policy, ct), campaign.Id, campaign.Version, campaign.Deadline, Count(placed),
+                placed.Count(p => Paused(p.Member)), placed.Count(p => p.Member.Status is MemberStatuses.Open or MemberStatuses.Overdue && ExemptUntil(p) is not null), owing));
+        }
+        return new TeamDashboard(reports.Count, direct.Count, result);
+    }
+
+    /// <summary>
     /// Reminds the viewer's people who still owe an attestation in an open campaign (US3 scenario 4), all of them or the
     /// ones named. A line manager reaches only their reports.
     /// </summary>
