@@ -5181,7 +5181,9 @@
         "hi": "Hindi",
         "ur": "Urdu"
       },
-      "ask": "Ask about this policy"
+      "ask": "Ask about this policy",
+      "document": "This policy is kept as controlled document {number} {name}, version {label}.",
+      "openDocument": "Open the signed document"
     },
     "attest": {
       "title": "Your attestation",
@@ -5291,7 +5293,16 @@
       "withdraw": "Withdraw from review",
       "busy": "Saving",
       "saved": "Draft saved.",
-      "failed": "The draft could not be saved. Try again."
+      "failed": "The draft could not be saved. Try again.",
+      "source": {
+        "legend": "Where the text comes from",
+        "clauses": "Clauses written here",
+        "document": "A released controlled document",
+        "reference": "Controlled document ID or link",
+        "hint": "The clauses are taken from the version in force, one a paragraph, in {language}.",
+        "linked": "Kept as {number} {name}, version {label}, with {clauses, plural, one {# clause} other {# clauses}}.",
+        "open": "Open the document"
+      }
     },
     "review": {
       "register": "Policies",

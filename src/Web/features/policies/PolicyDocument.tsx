@@ -31,6 +31,12 @@ export function PolicyDocument({ reading, locale }: { reading: PolicyReading; lo
         {" · "}
         {t("owner", { name: isolate(policy.owner.displayName) })}
       </p>
+      {version.document ? (
+        <p className="policies-banner" role="note" data-testid="policy-controlled-document">
+          {t("document", { number: version.document.number ?? "", name: version.document.name, label: version.document.label })}{" "}
+          <Link href={version.document.link}>{t("openDocument")}</Link>
+        </p>
+      ) : null}
       {reading.superseded ? (
         <div className="policies-banner" role="note" data-testid="superseded-banner">
           <p>

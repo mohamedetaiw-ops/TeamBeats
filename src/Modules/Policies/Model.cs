@@ -64,7 +64,14 @@ public sealed record CategoryView(Guid Id, IReadOnlyDictionary<string, string> N
 /// </summary>
 public sealed record ClauseInput(string? Key, int? Level, IReadOnlyDictionary<string, string>? Titles, IReadOnlyDictionary<string, BodyDocument>? Bodies);
 
-public sealed record DraftRequest(IReadOnlyDictionary<string, string>? Titles, IReadOnlyList<ClauseInput>? Clauses, bool? Material, string? ChangeNote);
+public sealed record DraftRequest(IReadOnlyDictionary<string, string>? Titles, IReadOnlyList<ClauseInput>? Clauses, bool? Material, string? ChangeNote,
+    Guid? DocumentId = null);
+
+/// <summary>
+/// The controlled document a version is kept as (FR-003): the spec 011 document and the released version it was made
+/// from, its number and file, and its reader page, where the signed PDF opens.
+/// </summary>
+public sealed record PolicyDocumentSource(Guid DocumentId, Guid VersionId, string Name, string? Number, string Label, string FileName, string Link);
 
 public sealed record SubmitRequest(DateOnly? EffectiveOn);
 
@@ -93,7 +100,8 @@ public sealed record VersionView(
     DateTimeOffset? SubmittedAt,
     DateTimeOffset? ApprovedAt,
     DateTimeOffset? SupersededAt,
-    DateTimeOffset UpdatedAt);
+    DateTimeOffset UpdatedAt,
+    PolicyDocumentSource? Document = null);
 
 /// <summary>
 /// A version for a reader (US1 scenarios 4 and 5): the policy, the binding language for the note on other languages,
@@ -116,7 +124,7 @@ public sealed record ScheduledVersion(Guid Id, int Number, DateTimeOffset Effect
 /// force and the package includes the assistant and policy Q&amp;A.
 /// </summary>
 public sealed record PolicyRights(bool Manage, bool Edit, bool Review, bool History, bool Compliance, bool Ask = false, bool Analytics = false, bool Comprehension = false,
-    bool Exemptions = false, bool Controls = false, bool Paper = false, bool Pause = false, bool Cycle = false);
+    bool Exemptions = false, bool Controls = false, bool Paper = false, bool Pause = false, bool Cycle = false, bool Document = false);
 
 /// <summary>What the current user may do in the register: create policies where they hold <c>policy.manage</c>, and open the exemption register.</summary>
 public sealed record RegisterRights(bool Create, bool Exemptions = false, bool Evidence = false, bool Team = false);

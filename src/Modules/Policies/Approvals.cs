@@ -29,7 +29,8 @@ public sealed class PolicyApprovals(
     INotificationSender notifications,
     IAuditWriter audit,
     IOutbox outbox,
-    IClock clock)
+    IClock clock,
+    TeamBeats.Modules.Documents.Contracts.IDocumentReferences documents)
 {
     public const string RoutePrefix = "policies.approval.";
     public const int MaxCommentLength = 2000;
@@ -122,34 +123,56 @@ public sealed class PolicyApprovals(
         var errors = new ValidationErrors();
         var enabled = (await tenantSettings.GetLocaleSettingsAsync(ct)).EnabledLocales;
         var (locales, titles, clauses) = ClauseRules.Normalize(request, enabled, errors);
+        PolicyDocumentSource? source = null;
+        if (request.DocumentId is { } documentId)
+        {
+            // A policy kept as a controlled document (FR-003): its clauses are the document's text, in the one language of the version.
+            if (request.Clauses is { Count: > 0 })
+            {
+                errors.Add("clauses", "validation.policies.document_clauses");
+            }
+            if (locales.Count > 1)
+            {
+                errors.Add("titles", "validation.policies.document_locale");
+            }
+            errors.ThrowIfAny();
+            var document = await documents.ControlledAsync(documentId, ct) ?? throw AppException.Validation("documentId", "validation.policies.document");
+            source = new PolicyDocumentSource(document.Reference.DocumentId, document.Reference.VersionId, document.Reference.Name, document.Number,
+                document.Reference.Label, document.Reference.FileName, document.Link);
+            clauses = ClauseRules.FromText(document.Text, locales[0]);
+            if (clauses.Count == 0 || clauses.Sum(c => ClauseRules.Text(c, locales[0]).Length) > ClauseRules.MaxCharacters)
+            {
+                throw AppException.Validation("documentId", "validation.policies.document_text");
+            }
+        }
         errors.ThrowIfAny();
         var now = clock.UtcNow;
         var note = string.IsNullOrWhiteSpace(request.ChangeNote) ? null : request.ChangeNote.Trim();
         var args = new
         {
             id = working?.Id ?? Ids.New(), policy = id, locales = locales.ToArray(), titles = new Jsonb(PolicyJson.Write(titles)), clauses = new Jsonb(PolicyJson.Write(clauses)),
-            material = request.Material ?? working?.Material ?? true, note, user, now,
+            material = request.Material ?? working?.Material ?? true, note, user, now, document = source is null ? null : PolicyJson.Write(source),
         };
         if (working is null)
         {
             await session.ExecAsync(
                 """
-                insert into policies.policy_version (tenant_id, id, policy_id, state, locales, titles, clauses, material, change_note, editors, created_at, updated_at)
-                values (platform.current_tenant_id(), @id, @policy, 'draft', @locales, @titles, @clauses, @material, @note, array[@user], @now, @now)
+                insert into policies.policy_version (tenant_id, id, policy_id, state, locales, titles, clauses, material, change_note, editors, created_at, updated_at, document)
+                values (platform.current_tenant_id(), @id, @policy, 'draft', @locales, @titles, @clauses, @material, @note, array[@user], @now, @now, @document::jsonb)
                 """, args, ct);
         }
         else
         {
             await session.ExecAsync(
                 """
-                update policies.policy_version set locales = @locales, titles = @titles, clauses = @clauses, material = @material, change_note = @note,
+                update policies.policy_version set locales = @locales, titles = @titles, clauses = @clauses, material = @material, change_note = @note, document = @document::jsonb,
                   editors = case when @user = any(editors) then editors else editors || @user end, updated_at = @now
                 where id = @id
                 """, args, ct);
         }
         await register.RefreshStatusAsync(id, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.PolicyDraftSaved, Securables.Policy, id.ToString(), TargetOrgUnitId: policy.OrgUnitId,
-            Changes: new { version = args.id, locales, clauses = clauses.Count, args.material }), ct);
+            Changes: new { version = args.id, locales, clauses = clauses.Count, args.material, document = source?.DocumentId, documentVersion = source?.VersionId }), ct);
         return await register.VersionViewAsync((await register.VersionAsync(args.id, false, ct))!, ct);
     }
 
@@ -169,8 +192,8 @@ public sealed class PolicyApprovals(
         var now = clock.UtcNow;
         await session.ExecAsync(
             """
-            insert into policies.policy_version (tenant_id, id, policy_id, state, locales, titles, clauses, material, change_note, editors, created_at, updated_at)
-            select platform.current_tenant_id(), @id, policy_id, 'draft', locales, titles, clauses, @material, null, array[@user], @now, @now
+            insert into policies.policy_version (tenant_id, id, policy_id, state, locales, titles, clauses, material, change_note, editors, created_at, updated_at, document)
+            select platform.current_tenant_id(), @id, policy_id, 'draft', locales, titles, clauses, @material, null, array[@user], @now, @now, document
             from policies.policy_version where policy_id = @policy and number = @number
             """, new { id, policy = policy.Id, number = policy.CurrentVersion, material, user, now }, ct);
         await register.RefreshStatusAsync(policy.Id, ct);
@@ -195,6 +218,11 @@ public sealed class PolicyApprovals(
         if (await register.ScheduledAsync(id, ct) is not null)
         {
             throw AppException.Conflict("conflict.policies.scheduled");
+        }
+        // A controlled document version goes for approval as the release it was made from; a newer release needs the draft saved again.
+        if (working.Document is { } source && (await documents.ControlledAsync(source.DocumentId, ct))?.Reference.VersionId != source.VersionId)
+        {
+            throw AppException.Conflict("conflict.policies.document_changed");
         }
         var errors = new ValidationErrors();
         ClauseRules.Complete(working.Locales, working.Clauses, policy.BindingLocale, errors);

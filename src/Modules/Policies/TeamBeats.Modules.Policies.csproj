@@ -20,6 +20,7 @@
     <ProjectReference Include="../Spaces.Contracts/TeamBeats.Modules.Spaces.Contracts.csproj" />
     <ProjectReference Include="../Policies.Contracts/TeamBeats.Modules.Policies.Contracts.csproj" />
     <ProjectReference Include="../AiGateway.Contracts/TeamBeats.Modules.AiGateway.Contracts.csproj" />
+    <ProjectReference Include="../Documents.Contracts/TeamBeats.Modules.Documents.Contracts.csproj" />
     <ProjectReference Include="../Learning.Contracts/TeamBeats.Modules.Learning.Contracts.csproj" />
     <ProjectReference Include="../Search.Contracts/TeamBeats.Modules.Search.Contracts.csproj" />
     <ProjectReference Include="../Analytics.Contracts/TeamBeats.Modules.Analytics.Contracts.csproj" />
