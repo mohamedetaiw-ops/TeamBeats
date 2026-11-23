@@ -15468,6 +15468,39 @@
         }
       }
     },
+    "/api/v1/policies/{id}/cycle": {
+      "put": {
+        "tags": [
+          "Policies"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CycleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/policies/{id}/campaigns/{campaignId}/members/{userId}/pause": {
       "post": {
         "tags": [
@@ -34003,6 +34036,23 @@
               "null",
               "boolean"
             ]
+          }
+        }
+      },
+      "CycleRequest": {
+        "required": [
+          "months"
+        ],
+        "type": "object",
+        "properties": {
+          "months": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },

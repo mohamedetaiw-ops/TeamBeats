@@ -44,5 +44,5 @@ R2 covers User Stories 5 to 8, FR-014 to FR-017, the AI change summary for appro
 
 ## Left from R1
 
-- [ ] T022 Fixed attestation cycles (FR-008): a cycle per policy (for example 12 months) that launches a new campaign for the version in force when the last one is that old, with the policy's campaign defaults
+- [x] T022 Fixed attestation cycles (FR-008): a cycle per policy (for example 12 months) that launches a new campaign for the version in force when the last one is that old, with the policy's campaign defaults
 - [ ] T023 Controlled document policies (FR-003): a policy kept as a signed PDF in a spec 011 controlled document, with the text extracted for reading, attestation and Q&A

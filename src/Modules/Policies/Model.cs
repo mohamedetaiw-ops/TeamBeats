@@ -116,7 +116,7 @@ public sealed record ScheduledVersion(Guid Id, int Number, DateTimeOffset Effect
 /// force and the package includes the assistant and policy Q&amp;A.
 /// </summary>
 public sealed record PolicyRights(bool Manage, bool Edit, bool Review, bool History, bool Compliance, bool Ask = false, bool Analytics = false, bool Comprehension = false,
-    bool Exemptions = false, bool Controls = false, bool Paper = false, bool Pause = false);
+    bool Exemptions = false, bool Controls = false, bool Paper = false, bool Pause = false, bool Cycle = false);
 
 /// <summary>What the current user may do in the register: create policies where they hold <c>policy.manage</c>, and open the exemption register.</summary>
 public sealed record RegisterRights(bool Create, bool Exemptions = false, bool Evidence = false, bool Team = false);
@@ -146,7 +146,11 @@ public sealed record PolicyView(
     bool OnboardingRequired,
     PolicyTraining? Training = null,
     int ReviewWindowDays = PolicyReviews.DefaultWindowDays,
-    string? ReviewState = null);
+    string? ReviewState = null,
+    int? AttestationCycleMonths = null);
+
+/// <summary>Sets or clears the fixed re-attestation cycle of a policy (FR-008): <c>null</c> months clears it.</summary>
+public sealed record CycleRequest(int? Months);
 
 /// <summary>The training course linked to a policy (spec 028 US4), and whether attesting waits for its completion.</summary>
 public sealed record PolicyTraining(Guid CourseId, bool BeforeAttestation);
@@ -334,3 +338,6 @@ public sealed record PersonCompliance(PolicyPerson Person, IReadOnlyList<MyPolic
 public sealed record ComplianceRemindRequest(Guid? CampaignId, IReadOnlyList<Guid>? UserIds);
 
 public sealed record ComplianceRemindResult(Guid CampaignId, int Recipients);
+
+/// <summary>A policy's fixed re-attestation cycle: the months, the last campaign and when the next one launches.</summary>
+public sealed record CycleView(int? Months, DateTimeOffset? LastLaunchedAt, DateTimeOffset? NextLaunchAt);

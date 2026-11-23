@@ -5791,6 +5791,18 @@
         "open": "Open",
         "overdue": "Overdue"
       }
+    },
+    "cycle": {
+      "title": "Re-attest on a cycle",
+      "months": "Every",
+      "unit": "months",
+      "hint": "Counted from the last campaign. A new one launches for the version in force with the same settings. Leave empty for no cycle.",
+      "save": "Save cycle",
+      "busy": "Saving",
+      "failed": "The cycle could not be saved. Try again.",
+      "off": "No cycle. Campaigns launch only by hand.",
+      "next": "The next campaign launches on {date, date, medium}.",
+      "afterFirst": "The cycle starts after the first campaign."
     }
   },
   "ai": {
