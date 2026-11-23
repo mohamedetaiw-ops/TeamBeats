@@ -114,3 +114,14 @@ export type BrandSubmission = {
 };
 
 export type BrandApprovalState = { publish: boolean; pending: BrandSubmission | null; last: BrandSubmission | null };
+
+/** What publishing a brand's draft reaches (spec 033 R2 T015): the spec 032 impact report plus what only themes have. */
+export type BrandImpact = {
+  report: import("@/lib/experience/builder-types").ImpactReport;
+  changes: string[];
+  excluded: { id: string; names: Record<string, string> }[];
+  overridden: { scope: string; scopeNames: Record<string, string>; token: string; value: TokenValue }[];
+  previewScope: string;
+  previewNames: Record<string, string>;
+  preview: Record<string, Record<string, string>>;
+};

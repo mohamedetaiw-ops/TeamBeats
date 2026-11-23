@@ -2813,5 +2813,6 @@
   "notifications.template.experience.theme_returned.title": "Your theme change was returned",
   "notifications.template.experience.theme_returned.body": "The change to {brand} was returned: {comment}",
   "notifications.template.experience.theme_schedule_failed.title": "A scheduled theme did not go live",
-  "notifications.template.experience.theme_schedule_failed.body": "{brand} did not go live at its time because of contrast problems, so the current version stays."
+  "notifications.template.experience.theme_schedule_failed.body": "{brand} did not go live at its time because of contrast problems, so the current version stays.",
+  "validation.theme.preview_scope": "Choose a scope that uses this brand"
 }

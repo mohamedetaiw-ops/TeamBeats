@@ -1770,7 +1770,14 @@
       "revertConfirm": "Roll back",
       "reverted": "Version {version} is live again.",
       "working": "Working…",
-      "failed": "That did not work. Try again in a moment."
+      "failed": "That did not work. Try again in a moment.",
+      "impactChanges": "{count, plural, one {# setting changes:} other {# settings change:}}",
+      "separator": ", ",
+      "impactExcluded": "It stops at units that use another brand: {units}.",
+      "impactOverridden": "{scope} keeps its own value for {token}, so this change does not reach it there.",
+      "impactPreview": "Preview of {scope} with the draft",
+      "impactPane": "Light, {direction}",
+      "tenant": "The whole organization"
     },
     "saveDraft": "Save draft",
     "draftSaved": "Draft saved. Employees still see the version in force."

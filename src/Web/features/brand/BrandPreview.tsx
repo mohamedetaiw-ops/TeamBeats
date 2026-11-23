@@ -18,7 +18,10 @@ export function BrandPreview({
   logoAlt,
   panes,
   title,
+  headingId = "brand-preview-title",
 }: {
+  /** Unique per page when a second preview shows, as in the impact report. */
+  headingId?: string;
   preview: Record<string, Record<string, string>> | null;
   logoUrl: string | null;
   logoAlt: string;
@@ -26,8 +29,8 @@ export function BrandPreview({
   title: string;
 }) {
   return (
-    <section className="brand-section" aria-labelledby="brand-preview-title">
-      <h2 id="brand-preview-title">{title}</h2>
+    <section className="brand-section" aria-labelledby={headingId}>
+      <h2 id={headingId}>{title}</h2>
       <div className="brand-preview-grid">
         {panes.map((pane) => (
           <figure
