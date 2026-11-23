@@ -11,6 +11,8 @@ using TeamBeats.Persistence;
 using TeamBeats.Primitives;
 using TeamBeats.TenantContext;
 
+using TeamBeats.Modules.Experience.Sharing;
+
 namespace TeamBeats.Modules.Experience.Shell;
 
 /// <summary>
@@ -63,7 +65,8 @@ public sealed record ShellView(int Version, ShellDefinition Layout, IReadOnlyLis
     string? Home = null, bool Assistant = false, FooterView? Footer = null, IReadOnlyList<HomeViewLink>? HomeViews = null, bool Administration = false,
     IReadOnlyList<NavLink>? MobileNav = null, bool Guest = false, Themes.BrandPresentation? Brand = null);
 
-public sealed record OrganizationMenu(Guid OrgUnitId, string Name, IReadOnlyList<NavLink> Items);
+/// <param name="Shared">True when the menu belongs to another organization that shared it with the viewer's (spec 033 FR-022).</param>
+public sealed record OrganizationMenu(Guid OrgUnitId, string Name, IReadOnlyList<NavLink> Items, bool Shared = false);
 
 public sealed record Crumb(string Label, string Href);
 
@@ -92,7 +95,8 @@ public sealed partial class ShellService(
     IOutbox outbox,
     IEntitlementService entitlements,
     AudienceEvaluator audiences,
-    ITenantMemberships tenantMemberships)
+    ITenantMemberships tenantMemberships,
+    Sharing.OrgSharing sharing)
 {
     public const string TenantScope = "tenant";
     public static readonly IReadOnlyList<string> Regions =
@@ -219,6 +223,20 @@ public sealed partial class ShellService(
                 orgMenus.Add(new OrganizationMenu(scope, Label(scopeNames.GetValueOrDefault(scope), locale) ?? scope.ToString(),
                     await LinksAsync(menu.Items, nodes, visible, locale, ct)));
             }
+        }
+        // Menus of other organizations shared with the viewer's (spec 033 R2 T019), after their own, marked as shared so the
+        // owner shows (FR-022). Their links keep each page's own visibility.
+        foreach (var menu in menus.Where(m => m.Kind == "organization"))
+        {
+            var scope = Guid.Parse(menu.Scope);
+            if (seen.Contains(scope) || !await sharing.IsSharedToViewerAsync(OrgSharing.Menu, scope, scope, ct))
+            {
+                continue;
+            }
+            seen.Add(scope);
+            var scopeNames = await hierarchy.GetNamesAsync([scope], ct);
+            orgMenus.Add(new OrganizationMenu(scope, Label(scopeNames.GetValueOrDefault(scope), locale) ?? scope.ToString(),
+                await LinksAsync(menu.Items, nodes, visible, locale, ct), Shared: true));
         }
 
         var home = await HomeSlugAsync(layout.HomePageId, ct);
@@ -447,7 +465,7 @@ public sealed partial class ShellService(
             }
             // A page that is not in the IA is reachable by its own slug, under the same visibility rule.
             var page = await PageBySlugAsync(slug, ct);
-            if (page is { } p && await CanViewPageAsync(p.OrgUnitId, p.Published, ct))
+            if (page is { } p && await CanViewPageAsync(p.Id, p.OrgUnitId, p.Published, ct))
             {
                 return new ResolveResult("page", slug, null, null, [], [], []);
             }
@@ -502,7 +520,7 @@ public sealed partial class ShellService(
             if (slug.StartsWith("p/", StringComparison.Ordinal))
             {
                 var pageSlug = slug[2..];
-                if (await PageBySlugAsync(pageSlug, ct) is { } page && await CanViewPageAsync(page.OrgUnitId, page.Published, ct))
+                if (await PageBySlugAsync(pageSlug, ct) is { } page && await CanViewPageAsync(page.Id, page.OrgUnitId, page.Published, ct))
                 {
                     result[path] = pageSlug;
                 }
@@ -545,7 +563,7 @@ public sealed partial class ShellService(
             new { q = "%" + term.Replace("%", "").Replace("_", "") + "%" }, r => (Id: r.GetGuid(0), Slug: r.GetString(1), Unit: r.IsDBNull(2) ? (Guid?)null : r.GetGuid(2)), ct);
         foreach (var page in pages.Where(p => !inIa.Contains(p.Id)))
         {
-            if (await CanViewPageAsync(page.Unit, true, ct))
+            if (await CanViewPageAsync(page.Id, page.Unit, true, ct))
             {
                 result.Add(new QuickNavItem(page.Slug, "/p/" + page.Slug, null));
             }
@@ -721,7 +739,7 @@ public sealed partial class ShellService(
         var page = await session.QuerySingleOrDefaultAsync(
             "select slug, org_unit_id from experience.page where id = @id and current_release is not null", new { id },
             r => (Slug: r.GetString(0), Unit: r.IsDBNull(1) ? (Guid?)null : r.GetGuid(1)), ct);
-        return page.Slug is not null && (await authz.CheckAsync(Permissions.PageView, Target(page.Unit), ct)).Allowed ? page.Slug : null;
+        return page.Slug is not null && await CanViewPageAsync(id, page.Unit, true, ct) ? page.Slug : null;
     }
 
     private async Task<HashSet<Guid>> VisibleNodesAsync(IReadOnlyDictionary<Guid, Node> nodes, CancellationToken ct)
@@ -745,7 +763,7 @@ public sealed partial class ShellService(
                 {
                     allowed = viewable[page.Unit ?? Guid.Empty] = (await authz.CheckAsync(Permissions.PageView, Target(page.Unit), ct)).Allowed;
                 }
-                if (allowed)
+                if (allowed && await sharing.SeesAsync(OrgSharing.Page, pid, page.Unit, ct))
                 {
                     own.Add(node.Id);
                 }
@@ -807,18 +825,19 @@ public sealed partial class ShellService(
     private static ResolveResult Recovery() =>
         new("recovery", null, null, null, [], [], [new Crumb("home", "/"), new Crumb("search", "/search")]);
 
-    private async Task<(Guid? OrgUnitId, bool Published)?> PageBySlugAsync(string slug, CancellationToken ct)
+    private async Task<(Guid Id, Guid? OrgUnitId, bool Published)?> PageBySlugAsync(string slug, CancellationToken ct)
     {
-        var row = await session.QuerySingleOrDefaultAsync("select org_unit_id, current_release is not null from experience.page where slug = @slug",
-            new { slug }, r => (Found: true, Unit: r.IsDBNull(0) ? (Guid?)null : r.GetGuid(0), Published: r.GetBoolean(1)), ct);
-        return row.Found ? (row.Unit, row.Published) : null;
+        var row = await session.QuerySingleOrDefaultAsync("select id, org_unit_id, current_release is not null from experience.page where slug = @slug",
+            new { slug }, r => (Found: true, Id: r.GetGuid(0), Unit: r.IsDBNull(1) ? (Guid?)null : r.GetGuid(1), Published: r.GetBoolean(2)), ct);
+        return row.Found ? (row.Id, row.Unit, row.Published) : null;
     }
 
     private async Task<string?> PageSlugAsync(Guid pageId, CancellationToken ct) =>
         await session.ScalarAsync<string?>("select slug from experience.page where id = @id", new { id = pageId }, ct);
 
-    private async Task<bool> CanViewPageAsync(Guid? unit, bool published, CancellationToken ct) =>
-        published && (await authz.CheckAsync(Permissions.PageView, Target(unit), ct)).Allowed;
+    /// <summary>Published, viewable at its scope, and reaching the viewer's organization or shared with it (spec 033 R2 T019).</summary>
+    private async Task<bool> CanViewPageAsync(Guid id, Guid? unit, bool published, CancellationToken ct) =>
+        published && (await authz.CheckAsync(Permissions.PageView, Target(unit), ct)).Allowed && await sharing.SeesAsync(OrgSharing.Page, id, unit, ct);
 
     private static NodeView View(Node node, IReadOnlyList<(string OldSlug, Guid NodeId)> redirects) =>
         new(node.Id, node.ParentId, node.Labels, node.Slug, node.PageId, node.Url, node.Owner, node.Position,

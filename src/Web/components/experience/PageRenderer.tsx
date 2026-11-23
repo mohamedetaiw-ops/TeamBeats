@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { EventChannel } from "@/lib/experience/events";
 import type { RenderedPage, RenderedPlacement, RenderedRegion, SectionMode } from "@/lib/experience/types";
+import { Badge } from "@/components/ui/Badge";
 import { PageTelemetry } from "./PageTelemetry";
 import { Placement } from "./Placement";
 import { RegionTabs } from "./RegionTabs";
@@ -73,8 +74,11 @@ export function PageRenderer({
   tabLabel,
   tabsLabel,
   tools,
+  sharedLabel,
 }: {
   page: RenderedPage;
+  /** "Shared by {organization}" when the viewer reaches the page through a share (spec 033 FR-022). */
+  sharedLabel?: (owner: string) => string;
   tabLabel: (n: number) => string;
   tabsLabel: string;
   tools?: RendererTools;
@@ -111,6 +115,11 @@ export function PageRenderer({
     <EventChannel>
       <PageTelemetry page={{ pageId: page.pageId, release: page.release, template: page.template, layout: page.layout }} />
       <div className={`xp-page xp-variant-${page.variant} xp-fallback-${page.fallback}`} data-layout={page.layout} data-template={page.template}>
+        {page.sharedBy && sharedLabel ? (
+          <div className="xp-row xp-section-contained xp-owner" data-testid="page-shared-by">
+            <Badge icon="building">{sharedLabel(page.sharedBy)}</Badge>
+          </div>
+        ) : null}
         {body}
       </div>
     </EventChannel>

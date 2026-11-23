@@ -34,7 +34,7 @@ export default async function PublishedPage({ params }: { params: Promise<{ slug
       ) : null}
       <Header me={me.data} favorite={{ path: "/p/" + slug.map(decodeURIComponent).join("/").toLowerCase() }} />
       <main id="main">
-        <PageRenderer page={page.data} tabsLabel={t("panels")} tabLabel={(n) => t("panel", { number: n })} />
+        <PageRenderer page={page.data} tabsLabel={t("panels")} tabLabel={(n) => t("panel", { number: n })} sharedLabel={(owner) => t("sharedBy", { owner })} />
       </main>
     </>
   );

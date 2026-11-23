@@ -34,7 +34,8 @@ export type HomeView = { id: string; label: string; slug: string };
 
 export type NavLink = { nodeId: string; label: string; href: string; owner: string | null; children: NavLink[] };
 
-export type OrganizationMenu = { orgUnitId: string; name: string; items: NavLink[] };
+/** An organization's menu; `shared` when another organization shared it with the viewer's, so the owner shows (spec 033 FR-022). */
+export type OrganizationMenu = { orgUnitId: string; name: string; items: NavLink[]; shared?: boolean };
 
 export type OrganizationIndicator = { id: string; name: string; primary: boolean };
 

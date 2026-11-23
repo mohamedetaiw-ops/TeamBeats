@@ -8,6 +8,7 @@ import { LayoutPreview } from "@/features/builder/LayoutPreview";
 import { EditorMount } from "@/features/builder/editor/EditorMount";
 import { TemplateChange } from "@/features/builder/TemplateChange";
 import { DraftRevisions } from "@/features/builder/DraftRevisions";
+import { PageSharing } from "@/features/builder/PageSharing";
 import "@/features/builder/builder.css";
 
 /**
@@ -83,6 +84,8 @@ export default async function BuilderPage({ params }: { params: Promise<{ id: st
         approval={approval.ok ? approval.data : null}
       />
       <DraftRevisions pageId={page.data.id} />
+      {/* An organization's page can be shared with another branch (spec 033 R2 T019); tenant pages reach everyone. */}
+      {page.data.orgUnitId && units.ok ? <PageSharing pageId={page.data.id} units={units.data} /> : null}
     </>
   );
 }

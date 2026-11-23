@@ -38,6 +38,8 @@ export type RenderedPage = {
   fallback: "stack" | "two_then_stack" | "tabs";
   regions: RenderedRegion[];
   themeScope: string;
+  /** The owning organization's name when the viewer reaches the page through a share (spec 033 R2 T019). */
+  sharedBy?: string | null;
   /** Placements the server left out because an earlier one already shows their data source and view (spec 032 FR-072). */
   dropped?: { id: string; componentRef: string; region: string; keptPlacement: string; reasonKey: string }[] | null;
 };

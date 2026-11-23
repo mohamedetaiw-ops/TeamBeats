@@ -54,6 +54,7 @@ public static class ExperienceModule
         services.AddScoped<ThemeApprovals>();
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<ThemeApprovals>());
         services.AddScoped<AppManifest>();
+        services.AddScoped<Sharing.OrgSharing>();
         services.AddSingleton<Offline.OfflineKeySource>();
         services.AddScoped<Offline.OfflineBundles>();
         services.AddScoped<ShellService>();
@@ -382,7 +383,36 @@ public static class ExperienceModule
         MapFavoriteEndpoints(app);
         MapHelpEndpoints(app);
         MapPersonalizationEndpoints(app);
+        MapSharingEndpoints(app);
         return app;
+    }
+
+    /// <summary>
+    /// Sharing policies (spec 033 R2 T019): an organization shares its page or organization menu with another organization
+    /// and the organizations below it. Kinds are <c>page</c> (by page ID) and <c>menu</c> (by the owning organization's ID).
+    /// </summary>
+    private static void MapSharingEndpoints(IEndpointRouteBuilder app)
+    {
+        var x = app.MapGroup("/api/v1/experience/shares").RequireTenantUser().WithTags("Experience: sharing");
+        x.MapGet("/{kind}/{id:guid}", async (string kind, Guid id, Sharing.OrgSharing sharing, RequestLocale locale, IDbSession session, CancellationToken ct) =>
+        {
+            var owner = await sharing.OwnerAsync(kind, id, ct);
+            var list = await sharing.ListAsync(kind, id, owner, locale.Locale, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(list);
+        });
+        x.MapPut("/{kind}/{id:guid}/{unit:guid}", async (string kind, Guid id, Guid unit, Sharing.OrgSharing sharing, IDbSession session, CancellationToken ct) =>
+        {
+            await sharing.ShareAsync(kind, id, await sharing.OwnerAsync(kind, id, ct), unit, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+        x.MapDelete("/{kind}/{id:guid}/{unit:guid}", async (string kind, Guid id, Guid unit, Sharing.OrgSharing sharing, IDbSession session, CancellationToken ct) =>
+        {
+            await sharing.UnshareAsync(kind, id, await sharing.OwnerAsync(kind, id, ct), unit, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
     }
 
     /// <summary>Brands, assignments, locks and the effective theme (spec 033 R1). Every call commits, so first-use seeding is kept.</summary>
