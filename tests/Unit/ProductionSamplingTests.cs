@@ -68,3 +68,24 @@ public sealed class ProductionSamplingTests
         Assert.Equal(CaseMetricStates.NotEvaluated, denied["groundedness"].State);
     }
 }
+
+/// <summary>Spec 034 R2 T019 (FR-024): when a production score drifts.</summary>
+public sealed class DriftRulesTests
+{
+    [Fact]
+    public void A_score_drifts_below_its_threshold_or_ten_points_under_the_gate_result()
+    {
+        var groundedness = MetricCatalog.Find("groundedness")!;
+        var relevance = MetricCatalog.Find("relevance")!;
+        var attempts = MetricCatalog.Find("unauthorized_attempts")!;
+        Assert.True(DriftRules.Drifts(groundedness, 0.85, null, 0.90));
+        Assert.False(DriftRules.Drifts(groundedness, 0.92, 0.95, 0.90));
+        Assert.True(DriftRules.Drifts(groundedness, 0.90, 1.0, 0.85));
+        Assert.False(DriftRules.Drifts(relevance, 0.5, null, null));
+        Assert.True(DriftRules.Drifts(relevance, 0.8, 0.9, null));
+        Assert.False(DriftRules.Drifts(relevance, 0.81, 0.9, null));
+        // Lower is better: any unauthorized attempt in real use passes its zero threshold.
+        Assert.True(DriftRules.Drifts(attempts, 0.05, 0, 0));
+        Assert.False(DriftRules.Drifts(attempts, 0, 0, 0));
+    }
+}
