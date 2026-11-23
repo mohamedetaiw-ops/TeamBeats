@@ -5100,7 +5100,8 @@
       "my": "سياساتي",
       "register": "سجل السياسات",
       "exemptions": "الإعفاءات",
-      "evidence": "حزم الأدلة"
+      "evidence": "حزم الأدلة",
+      "team": "فريقي"
     },
     "status": {
       "draft": "مسودة",
@@ -5763,6 +5764,33 @@
       "rejectedLabel": "الأسطر المرفوضة",
       "line": "السطر {line}: {reason}",
       "openScan": "افتح {name}"
+    },
+    "team": {
+      "register": "السياسات",
+      "title": "فريقي",
+      "description": "موقف من يتبعونك مباشرة وبشكل غير مباشر في كل حملة إقرار مفتوحة.",
+      "reports": "{reports, plural, zero {لا أحد في فريقك} one {شخص واحد في فريقك} two {شخصان في فريقك} few {# أشخاص في فريقك} many {# شخصًا في فريقك} other {# شخص في فريقك}}، منهم {direct} يتبعونك مباشرة.",
+      "none": "لا توجد حملة مفتوحة تطلب شيئًا من فريقك الآن.",
+      "noneTitle": "لا شيء للمتابعة",
+      "summary": "أقرّ {attested} من {members}، و{open} مفتوح، و{overdue} متأخر.",
+      "version": "الإصدار {number}، الموعد {date}",
+      "paused": "{count, plural, zero {لا أحد موقوف} one {شخص موقوف لإجازة} two {شخصان موقوفان لإجازة} few {# أشخاص موقوفون لإجازة} many {# شخصًا موقوفًا لإجازة} other {# شخص موقوف لإجازة}}",
+      "exempt": "{count, plural, zero {لا أحد معفى} one {شخص معفى} two {شخصان معفيان} few {# أشخاص معفون} many {# شخصًا معفى} other {# شخص معفى}}",
+      "owing": "لم يقرّوا بعد",
+      "allDone": "أقرّ كل من في فريقك.",
+      "column": {
+        "person": "الشخص",
+        "status": "الحالة",
+        "due": "الموعد"
+      },
+      "indirect": "عبر مدير في فريقك",
+      "pausedUntil": "موقوف حتى {date}",
+      "exemptUntil": "معفى حتى {date}",
+      "openCompliance": "فتح الامتثال",
+      "memberStatus": {
+        "open": "مفتوح",
+        "overdue": "متأخر"
+      }
     }
   },
   "ai": {

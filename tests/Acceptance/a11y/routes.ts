@@ -236,6 +236,7 @@ export const routes: readonly Route[] = [
   { path: "/policies/exemptions", tier: "other" },
   { path: "/policies/evidence", tier: "other" },
   { path: "/policies/my", tier: "other" },
+  { path: "/policies/team", tier: "detail", reason: "only a line manager finds it; opened by the policy team suite" },
   { path: "/policies/new", tier: "other" },
   { path: "/preboarding/[token]", tier: "detail", reason: "a link sent to a new hire before their account exists; opened by the journeys suite" },
   { path: "/preview/pages/[id]", tier: "detail" },

@@ -119,7 +119,7 @@ public sealed record PolicyRights(bool Manage, bool Edit, bool Review, bool Hist
     bool Exemptions = false, bool Controls = false, bool Paper = false, bool Pause = false);
 
 /// <summary>What the current user may do in the register: create policies where they hold <c>policy.manage</c>, and open the exemption register.</summary>
-public sealed record RegisterRights(bool Create, bool Exemptions = false, bool Evidence = false);
+public sealed record RegisterRights(bool Create, bool Exemptions = false, bool Evidence = false, bool Team = false);
 
 public sealed record PolicyView(
     Guid Id,
@@ -285,6 +285,19 @@ public sealed record ComplianceCampaign(Guid Id, int Version, DateTimeOffset Dea
 
 /// <summary>Counts for a group, with the share attested of everyone still in the audience.</summary>
 public sealed record ComplianceCounts(int Members, int Attested, int Open, int Overdue, int LeftAudience, double Percent);
+
+/// <summary>One report of the viewer who still owes an attestation in an open campaign, for the team dashboard.</summary>
+public sealed record TeamMember(PolicyPerson Person, bool Direct, string Status, DateTimeOffset DueAt, DateTimeOffset? PausedUntil, DateOnly? ExemptUntil);
+
+/// <summary>
+/// One open campaign with some of the viewer's reports in it (spec 025 R2 manager dashboard): their counts, how many are
+/// paused for long leave or covered by an approved exemption, and the reports who still owe it, overdue first.
+/// </summary>
+public sealed record TeamPolicyStatus(PolicySummary Policy, Guid CampaignId, int Version, DateTimeOffset Deadline, ComplianceCounts Counts, int Paused, int Exempt,
+    IReadOnlyList<TeamMember> Owing);
+
+/// <summary>A line manager's view of their team across policies: their direct and indirect reports in every open campaign.</summary>
+public sealed record TeamDashboard(int Reports, int Direct, IReadOnlyList<TeamPolicyStatus> Policies);
 
 /// <summary>
 /// One line of a breakdown. By unit: <see cref="UnitId"/> with its names, rolled up over its subtree, or

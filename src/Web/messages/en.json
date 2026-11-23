@@ -5100,7 +5100,8 @@
       "my": "My policies",
       "register": "Policy register",
       "exemptions": "Exemptions",
-      "evidence": "Evidence packs"
+      "evidence": "Evidence packs",
+      "team": "My team"
     },
     "status": {
       "draft": "Draft",
@@ -5763,6 +5764,33 @@
       "rejectedLabel": "Refused lines",
       "line": "Line {line}: {reason}",
       "openScan": "Open {name}"
+    },
+    "team": {
+      "register": "Policies",
+      "title": "My team",
+      "description": "Where your direct and indirect reports stand on every open attestation campaign.",
+      "reports": "{reports, plural, one {# person in your team} other {# people in your team}}, {direct} reporting to you directly.",
+      "none": "No open campaign asks your team for anything right now.",
+      "noneTitle": "Nothing to follow up",
+      "summary": "{attested} of {members} attested, {open} open, {overdue} overdue.",
+      "version": "Version {number}, due {date}",
+      "paused": "{count, plural, one {# paused for leave} other {# paused for leave}}",
+      "exempt": "{count, plural, one {# exempt} other {# exempt}}",
+      "owing": "Still to attest",
+      "allDone": "Everyone in your team has attested.",
+      "column": {
+        "person": "Person",
+        "status": "Status",
+        "due": "Due"
+      },
+      "indirect": "Through a manager in your team",
+      "pausedUntil": "Paused until {date}",
+      "exemptUntil": "Exempt until {date}",
+      "openCompliance": "Open compliance",
+      "memberStatus": {
+        "open": "Open",
+        "overdue": "Overdue"
+      }
     }
   },
   "ai": {
