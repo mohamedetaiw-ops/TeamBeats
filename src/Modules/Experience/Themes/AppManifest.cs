@@ -32,13 +32,25 @@ public sealed partial class AppManifest(ThemeService themes, ITenantSettingsRead
         return (memberships.FirstOrDefault(m => m.IsPrimary) ?? memberships.FirstOrDefault())?.OrgUnitId.ToString() ?? "tenant";
     }
 
+    /// <summary>
+    /// The viewer's brand title, logo and lockup in the request language (spec 033 R2 T018), for the shell. Any member may
+    /// read it, as they may read the theme.
+    /// </summary>
+    public async Task<BrandPresentation> PresentationAsync(CancellationToken ct)
+    {
+        var theme = await themes.ThemeAsync(await ScopeAsync(ct), ct);
+        return BrandSlots.Present(theme.Assets, locale.Locale);
+    }
+
     private async Task<(string Name, string Accent, string Surface, string? Favicon)> BrandAsync(CancellationToken ct)
     {
         await entitlements.DemandAsync(Capabilities.MobilePwa, ct);
         var theme = await themes.ThemeAsync(await ScopeAsync(ct), ct);
         var light = theme.Variants.FirstOrDefault(v => v.Mode == ThemeModes.Light && v.Density == ThemeModes.Comfortable) ?? theme.Variants[0];
         var branding = await tenant.GetBrandingAsync(ct);
-        var name = string.IsNullOrWhiteSpace(branding.DisplayName) ? "TeamBeats" : branding.DisplayName.Trim();
+        // The brand title in the viewer's language wins over the tenant name (R2 T018).
+        var name = BrandSlots.Pick(theme.Assets, BrandSlots.Title, locale.Locale)
+            ?? (string.IsNullOrWhiteSpace(branding.DisplayName) ? "TeamBeats" : branding.DisplayName.Trim());
         return (name, Color(light.Tokens, "color.accent.base", "#4338ca"), Color(light.Tokens, "color.surface.base", "#f7f8fb"),
             theme.Assets.TryGetValue("favicon", out var favicon) ? ThemeService.AssetUrlOf(favicon) : null);
     }

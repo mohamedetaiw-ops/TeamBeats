@@ -16,6 +16,11 @@ export type TokenSchemaEntry = {
 export type TokenSchema = {
   tokens: TokenSchemaEntry[];
   assetSlots: string[];
+  /** Image slots that may differ per language, given as `slot.locale` (spec 033 R2 T018). */
+  languageSlots: string[];
+  /** The text slot for the title, also given per language as `title.locale`, and its longest length. */
+  titleSlot: string;
+  titleLength: number;
   fonts: Record<string, string[]>;
   easings: string[];
   /** Allowed keywords of the choice tokens, such as `design.preset` and `layout.navigation`. */

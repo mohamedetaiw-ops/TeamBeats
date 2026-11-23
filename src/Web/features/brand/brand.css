@@ -114,6 +114,21 @@
   list-style: none;
 }
 
+/* One language's title, logo and lockup (spec 033 R2 T018). */
+.brand-language {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: var(--tb-space-md) 0 0;
+  border: 0;
+  border-block-start: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.brand-language legend {
+  padding: 0;
+  font-weight: var(--tb-font-weight-semibold);
+}
+
 .brand-asset {
   display: flex;
   flex-wrap: wrap;

@@ -305,6 +305,15 @@
   text-decoration: none;
 }
 
+/* The brand logo in the viewer's language (spec 033 R2 T018): the mark's height, its own width up to a lockup's. */
+.shell-logo {
+  display: block;
+  block-size: 2rem;
+  inline-size: auto;
+  max-inline-size: 10rem;
+  object-fit: contain;
+}
+
 .shell-mark rect {
   fill: var(--tb-color-accent-base);
 }

@@ -46,7 +46,9 @@ export async function Shell({ me, breadcrumbs = [], favorite }: { me: Me; breadc
   const layout = shell.ok ? shell.data.layout : fallbackLayout;
   const locales = me.tenant.enabledLocales.filter((l) => l === "ar" || l === "en");
   const orgMenus = shell.ok ? shell.data.organizationMenus.filter((m) => m.items.length > 0) : [];
-  const tenantName = me.tenant.displayName || me.tenant.key;
+  // The brand title and logo in the viewer's language (spec 033 R2 T018), else the tenant name and the platform mark.
+  const brand = shell.ok ? shell.data.brand : null;
+  const tenantName = brand?.title || me.tenant.displayName || me.tenant.key;
   const regions = [...layout.start, ...layout.center, ...layout.end, ...layout.below];
   // The counts are read with the page, so the bell and task badge show them on first paint on every page and the bar
   // never shifts when they arrive (spec 036 DLS-092). The client components then keep them fresh.
@@ -61,10 +63,17 @@ export async function Shell({ me, breadcrumbs = [], favorite }: { me: Me; breadc
       case "identity":
         return (
           <Link key={region} className="brand shell-brand" href="/" aria-label={t("homeOf", { name: tenantName })}>
-            <svg className="shell-mark" viewBox="0 0 24 24" width="32" height="32" aria-hidden="true" focusable="false">
-              <rect width="24" height="24" rx="7" />
-              <path d="M12 4.5c.45 3.6 1.65 4.8 5.25 5.25-3.6.45-4.8 1.65-5.25 5.25-.45-3.6-1.65-4.8-5.25-5.25 3.6-.45 4.8-1.65 5.25-5.25z" />
-            </svg>
+            {brand?.logoUrl ? (
+              // Brand assets are session-protected API files, so the image optimizer cannot fetch them. The link names the
+              // tenant, so the logo is decorative here.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img className="shell-logo" src={brand.logoUrl} alt="" data-testid="shell-logo" />
+            ) : (
+              <svg className="shell-mark" viewBox="0 0 24 24" width="32" height="32" aria-hidden="true" focusable="false">
+                <rect width="24" height="24" rx="7" />
+                <path d="M12 4.5c.45 3.6 1.65 4.8 5.25 5.25-3.6.45-4.8 1.65-5.25 5.25-.45-3.6-1.65-4.8-5.25-5.25 3.6-.45 4.8-1.65 5.25-5.25z" />
+              </svg>
+            )}
             <bdi className="shell-tenant">{tenantName}</bdi>
           </Link>
         );

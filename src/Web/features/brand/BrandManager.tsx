@@ -45,6 +45,7 @@ export function BrandManager({
   draft,
   initialPreview,
   samples,
+  locales,
 }: {
   schema: TokenSchema;
   brands: BrandSummary[];
@@ -53,8 +54,11 @@ export function BrandManager({
   draft: BrandDraft | null;
   initialPreview: BrandCheck["preview"] | null;
   samples: { ltr: PreviewSample; rtl: PreviewSample };
+  /** The tenant's languages, each of which may have its own title, logo and lockup (R2 T018). */
+  locales: string[];
 }) {
   const t = useTranslations("brand");
+  const languageName = useTranslations("locale");
   const locale = useLocale();
   const router = useRouter();
   const start = draft?.hasDraft ? draft : null;
@@ -155,6 +159,71 @@ export function BrandManager({
     setAssets(nextAssets);
     setAssetUrls(nextUrls);
     setStatus({ kind: "idle" });
+  }
+
+  /** The title is text kept with the brand images (R2 T018); an empty field removes it, so the fallback applies. */
+  function setTitle(slot: string, value: string) {
+    const next = { ...assets };
+    if (value.trim() === "") delete next[slot];
+    else next[slot] = value;
+    setAssets(next);
+    setStatus({ kind: "idle" });
+  }
+
+  function assetItem(slot: string, label: string) {
+    return (
+      <li key={slot} className="brand-asset" data-slot={slot}>
+        <span className="brand-asset-name">{label}</span>
+        {assetUrls[slot] ? (
+          // Brand assets are session-protected API files, so the image optimizer cannot fetch them.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className="brand-asset-image" src={assetUrls[slot]} alt={label} />
+        ) : (
+          <span className="notice">{assets[slot] ? t("assets.saved") : t("assets.none")}</span>
+        )}
+        <label className="button secondary">
+          {uploading === slot ? t("assets.uploading") : t("assets.upload")}
+          <input
+            className="visually-hidden"
+            type="file"
+            accept="image/png,image/jpeg,image/svg+xml"
+            onChange={(e) => void upload(slot, e)}
+            aria-label={t("assets.uploadFor", { slot: label })}
+          />
+        </label>
+        {assets[slot] ? (
+          <button type="button" className="button secondary" onClick={() => removeAsset(slot)}>
+            {t("assets.remove")}
+          </button>
+        ) : null}
+        {fieldError(`assets.${slot}`) ? (
+          <p className="field-error" role="alert">
+            {fieldError(`assets.${slot}`)}
+          </p>
+        ) : null}
+      </li>
+    );
+  }
+
+  function titleField(slot: string, label: string, hint: string) {
+    return (
+      <label className="field">
+        <span>{label}</span>
+        <input
+          type="text"
+          value={assets[slot] ?? ""}
+          maxLength={schema.titleLength}
+          placeholder={hint}
+          onChange={(e) => setTitle(slot, e.target.value)}
+          aria-invalid={fieldError(`assets.${slot}`) ? true : undefined}
+        />
+        {fieldError(`assets.${slot}`) ? (
+          <p className="field-error" role="alert">
+            {fieldError(`assets.${slot}`)}
+          </p>
+        ) : null}
+      </label>
+    );
   }
 
   /** A design replaces the token values set so far; brand images, name and contrast policy stay (spec 036). */
@@ -371,40 +440,28 @@ export function BrandManager({
           <section className="brand-section" aria-labelledby="brand-assets-title">
             <h2 id="brand-assets-title">{t("assets.title")}</h2>
             <p className="notice">{t("assets.rules")}</p>
-            <ul className="brand-assets">
-              {schema.assetSlots.map((slot) => (
-                <li key={slot} className="brand-asset" data-slot={slot}>
-                  <span className="brand-asset-name">{t(`assets.slots.${slot}`)}</span>
-                  {assetUrls[slot] ? (
-                    // Brand assets are session-protected API files, so the image optimizer cannot fetch them.
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img className="brand-asset-image" src={assetUrls[slot]} alt={t(`assets.slots.${slot}`)} />
-                  ) : (
-                    <span className="notice">{t("assets.none")}</span>
-                  )}
-                  <label className="button secondary">
-                    {uploading === slot ? t("assets.uploading") : t("assets.upload")}
-                    <input
-                      className="visually-hidden"
-                      type="file"
-                      accept="image/png,image/jpeg,image/svg+xml"
-                      onChange={(e) => void upload(slot, e)}
-                      aria-label={t("assets.uploadFor", { slot: t(`assets.slots.${slot}`) })}
-                    />
-                  </label>
-                  {assets[slot] ? (
-                    <button type="button" className="button secondary" onClick={() => removeAsset(slot)}>
-                      {t("assets.remove")}
-                    </button>
-                  ) : null}
-                  {fieldError(`assets.${slot}`) ? (
-                    <p className="field-error" role="alert">
-                      {fieldError(`assets.${slot}`)}
-                    </p>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
+            <div className="ui-field-grid">{titleField(schema.titleSlot, t("assets.titleAll"), t("assets.titleFallback"))}</div>
+            <ul className="brand-assets">{schema.assetSlots.map((slot) => assetItem(slot, t(`assets.slots.${slot}`)))}</ul>
+          </section>
+
+          <section className="brand-section" aria-labelledby="brand-languages-title" data-testid="brand-languages">
+            <h2 id="brand-languages-title">{t("assets.byLanguage")}</h2>
+            <p className="notice">{t("assets.byLanguageRules")}</p>
+            {locales.map((l) => (
+              <fieldset key={l} className="brand-language" data-locale={l}>
+                <legend>
+                  <bdi lang={l}>{languageName(l)}</bdi>
+                </legend>
+                <div className="ui-field-grid">
+                  {titleField(`${schema.titleSlot}.${l}`, t("assets.titleIn", { language: languageName(l) }), assets[schema.titleSlot] ?? t("assets.titleFallback"))}
+                </div>
+                <ul className="brand-assets">
+                  {schema.languageSlots
+                    .filter((slot) => slot === "logo" || slot === "lockup")
+                    .map((slot) => assetItem(`${slot}.${l}`, t("assets.slotIn", { slot: t(`assets.slots.${slot}`), language: languageName(l) })))}
+                </ul>
+              </fieldset>
+            ))}
           </section>
         </div>
 
@@ -430,6 +487,7 @@ export function BrandManager({
             title={t("preview.title")}
             preview={preview}
             logoUrl={assetUrls.logo ?? null}
+            logoUrls={{ en: assetUrls["logo.en"] ?? null, ar: assetUrls["logo.ar"] ?? null }}
             logoAlt={t("assets.slots.logo")}
             panes={[
               { mode: "light", dir: "ltr", lang: "en", sample: samples.ltr, label: t("preview.pane", { mode: t("modes.light"), direction: t("preview.ltr") }) },

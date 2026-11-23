@@ -15,6 +15,7 @@ type Pane = { mode: string; dir: "ltr" | "rtl"; lang: string; sample: PreviewSam
 export function BrandPreview({
   preview,
   logoUrl,
+  logoUrls,
   logoAlt,
   panes,
   title,
@@ -24,6 +25,8 @@ export function BrandPreview({
   headingId?: string;
   preview: Record<string, Record<string, string>> | null;
   logoUrl: string | null;
+  /** A logo per pane language (spec 033 R2 T018), which wins over the one for every language. */
+  logoUrls?: Record<string, string | null>;
   logoAlt: string;
   panes: Pane[];
   title: string;
@@ -44,8 +47,10 @@ export function BrandPreview({
             <figcaption className="brand-preview-caption">{pane.label}</figcaption>
             <div className="brand-preview-shell">
               {/* Brand assets are session-protected API files, so the image optimizer cannot fetch them. */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              {logoUrl ? <img className="brand-preview-logo" src={logoUrl} alt={logoAlt} /> : null}
+              {(logoUrls?.[pane.lang] ?? logoUrl) ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className="brand-preview-logo" src={(logoUrls?.[pane.lang] ?? logoUrl)!} alt={logoAlt} />
+              ) : null}
               <span>{pane.sample.shell}</span>
             </div>
             <nav className="brand-preview-nav" aria-label={pane.sample.shell}>

@@ -2815,5 +2815,6 @@
   "notifications.template.experience.theme_schedule_failed.title": "A scheduled theme did not go live",
   "notifications.template.experience.theme_schedule_failed.body": "{brand} did not go live at its time because of contrast problems, so the current version stays.",
   "validation.theme.preview_scope": "Choose a scope that uses this brand",
-  "validation.theme.preview_source": "Show the draft or the current version"
+  "validation.theme.preview_source": "Show the draft or the current version",
+  "validation.theme.title": "Enter a title of up to 60 characters, without line breaks"
 }
