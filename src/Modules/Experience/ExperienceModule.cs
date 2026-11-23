@@ -658,6 +658,9 @@ public static class ExperienceModule
             titleLength = BrandSlots.TitleLength,
             fonts = TokenSchema.ApprovedFonts,
             easings = TokenSchema.Easings.Keys,
+            // Shell settings that can be locked besides tokens, and the locks no scope may remove (FR-019).
+            shellSettings = TokenSchema.ShellSettings,
+            permanentLocks = TokenSchema.PermanentLocks,
             choices = TokenSchema.All.Where(t => t.Choices is not null).ToDictionary(t => t.Name, t => t.Choices!),
             // The designs with their resolved custom properties per mode, for the design picker previews (spec 033 FR-031).
             designs = DesignPresets.Keys.Select(key =>

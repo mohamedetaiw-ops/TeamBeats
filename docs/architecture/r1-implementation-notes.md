@@ -254,7 +254,7 @@ What was built for R1, slice by slice, and where it differs from the specs and p
 |---|---|
 | Tenant settings link | The spec 001 settings screen is still the generic section page; its link to the brand manager comes with that screen. |
 | Asset preview sizes | The preview shows the logo in light, dark and both directions; mobile and desktop shell previews come with the spec 008 shell. |
-| Org overrides and locks | Managed through the API; their screens come with preview as organization (R2) or the shell slice. |
+| Org overrides and locks | Screen at `/admin/branding/organizations`: per scope the brand (or the parent's), the values set there and the locks set there or inherited. Settings a parent locked are not offered; the API still refuses them. `/experience/tokens` lists the lockable shell settings and the permanent locks. |
 
 ## Shared states and interaction primitives (spec 008 T001 to T003)
 - `components/ui`: `StateView` for the seven shared states (loading, success, empty, error, permission denied, offline, unsupported) with platform wording under `ui.state.*`; `Skeleton` sized by the caller and announced once; `Button` with primary, secondary, quiet and destructive variants and a busy state; `ConfirmAction`, where the first press only asks, focus goes to the safe choice and Escape cancels; `MessagesProvider` and `useMessages` with critical messages that persist and are announced assertively, and normal and low messages that never block, dismiss themselves (10 s and 5 s, 15 s with an action such as undo) and pause while focused or hovered; `SelectionBar` with count and consequence in text; `FormField` hints.

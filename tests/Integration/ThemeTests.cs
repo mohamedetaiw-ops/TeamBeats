@@ -426,5 +426,8 @@ public sealed class ThemeTests(TenantWorld world)
         Assert.Equal("color", accent.GetProperty("group").GetString());
         Assert.Equal(["dark", "high_contrast"], accent.GetProperty("modes").EnumerateArray().Select(m => m.GetString()));
         Assert.Contains("logo", schema.GetProperty("assetSlots").EnumerateArray().Select(m => m.GetString()));
+        // The organization themes screen offers shell settings as locks and marks the ones no scope may remove.
+        Assert.Contains("legal_footer", schema.GetProperty("shellSettings").EnumerateArray().Select(m => m.GetString()));
+        Assert.Equal(["security_banner", "accessibility_minimums"], schema.GetProperty("permanentLocks").EnumerateArray().Select(m => m.GetString()));
     }
 }
