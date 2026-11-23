@@ -2487,6 +2487,25 @@
       "publish": "Publish",
       "submit": "Submit for approval",
       "working": "Working"
+    },
+    "schedule": {
+      "title": "Schedule",
+      "goLive": "Go live at",
+      "ends": "End at (optional)",
+      "endsHint": "At the end the page returns to the release in force before, or goes offline if it had none.",
+      "zone": "Times are in {zone}.",
+      "schedule": "Schedule the draft",
+      "scheduled": "Release scheduled.",
+      "waiting": "The draft is scheduled to go live on {when}.",
+      "until": "It ends on {when}.",
+      "ending": "This release ends on {when}.",
+      "keepLive": "Keep it live",
+      "keptLive": "The release stays live.",
+      "cancel": "Cancel the schedule",
+      "cancelled": "Schedule cancelled.",
+      "didNotGoLive": "The release scheduled for {when} did not go live because of problems on the page. The release in force stayed.",
+      "failed": "That did not work. Try again.",
+      "working": "Working"
     }
   },
   "templates": {

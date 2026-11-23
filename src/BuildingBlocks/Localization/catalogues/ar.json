@@ -2762,5 +2762,11 @@
   "notifications.template.experience.page_approved.title": "صفحتك منشورة الآن",
   "notifications.template.experience.page_approved.body": "اعتُمدت {page} ونُشرت.",
   "notifications.template.experience.page_returned.title": "أُعيدت صفحتك",
-  "notifications.template.experience.page_returned.body": "أُعيدت {page}: {comment}"
+  "notifications.template.experience.page_returned.body": "أُعيدت {page}: {comment}",
+  "validation.page.schedule_time": "اختر وقتا لاحقا للنشر.",
+  "validation.page.schedule_expiry": "يجب أن يأتي وقت الانتهاء بعد وقت النشر.",
+  "conflict.page.scheduled": "لهذه الصفحة إصدار مجدول بالفعل. ألغه أولا.",
+  "conflict.page.not_scheduled": "لا يوجد إصدار مجدول لهذه الصفحة.",
+  "notifications.template.experience.page_schedule_failed.title": "لم تُنشر صفحة مجدولة",
+  "notifications.template.experience.page_schedule_failed.body": "لم تُنشر {page} في موعدها بسبب مشكلات في الصفحة، ويبقى الإصدار الحالي."
 }

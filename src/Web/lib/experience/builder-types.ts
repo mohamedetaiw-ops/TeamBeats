@@ -176,3 +176,19 @@ export type ImpactReport = {
   personalLayouts: number;
   personalLayoutsTouched: number;
 };
+
+/** A scheduled page release (spec 032 R2 T025); times are UTC, set and shown in the tenant's time zone. */
+export type PageSchedule = {
+  id: string;
+  status: "scheduled" | "live" | "failed" | "cancelled" | "expired";
+  goLiveAt: string;
+  expiresAt: string | null;
+  timeZone: string;
+  reason: string | null;
+  scheduledBy: string;
+  scheduledAt: string;
+  release: number | null;
+  findings: string[];
+};
+
+export type PageScheduleState = { timeZone: string; current: PageSchedule | null };

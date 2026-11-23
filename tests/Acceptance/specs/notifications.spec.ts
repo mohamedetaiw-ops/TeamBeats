@@ -87,7 +87,12 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.goto(`${hostOrigin(tenant.key)}/notifications/preferences`);
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, "notifications.preferences.title"));
       const comment = msg(locale, "notifications.category.comment");
-      await page.getByLabel(msg(locale, "notifications.preferences.emailFor", { category: comment })).check();
+      const email = page.getByLabel(msg(locale, "notifications.preferences.emailFor", { category: comment }));
+      // A box ticked before the form has hydrated is put back by React, so the choice is made again until it holds.
+      await expect(async () => {
+        await email.check();
+        await expect(email).toBeChecked({ timeout: 1_000 });
+      }).toPass();
       await page.getByLabel(msg(locale, "notifications.preferences.digestFor", { category: comment })).check();
       const security = msg(locale, "notifications.category.security_notice");
       await expect(page.getByLabel(msg(locale, "notifications.preferences.emailFor", { category: security }))).toBeDisabled();

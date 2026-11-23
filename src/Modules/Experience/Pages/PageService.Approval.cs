@@ -68,3 +68,50 @@ public sealed partial class PageService
         return await impacts.ForPageAsync(Info(page), draft, current, ct);
     }
 }
+
+public sealed partial class PageService
+{
+    /// <summary>The page for someone holding <paramref name="permission"/> at its scope, with access refusals audited.</summary>
+    internal async Task<PageInfo> PublishableInfoAsync(Guid id, CancellationToken ct) => Info(await EditableAsync(id, Permissions.PagePublish, ct, audited: true));
+
+    /// <summary>The findings that block a scheduled release going live now, checked as the system (R2 T025).</summary>
+    internal async Task<List<Finding>> GoLiveFindingsAsync(Guid id, PageDefinition definition, CancellationToken ct)
+    {
+        var page = await session.QuerySingleOrDefaultAsync(PageSelect + " where id = @id", new { id }, MapPage, ct) ?? throw Primitives.AppException.NotFound();
+        return await ValidateAsync(page, definition, ValidationMode.Publish, ct, system: true);
+    }
+
+    /// <summary>Puts a scheduled release live, published by the person who scheduled it.</summary>
+    internal async Task<ReleaseView> PublishScheduledAsync(Guid id, PageDefinition definition, string? reason, Guid scheduledBy, Guid schedule, CancellationToken ct)
+    {
+        var row = await session.QuerySingleOrDefaultAsync(PageSelect + " where id = @id", new { id }, MapPage, ct) ?? throw Primitives.AppException.NotFound();
+        var release = await InsertReleaseAsync(row, definition, reason, rollbackOf: null, ct, scheduledBy);
+        await audit.WriteAsync(new AuditEntry(AuditActions.PagePublished, "page", id.ToString(), TargetOrgUnitId: row.OrgUnitId,
+            Changes: new { release = release.Release, previous = row.CurrentRelease, reason, schedule }), ct);
+        await outbox.EnqueueAsync(new PagePublished(id, release.Release), ct);
+        return release;
+    }
+
+    /// <summary>
+    /// Ends a scheduled release at its expiry: the release in force before it returns as a new release, or the page goes
+    /// offline when it had none. Returns the new release, or null when the page went offline.
+    /// </summary>
+    internal async Task<int?> ExpireScheduledAsync(Guid id, int? restore, Guid scheduledBy, Guid schedule, CancellationToken ct)
+    {
+        var row = await session.QuerySingleOrDefaultAsync(PageSelect + " where id = @id", new { id }, MapPage, ct) ?? throw Primitives.AppException.NotFound();
+        int? release = null;
+        if (restore is { } r)
+        {
+            var restored = (await ReleaseAsync(id, r, ct)).Definition;
+            release = (await InsertReleaseAsync(row, restored, null, r, ct, scheduledBy)).Release;
+            await outbox.EnqueueAsync(new PageRolledBack(id, release.Value, r), ct);
+        }
+        else
+        {
+            await session.ExecAsync("update experience.page set current_release = null where id = @id", new { id }, ct);
+        }
+        await audit.WriteAsync(new AuditEntry(AuditActions.PageExpired, "page", id.ToString(), TargetOrgUnitId: row.OrgUnitId,
+            Changes: new { expired = row.CurrentRelease, restored = restore, release, schedule }), ct);
+        return release;
+    }
+}

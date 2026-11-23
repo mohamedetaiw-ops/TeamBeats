@@ -42,6 +42,7 @@ public static class ExperienceModule
         services.AddScoped<PageService>();
         services.AddScoped<Pages.PageRoutes>();
         services.AddScoped<Pages.ImpactReports>();
+        services.AddScoped<Pages.PageSchedules>();
         services.AddScoped<Pages.PageApprovals>();
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<Pages.PageApprovals>());
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, Pages.PageApprovals>("experience.page_waiting");
@@ -192,6 +193,23 @@ public static class ExperienceModule
 
         x.MapGet("/brand-assignments/{scope}/impact", async (string scope, ThemeService themes, ImpactReports impacts, CancellationToken ct) =>
             Results.Ok(await themes.ImpactAsync(scope, impacts, ct)));
+
+        x.MapGet("/pages/{id:guid}/schedule", async (Guid id, PageSchedules schedules, CancellationToken ct) =>
+            Results.Ok(await schedules.StateAsync(id, ct)));
+
+        x.MapPut("/pages/{id:guid}/schedule", async (Guid id, SchedulePageRequest request, PageSchedules schedules, IDbSession session, CancellationToken ct) =>
+        {
+            var schedule = await schedules.ScheduleAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(schedule);
+        });
+
+        x.MapDelete("/pages/{id:guid}/schedule", async (Guid id, PageSchedules schedules, IDbSession session, CancellationToken ct) =>
+        {
+            await schedules.CancelAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
 
         x.MapGet("/page-routes", async (PageRoutes routes, CancellationToken ct) => Results.Ok(await routes.ListAsync(ct)));
 
