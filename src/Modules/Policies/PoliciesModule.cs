@@ -312,6 +312,14 @@ public static class PoliciesModule
         root.MapGet("/{id:guid}/campaigns/{campaignId:guid}", async (Guid id, Guid campaignId, PolicyCampaigns campaigns, CancellationToken ct) =>
             Results.Ok(await campaigns.GetAsync(id, campaignId, ct)));
 
+        root.MapPost("/{id:guid}/campaigns/{campaignId:guid}/members/{userId:guid}/pause", async (Guid id, Guid campaignId, Guid userId, PauseRequest request,
+            PolicyCampaigns campaigns, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await campaigns.PauseAsync(id, campaignId, userId, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
         root.MapPost("/{id:guid}/campaigns/{campaignId:guid}/remind", async (Guid id, Guid campaignId, PolicyCampaigns campaigns, IDbSession session, CancellationToken ct) =>
         {
             var view = await campaigns.RemindAsync(id, campaignId, ct);

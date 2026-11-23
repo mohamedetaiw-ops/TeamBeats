@@ -2741,5 +2741,9 @@
   "validation.policies.paper_duplicate": "يتكرر هذا الشخص وهذا الإصدار أكثر من مرة.",
   "validation.policies.paper_already": "أقر هذا الشخص بهذا الإصدار من قبل.",
   "conflict.policies.paper_not_in_force": "لا تستورد الإقرارات الورقية إلا لسياسة سارية.",
-  "conflict.policies.paper_import_done": "اكتمل هذا الاستيراد من قبل."
+  "conflict.policies.paper_import_done": "اكتمل هذا الاستيراد من قبل.",
+  "validation.policies.pause_until": "اختر يوم عودة الشخص، من الغد حتى سنة قادمة.",
+  "validation.policies.pause_reason": "اذكر سببًا لا يتجاوز 500 حرف.",
+  "conflict.policies.pause_not_owed": "لا يوجد ما يقر به هذا الشخص في هذه الحملة.",
+  "conflict.policies.already_paused": "موعد هذا الشخص متوقف من قبل."
 }

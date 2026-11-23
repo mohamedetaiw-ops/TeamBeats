@@ -116,7 +116,7 @@ public sealed record ScheduledVersion(Guid Id, int Number, DateTimeOffset Effect
 /// force and the package includes the assistant and policy Q&amp;A.
 /// </summary>
 public sealed record PolicyRights(bool Manage, bool Edit, bool Review, bool History, bool Compliance, bool Ask = false, bool Analytics = false, bool Comprehension = false,
-    bool Exemptions = false, bool Controls = false, bool Paper = false);
+    bool Exemptions = false, bool Controls = false, bool Paper = false, bool Pause = false);
 
 /// <summary>What the current user may do in the register: create policies where they hold <c>policy.manage</c>, and open the exemption register.</summary>
 public sealed record RegisterRights(bool Create, bool Exemptions = false, bool Evidence = false);
@@ -255,6 +255,9 @@ public sealed record CampaignView(
     CampaignCounts Counts,
     CampaignCheck? Check = null);
 
+/// <summary>Pauses a person's deadline while they are on long leave, until the end of <paramref name="Until"/>, with a reason.</summary>
+public sealed record PauseRequest(DateOnly? Until, string? Reason);
+
 public sealed record AttestRequest(Guid? CampaignId, string? Locale, string? Channel);
 
 public sealed record AttestationView(Guid Id, Guid PolicyId, int Version, Guid? CampaignId, string Locale, string AttestationText, string TextHash, string Channel,
@@ -308,7 +311,7 @@ public sealed record ComplianceView(
 /// <paramref name="ExemptUntil"/>: the last day of an approved exemption that covers them (US7 scenario 2).
 /// </summary>
 public sealed record CompliancePerson(PolicyPerson Person, Guid? UnitId, string? Location, Guid? ManagerId, string Status, DateTimeOffset DueAt, DateTimeOffset? AttestedAt,
-    DateTimeOffset? LeftAt, bool NeedsFollowUp = false, DateOnly? ExemptUntil = null);
+    DateTimeOffset? LeftAt, bool NeedsFollowUp = false, DateOnly? ExemptUntil = null, DateTimeOffset? PausedUntil = null);
 
 public sealed record CompliancePeople(IReadOnlyList<CompliancePerson> Items, int Total, int Offset, int Limit);
 

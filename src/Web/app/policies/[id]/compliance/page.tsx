@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/Badge";
 import { StateView } from "@/components/ui/StateView";
 import { PoliciesNav } from "@/features/policies/PoliciesNav";
 import { RemindButton } from "@/features/policies/RemindButton";
+import { PauseDeadline } from "@/features/policies/PauseDeadline";
 import { ComplianceBreakdown } from "@/features/policies/ComplianceBreakdown";
 import { PageHeader } from "@/components/ui/PageHeader";
 
@@ -76,6 +77,7 @@ export default async function PolicyCompliancePage({ params, searchParams }: { p
     return `${complianceHref(p.id)}${q.size ? `?${q}` : ""}`;
   };
   const percent = (n: number) => format.number(n / 100, { style: "percent", maximumFractionDigits: 1 });
+  const canPause = p.rights.pause === true && v.campaign?.status === "open";
   const parent = v.unitPath.length > 1 ? v.unitPath[v.unitPath.length - 2] : null;
 
   return (
@@ -220,6 +222,18 @@ export default async function PolicyCompliancePage({ params, searchParams }: { p
                                   <>
                                     {" "}
                                     <Badge tone="info">{t("exemptUntil", { date: format.dateTime(new Date(x.exemptUntil), { dateStyle: "medium" }) })}</Badge>
+                                  </>
+                                ) : null}
+                                {x.pausedUntil ? (
+                                  <>
+                                    {" "}
+                                    <Badge tone="neutral">{t("pausedUntil", { date: format.dateTime(new Date(x.pausedUntil), { dateStyle: "medium" }) })}</Badge>
+                                  </>
+                                ) : null}
+                                {canPause && !x.pausedUntil && (x.status === "open" || x.status === "overdue") ? (
+                                  <>
+                                    {" "}
+                                    <PauseDeadline policyId={p.id} campaignId={v.campaign?.id ?? ""} userId={x.person.id} name={x.person.displayName} />
                                   </>
                                 ) : null}
                               </td>

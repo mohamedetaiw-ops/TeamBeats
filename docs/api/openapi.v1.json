@@ -15424,6 +15424,57 @@
         }
       }
     },
+    "/api/v1/policies/{id}/campaigns/{campaignId}/members/{userId}/pause": {
+      "post": {
+        "tags": [
+          "Policies"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PauseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/policies/{id}/campaigns/{campaignId}/remind": {
       "post": {
         "tags": [
@@ -39137,6 +39188,28 @@
             ]
           },
           "sample": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "PauseRequest": {
+        "required": [
+          "until",
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "until": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "reason": {
             "type": [
               "null",
               "string"

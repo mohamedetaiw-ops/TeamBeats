@@ -41,7 +41,8 @@ public sealed class PolicyCompliance(
         public string Scope => Coverage.WholeTenant ? ComplianceScopes.Tenant : Coverage.Any ? ComplianceScopes.Units : ComplianceScopes.Reports;
     }
 
-    private sealed record Member(Guid UserId, string Status, DateTimeOffset DueAt, DateTimeOffset? AttestedAt, DateTimeOffset? LeftAt, bool FollowUp = false);
+    private sealed record Member(Guid UserId, string Status, DateTimeOffset DueAt, DateTimeOffset? AttestedAt, DateTimeOffset? LeftAt, bool FollowUp = false,
+        DateTimeOffset? PausedUntil = null);
 
     /// <summary>A member with where they sit: primary unit and its path from the root, location and manager.</summary>
     private sealed record Placed(Member Member, Guid? Unit, IReadOnlyList<Guid> Path, string? Location, Guid? Manager);
@@ -102,9 +103,9 @@ public sealed class PolicyCompliance(
             return (policy, viewer, null, all, []);
         }
         var members = await session.QueryAsync(
-            "select user_id, status, due_at, attested_at, left_at, follow_up_at is not null from policies.campaign_member where campaign_id = @c",
+            "select user_id, status, due_at, attested_at, left_at, follow_up_at is not null, paused_until from policies.campaign_member where campaign_id = @c",
             new { c = campaign.Id }, r => new Member(r.GetGuid(0), r.GetString(1), r.GetFieldValue<DateTimeOffset>(2), r.Get<DateTimeOffset?>("attested_at"),
-                r.Get<DateTimeOffset?>("left_at"), r.GetBoolean(5)), ct);
+                r.Get<DateTimeOffset?>("left_at"), r.GetBoolean(5), r.Get<DateTimeOffset?>("paused_until")), ct);
         var memberships = await MembershipsAsync(ct);
         var visible = members.Where(m => Sees(viewer, memberships, m.UserId)).ToList();
         var units = visible.Select(m => memberships.Primary(m.UserId)).OfType<Guid>().Distinct().ToList();
@@ -263,7 +264,8 @@ public sealed class PolicyCompliance(
             // A person's own exemption, or one for any unit above their primary unit, the latest end date first.
             var exempt = covers.Where(c => c.Subject == p.Member.UserId || (c.UnitId is { } u && p.Path.Contains(u))).Select(c => (DateOnly?)c.EndsOn).Max();
             page.Add(new CompliancePerson(await register.PersonAsync(p.Member.UserId, ct), p.Unit, NoneKey(p.Location), p.Manager, p.Member.Status, p.Member.DueAt,
-                p.Member.AttestedAt, p.Member.LeftAt, p.Member.FollowUp && p.Member.Status is MemberStatuses.Open or MemberStatuses.Overdue, exempt));
+                p.Member.AttestedAt, p.Member.LeftAt, p.Member.FollowUp && p.Member.Status is MemberStatuses.Open or MemberStatuses.Overdue, exempt,
+                p.Member.PausedUntil > clock.UtcNow && p.Member.Status == MemberStatuses.Open ? p.Member.PausedUntil : null));
         }
         return new CompliancePeople(page, filtered.Count, skip, take);
     }
@@ -297,7 +299,8 @@ public sealed class PolicyCompliance(
         }
         var named = request.UserIds is { Count: > 0 } ids ? ids.ToHashSet() : null;
         var pending = everyone
-            .Where(p => p.Member.Status is MemberStatuses.Open or MemberStatuses.Overdue && (named is null || named.Contains(p.Member.UserId)))
+            .Where(p => p.Member.Status is MemberStatuses.Open or MemberStatuses.Overdue && !(p.Member.PausedUntil > clock.UtcNow)
+                && (named is null || named.Contains(p.Member.UserId)))
             .Select(p => p.Member.UserId).ToArray();
         var me = context.RequireUser();
         var stamp = clock.UtcNow.ToString("yyyyMMddHHmm", System.Globalization.CultureInfo.InvariantCulture);

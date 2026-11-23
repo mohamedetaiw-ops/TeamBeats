@@ -285,8 +285,8 @@ public sealed class PolicyCampaigns(
         {
             throw AppException.Conflict("conflict.policies.campaign_closed");
         }
-        var pending = (await session.QueryAsync("select user_id from policies.campaign_member where campaign_id = @campaignId and status in ('open', 'overdue')",
-            new { campaignId }, r => r.GetGuid(0), ct)).ToArray();
+        var pending = (await session.QueryAsync("select user_id from policies.campaign_member where campaign_id = @campaignId and status in ('open', 'overdue') and (paused_until is null or paused_until <= @now)",
+            new { campaignId, now = clock.UtcNow }, r => r.GetGuid(0), ct)).ToArray();
         var stamp = clock.UtcNow.ToString("yyyyMMddHHmm", System.Globalization.CultureInfo.InvariantCulture);
         foreach (var chunk in pending.Chunk(NoticeBatch))
         {
@@ -294,6 +294,64 @@ public sealed class PolicyCampaigns(
         }
         await audit.WriteAsync(new AuditEntry(AuditActions.PolicyCampaignReminded, Securables.Policy, id.ToString(), TargetOrgUnitId: policy.OrgUnitId,
             Changes: new { campaign = campaignId, recipients = pending.Length }), ct);
+        return await ViewAsync(campaign, ct);
+    }
+
+    public const int MaxPauseDays = 365;
+    public const int MaxPauseReasonLength = 500;
+
+    /// <summary>
+    /// Pauses a person's deadline while they are on long leave (spec 025 edge cases), for compliance officers: until the
+    /// end of the day they are back, with a reason. The deadline moves by the time paused, an overdue person is open
+    /// again, and no reminder or escalation goes out meanwhile. The reason stays with compliance.
+    /// </summary>
+    public async Task<CampaignView> PauseAsync(Guid id, Guid campaignId, Guid userId, PauseRequest request, CancellationToken ct)
+    {
+        var (policy, campaign) = await CampaignAsync(id, campaignId, true, ct);
+        if (campaign.Status != "open")
+        {
+            throw AppException.Conflict("conflict.policies.campaign_closed");
+        }
+        var now = clock.UtcNow;
+        var member = await session.QuerySingleOrDefaultAsync(
+            "select status, due_at, paused_until from policies.campaign_member where campaign_id = @campaignId and user_id = @userId for update",
+            new { campaignId, userId },
+            r => ((string Status, DateTimeOffset DueAt, DateTimeOffset? PausedUntil)?)(r.GetString(0), r.GetFieldValue<DateTimeOffset>(1), r.Get<DateTimeOffset?>("paused_until")), ct)
+            ?? throw AppException.NotFound();
+        if (member.Status is not (MemberStatuses.Open or MemberStatuses.Overdue))
+        {
+            throw AppException.Conflict("conflict.policies.pause_not_owed");
+        }
+        if (member.PausedUntil > now)
+        {
+            throw AppException.Conflict("conflict.policies.already_paused");
+        }
+        var zone = TimeZoneInfo.FindSystemTimeZoneById((await tenantSettings.GetLocaleSettingsAsync(ct)).TimeZone);
+        var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(now.UtcDateTime, zone));
+        var errors = new ValidationErrors();
+        if (request.Until is not { } until || until <= today || until > today.AddDays(MaxPauseDays))
+        {
+            errors.Add("until", "validation.policies.pause_until");
+            until = today;
+        }
+        var reason = request.Reason?.Trim() ?? string.Empty;
+        if (reason.Length is 0 or > MaxPauseReasonLength)
+        {
+            errors.Add("reason", "validation.policies.pause_reason");
+        }
+        errors.ThrowIfAny();
+        var back = new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(until.AddDays(1).ToDateTime(TimeOnly.MinValue), zone), TimeSpan.Zero);
+        // The time the person still had, or none when already overdue, counted from the day they are back.
+        var left = member.DueAt > now ? member.DueAt - now : TimeSpan.Zero;
+        var due = back + left;
+        await session.ExecAsync(
+            """
+            update policies.campaign_member set status = 'open', due_at = @due, paused_until = @back, pause_reason = @reason, paused_by = @by, paused_at = @now,
+              reminders_sent = '{}'
+            where campaign_id = @campaignId and user_id = @userId
+            """, new { campaignId, userId, due, back, reason, by = context.RequireUser(), now }, ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.PolicyAttestationPaused, Securables.Policy, id.ToString(), TargetOrgUnitId: policy.OrgUnitId,
+            Changes: new { campaign = campaignId, user = userId, until, before = member.DueAt, after = due, reason }), ct);
         return await ViewAsync(campaign, ct);
     }
 
@@ -573,6 +631,7 @@ public sealed class PolicyCampaigns(
             join policies.campaign c on c.id = m.campaign_id
             cross join lateral unnest(c.reminder_days) d
             where c.status = 'open' and m.status = 'open' and m.due_at > @now and m.due_at - make_interval(days => d) <= @now and not (d = any(m.reminders_sent))
+              and (m.paused_until is null or m.paused_until <= @now)
             group by m.campaign_id, m.user_id
             order by m.campaign_id, m.user_id limit @limit
             """, new { now, limit }, r => (Campaign: r.GetGuid(0), User: r.GetGuid(1), Days: r.GetFieldValue<int[]>(2)), ct);
@@ -592,10 +651,11 @@ public sealed class PolicyCampaigns(
             """
             update policies.campaign_member m set status = 'overdue'
             from policies.campaign c
-            where c.id = m.campaign_id and c.status = 'open' and m.status = 'open' and m.due_at <= @now
+            where c.id = m.campaign_id and c.status = 'open' and m.status = 'open' and m.due_at <= @now and (m.paused_until is null or m.paused_until <= @now)
               and (m.campaign_id, m.user_id) in (
                 select m2.campaign_id, m2.user_id from policies.campaign_member m2 join policies.campaign c2 on c2.id = m2.campaign_id
-                where c2.status = 'open' and m2.status = 'open' and m2.due_at <= @now order by m2.due_at limit @limit)
+                where c2.status = 'open' and m2.status = 'open' and m2.due_at <= @now and (m2.paused_until is null or m2.paused_until <= @now)
+                order by m2.due_at limit @limit)
             returning m.campaign_id, m.user_id, c.policy_id, c.version
             """, new { now, limit }, r => (Campaign: r.GetGuid(0), User: r.GetGuid(1), Policy: r.GetGuid(2), Version: r.GetInt32(3)), ct);
         if (overdue.Count == 0)

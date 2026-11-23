@@ -35,7 +35,7 @@ export type PolicyReading = { policy: PolicySummary; version: VersionView; super
 
 export type RouteStep = { names?: Names | null; approvers?: string[] | null; complianceOfficers?: boolean };
 
-export type PolicyRights = { manage: boolean; edit: boolean; review: boolean; history: boolean; compliance: boolean; ask: boolean; analytics: boolean; comprehension?: boolean; exemptions?: boolean; controls?: boolean; paper?: boolean };
+export type PolicyRights = { manage: boolean; edit: boolean; review: boolean; history: boolean; compliance: boolean; ask: boolean; analytics: boolean; comprehension?: boolean; exemptions?: boolean; controls?: boolean; paper?: boolean; pause?: boolean };
 
 export type RegisterRights = { create: boolean; exemptions?: boolean; evidence?: boolean };
 
@@ -256,6 +256,8 @@ export type CompliancePerson = {
   needsFollowUp?: boolean;
   /** The last day of an approved exemption that covers the person (spec 025 US7). */
   exemptUntil?: string | null;
+  /** The day a long leave pause ends, while it lasts (spec 025 edge cases); the reason stays with compliance. */
+  pausedUntil?: string | null;
 };
 
 export type CompliancePeople = { items: CompliancePerson[]; total: number; offset: number; limit: number };

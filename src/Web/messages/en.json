@@ -5411,7 +5411,19 @@
       "showing": "{from} to {to} of {total}",
       "failed": "The people could not be loaded. Try again.",
       "needsFollowUp": "Needs follow-up",
-      "exemptUntil": "Exempt until {date}"
+      "exemptUntil": "Exempt until {date}",
+      "pausedUntil": "Paused until {date}",
+      "pause": "Pause deadline",
+      "pauseTitle": "Pause the deadline for {name}",
+      "pauseIntro": "For long leave. The deadline moves by the time away, and no reminder or overdue notice goes out until they are back.",
+      "pauseUntil": "Away until",
+      "pauseUntilHint": "The last day of the leave, within a year.",
+      "pauseReason": "Reason",
+      "pauseReasonHint": "Kept with compliance, never shown to the person or their manager.",
+      "pauseSubmit": "Pause",
+      "pauseCancel": "Cancel",
+      "pauseBusy": "Pausing",
+      "pauseFailed": "The deadline could not be paused. Try again."
     },
     "person": {
       "register": "Policies",
