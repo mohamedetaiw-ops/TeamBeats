@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import type { CatalogueTemplate, Finding, PageApprovalState, PageDefinition, PageSubmission, PageView } from "@/lib/experience/builder-types";
+import type { CatalogueTemplate, Finding, ImpactReport, PageApprovalState, PageDefinition, PageSubmission, PageView } from "@/lib/experience/builder-types";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { useDragHandle, type Drop, type DragTargets } from "@/lib/experience/drag";
 import * as model from "./model";
+import { ImpactDialog } from "./ImpactDialog";
 import { Picker } from "./Picker";
 import { PropertyForm } from "./PropertyForm";
 
@@ -102,6 +103,7 @@ export function PageEditor({
   const [previewLocale, setPreviewLocale] = useState(locales.includes(uiLocale) ? uiLocale : (locales[0] ?? uiLocale));
   const [published, setPublished] = useState<number | null>(page.currentRelease);
   const [pending, setPending] = useState<PageSubmission | null>(approval?.pending ?? null);
+  const [impact, setImpact] = useState<ImpactReport | null>(null);
   const etag = useRef(restored?.etag ?? page.eTag);
   const focusAfter = useRef<string | null>(null);
   const cards = useRef(new Map<string, HTMLElement>());
@@ -252,6 +254,25 @@ export function PageEditor({
     }
   };
 
+  /** Where the package has impact reports (spec 032 R2 T024), the publisher sees what the release reaches first and may cancel. */
+  async function review() {
+    if (!approval?.impact) return publish();
+    setPublishing(true);
+    try {
+      if (dirty) await save(draft, etag.current);
+      const response = await fetch(`/api/v1/experience/pages/${page.id}/impact`);
+      if (response.ok) {
+        setImpact((await response.json()) as ImpactReport);
+        return;
+      }
+      setAnnouncement(t("publishFailed"));
+    } catch {
+      setAnnouncement(t("publishFailed"));
+    } finally {
+      setPublishing(false);
+    }
+  }
+
   async function publish() {
     setPublishing(true);
     try {
@@ -292,6 +313,7 @@ export function PageEditor({
       setAnnouncement(t("publishFailed"));
     } finally {
       setPublishing(false);
+      setImpact(null);
     }
   }
 
@@ -616,13 +638,17 @@ export function PageEditor({
               <label htmlFor="builder-reason">{t("reason")}</label>
               <input id="builder-reason" type="text" maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} />
             </div>
-            <Button variant="primary" busy={publishing} busyLabel={t("publishing")} disabled={blocking > 0 || !!conflict} onClick={() => void publish()}>
+            <Button variant="primary" busy={publishing} busyLabel={t("publishing")} disabled={blocking > 0 || !!conflict} onClick={() => void review()}>
               {approval?.required ? t("approval.submit") : t("publish")}
             </Button>
           </>
         )}
         {blocking > 0 ? <p className="builder-template-description">{t("fixFirst")}</p> : null}
       </section>
+
+      {impact ? (
+        <ImpactDialog report={impact} submit={!!approval?.required} busy={publishing} onCancel={() => setImpact(null)} onConfirm={() => void publish()} />
+      ) : null}
 
       {picker ? (
         <Picker

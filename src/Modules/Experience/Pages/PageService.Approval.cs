@@ -1,4 +1,5 @@
 using TeamBeats.Audit.Contracts;
+using TeamBeats.Authorization.Contracts;
 using TeamBeats.Modules.Experience.Contracts;
 using TeamBeats.Persistence;
 
@@ -51,5 +52,19 @@ public sealed partial class PageService
             Changes: new { release = release.Release, previous = row.CurrentRelease, reason, submission }), ct);
         await outbox.EnqueueAsync(new PagePublished(page.Id, release.Release), ct);
         return release;
+    }
+}
+
+public sealed partial class PageService
+{
+    /// <summary>What publishing the page's draft reaches (spec 032 R2 T024, FR-054), for those who may publish or submit it.</summary>
+    public async Task<ImpactReport> ImpactAsync(Guid id, ImpactReports impacts, CancellationToken ct)
+    {
+        // Editors see it too: under an approval route they submit rather than publish.
+        var page = await EditableAsync(id, Permissions.PageEdit, ct);
+        await impacts.DemandAsync(ct);
+        var (_, draft) = await DraftAsync(id, ct);
+        var current = page.CurrentRelease is { } r ? (await ReleaseAsync(id, r, ct)).Definition : null;
+        return await impacts.ForPageAsync(Info(page), draft, current, ct);
     }
 }

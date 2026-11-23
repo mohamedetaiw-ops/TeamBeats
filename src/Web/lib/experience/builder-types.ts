@@ -162,4 +162,17 @@ export type PageSubmission = {
 };
 
 /** Whether a page goes live through approval, and its waiting and last decided submissions. */
-export type PageApprovalState = { required: boolean; pending: PageSubmission | null; last: PageSubmission | null };
+export type PageApprovalState = { required: boolean; pending: PageSubmission | null; last: PageSubmission | null; impact?: boolean };
+
+/** What publishing a shared artifact reaches (spec 032 R2 T024, FR-054); lists stop at 50, counts are whole. */
+export type ImpactReport = {
+  artifact: "page" | "template" | "theme";
+  tenantWide: boolean;
+  orgUnitCount: number;
+  orgUnits: { id: string; names: Record<string, string> }[];
+  audiences: { id: string; labels: Record<string, string> }[];
+  pageCount: number;
+  pages: { id: string; slug: string; orgUnitId: string | null }[];
+  personalLayouts: number;
+  personalLayoutsTouched: number;
+};

@@ -4457,6 +4457,73 @@
         }
       }
     },
+    "/api/v1/experience/pages/{id}/impact": {
+      "get": {
+        "tags": [
+          "Experience: pages"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/experience/templates/{id}/impact": {
+      "get": {
+        "tags": [
+          "Experience: pages"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/experience/brand-assignments/{scope}/impact": {
+      "get": {
+        "tags": [
+          "Experience: pages"
+        ],
+        "parameters": [
+          {
+            "name": "scope",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/experience/page-routes": {
       "get": {
         "tags": [

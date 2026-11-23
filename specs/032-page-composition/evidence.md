@@ -1,6 +1,6 @@
 # Spec 032 evidence (R1)
 
-The spec stays Approved, not Implemented. R1 builds the page model, the resolver, the 10 layouts and 12 templates with variants, template preview, locks, distribution and lifecycle, the manifest registry, the builder with keyboard composition, autosave, undo, previews by device and direction, accessibility and translation checks, error isolation, publish and rollback, and the performance and isolation baseline. Still open in R1: persona previews in the builder (FR-041, waiting on spec 008 audiences in the builder), a draft revision history across sessions (FR-043), the retired template state with migration guidance (FR-021), page and navigation label translation checks (FR-047), and asset size budgets in CI (FR-060). The R2 and R3 parts are not built: approval routes (FR-051), impact reports (FR-044, FR-054), fragments (FR-045), import and export (FR-022), scheduled releases (FR-053), feature controls (FR-057), resizable regions (FR-007), independent component deployment (FR-033), sandboxed tenant components (FR-031) and template recommendations (FR-023). The spec 032 sections of `docs/architecture/r1-implementation-notes.md` hold the defaults, deviations and gaps.
+The spec stays Approved, not Implemented. R1 builds the page model, the resolver, the 10 layouts and 12 templates with variants, template preview, locks, distribution and lifecycle, the manifest registry, the builder with keyboard composition, autosave, undo, previews by device and direction, accessibility and translation checks, error isolation, publish and rollback, and the performance and isolation baseline. Still open in R1: persona previews in the builder (FR-041, waiting on spec 008 audiences in the builder), a draft revision history across sessions (FR-043), the retired template state with migration guidance (FR-021), page and navigation label translation checks (FR-047), and asset size budgets in CI (FR-060). R2 approval routes for page scopes (FR-051) and impact reports (FR-044, FR-054) are built; see the R2 implementation notes. The other R2 and R3 parts are not built yet: fragments (FR-045), import and export (FR-022), scheduled releases (FR-053), feature controls (FR-057), resizable regions (FR-007), independent component deployment (FR-033), sandboxed tenant components (FR-031) and template recommendations (FR-023). The spec 032 sections of `docs/architecture/r1-implementation-notes.md` hold the defaults, deviations and gaps.
 
 | Requirement | Status | Evidence |
 |---|---|---|
@@ -38,14 +38,14 @@ The spec stays Approved, not Implemented. R1 builds the page model, the resolver
 | FR-041 persona preview | Open | Waits for spec 008 audiences in the builder; the targeting preview exists in spec 008 |
 | FR-042 autosave and concurrency | Met | `PageCompositionTests.Stale_draft_save_is_a_conflict_that_keeps_both_versions`, `page-builder.spec.ts` |
 | FR-043 undo, redo and history | Partly met | Undo and redo in a session: `page-builder.spec.ts`. Releases and rollback exist; a draft revision history is open |
-| FR-044, FR-054 affected pages before publishing | R2 | Not built |
+| FR-044, FR-054 affected pages before publishing | Met for pages, templates and themes | `ImpactReportTests.Publishing_a_page_reports_its_scope_audiences_and_the_personal_layouts_it_touches`, `Template_releases_and_theme_assignments_report_the_pages_they_reach_and_need_the_package`, `page-approval.spec.ts` (the builder dialog with cancel) |
 | FR-045 fragments | R2 | Not built |
 | FR-046 accessibility findings | Met | `PageCompositionTests.Validator_blocks_bad_placements_and_names_each_one`, `page-builder.spec.ts` |
 | FR-047 translation status | Partly met | `PageCompositionTests.Text_missing_in_one_enabled_language_is_a_translation_warning_that_does_not_block`; page and navigation labels are open |
 | FR-048 built-in roles | Met | Page editor and brand manager roles; `PermissionBackfillTests` |
 | FR-049 owner and scope | Met | `PageCompositionTests.Page_list_shows_only_pages_the_editor_may_edit_in_their_own_tenant`; an inventory report is open |
 | FR-050 no live change before publish, immutable releases | Met | `PageCompositionTests.Draft_is_never_visible_and_publish_makes_an_immutable_release` |
-| FR-051 approval | R2 | Not built |
+| FR-051 approval | Partly met | Page scopes: `PageApprovalTests`, `page-approval.spec.ts`. Approval of shared template releases is open |
 | FR-052 rollback as a new release | Met | `PageCompositionTests.Rollback_restores_an_earlier_release_as_a_new_release` |
 | FR-053 scheduling | R2 | Not built |
 | FR-055 audit | Met | `PageCompositionTests.Page_is_created_from_configuration_with_provenance_and_audited`, `Delegated_editor_works_only_inside_their_scope_and_outside_is_not_found_and_audited` |
