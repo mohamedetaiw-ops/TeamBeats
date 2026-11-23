@@ -2836,5 +2836,15 @@
   "notifications.template.tenancy.domain.stopped.title": "توقف نطاق مخصص عن العمل",
   "notifications.template.tenancy.domain.stopped.body": "اختفى سجل DNS الذي يثبت أن {host} يتبع مساحة العمل هذه، لذلك لم يعد النطاق يُخدَم. ما زال بإمكان الأشخاص استخدام عنوان مساحة العمل الأصلي. أضف السجل مرة أخرى وتحقق من النطاق.",
   "notifications.template.tenancy.domain.certificate.title": "شهادة نطاق مخصص تحتاج إلى انتباه",
-  "notifications.template.tenancy.domain.certificate.body": "تنتهي شهادة {host} قريبا أو تعذرت قراءتها. ما زال بإمكان الأشخاص استخدام عنوان مساحة العمل الأصلي. تحقق من أن النطاق ما زال يشير إلى TeamBeats."
+  "notifications.template.tenancy.domain.certificate.body": "تنتهي شهادة {host} قريبا أو تعذرت قراءتها. ما زال بإمكان الأشخاص استخدام عنوان مساحة العمل الأصلي. تحقق من أن النطاق ما زال يشير إلى TeamBeats.",
+  "validation.theme.dtcg_invalid": "هذا ليس ملف رموز تصميم. صدّر ملفا من TeamBeats أو من أداة أخرى تكتب صيغة DTCG.",
+  "validation.theme.dtcg_type_mismatch": "لهذا الرمز نوع مختلف في TeamBeats",
+  "validation.theme.extension_key": "استخدم من 2 إلى 32 حرفا لاتينيا صغيرا أو رقما أو شرطة سفلية، تبدأ بحرف",
+  "validation.theme.extension_type": "اختر لونا أو قياسا أو رقما أو مدة أو ظلا",
+  "validation.theme.extension_limit": "في هذا النطاق 20 امتدادا للرموز بالفعل. احذف واحدا أولا.",
+  "validation.theme.extension_description": "اجعل الوصف في حدود 200 حرف",
+  "conflict.theme.extension_exists": "في هذا النطاق امتداد بهذا المفتاح بالفعل",
+  "conflict.theme.extension_approved": "لا يمكن تغيير امتداد معتمد. احذفه واقترح امتدادا جديدا.",
+  "conflict.theme.extension_reviewed": "تمت مراجعة هذا الامتداد بالفعل",
+  "authz.denied.extension_own_proposal": "يجب أن يراجع هذا الامتداد شخص غير الذي اقترحه"
 }
