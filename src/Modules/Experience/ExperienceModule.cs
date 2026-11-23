@@ -34,6 +34,7 @@ public static class ExperienceModule
         services.AddScoped<ISitePages, Pages.SitePages>();
         services.AddScoped<ComponentAvailability>();
         services.AddScoped<FeatureControls>();
+        services.AddScoped<ComponentDeployments>();
         services.AddScoped<AudienceEvaluator>();
         services.AddScoped<LayoutEngine>();
         services.AddScoped<HomeDefaults>();
@@ -357,6 +358,17 @@ public static class ExperienceModule
             var view = await pages.UpgradeComponentAsync(componentId, request, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
+        });
+
+        // Independent deployment (spec 032 R2 T031): which upgraded majors live pages show, and rolling one back.
+        x.MapGet("/components/deployments", async (ComponentDeployments deployments, CancellationToken ct) => Results.Ok(await deployments.ListAsync(ct)));
+
+        x.MapDelete("/components/{componentId}/deployments/{fromMajor:int}", async (string componentId, int fromMajor, ComponentDeployments deployments,
+            IDbSession session, CancellationToken ct) =>
+        {
+            await deployments.RemoveAsync(componentId, fromMajor, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
         });
 
         // Renderer telemetry (spec 032 section 13): identifiers and numbers only, tagged with the session's tenant.

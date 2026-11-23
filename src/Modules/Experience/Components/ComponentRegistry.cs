@@ -65,6 +65,9 @@ public sealed partial class ComponentRegistry
     /// <summary>The migration hook from <c>id@major</c> to the next major, or null when there is none.</summary>
     public ComponentMigration? MigrationFrom(string reference) => _migrations.GetValueOrDefault(reference);
 
+    /// <summary>Every registered migration hook, so a tenant can see which upgrades it may deploy (R2 T031).</summary>
+    public IEnumerable<ComponentMigration> Migrations => _migrations.Values.OrderBy(m => m.From, StringComparer.Ordinal);
+
     /// <summary>Manifests that failed validation, with the reason code.</summary>
     public IReadOnlyList<(string Component, string Reason)> Rejected { get; }
 

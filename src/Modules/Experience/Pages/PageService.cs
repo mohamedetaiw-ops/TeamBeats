@@ -121,7 +121,8 @@ public sealed partial class PageService(
     ITenantSettingsReader tenantSettings,
     PageRoutes routes,
     Fragments fragments,
-    Components.FeatureControls controls)
+    Components.FeatureControls controls,
+    Components.ComponentDeployments deployments)
 {
     private sealed record PageRow(Guid Id, Guid? OrgUnitId, string Slug, string TemplateId, string TemplateVersion, int? CurrentRelease);
 
@@ -484,6 +485,8 @@ public sealed partial class PageService(
                 new { r = revision + 1, d = Jsonb.From(draft with { Regions = regions }), u = context.RequireUser(), now = clock.UtcNow, id = page.Id }, ct);
             upgraded.Add(page.Id);
         }
+        // Live releases show the new major from now on (R2 T031); drafts were converted above and publish as usual.
+        await deployments.RecordAsync(migration, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.ComponentUpgraded, "component", componentId,
             Changes: new { from = migration.From, to = migration.To, upgraded = upgraded.Count, blocked = blocked.Count }), ct);
         return new ComponentUpgradeView(migration.From, migration.To, upgraded, blocked);
@@ -585,7 +588,7 @@ public sealed partial class PageService(
     private async Task<RenderedPage> PreviewOfAsync(PageRow page, PageDefinition draft, string? previewLocale, CancellationToken ct)
     {
         var shown = previewLocale is { } l && Primitives.Locales.IsSupported(l) ? l : locale.Locale;
-        draft = (await fragments.ExpandAsync(draft, page.OrgUnitId, ct)).Definition;
+        draft = await deployments.ApplyAsync((await fragments.ExpandAsync(draft, page.OrgUnitId, ct)).Definition, ct);
         var template = await templates.GetAsync(draft.Template, ct);
         var layout = RegionSpans.Apply(catalogue.Layouts[template.Layout], draft);
         var availability = await AvailabilityAsync(page.OrgUnitId, ct);
@@ -658,7 +661,8 @@ public sealed partial class PageService(
         await authz.DemandVisibleAsync(Permissions.PageView, Target(page.OrgUnitId), ct);
         var snapshot = await ReleaseAsync(page.Id, current, ct);
         // A fragment shows its current version on every page that places it (R2 T027); the release keeps only the reference.
-        snapshot = snapshot with { Definition = (await fragments.ExpandAsync(snapshot.Definition, page.OrgUnitId, ct)).Definition };
+        // A deployed component major (R2 T031) shows on the release through its migration hook, without a republish.
+        snapshot = snapshot with { Definition = await deployments.ApplyAsync((await fragments.ExpandAsync(snapshot.Definition, page.OrgUnitId, ct)).Definition, ct) };
         var template = await templates.GetAsync(snapshot.Definition.Template, ct);
         var layout = RegionSpans.Apply(catalogue.Layouts[template.Layout], snapshot.Definition);
         // Spec 008 audiences: who the viewer is decides audience rules and the audience feature controls (R2 T030).
@@ -690,9 +694,11 @@ public sealed partial class PageService(
 
         var shownSources = new Dictionary<string, string>(StringComparer.Ordinal);
         var dropped = new List<DroppedPlacement>();
+        // Placements a viewer added to their own layout follow the tenant's deployments too (R2 T031).
+        var upgrade = await deployments.UpgraderAsync(ct);
         var regions = layout.Regions.Select(lr =>
         {
-            var placements = personal.Regions.TryGetValue(lr.Id, out var list) ? list : [];
+            var placements = (personal.Regions.TryGetValue(lr.Id, out var list) ? list : []).Select(item => item with { Placement = upgrade(item.Placement) }).ToList();
             // On a shared kiosk device (spec 030 FR-017) a component that reads from a feature the kiosk does not allow is left out.
             if (context.SharedDevice is { } device)
             {
@@ -738,7 +744,7 @@ public sealed partial class PageService(
             throw AppException.NotFound();
         }
         var snapshot = await ReleaseAsync(page.Id, current, ct);
-        var definition = (await fragments.ExpandAsync(snapshot.Definition, page.OrgUnitId, ct)).Definition;
+        var definition = await deployments.ApplyAsync((await fragments.ExpandAsync(snapshot.Definition, page.OrgUnitId, ct)).Definition, ct);
         return new PageContext(page.Id, page.OrgUnitId, definition.Template.Id, current, definition);
     }
 
