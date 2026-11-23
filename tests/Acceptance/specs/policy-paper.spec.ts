@@ -55,7 +55,8 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(form).toBeVisible();
       await expectAccessible(page, testInfo, `policy-paper-${locale}`);
 
-      const today = new Date().toISOString().slice(0, 10);
+      // The tenant's own date: the server checks the signing day in the tenant's time zone, which runs ahead of UTC.
+      const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dubai" }).format(new Date());
       await form.getByLabel(m("policies.paper.scan")).setInputFiles({ name: "signed-forms.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.7 signed forms") });
       await form.getByLabel(m("policies.paper.csv")).setInputFiles({
         name: "signatures.csv",

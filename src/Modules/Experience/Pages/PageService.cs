@@ -120,7 +120,8 @@ public sealed partial class PageService(
     RequestLocale locale,
     ITenantSettingsReader tenantSettings,
     PageRoutes routes,
-    Fragments fragments)
+    Fragments fragments,
+    Components.FeatureControls controls)
 {
     private sealed record PageRow(Guid Id, Guid? OrgUnitId, string Slug, string TemplateId, string TemplateVersion, int? CurrentRelease);
 
@@ -156,6 +157,12 @@ public sealed partial class PageService(
         {
             throw AppException.Validation("templateId", "validation.page.template_unknown");
         }
+        // A template switched off at the page's scope by a feature control takes no new pages (R2 T030); existing pages keep it.
+        if ((await controls.OffAsync(Components.FeatureControlSubjects.Template, request.OrgUnitId, ct))(template!.Id))
+        {
+            throw AppException.Validation("templateId", "validation.page.template_switched_off");
+        }
+
         var taken = await session.ScalarAsync<Guid?>("select id from experience.page where slug = @s", new { s = request.Slug }, ct);
         if (taken is not null)
         {
@@ -654,7 +661,11 @@ public sealed partial class PageService(
         snapshot = snapshot with { Definition = (await fragments.ExpandAsync(snapshot.Definition, page.OrgUnitId, ct)).Definition };
         var template = await templates.GetAsync(snapshot.Definition.Template, ct);
         var layout = RegionSpans.Apply(catalogue.Layouts[template.Layout], snapshot.Definition);
-        var availability = await AvailabilityAsync(page.OrgUnitId, ct, viewer: true);
+        // Spec 008 audiences: who the viewer is decides audience rules and the audience feature controls (R2 T030).
+        var rules = await audiences.RulesAsync(ct);
+        var viewer = await audiences.ViewerAsync(ct);
+        var availability = await AvailabilityAsync(page.OrgUnitId, ct, viewer: true,
+            inAudience: a => rules.TryGetValue(a, out var rule) && Personalization.AudienceMatcher.Matches(rule.Conditions, viewer));
         var known = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["tenantId"] = context.RequireTenant().ToString(),
@@ -668,8 +679,6 @@ public sealed partial class PageService(
         }
 
         // Spec 008 precedence: audience rules, then the published arrangement, then the viewer's own operations where allowed.
-        var rules = await audiences.RulesAsync(ct);
-        var viewer = await audiences.ViewerAsync(ct);
         var targeted = Personalization.LayoutEngine.ForAudience(snapshot.Definition.Regions, rules, viewer);
         var canPersonalize = (await authz.CheckAsync(Permissions.PersonalLayoutEdit, Target(page.OrgUnitId), ct)).Allowed;
         var rights = await layouts.RightsAsync(page.Id, template, viewer, rules, canPersonalize, ct);
@@ -846,8 +855,9 @@ public sealed partial class PageService(
         return result;
     }
 
-    private Task<Func<ComponentManifest, Availability>> AvailabilityAsync(Guid? orgUnitId, CancellationToken ct, bool viewer = false) =>
-        availability.ForScopeAsync(orgUnitId, ct, viewer);
+    private Task<Func<ComponentManifest, Availability>> AvailabilityAsync(Guid? orgUnitId, CancellationToken ct, bool viewer = false,
+        Func<Guid, bool>? inAudience = null) =>
+        availability.ForScopeAsync(orgUnitId, ct, viewer, inAudience);
 
     private async Task<PageRow> EditableAsync(Guid id, string permission, CancellationToken ct, bool audited = false)
     {

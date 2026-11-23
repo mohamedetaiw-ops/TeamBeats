@@ -1156,7 +1156,8 @@
       "other": "Workspace",
       "finance": "Finance",
       "kiosk": "Kiosks",
-      "help": "Help and tours"
+      "help": "Help and tours",
+      "feature_control": "Feature controls"
     },
     "auditActions": {
       "tenant_created": "Workspace created",
@@ -1391,6 +1392,9 @@
       "api": {
         "manage": "Manage API access",
         "view": "View API access"
+      },
+      "feature_control": {
+        "manage": "Switch experience features"
       }
     },
     "menu": "Admin menu"

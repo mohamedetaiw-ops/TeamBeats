@@ -2790,5 +2790,14 @@
   "builder.fragments.description": "مجموعة مشتركة من المكوّنات. تظهر تغييراتها في كل صفحة تضعها.",
   "validation.template.document_format": "هذا ليس مستند قالب من TeamBeats، أو أنه من إصدار لا تستطيع المنصة قراءته.",
   "validation.page.region_span_invalid": "لا يمكن أن تكون هذه المنطقة بهذا العرض أو الضيق في هذا التخطيط.",
-  "validation.page.region_span_overlap": "يجب أن تملأ مناطق هذا الصف معًا 12 عمودًا دون تداخل."
+  "validation.page.region_span_overlap": "يجب أن تملأ مناطق هذا الصف معًا 12 عمودًا دون تداخل.",
+  "validation.feature_control.subject_invalid": "اختر ما إذا كان المفتاح لمكوّن أو لقالب.",
+  "validation.feature_control.subject_unknown": "لا يوجد مكوّن أو قالب بهذا المعرّف.",
+  "validation.feature_control.enabled_required": "حدّد ما إذا كان المفتاح يشغّله أو يوقفه.",
+  "validation.feature_control.one_scope": "المفتاح لوحدة تنظيمية أو لجمهور، لا لكليهما.",
+  "validation.feature_control.audience_components_only": "يمكن تبديل المكوّنات فقط لجمهور معيّن.",
+  "validation.feature_control.audience_unknown": "هذا الجمهور غير موجود.",
+  "validation.feature_control.not_in_package": "باقتك لا تتضمن هذا المكوّن، لذلك لا يمكن تشغيله.",
+  "validation.feature_control.too_many": "بلغ هذا المستأجر حد 500 مفتاح. احذف بعضها أولًا.",
+  "validation.page.template_switched_off": "هذا القالب متوقف هنا، لذلك لا يمكن للصفحات الجديدة استخدامه."
 }

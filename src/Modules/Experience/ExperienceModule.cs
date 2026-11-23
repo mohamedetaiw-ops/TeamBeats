@@ -33,6 +33,7 @@ public static class ExperienceModule
         services.AddScoped<ITemplateUsage, Templates.TemplateUsageSource>();
         services.AddScoped<ISitePages, Pages.SitePages>();
         services.AddScoped<ComponentAvailability>();
+        services.AddScoped<FeatureControls>();
         services.AddScoped<AudienceEvaluator>();
         services.AddScoped<LayoutEngine>();
         services.AddScoped<HomeDefaults>();
@@ -66,9 +67,11 @@ public static class ExperienceModule
         var x = app.MapGroup("/api/v1/experience").RequireTenantUser().WithTags("Experience: pages");
 
         x.MapGet("/catalogue", async (IEntitlementService entitlements, PlatformCatalogue catalogue, Templates.TemplateService tenantTemplates,
-            ILocalizer localizer, RequestLocale locale, CancellationToken ct) =>
+            FeatureControls controls, ILocalizer localizer, RequestLocale locale, CancellationToken ct) =>
         {
             await entitlements.DemandAsync(Capabilities.ExperiencePageBuilder, ct);
+            // Templates switched off for the whole tenant (R2 T030) are not offered; one switched off for a unit is refused when the page is created there.
+            var off = await controls.OffAsync(FeatureControlSubjects.Template, null, ct);
             // Tenant templates follow the platform ones, and only those the caller may build pages with (FR-020).
             var own = await tenantTemplates.ForChooserAsync(ct);
             // Names and the text description of each structure in the caller's language, for the template chooser (FR-017).
@@ -78,7 +81,7 @@ public static class ExperienceModule
                 {
                     l.Id, l.Version, l.NameKey, l.Regions, l.Fallback, name = localizer.Get(l.NameKey, locale.Locale),
                 }),
-                templates = catalogue.Templates.Values.OrderBy(t => t.Id).Concat(own).Select(t => new
+                templates = catalogue.Templates.Values.OrderBy(t => t.Id).Concat(own).Where(t => !off(t.Id)).Select(t => new
                 {
                     t.Id, t.Version, t.State, t.NameKey, t.DescriptionKey, t.Layout, t.Variants, t.Regions,
                     name = tenantTemplates.NameOf(t, locale.Locale), description = tenantTemplates.DescriptionOf(t, locale.Locale),
@@ -317,6 +320,26 @@ public static class ExperienceModule
             }
             return Results.Ok(await pages.RenderAsync(slug, locale.Locale, locale.Direction, DeviceClasses.From(http), ct));
         });
+
+        // Feature controls (R2 T030, FR-057).
+        x.MapGet("/feature-controls", async (FeatureControls controls, CancellationToken ct) => Results.Ok(await controls.ListAsync(ct)));
+
+        x.MapPut("/feature-controls", async (FeatureControlRequest request, FeatureControls controls, IDbSession session, CancellationToken ct) =>
+        {
+            var control = await controls.SetAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(control);
+        });
+
+        x.MapDelete("/feature-controls/{controlId:guid}", async (Guid controlId, FeatureControls controls, IDbSession session, CancellationToken ct) =>
+        {
+            await controls.RemoveAsync(controlId, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        x.MapGet("/feature-controls/{controlId:guid}/versions", async (Guid controlId, FeatureControls controls, CancellationToken ct) =>
+            Results.Ok(await controls.VersionsAsync(controlId, ct)));
 
         x.MapGet("/components", async (ComponentEnablement enablement, CancellationToken ct) => Results.Ok(await enablement.ListAsync(ct)));
 

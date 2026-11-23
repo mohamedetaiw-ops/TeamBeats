@@ -2790,5 +2790,14 @@
   "builder.fragments.description": "A shared set of components. Changes to it show on every page that places it.",
   "validation.template.document_format": "This is not a TeamBeats template document, or it is from a version this platform cannot read.",
   "validation.page.region_span_invalid": "This region cannot be that wide or that narrow in this layout.",
-  "validation.page.region_span_overlap": "The regions in this row must together fill 12 columns, without overlapping."
+  "validation.page.region_span_overlap": "The regions in this row must together fill 12 columns, without overlapping.",
+  "validation.feature_control.subject_invalid": "Choose whether the switch is for a component or a template.",
+  "validation.feature_control.subject_unknown": "There is no component or template with this id.",
+  "validation.feature_control.enabled_required": "Say whether the switch turns it on or off.",
+  "validation.feature_control.one_scope": "A switch is for an org unit or an audience, not both.",
+  "validation.feature_control.audience_components_only": "Only components can be switched for an audience.",
+  "validation.feature_control.audience_unknown": "This audience does not exist.",
+  "validation.feature_control.not_in_package": "Your package does not include this component, so it cannot be switched on.",
+  "validation.feature_control.too_many": "This tenant has reached the limit of 500 switches. Remove some first.",
+  "validation.page.template_switched_off": "This template is switched off here, so new pages cannot use it."
 }

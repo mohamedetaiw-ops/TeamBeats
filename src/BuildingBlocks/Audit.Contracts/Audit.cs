@@ -140,6 +140,7 @@ public static class AuditActions
     public const string TemplateDeprecated = "template.deprecated";
     public const string TemplateImported = "template.imported";
     public const string TemplateExported = "template.exported";
+    public const string FeatureControlChanged = "experience.feature_control_changed";
     public const string RegionLockChanged = "region.lock_changed";
 
     // 033
@@ -650,7 +651,7 @@ public static class AuditActions
         ConnectionCreated, ConnectionDeleted, ConnectionFeatureEnabled, ConnectionFeatureDisabled, ConnectionConsentGranted,
         ConnectionConsentRevokedDetected, ConnectionStatusChanged, ConnectionFeatureOptionsChanged, ConnectionSiteAllowed, ConnectionSiteRemoved, OutlookConnected, OutlookDisconnected,
         PageCreated, PagePublished, PageRolledBack, PageTemplateChanged, PageSubmitted, PageApproved, PageReturned, PageRouteChanged, PageScheduled, PageScheduleCancelled, PageScheduleFailed, PageExpired, FragmentChanged, FragmentArchived, ComponentEnabled, ComponentDisabled, ComponentUpgraded,
-        TemplateReleased, TemplateDistributed, TemplateDeprecated, TemplateImported, TemplateExported, RegionLockChanged,
+        TemplateReleased, TemplateDistributed, TemplateDeprecated, TemplateImported, TemplateExported, FeatureControlChanged, RegionLockChanged,
         ThemePublished, BrandAssigned, BrandUnassigned, ExperienceLockChanged,
         NotificationSettingsChanged, NotificationRelayTested, NotificationTemplateOverridden,
         HrCalendarChanged, HrSettingsChanged, HrMatchLinked, HrMatchUnlinked, HrSyncHeld, HrSyncConfirmed, HrChangeApplied, HrOrgCodeMapped, DisabledByHr, ReenabledByHr,
