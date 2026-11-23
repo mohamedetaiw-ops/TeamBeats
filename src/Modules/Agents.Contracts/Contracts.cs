@@ -498,3 +498,9 @@ public interface IProductionSampler
 {
     Task OfferAsync(ProductionRunFacts facts, Func<CancellationToken, Task<ProductionRunContent>> content, CancellationToken ct);
 }
+
+/// <summary>
+/// A person said an answer an agent run gave was not helpful (spec 014 US4 scenario 2), for the review queue of spec 034
+/// US8 scenario 2. It names the run only, never the person, so evaluation can flag the run's sample if it has one.
+/// </summary>
+public sealed record AgentRunFeedbackGiven(Guid RunId, bool Helpful) : IIntegrationEvent;

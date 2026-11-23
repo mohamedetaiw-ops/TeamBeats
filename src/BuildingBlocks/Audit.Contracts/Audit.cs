@@ -585,6 +585,8 @@ public static class AuditActions
     public const string EvalGateOverridden = "eval.gate_overridden";
     public const string EvalRubricCalibrated = "eval.rubric_calibrated";
     public const string EvalRubricDemoted = "eval.rubric_demoted";
+    public const string EvalReviewVerdict = "eval.review_verdict";
+    public const string EvalReviewPromoted = "eval.review_promoted";
 
     // 023
     public const string EngagementCommunityCreated = "engagement.community_created";
@@ -716,7 +718,7 @@ public static class AuditActions
         AgentVersionSubmitted, AgentVersionApproved, AgentVersionRejected, AgentVersionPublished, AgentRolledBack, AgentSuspended, AgentResumed, AgentAlertRaised, AgentAlertDismissed, AgentIncidentOpened, AgentIncidentUpdated, AgentIncidentClosed, AgentEvidenceExported,
         AgentRetired, AgentKillSwitch, AgentTokensRevoked,
         EvalSuiteCreated, EvalSuiteChanged, EvalDatasetVersionCreated, EvalDatasetImported, EvalPolicyChanged, EvalPersonaCreated, EvalGateDecided, EvalGateOverridden,
-        EvalRubricCalibrated, EvalRubricDemoted,
+        EvalRubricCalibrated, EvalRubricDemoted, EvalReviewVerdict, EvalReviewPromoted,
         EngagementCommunityCreated, EngagementCommunityChanged, EngagementCommunityArchived, EngagementMemberChanged, EngagementPostPinned,
         EngagementContentApproved, EngagementContentHidden, EngagementContentRemoved, EngagementMemberMuted, EngagementMemberUnmuted, EngagementKeywordsChanged, EngagementSpeakUpAnswered, EngagementSpeakUpDeclined,
         EngagementSurveyPublished, EngagementSurveyClosed, EngagementSurveyThresholdChanged, EngagementPointsConfigChanged, EngagementRecognitionCatalogueChanged,

@@ -64,3 +64,6 @@ public sealed record RankingScore(string Metric, string Locale, double Live, dou
 
 /// <summary>A production run was sampled (spec 034 US7): the worker scores it after the person's request has ended.</summary>
 public sealed record ProductionSampleCaptured(Guid SampleId) : TeamBeats.Primitives.IIntegrationEvent;
+
+/// <summary>A production sample was flagged for human review (spec 034 US8 scenario 2). It names the agent, never the person.</summary>
+public sealed record EvaluationReviewRequested(Guid ItemId, Guid AgentId, IReadOnlyList<string> Reasons) : TeamBeats.Primitives.IIntegrationEvent;
