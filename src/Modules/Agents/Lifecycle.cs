@@ -20,6 +20,12 @@ public sealed class NoReleaseGate : IAgentReleaseGate
     public Task<AgentGateResult> ResultAsync(Guid agentId, int version, CancellationToken ct) => Task.FromResult(new AgentGateResult(GateStatuses.NotBuilt, false, []));
 }
 
+/// <summary>No comparisons until the evaluation module provides them (spec 034 US9).</summary>
+public sealed class NoArmAllocator : IAgentArmAllocator
+{
+    public Task<AgentArm?> ArmAsync(Guid agentId, int championVersion, Guid userId, CancellationToken ct) => Task.FromResult<AgentArm?>(null);
+}
+
 /// <summary>Used until spec 034 is wired in: no run is sampled for production evaluation.</summary>
 public sealed class NoProductionSampler : IProductionSampler
 {

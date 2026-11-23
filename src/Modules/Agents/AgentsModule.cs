@@ -65,6 +65,7 @@ public static class AgentsModule
         services.AddScoped<AgentRouter>();
         services.TryAddScoped<Contracts.IAgentReleaseGate, NoReleaseGate>();
         services.TryAddScoped<Contracts.IProductionSampler, NoProductionSampler>();
+        services.TryAddScoped<Contracts.IAgentArmAllocator, NoArmAllocator>();
         services.AddScoped<Workflow.Contracts.IPersonalTaskSource, AgentReviewTasks>();
         return services;
     }

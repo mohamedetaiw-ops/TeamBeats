@@ -587,6 +587,9 @@ public static class AuditActions
     public const string EvalRubricDemoted = "eval.rubric_demoted";
     public const string EvalReviewVerdict = "eval.review_verdict";
     public const string EvalReviewPromoted = "eval.review_promoted";
+    public const string EvalComparisonProposed = "eval.comparison_proposed";
+    public const string EvalComparisonDecided = "eval.comparison_decided";
+    public const string EvalComparisonStopped = "eval.comparison_stopped";
 
     // 023
     public const string EngagementCommunityCreated = "engagement.community_created";
@@ -718,7 +721,7 @@ public static class AuditActions
         AgentVersionSubmitted, AgentVersionApproved, AgentVersionRejected, AgentVersionPublished, AgentRolledBack, AgentSuspended, AgentResumed, AgentAlertRaised, AgentAlertDismissed, AgentIncidentOpened, AgentIncidentUpdated, AgentIncidentClosed, AgentEvidenceExported,
         AgentRetired, AgentKillSwitch, AgentTokensRevoked,
         EvalSuiteCreated, EvalSuiteChanged, EvalDatasetVersionCreated, EvalDatasetImported, EvalPolicyChanged, EvalPersonaCreated, EvalGateDecided, EvalGateOverridden,
-        EvalRubricCalibrated, EvalRubricDemoted, EvalReviewVerdict, EvalReviewPromoted,
+        EvalRubricCalibrated, EvalRubricDemoted, EvalReviewVerdict, EvalReviewPromoted, EvalComparisonProposed, EvalComparisonDecided, EvalComparisonStopped,
         EngagementCommunityCreated, EngagementCommunityChanged, EngagementCommunityArchived, EngagementMemberChanged, EngagementPostPinned,
         EngagementContentApproved, EngagementContentHidden, EngagementContentRemoved, EngagementMemberMuted, EngagementMemberUnmuted, EngagementKeywordsChanged, EngagementSpeakUpAnswered, EngagementSpeakUpDeclined,
         EngagementSurveyPublished, EngagementSurveyClosed, EngagementSurveyThresholdChanged, EngagementPointsConfigChanged, EngagementRecognitionCatalogueChanged,

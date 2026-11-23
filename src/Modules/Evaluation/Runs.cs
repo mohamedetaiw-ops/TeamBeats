@@ -105,7 +105,7 @@ public sealed class RunService(IDbSession session, ITenantContext context, EvalA
             new { agentId, version }, ct) > 0;
 
     /// <summary>Fixes the cases and versions of a run and queues it. The caller has checked who may start it.</summary>
-    internal async Task<Guid> CreateAsync(AgentFacts agent, int version, string trigger, CancellationToken ct, Guid? routeChangeId = null)
+    internal async Task<Guid> CreateAsync(AgentFacts agent, int version, string trigger, CancellationToken ct, Guid? routeChangeId = null, string? model = null)
     {
         var agentId = agent.Id;
         var user = context.RequireUser();
@@ -123,9 +123,9 @@ public sealed class RunService(IDbSession session, ITenantContext context, EvalA
         var now = clock.UtcNow;
         await session.ExecAsync(
             """
-            insert into evaluation.run (tenant_id, id, agent_id, agent_version, org_unit_id, trigger, status, suites, total, requested_by, created_at, route_change_id)
-            values (platform.current_tenant_id(), @id, @agentId, @version, @unit, @trigger, 'queued', @suites, @total, @user, @now, @routeChangeId)
-            """, new { id, agentId, version, unit = agent.OrgUnitId, trigger, suites = Jsonb.From(suiteList), total = cases.Count, user, now, routeChangeId }, ct);
+            insert into evaluation.run (tenant_id, id, agent_id, agent_version, org_unit_id, trigger, status, suites, total, requested_by, created_at, route_change_id, model)
+            values (platform.current_tenant_id(), @id, @agentId, @version, @unit, @trigger, 'queued', @suites, @total, @user, @now, @routeChangeId, @model)
+            """, new { id, agentId, version, unit = agent.OrgUnitId, trigger, suites = Jsonb.From(suiteList), total = cases.Count, user, now, routeChangeId, model }, ct);
         await InsertCasesAsync(id, cases, ct);
         await outbox.EnqueueAsync(new EvaluationRunRequested(id), ct);
         logger.LogInformation("eval.run_started tenant {Tenant} run {Run} agent {Agent} version {Version} cases {Cases} trigger {Trigger}", context.TenantId, id, agentId,
@@ -494,7 +494,8 @@ public sealed class RunService(IDbSession session, ITenantContext context, EvalA
 
 /// <summary>A case claimed for running, with the identity of its persona.</summary>
 internal sealed record CaseWork(Guid RunId, int N, Guid? AgentId, int? AgentVersion, string Suite, string Locale, string Input, CaseExpectations Expect, Guid PersonaUserId,
-    string Classification, IReadOnlyList<string> Metrics, Guid? RouteChangeId = null, IReadOnlyList<EvalPassage>? Context = null, Guid? RetrievalChangeId = null);
+    string Classification, IReadOnlyList<string> Metrics, Guid? RouteChangeId = null, IReadOnlyList<EvalPassage>? Context = null, Guid? RetrievalChangeId = null,
+    string? Model = null);
 
 /// <summary>The run's bookkeeping, each call in its own short transaction so a cancel is never blocked by a running case.</summary>
 public sealed class RunStore(IDbSession session, IOutbox outbox, IClock clock, ITenantContext context, IAuditWriter audit, RouteGates routes, RetrievalGates retrievals,
@@ -510,9 +511,10 @@ public sealed class RunStore(IDbSession session, IOutbox outbox, IClock clock, I
     /// <summary>Claims the next pending case, or null when the run is done, cancelled or another worker has the rest.</summary>
     internal async Task<CaseWork?> ClaimAsync(Guid runId, CancellationToken ct)
     {
-        var run = await session.QueryAsync("select agent_id, agent_version, status, suites::text, route_change_id, retrieval_change_id from evaluation.run where id = @runId", new { runId },
+        var run = await session.QueryAsync("select agent_id, agent_version, status, suites::text, route_change_id, retrieval_change_id, model from evaluation.run where id = @runId",
+            new { runId },
             r => (Agent: r.Get<Guid?>("agent_id"), Version: r.Get<int?>("agent_version"), Status: r.GetString(2), Suites: r.GetString(3), Route: r.Get<Guid?>("route_change_id"),
-                Retrieval: r.Get<Guid?>("retrieval_change_id")), ct);
+                Retrieval: r.Get<Guid?>("retrieval_change_id"), Model: r.Get<string?>("model")), ct);
         if (run.Count == 0 || run[0].Status != RunStatuses.Running)
         {
             return null;
@@ -535,7 +537,8 @@ public sealed class RunStore(IDbSession session, IOutbox outbox, IClock clock, I
         var suites = JsonSerializer.Deserialize<List<RunSuite>>(run[0].Suites, EvalJson.Options)!;
         var metrics = suites.FirstOrDefault(s => s.Key == c.Suite)?.Metrics.Select(m => m.Key).ToList() ?? [];
         return new CaseWork(runId, c.N, run[0].Agent, run[0].Version, c.Suite, c.Locale, c.Input, JsonSerializer.Deserialize<CaseExpectations>(c.Expect, EvalJson.Options)!,
-            user, c.Classification, metrics, run[0].Route, c.Context is null ? null : JsonSerializer.Deserialize<List<EvalPassage>>(c.Context, EvalJson.Options), run[0].Retrieval);
+            user, c.Classification, metrics, run[0].Route, c.Context is null ? null : JsonSerializer.Deserialize<List<EvalPassage>>(c.Context, EvalJson.Options), run[0].Retrieval,
+            run[0].Model);
     }
 
     internal async Task ErrorAsync(Guid runId, int n, string error, CancellationToken ct)
@@ -637,7 +640,7 @@ public sealed class RunStore(IDbSession session, IOutbox outbox, IClock clock, I
         var runs = await session.QueryAsync(
             """
             select id, agent_version, result::text from evaluation.run
-            where agent_id = @agent and agent_version <> @version and status = 'completed' and result is not null and trigger <> 'route'
+            where agent_id = @agent and agent_version <> @version and status = 'completed' and result is not null and trigger not in ('route', 'comparison')
             order by finished_at desc limit 20
             """, new { agent, version }, r => (Id: r.GetGuid(0), Version: r.GetInt32(1), Result: r.GetString(2)), ct);
         if (runs.Count == 0)
@@ -732,7 +735,7 @@ public sealed class CaseExecutor(IDbSession session, IAgentEvaluationRuntime run
             {
                 record = work.RetrievalChangeId is { } change ? await RetrieveAsync(change, work, ct)
                     : work.AgentId is { } agentId && work.AgentVersion is { } version
-                    ? await runtime.RunCaseAsync(agentId, version, work.Input, work.Locale, work.RouteChangeId, ct)
+                    ? await runtime.RunCaseAsync(agentId, version, work.Input, work.Locale, work.RouteChangeId, work.Model, ct)
                     : await assistant.RunCaseAsync(work.Input, work.Locale, work.Context ?? [], work.RouteChangeId, ct);
             }
         }
