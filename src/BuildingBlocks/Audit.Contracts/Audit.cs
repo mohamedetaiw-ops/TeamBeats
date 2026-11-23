@@ -454,6 +454,9 @@ public static class AuditActions
     public const string PolicyExemptionRejected = "policy.exemption_rejected";
     public const string PolicyExemptionExpired = "policy.exemption_expired";
     public const string PolicyControlsChanged = "policy.controls_changed";
+    public const string PolicyEvidenceExported = "policy.evidence_exported";
+    public const string PolicyEvidenceShared = "policy.evidence_shared";
+    public const string PolicyEvidenceDownloaded = "policy.evidence_downloaded";
 
     // 013
     public const string AiPolicyChanged = "ai.policy_changed";
@@ -668,6 +671,7 @@ public static class AuditActions
         PolicyCreated, PolicyChanged, PolicyDraftSaved, PolicySubmitted, PolicyWithdrawn, PolicyApproved, PolicyReturned, PolicyPublished, PolicySuperseded,
         PolicyRetired, PolicyCampaignLaunched, PolicyCampaignReminded, PolicyCampaignClosed, PolicyAttested, PolicyTrainingLinked, PolicyReviewCompleted, PolicyCheckChanged, PolicyCheckFailed, PolicyCheckViewed, PolicyCheckReset,
         PolicyExemptionRequested, PolicyExemptionApproved, PolicyExemptionRejected, PolicyExemptionExpired, PolicyControlsChanged,
+        PolicyEvidenceExported, PolicyEvidenceShared, PolicyEvidenceDownloaded,
         AiPolicyChanged, AiRouteChangeProposed, AiRouteChangeOverridden, AiRouteChangeApplied, AiRouteChangeRejected, AiCatalogueChanged, AiLoggingWindowOpened, AiLoggingWindowClosed,
         SearchBestBetChanged, SearchSynonymsChanged, SearchRetrievalChangeProposed, SearchRetrievalChangeDecided, SearchRetrievalChangeOverridden,
         SearchRetrievalChangeCancelled, SearchFederatedChanged, SearchAiSummaryChanged, SearchQueryTextChanged,

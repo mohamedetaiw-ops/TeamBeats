@@ -29,6 +29,8 @@ public static class PoliciesModule
         services.AddScoped<PolicyChecks>();
         services.AddScoped<PolicyExemptions>();
         services.AddScoped<PolicyControls>();
+        services.AddScoped<PolicyEvidence>();
+        services.AddMessageHandler<EvidencePackRequested, PolicyEvidence>("policies.evidence_pack");
         services.AddScoped<ExemptionTaskSource>();
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<ExemptionTaskSource>());
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, ExemptionTaskSource>("policies.notify_exemption");
@@ -203,6 +205,35 @@ public static class PoliciesModule
         root.MapPut("/{id:guid}/controls", async (Guid id, PolicyControlsRequest request, PolicyControls controls, IDbSession session, CancellationToken ct) =>
         {
             var view = await controls.SaveAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapPost("/evidence-packs", async (EvidencePackRequest request, PolicyEvidence evidence, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await evidence.RequestAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/policies/evidence-packs/{view.Id}", view);
+        });
+
+        root.MapGet("/evidence-packs", async (Guid? spaceId, PolicyEvidence evidence, CancellationToken ct) => Results.Ok(await evidence.ListAsync(spaceId, ct)));
+
+        root.MapGet("/evidence-packs/{id:guid}", async (Guid id, PolicyEvidence evidence, CancellationToken ct) => Results.Ok(await evidence.GetAsync(id, ct)));
+
+        foreach (var format in new[] { "pdf", "csv" })
+        {
+            root.MapGet($"/evidence-packs/{{id:guid}}/{format}", async (Guid id, PolicyEvidence evidence, IDbSession session, CancellationToken ct) =>
+            {
+                var (content, type, name) = await evidence.DownloadAsync(id, format, ct);
+                await session.CommitAsync(ct);
+                return Results.File(content, type, name);
+            });
+        }
+
+        root.MapPut("/evidence-packs/{id:guid}/share", async (Guid id, EvidenceShareRequest request, PolicyEvidence evidence, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var view = await evidence.ShareAsync(id, request, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });

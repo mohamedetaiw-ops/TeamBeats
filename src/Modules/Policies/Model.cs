@@ -119,7 +119,7 @@ public sealed record PolicyRights(bool Manage, bool Edit, bool Review, bool Hist
     bool Exemptions = false, bool Controls = false);
 
 /// <summary>What the current user may do in the register: create policies where they hold <c>policy.manage</c>, and open the exemption register.</summary>
-public sealed record RegisterRights(bool Create, bool Exemptions = false);
+public sealed record RegisterRights(bool Create, bool Exemptions = false, bool Evidence = false);
 
 public sealed record PolicyView(
     Guid Id,

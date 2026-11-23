@@ -5099,7 +5099,8 @@
       "label": "Policies",
       "my": "My policies",
       "register": "Policy register",
-      "exemptions": "Exemptions"
+      "exemptions": "Exemptions",
+      "evidence": "Evidence packs"
     },
     "status": {
       "draft": "Draft",
@@ -5652,6 +5653,48 @@
         "published": "Published",
         "retired": "Retired"
       }
+    },
+    "evidence": {
+      "register": "Policies",
+      "title": "Evidence packs",
+      "description": "Ask for a pack of policy evidence for an audit, download it, or share it with an auditor space.",
+      "sharedDescription": "Evidence packs shared with this space. They open read only until the date the compliance officer set.",
+      "askTitle": "Ask for a pack",
+      "askIntro": "Choose the policies and the period. The pack is built in the background and you are told when it is ready.",
+      "policies": "Policies",
+      "noPolicies": "No policies in force to choose from.",
+      "policyName": "{code} {name}",
+      "from": "From",
+      "to": "To",
+      "rangeHint": "At most five years.",
+      "ask": "Ask for the pack",
+      "busy": "Working",
+      "failed": "That did not work. Try again.",
+      "choosePolicies": "Choose at least one policy.",
+      "listTitle": "Your packs",
+      "sharedTitle": "Shared packs",
+      "noPacks": "You have not asked for a pack yet.",
+      "noShared": "No packs are shared with this space.",
+      "period": "Period",
+      "status": "Status",
+      "files": "Files",
+      "range": "{from} to {to}",
+      "askedBy": "Asked by {name} on {date}",
+      "statuses": {
+        "queued": "Being built",
+        "ready": "Ready",
+        "failed": "Failed"
+      },
+      "sharedWith": "Shared with {space} until {date}",
+      "pdf": "PDF",
+      "csv": "CSV",
+      "noPdf": "PDF not available",
+      "building": "The pack is being built.",
+      "shareLabel": "Share the pack",
+      "space": "Space",
+      "notShared": "Not shared",
+      "until": "Until",
+      "share": "Save sharing"
     }
   },
   "ai": {
