@@ -119,7 +119,8 @@ public sealed partial class PageService(
     ILocalizer localizer,
     RequestLocale locale,
     ITenantSettingsReader tenantSettings,
-    PageRoutes routes)
+    PageRoutes routes,
+    Fragments fragments)
 {
     private sealed record PageRow(Guid Id, Guid? OrgUnitId, string Slug, string TemplateId, string TemplateVersion, int? CurrentRelease);
 
@@ -525,6 +526,14 @@ public sealed partial class PageService(
                 localizer.Get(m.Display.DescriptionKey, locale.Locale), reason is null ? null : localizer.Get(reason, locale.Locale), m.Properties, m.Placement,
                 Labels(m)));
         }
+        // Fragments the page may place come last, under their own category (R2 T027).
+        foreach (var f in await fragments.UsableAtAsync(page.OrgUnitId, ct))
+        {
+            var name = f.Names.TryGetValue(locale.Locale, out var n) ? n : f.Names.TryGetValue("en", out var en) ? en : f.Names.Values.First();
+            items.Add(new PickerItem(f.Reference, f.CurrentVersion.ToString(System.Globalization.CultureInfo.InvariantCulture), "builder.fragments.name",
+                "builder.fragments.description", "fragments", "folder", [], true, null, name, localizer.Get("builder.fragments.description", locale.Locale), null,
+                new Dictionary<string, PropertySchema>(), new PlacementRules(), new Dictionary<string, string>()));
+        }
         return items;
     }
 
@@ -566,6 +575,7 @@ public sealed partial class PageService(
     private async Task<RenderedPage> PreviewOfAsync(PageRow page, PageDefinition draft, string? previewLocale, CancellationToken ct)
     {
         var shown = previewLocale is { } l && Primitives.Locales.IsSupported(l) ? l : locale.Locale;
+        draft = (await fragments.ExpandAsync(draft, page.OrgUnitId, ct)).Definition;
         var template = await templates.GetAsync(draft.Template, ct);
         var layout = catalogue.Layouts[template.Layout];
         var availability = await AvailabilityAsync(page.OrgUnitId, ct);
@@ -637,6 +647,8 @@ public sealed partial class PageService(
         }
         await authz.DemandVisibleAsync(Permissions.PageView, Target(page.OrgUnitId), ct);
         var snapshot = await ReleaseAsync(page.Id, current, ct);
+        // A fragment shows its current version on every page that places it (R2 T027); the release keeps only the reference.
+        snapshot = snapshot with { Definition = (await fragments.ExpandAsync(snapshot.Definition, page.OrgUnitId, ct)).Definition };
         var template = await templates.GetAsync(snapshot.Definition.Template, ct);
         var layout = catalogue.Layouts[template.Layout];
         var availability = await AvailabilityAsync(page.OrgUnitId, ct, viewer: true);
@@ -714,7 +726,8 @@ public sealed partial class PageService(
             throw AppException.NotFound();
         }
         var snapshot = await ReleaseAsync(page.Id, current, ct);
-        return new PageContext(page.Id, page.OrgUnitId, snapshot.Definition.Template.Id, current, snapshot.Definition);
+        var definition = (await fragments.ExpandAsync(snapshot.Definition, page.OrgUnitId, ct)).Definition;
+        return new PageContext(page.Id, page.OrgUnitId, definition.Template.Id, current, definition);
     }
 
     /// <summary>The draft, or the latest release when there is one, for a caller holding <paramref name="permission"/> at the page's scope.</summary>
@@ -771,11 +784,24 @@ public sealed partial class PageService(
     private async Task<List<Finding>> ValidateAsync(PageRow page, PageDefinition definition, ValidationMode mode, CancellationToken ct, bool system = false)
     {
         var availability = await AvailabilityAsync(page.OrgUnitId, ct, viewer: system);
+        // Fragments are checked as the page shows them (R2 T027): a reference that cannot be shown blocks publishing and is a
+        // warning while saving, so a draft that still holds an archived fragment can be saved and fixed.
+        var (expanded, fragmentFindings) = await fragments.ExpandAsync(definition, page.OrgUnitId, ct);
+        if (mode != ValidationMode.Publish)
+        {
+            fragmentFindings = fragmentFindings.Select(f => f with { Severity = Severities.Warning }).ToList();
+        }
+        var references = definition.Regions.SelectMany(r => r.Placements).Where(p => Fragments.IsReference(p.ComponentRef)).Select(p => p.Id + "-").ToList();
+        definition = expanded;
         var rules = (await audiences.RulesAsync(ct)).Keys.Select(k => k.ToString()).ToHashSet(StringComparer.Ordinal);
         var template = definition.Template is { } named && named.Id == page.TemplateId && named.Version == page.TemplateVersion ? await templates.FindAsync(named, ct) : null;
         var findings = PageValidator.Validate(definition, template, catalogue, registry, availability, mode, rules,
             await entitlements.IsEnabledAsync(Capabilities.ExperienceAudienceVariants, ct));
         findings.AddRange(await TranslationFindingsAsync(definition, ct));
+        // A finding inside a fragment is shown on the page's reference to it.
+        findings = findings.Select(f => f.Placement is { } id && references.FirstOrDefault(r => id.StartsWith(r, StringComparison.Ordinal)) is { } r
+            ? f with { Placement = r[..^1] } : f).ToList();
+        findings.AddRange(fragmentFindings);
         // Each finding carries its text in the editor's language, so the builder shows it next to the placement (FR-046).
         return findings.Select(f => f with { Message = localizer.Get(f.Code, locale.Locale) }).ToList();
     }

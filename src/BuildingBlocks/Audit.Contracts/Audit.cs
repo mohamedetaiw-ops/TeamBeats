@@ -130,6 +130,8 @@ public static class AuditActions
     public const string PageScheduleCancelled = "page.schedule_cancelled";
     public const string PageScheduleFailed = "page.schedule_failed";
     public const string PageExpired = "page.expired";
+    public const string FragmentChanged = "fragment.changed";
+    public const string FragmentArchived = "fragment.archived";
     public const string ComponentEnabled = "component.enabled";
     public const string ComponentDisabled = "component.disabled";
     public const string ComponentUpgraded = "component.upgraded";
@@ -645,7 +647,7 @@ public static class AuditActions
         SignInFailed, IdpConfigChanged, DirectoryConnectionChanged, UserSynced, DisabledByDirectory, ReenabledByDirectory,
         ConnectionCreated, ConnectionDeleted, ConnectionFeatureEnabled, ConnectionFeatureDisabled, ConnectionConsentGranted,
         ConnectionConsentRevokedDetected, ConnectionStatusChanged, ConnectionFeatureOptionsChanged, ConnectionSiteAllowed, ConnectionSiteRemoved, OutlookConnected, OutlookDisconnected,
-        PageCreated, PagePublished, PageRolledBack, PageTemplateChanged, PageSubmitted, PageApproved, PageReturned, PageRouteChanged, PageScheduled, PageScheduleCancelled, PageScheduleFailed, PageExpired, ComponentEnabled, ComponentDisabled, ComponentUpgraded,
+        PageCreated, PagePublished, PageRolledBack, PageTemplateChanged, PageSubmitted, PageApproved, PageReturned, PageRouteChanged, PageScheduled, PageScheduleCancelled, PageScheduleFailed, PageExpired, FragmentChanged, FragmentArchived, ComponentEnabled, ComponentDisabled, ComponentUpgraded,
         TemplateReleased, TemplateDistributed, TemplateDeprecated, RegionLockChanged,
         ThemePublished, BrandAssigned, BrandUnassigned, ExperienceLockChanged,
         NotificationSettingsChanged, NotificationRelayTested, NotificationTemplateOverridden,
