@@ -62,6 +62,17 @@ public sealed class PolicyControls(
         await session.QueryAsync("select framework_key, control_code from policies.policy_control where policy_id = @policyId order by framework_key, control_code",
             new { policyId }, r => (r.GetString(0), r.GetString(1)), ct);
 
+    /// <summary>The controls a policy maps to, described from the library, for callers that already checked access.</summary>
+    internal async Task<IReadOnlyList<MappedControl>> OfAsync(Guid policyId, CancellationToken ct)
+    {
+        var list = new List<MappedControl>();
+        foreach (var (framework, code) in await StoredAsync(policyId, ct))
+        {
+            list.Add(await DescribeAsync(framework, code, ct));
+        }
+        return list;
+    }
+
     /// <summary>The controls a policy maps to, for anyone who sees the policy.</summary>
     public async Task<PolicyControlsView> ListAsync(Guid id, CancellationToken ct)
     {

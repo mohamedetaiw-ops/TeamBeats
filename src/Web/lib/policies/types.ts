@@ -37,7 +37,7 @@ export type RouteStep = { names?: Names | null; approvers?: string[] | null; com
 
 export type PolicyRights = { manage: boolean; edit: boolean; review: boolean; history: boolean; compliance: boolean; ask: boolean; analytics: boolean; comprehension?: boolean; exemptions?: boolean; controls?: boolean };
 
-export type RegisterRights = { create: boolean; exemptions?: boolean };
+export type RegisterRights = { create: boolean; exemptions?: boolean; evidence?: boolean };
 
 export type PolicyView = {
   id: string;
@@ -293,6 +293,29 @@ export type PolicyExemptionsView = {
 
 export const exemptionsHref = (id: string) => `/policies/${encodeURIComponent(id)}/exemptions`;
 export const exemptionRegisterHref = "/policies/exemptions";
+
+export type EvidencePackStatus = "queued" | "ready" | "failed";
+
+/** An evidence pack for auditors (spec 025 US8): what it covers, whether its files are ready, and where it is shared. */
+export type EvidencePackView = {
+  id: string;
+  status: EvidencePackStatus;
+  policies: { id: string; code: string; names: Names }[];
+  from: string;
+  to: string;
+  locale: string;
+  requestedBy: PolicyPerson;
+  requestedAt: string;
+  completedAt: string | null;
+  pdf: boolean;
+  csv: boolean;
+  sharedSpace: { id: string; name: string } | null;
+  sharedUntil: string | null;
+  canShare: boolean;
+};
+
+export const evidenceHref = "/policies/evidence";
+export const evidenceApi = "/api/v1/policies/evidence-packs";
 
 export const editHref = (id: string) => `/policies/${encodeURIComponent(id)}/edit`;
 export const reviewHref = (id: string) => `/policies/${encodeURIComponent(id)}/review`;

@@ -196,3 +196,20 @@
   padding-block-start: var(--tb-space-sm);
   border-block-start: var(--tb-border-width-thin) solid var(--tb-color-border-default);
 }
+
+.policies-choices {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.policies-choices legend {
+  margin-block-end: var(--tb-space-xs);
+  font-weight: var(--tb-font-weight-semibold);
+}
+
+.policies-line {
+  display: block;
+}

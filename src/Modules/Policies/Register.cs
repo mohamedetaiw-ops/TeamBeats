@@ -573,7 +573,8 @@ public sealed class PolicyRegister(
     {
         await entitlements.DemandAsync(Capabilities.PolicyCore, ct);
         var manages = (await authz.CoverageAsync(Permissions.PolicyManage, ct)).Any;
-        return new RegisterRights(manages, manages && await entitlements.IsEnabledAsync(Capabilities.PolicyExemptions, ct));
+        return new RegisterRights(manages, manages && await entitlements.IsEnabledAsync(Capabilities.PolicyExemptions, ct),
+            manages && await entitlements.IsEnabledAsync(Capabilities.PolicyEvidence, ct));
     }
 
     /// <summary>

@@ -233,6 +233,7 @@ export const routes: readonly Route[] = [
   { path: "/policies/compliance/people/[userId]", tier: "detail" },
   { path: "/policies/controls", tier: "detail", reason: "needs a control of the library in its query; opened from a policy's controls page by the policy controls suite" },
   { path: "/policies/exemptions", tier: "other" },
+  { path: "/policies/evidence", tier: "other" },
   { path: "/policies/my", tier: "other" },
   { path: "/policies/new", tier: "other" },
   { path: "/preboarding/[token]", tier: "detail", reason: "a link sent to a new hire before their account exists; opened by the journeys suite" },
