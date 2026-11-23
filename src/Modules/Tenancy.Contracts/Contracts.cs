@@ -155,3 +155,24 @@ public interface IGuestFigures
 {
     Task<GuestFigures> SummaryAsync(DateTimeOffset from, DateTimeOffset to, CancellationToken ct = default);
 }
+
+/// <summary>
+/// Custom domains (spec 033 R2 T021, FR-010): which tenant a verified host belongs to, read before any tenant context
+/// exists. Hosts that are pending, failed, removed or unknown give null, so they are never served.
+/// </summary>
+public interface ICustomDomainResolver
+{
+    Task<Guid?> TenantForHostAsync(string host, CancellationToken ct = default);
+
+    /// <summary>Drops what this process remembers about a host, after its route changed.</summary>
+    void Forget(string host);
+}
+
+/// <summary>What a custom domain shows in one language: the app title, the browser description and the sign-in message.</summary>
+public sealed record DomainPresentation(string Host, string? AppTitle, string? Description, string? SignInMessage);
+
+/// <summary>The presentation of the current tenant's verified domain, in the given language with the tenant default as fallback.</summary>
+public interface ICustomDomainPresentation
+{
+    Task<DomainPresentation?> ForHostAsync(string host, string locale, CancellationToken ct = default);
+}

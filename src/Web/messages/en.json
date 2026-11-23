@@ -94,7 +94,8 @@
     "testSubmit": "Sign in as test admin",
     "testEmployee": "Sign in as test employee",
     "testFailed": "Test sign-in was refused. The staging test account is not set up.",
-    "accessibility": "Accessibility statement"
+    "accessibility": "Accessibility statement",
+    "titleAt": "Sign in to {name}"
   },
   "admin": {
     "title": "Administration",
@@ -213,6 +214,50 @@
         "save": "Save default access",
         "saving": "Saving default access",
         "saved": "Default access saved"
+      },
+      "domains": {
+        "open": "Custom domains",
+        "breadcrumb": "Custom domains location",
+        "title": "Custom domains",
+        "description": "Browser description in {language}",
+        "pageDescription": "Serve the workspace on your own domains, each proven yours with a DNS record.",
+        "addTitle": "Add a domain",
+        "intro": "After you add a domain, publish the DNS record shown for it and verify. The domain is served only once it is verified, and the workspace's own address keeps working.",
+        "host": "Domain",
+        "hostHint": "For example intranet.example.com. Point it to TeamBeats with your DNS provider first.",
+        "add": "Add domain",
+        "added": "The domain was added. Publish its DNS record, then verify.",
+        "emptyTitle": "No custom domains",
+        "emptyMessage": "Domains you add appear here with the record that proves they are yours.",
+        "states": {
+          "pending": "Waiting for verification",
+          "verified": "Verified",
+          "failed": "Stopped"
+        },
+        "recordIntro": "Publish this TXT record with your DNS provider, then verify.",
+        "recordName": "TXT record name",
+        "recordValue": "TXT record value",
+        "failures": {
+          "record_missing": "The TXT record was not found yet. DNS changes can take a while to appear.",
+          "lookup_failed": "DNS could not be checked just now. Try again in a few minutes.",
+          "in_use": "Another workspace already uses this domain.",
+          "record_removed": "The TXT record was removed, so the domain stopped. Publish it again and verify."
+        },
+        "servedSince": "Served since {when}.",
+        "certificateUntil": "Its certificate is valid until {when}.",
+        "presentation": "What this domain shows",
+        "presentationHint": "Leave a language empty to use the workspace's own wording.",
+        "appTitle": "App title in {language}",
+        "signInMessage": "Sign-in message in {language}",
+        "verify": "Verify",
+        "verifiedDone": "{host} is verified and now served.",
+        "save": "Save texts",
+        "saved": "The texts were saved.",
+        "remove": "Remove",
+        "removeQuestion": "Remove {host}? It stops being served at once.",
+        "removeConfirm": "Remove domain",
+        "cancel": "Cancel",
+        "removed": "{host} was removed."
       }
     },
     "org": {

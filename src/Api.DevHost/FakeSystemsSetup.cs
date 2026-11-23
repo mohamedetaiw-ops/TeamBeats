@@ -128,6 +128,7 @@ public static class FakeSystemsSetup
         services.AddHttpClient(OpenRouterClient).ConfigurePrimaryHttpMessageHandler(() => systems.OpenRouter);
         services.AddHttpClient(PrivateModelsClient).ConfigurePrimaryHttpMessageHandler(FakeOpenRouter.Private);
         services.AddHttpClient(TeamBeats.Modules.Integrations.Weather.OpenMeteoWeather.ClientName).ConfigurePrimaryHttpMessageHandler(() => systems.Weather);
+        services.AddHttpClient(TeamBeats.Modules.Tenancy.Domains.DohTxtLookup.ClientName).ConfigurePrimaryHttpMessageHandler(() => systems.Dns);
 
         // Office previews (spec 011 FR-009): without a real Gotenberg, the real converter talks to the fake one.
         if (string.IsNullOrEmpty(builder.Configuration[TeamBeats.Persistence.GotenbergConverter.UrlKey]))

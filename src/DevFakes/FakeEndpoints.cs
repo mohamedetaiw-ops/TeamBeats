@@ -16,6 +16,7 @@ public sealed class FakeSystems(FakeScenario scenario, FakeIdentityProvider entr
     public FakeMicrosoftGraph Graph { get; } = graph;
     public FakeOpenRouter OpenRouter { get; } = openRouter;
     public FakeOpenMeteo Weather { get; } = weather ?? new FakeOpenMeteo();
+    public FakeDns Dns { get; } = new();
 
     /// <summary>Group memberships per user, for the groups claim of the fake ID token.</summary>
     public IReadOnlyDictionary<string, IReadOnlyList<string>> GroupsByUser(string directoryId) =>
@@ -27,6 +28,8 @@ public sealed class FakeSystems(FakeScenario scenario, FakeIdentityProvider entr
 /// Browser pages of the fake Microsoft sign-in and admin consent, the redirect rewrite that sends the browser to them,
 /// and a small control API for testers. Mapped under <c>/dev/fake</c> by the development host only.
 /// </summary>
+public sealed record FakeTxtRecord(IReadOnlyList<string>? Values);
+
 public static class FakeEndpoints
 {
     public const string Prefix = "/dev/fake";
@@ -246,6 +249,12 @@ public static class FakeEndpoints
         fake.MapPost("/graph/{directory:guid}/users/{id}:enable", (Guid directory, string id, FakeSystems f) => Change(() => f.Graph.Data(directory).UpdateUser(id, enabled: true)));
         fake.MapPost("/graph/{directory:guid}/users/{id}:delete", (Guid directory, string id, FakeSystems f) => Change(() => f.Graph.Data(directory).DeleteUser(id)));
         fake.MapPost("/graph/{directory:guid}/consent:revoke", (Guid directory, FakeSystems f) => Change(() => f.Graph.Revoke(directory)));
+        // Custom domains (spec 033 R2 T021): a test publishes the TXT record a domain asks for.
+        fake.MapPut("/dns/txt", (string name, FakeTxtRecord record, FakeSystems f) =>
+        {
+            f.Dns.SetTxt(name, [.. record.Values ?? []]);
+            return Results.Ok(new { name, values = record.Values });
+        });
         fake.MapPost("/outage/{system}", (string system, bool? down, FakeSystems f) =>
         {
             var value = down ?? true;
@@ -256,6 +265,7 @@ public static class FakeEndpoints
                 case "openrouter": f.OpenRouter.Unavailable = value; break;
                 case "open-meteo": f.Weather.Unavailable = value; break;
                 case "gotenberg": f.Conversion.Unavailable = value; break;
+                case "dns": f.Dns.Down = value; break;
                 default: return Results.NotFound();
             }
             return Results.Ok(new { system, down = value });

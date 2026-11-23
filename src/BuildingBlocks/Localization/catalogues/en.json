@@ -2827,5 +2827,14 @@
   "validation.experience.starter_navigation": "Choose one of the navigation patterns",
   "validation.experience.starter_pages": "Choose between one and eight starter pages",
   "conflict.experience.starter_exists": "This organization already has a starter. Edit what it made instead.",
-  "conflict.experience.starter_published": "This starter is already published"
+  "conflict.experience.starter_published": "This starter is already published",
+  "validation.tenant.domain_host": "Enter a host name such as intranet.example.com that is not one of this installation's own addresses",
+  "validation.tenant.domain_limit": "This workspace has the most custom domains it can have. Remove one to add another.",
+  "validation.tenant.domain_text": "Keep each text short and on one line",
+  "conflict.tenant.domain_exists": "This domain is already on the list",
+  "conflict.tenant.domain_in_use": "Another workspace already uses this domain",
+  "notifications.template.tenancy.domain.stopped.title": "A custom domain stopped working",
+  "notifications.template.tenancy.domain.stopped.body": "The DNS record that proves {host} belongs to this workspace is gone, so the domain is no longer served. People can still use the workspace's own address. Add the record again and verify the domain.",
+  "notifications.template.tenancy.domain.certificate.title": "A custom domain certificate needs attention",
+  "notifications.template.tenancy.domain.certificate.body": "The certificate for {host} ends soon or could not be read. People can still use the workspace's own address. Check that the domain still points to TeamBeats."
 }

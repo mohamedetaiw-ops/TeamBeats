@@ -82,3 +82,6 @@ export type Me = {
 export type NavigationSection = { key: string; labelKey: string; path: string; wholeTenant: boolean; badge?: number | null; group?: string };
 
 export type SignInOptions = { sso: boolean; kind: string | null; displayName: string | null };
+
+/** What this host shows before and after sign-in: a verified custom domain's own texts (spec 033 R2 T021), or nothing. */
+export type SitePresentation = { appTitle: string | null; description: string | null; signInMessage: string | null; customDomain: boolean };

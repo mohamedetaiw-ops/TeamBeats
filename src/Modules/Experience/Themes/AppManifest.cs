@@ -21,7 +21,7 @@ public sealed record WebManifest(string Id, string Name, string Short_name, stri
 /// colour. The tenant comes from the session, never from the request.
 /// </summary>
 public sealed partial class AppManifest(ThemeService themes, ITenantSettingsReader tenant, IOrganizationHierarchy hierarchy, ITenantContext context,
-    IEntitlementService entitlements, RequestLocale locale)
+    IEntitlementService entitlements, RequestLocale locale, ICustomDomainPresentation domains)
 {
     public const int ShortNameLength = 12;
 
@@ -39,8 +39,13 @@ public sealed partial class AppManifest(ThemeService themes, ITenantSettingsRead
     public async Task<BrandPresentation> PresentationAsync(CancellationToken ct)
     {
         var theme = await themes.ThemeAsync(await ScopeAsync(ct), ct);
-        return BrandSlots.Present(theme.Assets, locale.Locale);
+        var shown = BrandSlots.Present(theme.Assets, locale.Locale);
+        // On a verified custom domain its app title wins (R2 T021, FR-010).
+        return await DomainTitleAsync(ct) is { } title ? shown with { Title = title } : shown;
     }
+
+    private async Task<string?> DomainTitleAsync(CancellationToken ct) =>
+        context.Host.CustomDomain is { } host ? (await domains.ForHostAsync(host, locale.Locale, ct))?.AppTitle : null;
 
     private async Task<(string Name, string Accent, string Surface, string? Favicon)> BrandAsync(CancellationToken ct)
     {
@@ -49,7 +54,8 @@ public sealed partial class AppManifest(ThemeService themes, ITenantSettingsRead
         var light = theme.Variants.FirstOrDefault(v => v.Mode == ThemeModes.Light && v.Density == ThemeModes.Comfortable) ?? theme.Variants[0];
         var branding = await tenant.GetBrandingAsync(ct);
         // The brand title in the viewer's language wins over the tenant name (R2 T018).
-        var name = BrandSlots.Pick(theme.Assets, BrandSlots.Title, locale.Locale)
+        // On a verified custom domain its app title wins over both (R2 T021).
+        var name = await DomainTitleAsync(ct) ?? BrandSlots.Pick(theme.Assets, BrandSlots.Title, locale.Locale)
             ?? (string.IsNullOrWhiteSpace(branding.DisplayName) ? "TeamBeats" : branding.DisplayName.Trim());
         return (name, Color(light.Tokens, "color.accent.base", "#4338ca"), Color(light.Tokens, "color.surface.base", "#f7f8fb"),
             theme.Assets.TryGetValue("favicon", out var favicon) ? ThemeService.AssetUrlOf(favicon) : null);

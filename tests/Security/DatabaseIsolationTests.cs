@@ -15,6 +15,7 @@ public sealed class DatabaseIsolationTests(TenantWorld world)
         "messaging.inbox",
         "messaging.dead_letter",
         "identity.verified_domain",
+        "tenancy.domain_route",
     ];
 
     private async Task<List<T>> AppQueryAsync<T>(string sql, Func<NpgsqlDataReader, T> map, Guid? tenant = null)

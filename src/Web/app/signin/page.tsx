@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { apiGet, type SignInOptions } from "@/lib/api";
+import { apiGet, type SignInOptions, type SitePresentation } from "@/lib/api";
 import type { KioskDeviceInfo } from "@/lib/kiosk";
 import { DevSignInForm, type DevSignInMode } from "./DevSignInForm";
 import { OfflineWipe } from "@/features/app/OfflineSync";
@@ -44,11 +44,17 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
   }
   const t = await getTranslations("signin");
   const mode = devSignInMode();
-  const options = await apiGet<SignInOptions>("/api/v1/auth/signin/options");
+  const [options, site] = await Promise.all([
+    apiGet<SignInOptions>("/api/v1/auth/signin/options"),
+    apiGet<SitePresentation>("/api/v1/site/presentation"),
+  ]);
   const sso = options.ok && options.data.sso;
+  // A verified custom domain signs people in under its own name and message (spec 033 R2 T021).
+  const own = site.ok && site.data.customDomain ? site.data : null;
   return (
     <main id="main" className="page narrow">
-      <h1>{t("title")}</h1>
+      <h1>{own?.appTitle ? t("titleAt", { name: own.appTitle }) : t("title")}</h1>
+      {own?.signInMessage ? <p data-testid="signin-message">{own.signInMessage}</p> : null}
       <OfflineWipe />
       {sso ? (
         <a className="button" href={returnTo ? `/api/v1/auth/signin/sso?returnTo=${encodeURIComponent(returnTo)}` : "/api/v1/auth/signin/sso"}>

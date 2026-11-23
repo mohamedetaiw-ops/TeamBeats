@@ -2827,5 +2827,14 @@
   "validation.experience.starter_navigation": "اختر أحد أنماط التنقل",
   "validation.experience.starter_pages": "اختر من صفحة واحدة إلى ثماني صفحات بداية",
   "conflict.experience.starter_exists": "لهذه المنظمة بداية بالفعل. عدّل ما أنشأته بدلا من ذلك.",
-  "conflict.experience.starter_published": "هذه البداية منشورة بالفعل"
+  "conflict.experience.starter_published": "هذه البداية منشورة بالفعل",
+  "validation.tenant.domain_host": "أدخل اسم مضيف مثل intranet.example.com لا يكون أحد عناوين هذا التثبيت",
+  "validation.tenant.domain_limit": "وصلت مساحة العمل إلى الحد الأقصى من النطاقات المخصصة. أزل نطاقا لإضافة آخر.",
+  "validation.tenant.domain_text": "اجعل كل نص قصيرا وفي سطر واحد",
+  "conflict.tenant.domain_exists": "هذا النطاق موجود في القائمة بالفعل",
+  "conflict.tenant.domain_in_use": "تستخدم مساحة عمل أخرى هذا النطاق بالفعل",
+  "notifications.template.tenancy.domain.stopped.title": "توقف نطاق مخصص عن العمل",
+  "notifications.template.tenancy.domain.stopped.body": "اختفى سجل DNS الذي يثبت أن {host} يتبع مساحة العمل هذه، لذلك لم يعد النطاق يُخدَم. ما زال بإمكان الأشخاص استخدام عنوان مساحة العمل الأصلي. أضف السجل مرة أخرى وتحقق من النطاق.",
+  "notifications.template.tenancy.domain.certificate.title": "شهادة نطاق مخصص تحتاج إلى انتباه",
+  "notifications.template.tenancy.domain.certificate.body": "تنتهي شهادة {host} قريبا أو تعذرت قراءتها. ما زال بإمكان الأشخاص استخدام عنوان مساحة العمل الأصلي. تحقق من أن النطاق ما زال يشير إلى TeamBeats."
 }

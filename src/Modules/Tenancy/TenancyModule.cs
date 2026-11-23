@@ -38,6 +38,14 @@ public static class TenancyModule
         services.AddScoped<ITenantMemberships>(sp => sp.GetRequiredService<TenancyContracts>());
         services.AddScoped<IGuestFigures, GuestMembershipFigures>();
         services.AddScoped<ITestIdentityMemberships, TestIdentityMemberships>();
+        // Custom domains (spec 033 R2 T021).
+        services.AddOptions<Domains.CustomDomainOptions>().BindConfiguration(Domains.CustomDomainOptions.Section);
+        services.AddHttpClient(Domains.DohTxtLookup.ClientName, c => c.Timeout = TimeSpan.FromSeconds(10));
+        services.AddScoped<Domains.IDnsTxtLookup, Domains.DohTxtLookup>();
+        services.AddScoped<Domains.ICertificateProbe, Domains.TlsCertificateProbe>();
+        services.AddSingleton<ICustomDomainResolver, Domains.CustomDomainResolver>();
+        services.AddScoped<Domains.CustomDomains>();
+        services.AddScoped<ICustomDomainPresentation, Domains.CustomDomainPresentation>();
         return services;
     }
 
@@ -47,6 +55,7 @@ public static class TenancyModule
         MapTenant(app);
         MapOrganization(app);
         app.MapOrgPublicEndpoints();
+        Domains.DomainEndpoints.MapDomainEndpoints(app);
         return app;
     }
 
