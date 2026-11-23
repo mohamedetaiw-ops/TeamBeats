@@ -177,7 +177,8 @@ public sealed partial class FakeOpenRouter(string apiKey, string basePath, IRead
             // Content translation (spec 009 US5) answers each text marked as translated, in the target language's script.
             // Sentiment (spec 021 US8) labels each numbered text: [fake:positive] and [fake:negative] mark it, anything else is neutral.
             // A dashboard summary (spec 021 US8) states the first figure it was given and names it.
-            reply = properties?["sentiments"] is not null ? Sentiments(last) : properties?["figures"] is not null ? Summary(last)
+            // A policy change summary (spec 025 section 11) names how many clauses change and lists each one.
+            reply = properties?["points"] is not null ? ChangeSummary(last) : properties?["sentiments"] is not null ? Sentiments(last) : properties?["figures"] is not null ? Summary(last)
                 : properties?["texts"] is not null ? Translation(last) : properties?["safe"] is not null ? JsonSerializer.Serialize(new { safe = !Attached(messages).Any(t => t.Contains("[fake:unsafe]", StringComparison.Ordinal)) })
                 : properties?["merchant"] is not null ? Receipt(messages) : judging
                 ? JsonSerializer.Serialize(last.Contains("[fake:judge:fail]", StringComparison.Ordinal)
@@ -238,6 +239,14 @@ public sealed partial class FakeOpenRouter(string apiKey, string basePath, IRead
             choices = new[] { new { index = 0, message = new { role = "assistant", content = reply, tool_calls = toolCalls }, finish_reason = toolCalls is null ? finish : "tool_calls" } },
             usage,
         });
+    }
+
+    private static string ChangeSummary(string request)
+    {
+        var node = JsonNode.Parse(request);
+        var changes = (node?["changes"] as JsonArray ?? []).Select(c => $"Clause {c?["clause"]?.GetValue<string>()}: {c?["change"]?.GetValue<string>()}").ToList();
+        var arabic = node?["language"]?.GetValue<string>() == "Arabic";
+        return JsonSerializer.Serialize(new { summary = (arabic ? "ملخص تجريبي: " : "Fake summary: ") + changes.Count + (arabic ? " تغييرات." : " changes."), points = changes });
     }
 
     private static string Translation(string request)

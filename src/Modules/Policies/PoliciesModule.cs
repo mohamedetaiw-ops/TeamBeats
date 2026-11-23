@@ -23,6 +23,7 @@ public static class PoliciesModule
         services.AddScoped<PolicyRegister>();
         services.AddScoped<TeamBeats.Modules.Agents.Contracts.IAgentTool, GetPolicyTool>();
         services.AddScoped<PolicyApprovals>();
+        services.AddScoped<PolicyChangeSummaries>();
         services.AddScoped<PolicyTaskSource>();
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<PolicyTaskSource>());
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, PolicyTaskSource>("policies.notify_approval");
@@ -139,6 +140,15 @@ public static class PoliciesModule
         });
 
         root.MapGet("/{id:guid}/compare", async (Guid id, PolicyApprovals approvals, CancellationToken ct) => Results.Ok(await approvals.CompareAsync(id, ct)));
+
+        root.MapGet("/{id:guid}/compare/summary", async (Guid id, PolicyChangeSummaries summaries, CancellationToken ct) => Results.Ok(await summaries.GetAsync(id, ct)));
+
+        root.MapPost("/{id:guid}/compare/summary", async (Guid id, PolicyChangeSummaries summaries, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await summaries.SummarizeAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
 
         root.MapGet("/{id:guid}/drafts/{versionId:guid}/comments", async (Guid id, Guid versionId, PolicyApprovals approvals, CancellationToken ct) =>
             Results.Ok(await approvals.CommentsAsync(id, versionId, ct)));

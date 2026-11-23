@@ -2,10 +2,11 @@ import { notFound, redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
 import type { InboxItem } from "@/lib/services/types";
-import { nameIn, policyHref, reviewHref, shownLocale, type CommentView, type CompareView, type PolicyView, type VersionView } from "@/lib/policies/types";
+import { nameIn, policyHref, reviewHref, shownLocale, type ChangeSummaryView, type CommentView, type CompareView, type PolicyView, type VersionView } from "@/lib/policies/types";
 import { Header } from "@/components/shell/Header";
 import { PoliciesNav } from "@/features/policies/PoliciesNav";
 import { ReviewPanel } from "@/features/policies/ReviewPanel";
+import { ChangeSummaryPanel } from "@/features/policies/ChangeSummaryPanel";
 import { PageHeader } from "@/components/ui/PageHeader";
 
 /**
@@ -23,10 +24,11 @@ export default async function ReviewPolicyPage({ params }: { params: Promise<{ i
     notFound();
   }
   const p = policy.data;
-  const [draft, compare, tasks] = await Promise.all([
+  const [draft, compare, tasks, summary] = await Promise.all([
     apiGet<VersionView>(`/api/v1/policies/${encodeURIComponent(id)}/draft`),
     apiGet<CompareView>(`/api/v1/policies/${encodeURIComponent(id)}/compare`),
     apiGet<InboxItem[]>("/api/v1/tasks"),
+    apiGet<ChangeSummaryView>(`/api/v1/policies/${encodeURIComponent(id)}/compare/summary`),
   ]);
   if (!draft.ok || !compare.ok) {
     notFound();
@@ -49,6 +51,7 @@ export default async function ReviewPolicyPage({ params }: { params: Promise<{ i
       />
       <main id="main" className="page policies-page" lang={shown}>
         <PageHeader title={t("heading", { name: draft.data.titles[shown] ?? name })} icon="policy" nav={<PoliciesNav current={null} />} />
+        {summary.ok ? <ChangeSummaryPanel policyId={p.id} initial={summary.data} /> : null}
         <ReviewPanel
           policyId={p.id}
           compare={compare.data}
