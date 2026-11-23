@@ -39,6 +39,7 @@ const sourceIcons: Record<string, IconName> = {
   asset_access: "image",
   agent_access: "spark",
   page_approval: "edit",
+  theme_approval: "image",
 };
 const dayMs = 86_400_000;
 
@@ -146,6 +147,8 @@ export function TaskInbox({ items, meId, units }: { items: InboxItem[]; meId: st
         return t("agentAccess");
       case "page_approval":
         return t("pageApproval");
+      case "theme_approval":
+        return t("themeApproval");
       default:
         return i.name;
     }

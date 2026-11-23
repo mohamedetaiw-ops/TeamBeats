@@ -179,6 +179,9 @@ public sealed record TemplateDeprecated(string TemplateId, IReadOnlyList<int> Ve
 // Spec 033 section 12. A null scope means the tenant.
 public sealed record ThemePublished(Guid BrandId, int Version) : IIntegrationEvent;
 
+/// <summary>A brand went back to an earlier identity: <paramref name="Version"/> is the new version, a copy of <paramref name="RestoredVersion"/>.</summary>
+public sealed record ThemeRolledBack(Guid BrandId, int Version, int RestoredVersion) : IIntegrationEvent;
+
 public sealed record BrandAssignmentChanged(Guid? ScopeOrgUnitId, Guid? BrandId) : IIntegrationEvent;
 
 public sealed record ExperienceLockChanged(Guid? ScopeOrgUnitId, IReadOnlyList<string> Settings) : IIntegrationEvent;

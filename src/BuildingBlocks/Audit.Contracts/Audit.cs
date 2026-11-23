@@ -146,6 +146,12 @@ public static class AuditActions
 
     // 033
     public const string ThemePublished = "theme.published";
+    public const string ThemeDrafted = "theme.drafted";
+    public const string ThemeSubmitted = "theme.submitted";
+    public const string ThemeApproved = "theme.approved";
+    public const string ThemeReturned = "theme.returned";
+    public const string ThemeScheduled = "theme.scheduled";
+    public const string ThemeRolledBack = "theme.rolled_back";
     public const string BrandAssigned = "brand.assigned";
     public const string BrandUnassigned = "brand.unassigned";
     public const string ExperienceLockChanged = "experience.lock_changed";
@@ -653,7 +659,7 @@ public static class AuditActions
         ConnectionConsentRevokedDetected, ConnectionStatusChanged, ConnectionFeatureOptionsChanged, ConnectionSiteAllowed, ConnectionSiteRemoved, OutlookConnected, OutlookDisconnected,
         PageCreated, PagePublished, PageRolledBack, PageTemplateChanged, PageSubmitted, PageApproved, PageReturned, PageRouteChanged, PageScheduled, PageScheduleCancelled, PageScheduleFailed, PageExpired, FragmentChanged, FragmentArchived, ComponentEnabled, ComponentDisabled, ComponentUpgraded, ComponentRolledBack,
         TemplateReleased, TemplateDistributed, TemplateDeprecated, TemplateImported, TemplateExported, FeatureControlChanged, RegionLockChanged,
-        ThemePublished, BrandAssigned, BrandUnassigned, ExperienceLockChanged,
+        ThemePublished, ThemeDrafted, ThemeSubmitted, ThemeApproved, ThemeReturned, ThemeScheduled, ThemeRolledBack, BrandAssigned, BrandUnassigned, ExperienceLockChanged,
         NotificationSettingsChanged, NotificationRelayTested, NotificationTemplateOverridden,
         HrCalendarChanged, HrSettingsChanged, HrMatchLinked, HrMatchUnlinked, HrSyncHeld, HrSyncConfirmed, HrChangeApplied, HrOrgCodeMapped, DisabledByHr, ReenabledByHr,
         HrPayslipViewed, HrPayslipDownloaded,

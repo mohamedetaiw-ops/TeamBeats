@@ -1462,7 +1462,7 @@
   },
   "brand": {
     "title": "Brand",
-    "intro": "Set the colors, type, spacing and images your workspace uses. Changes publish when you save, and the checks below run as you type.",
+    "intro": "Set the colors, type, spacing and images your workspace uses. Save and publish puts changes live at once; Save draft keeps them to publish later, schedule or send for approval. The checks below run as you type.",
     "brandLabel": "Brand profile",
     "name": "Brand name",
     "version": "Version {version}",
@@ -1721,7 +1721,59 @@
           "opacity": "Pressed opacity"
         }
       }
-    }
+    },
+    "lifecycle": {
+      "title": "Publishing",
+      "noDraft": "No draft. Employees see version {version}. Use Save draft to keep changes without publishing them.",
+      "draftKept": "A draft based on version {version} is kept, last saved {when}. Employees do not see it until it is published.",
+      "staleTitle": "The draft is behind",
+      "stale": "Version {version} was published after this draft started. Check the values before publishing.",
+      "pending": "Sent for approval {when} with {count, plural, one {# change} other {# changes}}. Employees see the version in force until it is approved.",
+      "withdraw": "Withdraw",
+      "withdrawn": "Taken back from approval. The draft stays.",
+      "lastApproved": "The last change was approved and published as version {version}.",
+      "lastReturned": "The last change was returned: {comment}",
+      "lastWithdrawn": "The last change was taken back before a decision.",
+      "reason": "Reason",
+      "reasonHint": "Optional. Kept with the version so others know why it changed.",
+      "publish": "Publish draft",
+      "published": "The draft is now live.",
+      "submit": "Send for approval",
+      "submitted": "Sent for approval. A theme publisher will review it.",
+      "discard": "Discard draft",
+      "discardQuestion": "Throw the draft away? The version in force stays as it is.",
+      "discardConfirm": "Discard",
+      "discarded": "The draft was discarded.",
+      "cancel": "Cancel",
+      "scheduleTitle": "Schedule",
+      "goLive": "Go live at",
+      "zone": "Time in {zone}.",
+      "schedule": "Schedule draft",
+      "scheduled": "The draft is scheduled. It is checked again at that time.",
+      "scheduledFor": "Scheduled to go live {when}.",
+      "cancelSchedule": "Cancel schedule",
+      "scheduleCancelled": "The schedule was cancelled.",
+      "scheduleFailedTitle": "A schedule did not go live",
+      "scheduleFailed": "The version scheduled for {when} failed the contrast checks, so the version in force stayed.",
+      "versions": "Versions",
+      "versionLine": "Version {version}, {when}",
+      "inForce": "In force",
+      "how": {
+        "direct": "Published",
+        "approved": "Approved",
+        "scheduled": "Scheduled",
+        "reverted": "Rolled back"
+      },
+      "restored": "Brings back version {version}.",
+      "revertLabel": "Roll back to version {version}",
+      "revertQuestion": "Publish version {version} again as a new version? Pages and personal layouts do not change.",
+      "revertConfirm": "Roll back",
+      "reverted": "Version {version} is live again.",
+      "working": "Working…",
+      "failed": "That did not work. Try again in a moment."
+    },
+    "saveDraft": "Save draft",
+    "draftSaved": "Draft saved. Employees still see the version in force."
   },
   "ui": {
     "state": {
@@ -3883,7 +3935,8 @@
       "assetAccess": "Brand asset access",
       "policyReview": "Policy review",
       "policyExemption": "Policy exemption",
-      "pageApproval": "Page approval"
+      "pageApproval": "Page approval",
+      "themeApproval": "Theme approval"
     },
     "delegation": {
       "none": "No delegation set. Your approvals stay with you.",

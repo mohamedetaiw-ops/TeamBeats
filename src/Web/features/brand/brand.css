@@ -387,3 +387,49 @@
   border-radius: var(--tb-radius-full);
   background: var(--tb-color-accent-base);
 }
+
+/* Publishing a brand (spec 033 R2 T014): draft state, approval, schedule and versions. */
+.brand-lifecycle {
+  display: grid;
+  gap: var(--tb-space-md);
+  max-inline-size: 48rem;
+  margin-block-start: var(--tb-space-lg);
+}
+
+.brand-lifecycle h3 {
+  margin: 0;
+  font-size: var(--tb-font-size-md);
+}
+
+.brand-lifecycle-block {
+  display: grid;
+  gap: var(--tb-space-sm);
+  justify-items: start;
+}
+
+.brand-releases {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.brand-release {
+  display: grid;
+  gap: var(--tb-space-xs);
+  justify-items: start;
+  padding-block: var(--tb-space-sm);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.brand-release-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-xs);
+}
+
+.brand-release p {
+  margin: 0;
+}

@@ -2799,5 +2799,19 @@
   "validation.feature_control.audience_unknown": "This audience does not exist.",
   "validation.feature_control.not_in_package": "Your package does not include this component, so it cannot be switched on.",
   "validation.feature_control.too_many": "This tenant has reached the limit of 500 switches. Remove some first.",
-  "validation.page.template_switched_off": "This template is switched off here, so new pages cannot use it."
+  "validation.page.template_switched_off": "This template is switched off here, so new pages cannot use it.",
+  "conflict.theme.no_draft": "This brand has no draft to publish",
+  "conflict.theme.in_approval": "This brand already has a change waiting for approval",
+  "conflict.theme.scheduled": "This brand already has a version scheduled",
+  "conflict.theme.not_scheduled": "This brand has nothing scheduled",
+  "validation.theme.reason_too_long": "Keep the reason to 500 characters or fewer",
+  "validation.theme.revert_version": "Choose an earlier version of this brand",
+  "validation.theme.schedule_time": "Choose a time in the future, within one year",
+  "experience.task.theme_approval": "Theme approval: {brand}",
+  "notifications.template.experience.theme_approved.title": "Your theme change is live",
+  "notifications.template.experience.theme_approved.body": "The change to {brand} was approved and published.",
+  "notifications.template.experience.theme_returned.title": "Your theme change was returned",
+  "notifications.template.experience.theme_returned.body": "The change to {brand} was returned: {comment}",
+  "notifications.template.experience.theme_schedule_failed.title": "A scheduled theme did not go live",
+  "notifications.template.experience.theme_schedule_failed.body": "{brand} did not go live at its time because of contrast problems, so the current version stays."
 }

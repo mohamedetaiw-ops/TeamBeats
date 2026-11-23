@@ -2799,5 +2799,19 @@
   "validation.feature_control.audience_unknown": "هذا الجمهور غير موجود.",
   "validation.feature_control.not_in_package": "باقتك لا تتضمن هذا المكوّن، لذلك لا يمكن تشغيله.",
   "validation.feature_control.too_many": "بلغ هذا المستأجر حد 500 مفتاح. احذف بعضها أولًا.",
-  "validation.page.template_switched_off": "هذا القالب متوقف هنا، لذلك لا يمكن للصفحات الجديدة استخدامه."
+  "validation.page.template_switched_off": "هذا القالب متوقف هنا، لذلك لا يمكن للصفحات الجديدة استخدامه.",
+  "conflict.theme.no_draft": "لا توجد مسودة لهذه الهوية لنشرها",
+  "conflict.theme.in_approval": "لهذه الهوية تغيير بانتظار الاعتماد بالفعل",
+  "conflict.theme.scheduled": "لهذه الهوية إصدار مجدول بالفعل",
+  "conflict.theme.not_scheduled": "لا يوجد شيء مجدول لهذه الهوية",
+  "validation.theme.reason_too_long": "اجعل السبب في حدود 500 حرف",
+  "validation.theme.revert_version": "اختر إصدارًا سابقًا من هذه الهوية",
+  "validation.theme.schedule_time": "اختر وقتًا في المستقبل خلال سنة واحدة",
+  "experience.task.theme_approval": "اعتماد مظهر: {brand}",
+  "notifications.template.experience.theme_approved.title": "أصبح تغيير المظهر منشورًا",
+  "notifications.template.experience.theme_approved.body": "اعتُمد التغيير على {brand} ونُشر.",
+  "notifications.template.experience.theme_returned.title": "أُعيد تغيير المظهر",
+  "notifications.template.experience.theme_returned.body": "أُعيد التغيير على {brand}: {comment}",
+  "notifications.template.experience.theme_schedule_failed.title": "لم يُنشر مظهر مجدول",
+  "notifications.template.experience.theme_schedule_failed.body": "لم يُنشر {brand} في موعده بسبب مشكلات في التباين، ويبقى الإصدار الحالي."
 }
