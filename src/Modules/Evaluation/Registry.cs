@@ -25,7 +25,7 @@ public sealed record AgentSuiteView(Guid? Id, int Version, IReadOnlyList<SuiteMe
 /// effective rule of every metric with the level each part comes from.
 /// </summary>
 public sealed record AgentSuitesView(Guid AgentId, IReadOnlyList<PlatformSuiteView> Inherited, AgentSuiteView Suite, IReadOnlyList<DatasetSummary> Datasets,
-    IReadOnlyList<EffectiveRule> Rules, bool CanEdit, bool WeightsAllowed);
+    IReadOnlyList<EffectiveRule> Rules, bool CanEdit, bool WeightsAllowed, IReadOnlyList<UnitLevelView>? Units = null);
 
 public sealed record SuiteRequest(int? Version, List<SuiteMetric>? Metrics, List<Guid>? Datasets);
 
@@ -54,6 +54,27 @@ public sealed class EvalAccess(IAgentCatalog agents, IAuthorizationService authz
 
     public async Task<bool> CanDesignAsync(AgentFacts agent, CancellationToken ct) =>
         (await authz.CheckAsync(Permissions.EvalDesign, AuthzTarget.OrgUnit(agent.OrgUnitId), ct)).Allowed;
+
+    /// <summary>Organization level (US10): business datasets of a unit are designed with <c>eval.design</c> in scope of the unit.</summary>
+    public async Task<bool> CanDesignUnitAsync(Guid unitId, CancellationToken ct) =>
+        (await authz.CheckAsync(Permissions.EvalDesign, AuthzTarget.OrgUnit(unitId), ct)).Allowed;
+
+    /// <summary>A unit's evaluation settings and datasets are read with any of the evaluation permissions in scope of the unit.</summary>
+    public async Task<bool> CanReadUnitAsync(Guid unitId, CancellationToken ct)
+    {
+        foreach (var permission in new[] { Permissions.EvalView, Permissions.EvalDesign, Permissions.EvalPolicyManage })
+        {
+            if ((await authz.CheckAsync(permission, AuthzTarget.OrgUnit(unitId), ct)).Allowed)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>A unit's stricter thresholds and its datasets in force are set with <c>eval.policy_manage</c> in scope of the unit.</summary>
+    public async Task<bool> CanManageUnitAsync(Guid unitId, CancellationToken ct) =>
+        (await authz.CheckAsync(Permissions.EvalPolicyManage, AuthzTarget.OrgUnit(unitId), ct)).Allowed;
 
     /// <summary>The assistant serves the whole tenant, so its runs are started by the AI Policy Administrator (spec 014 T008).</summary>
     public async Task<bool> CanRunAssistantAsync(CancellationToken ct) =>
@@ -126,7 +147,7 @@ public sealed class EvalSettingsService(IDbSession session, ITenantContext conte
 /// and the platform's.
 /// </summary>
 public sealed class SuiteService(IDbSession session, ITenantContext context, EvalAccess access, IEntitlementService entitlements, EvalSettingsService settings,
-    IAuditWriter audit, IClock clock)
+    UnitEvalSettings units, IAuditWriter audit, IClock clock)
 {
     public async Task<AgentSuitesView> GetAsync(Guid agentId, CancellationToken ct)
     {
@@ -140,15 +161,19 @@ public sealed class SuiteService(IDbSession session, ITenantContext context, Eva
         var suite = await CurrentAsync(agent.Id, ct);
         var datasets = await DatasetService.SummariesAsync(session, agent.Id, ct);
         var tenant = await settings.TenantRulesAsync(ct);
-        var keys = inherited.SelectMany(s => s.Metrics.Select(m => m.Key)).Concat(suite.Metrics.Select(m => m.Key)).Concat(tenant.Keys).Distinct().ToList();
+        var path = await units.PathAsync(agent.OrgUnitId, ct);
+        var keys = inherited.SelectMany(s => s.Metrics.Select(m => m.Key)).Concat(suite.Metrics.Select(m => m.Key)).Concat(tenant.Keys)
+            .Concat(path.SelectMany(l => l.Metrics.Select(m => m.Key))).Distinct().ToList();
         var rules = ThresholdRules.Effective(keys,
         [
             (EvalLevels.Platform, ThresholdRules.PlatformRules),
             (EvalLevels.Tenant, tenant),
+            .. UnitEvalSettings.Rules(path),
             (EvalLevels.Agent, ThresholdRules.Rules(suite.Metrics)),
         ]);
         return new AgentSuitesView(agent.Id, inherited.Select(View).ToList(), suite, datasets, rules,
-            await access.CanDesignAsync(agent, ct) && agent.Status != "retired", await entitlements.IsEnabledAsync(Capabilities.AiEvalsAdvanced, ct));
+            await access.CanDesignAsync(agent, ct) && agent.Status != "retired", await entitlements.IsEnabledAsync(Capabilities.AiEvalsAdvanced, ct),
+            path.Select(l => new UnitLevelView(l.UnitId, null, l.Version, l.Metrics, l.Datasets.Length)).ToList());
     }
 
     public static PlatformSuiteView View(PlatformSuite s) =>
@@ -195,8 +220,9 @@ public sealed class SuiteService(IDbSession session, ITenantContext context, Eva
         }
         var advanced = await entitlements.IsEnabledAsync(Capabilities.AiEvalsAdvanced, ct);
         var tenant = await settings.TenantRulesAsync(ct);
+        var path = await units.PathAsync(agent.OrgUnitId, ct);
         var errors = ThresholdRules.Check(request.Metrics, EvalLevels.Agent,
-            [(EvalLevels.Platform, ThresholdRules.PlatformRules), (EvalLevels.Tenant, tenant)], weightsAllowed: advanced);
+            [(EvalLevels.Platform, ThresholdRules.PlatformRules), (EvalLevels.Tenant, tenant), .. UnitEvalSettings.Rules(path)], weightsAllowed: advanced);
         var datasets = (request.Datasets ?? []).Distinct().ToArray();
         var own = (await DatasetService.SummariesAsync(session, agentId, ct)).Select(d => d.Id).ToHashSet();
         if (datasets.Length > 20 || datasets.Any(d => !own.Contains(d)))

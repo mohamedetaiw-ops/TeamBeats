@@ -48,7 +48,7 @@ public static class MetricCatalog
 /// <summary>A metric as a suite or a level sets it. A missing threshold or severity inherits the stricter levels above.</summary>
 public sealed record SuiteMetric(string Key, double Weight = 1, double? Threshold = null, string? Severity = null);
 
-/// <summary>A threshold and severity set at one level (platform, tenant, agent).</summary>
+/// <summary>A threshold and severity set at one level (platform, tenant, organization unit, agent).</summary>
 public sealed record LevelRule(double? Threshold, string? Severity);
 
 /// <summary>The rule that applies to a metric, with where each part came from (US1 scenario 2).</summary>
@@ -58,6 +58,7 @@ public static class EvalLevels
 {
     public const string Platform = "platform";
     public const string Tenant = "tenant";
+    public const string Organization = "org";
     public const string Agent = "agent";
 }
 
@@ -132,11 +133,21 @@ public static class ThresholdRules
                 }
                 if (metric.Threshold is { } t && rule.Threshold is { } floor && !Stricter(def, t, floor))
                 {
-                    errors.Add($"{at}.threshold", upper == EvalLevels.Platform ? "validation.eval.threshold_below_platform" : "validation.eval.threshold_below_tenant");
+                    errors.Add($"{at}.threshold", upper switch
+                    {
+                        EvalLevels.Platform => "validation.eval.threshold_below_platform",
+                        EvalLevels.Organization => "validation.eval.threshold_below_org",
+                        _ => "validation.eval.threshold_below_tenant",
+                    });
                 }
                 if (metric.Severity is { } s && rule.Severity is { } floorSeverity && EvalSeverities.Rank(s) < EvalSeverities.Rank(floorSeverity))
                 {
-                    errors.Add($"{at}.severity", upper == EvalLevels.Platform ? "validation.eval.severity_below_platform" : "validation.eval.severity_below_tenant");
+                    errors.Add($"{at}.severity", upper switch
+                    {
+                        EvalLevels.Platform => "validation.eval.severity_below_platform",
+                        EvalLevels.Organization => "validation.eval.severity_below_org",
+                        _ => "validation.eval.severity_below_tenant",
+                    });
                 }
             }
         }
