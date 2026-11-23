@@ -59,7 +59,7 @@ export default async function PolicyRegisterPage({ searchParams }: { searchParam
           title={t("title")}
           description={t("description")}
           icon="policy"
-          nav={<PoliciesNav current="register" />}
+          nav={<PoliciesNav current="register" exemptions={rights.ok && rights.data.exemptions === true} />}
           actions={
             rights.ok && rights.data.create ? (
               <Link href="/policies/new" className="button button-primary">

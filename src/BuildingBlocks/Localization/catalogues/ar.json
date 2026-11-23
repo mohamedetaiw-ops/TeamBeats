@@ -2651,5 +2651,22 @@
   "validation.policies.check_bank": "اكتب الأسئلة أولًا. لا تسحب المحاولة أسئلة أكثر مما في البنك.",
   "validation.policies.check_answers": "أجب عن كل سؤال من الخيارات المعروضة.",
   "notifications.template.policies.check_follow_up.title": "شخص يحتاج إلى متابعة في اختبار سياسة",
-  "notifications.template.policies.check_follow_up.body": "استنفد شخص كل محاولات اختبار الفهم دون اجتيازه. تابع معه من عرض الامتثال."
+  "notifications.template.policies.check_follow_up.body": "استنفد شخص كل محاولات اختبار الفهم دون اجتيازه. تابع معه من عرض الامتثال.",
+  "validation.policies.exemption_scope": "اختر شخصًا أو وحدة للإعفاء.",
+  "validation.policies.exemption_person": "اختر شخصًا تنطبق عليه السياسة.",
+  "validation.policies.exemption_reason": "اذكر سببًا في حدود 2000 حرف.",
+  "validation.policies.exemption_ends_on": "اختر تاريخ انتهاء من اليوم وخلال سنة واحدة.",
+  "validation.policies.exemption_status": "اختر حالة إعفاء صحيحة.",
+  "conflict.policies.exemption_exists": "يوجد بالفعل طلب أو إعفاء لهذا الشخص أو هذه الوحدة على هذه السياسة.",
+  "conflict.policies.exemption_closed": "تم البت في هذا الطلب أو إغلاقه بالفعل.",
+  "notifications.template.policies.exemption_waiting.title": "طلب إعفاء بانتظارك",
+  "notifications.template.policies.exemption_waiting.body": "طلب شخص إعفاء من سياسة تملكها. راجع السبب وتاريخ الانتهاء ثم قرر.",
+  "notifications.template.policies.exemption_approved.title": "تمت الموافقة على إعفائك",
+  "notifications.template.policies.exemption_approved.body": "الإعفاء مسجل في السجل حتى تاريخ انتهائه.",
+  "notifications.template.policies.exemption_rejected.title": "لم تتم الموافقة على طلب إعفائك",
+  "notifications.template.policies.exemption_rejected.body": "افتح الطلب لترى من قرر وما قاله.",
+  "notifications.template.policies.exemption_expiring.title": "ينتهي إعفاء خلال 14 يومًا",
+  "notifications.template.policies.exemption_expiring.body": "عند انتهائه تنطبق السياسة كاملة من جديد. اطلب إعفاء جديدًا إن كنت لا تزال بحاجة إليه.",
+  "notifications.template.policies.exemption_expired.title": "انتهى إعفاء",
+  "notifications.template.policies.exemption_expired.body": "مر تاريخ الانتهاء وأُغلق الإعفاء. تنطبق السياسة كاملة من جديد."
 }

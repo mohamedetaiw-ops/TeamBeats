@@ -2651,5 +2651,22 @@
   "validation.policies.check_bank": "Write the questions first. Each attempt can draw at most as many questions as the bank has.",
   "validation.policies.check_answers": "Answer every question with the choices shown.",
   "notifications.template.policies.check_follow_up.title": "Someone needs follow-up on a policy check",
-  "notifications.template.policies.check_follow_up.body": "A person used every attempt of the comprehension check without passing. Follow up with them from the compliance view."
+  "notifications.template.policies.check_follow_up.body": "A person used every attempt of the comprehension check without passing. Follow up with them from the compliance view.",
+  "validation.policies.exemption_scope": "Choose a person or a unit for the exemption.",
+  "validation.policies.exemption_person": "Choose a person the policy applies to.",
+  "validation.policies.exemption_reason": "Give a reason of up to 2000 characters.",
+  "validation.policies.exemption_ends_on": "Choose an end date from today and within one year.",
+  "validation.policies.exemption_status": "Choose a valid exemption status.",
+  "conflict.policies.exemption_exists": "There is already a request or an exemption for this person or unit on this policy.",
+  "conflict.policies.exemption_closed": "This request was already decided or closed.",
+  "notifications.template.policies.exemption_waiting.title": "An exemption request waits for you",
+  "notifications.template.policies.exemption_waiting.body": "Someone asked for an exemption to a policy you own. Review the reason and the end date, then decide.",
+  "notifications.template.policies.exemption_approved.title": "Your exemption was approved",
+  "notifications.template.policies.exemption_approved.body": "The exemption is in the register until its end date.",
+  "notifications.template.policies.exemption_rejected.title": "Your exemption request was not approved",
+  "notifications.template.policies.exemption_rejected.body": "Open the request to see who decided and what they said.",
+  "notifications.template.policies.exemption_expiring.title": "An exemption ends in 14 days",
+  "notifications.template.policies.exemption_expiring.body": "When it ends the policy applies in full again. Ask for a new exemption if you still need one.",
+  "notifications.template.policies.exemption_expired.title": "An exemption has ended",
+  "notifications.template.policies.exemption_expired.body": "The end date passed and the exemption closed. The policy applies in full again."
 }

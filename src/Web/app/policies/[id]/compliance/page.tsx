@@ -216,6 +216,12 @@ export default async function PolicyCompliancePage({ params, searchParams }: { p
                                     <Badge tone="warning">{t("needsFollowUp")}</Badge>
                                   </>
                                 ) : null}
+                                {x.exemptUntil ? (
+                                  <>
+                                    {" "}
+                                    <Badge tone="info">{t("exemptUntil", { date: format.dateTime(new Date(x.exemptUntil), { dateStyle: "medium" }) })}</Badge>
+                                  </>
+                                ) : null}
                               </td>
                               <td>
                                 {format.dateTime(new Date(x.attestedAt ?? x.leftAt ?? x.dueAt), { dateStyle: "medium" })}

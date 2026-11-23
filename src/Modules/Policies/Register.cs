@@ -516,7 +516,8 @@ public sealed class PolicyRegister(
             scheduled is { Number: { } n, EffectiveFrom: { } from } && (edit || manage || history) ? new ScheduledVersion(scheduled.Id, n, from) : null,
             new PolicyRights(manage, edit && policy.Status != PolicyStatuses.Retired, review, history, await FollowsPeopleAsync(ct), await AsksAsync(policy, ct),
                 history && policy.CurrentVersion is not null && await entitlements.IsEnabledAsync(Capabilities.AnalyticsCore, ct),
-                (edit || manage) && policy.Status != PolicyStatuses.Retired && await entitlements.IsEnabledAsync(Capabilities.PolicyComprehension, ct)),
+                (edit || manage) && policy.Status != PolicyStatuses.Retired && await entitlements.IsEnabledAsync(Capabilities.PolicyComprehension, ct),
+                policy.CurrentVersion is not null && await entitlements.IsEnabledAsync(Capabilities.PolicyExemptions, ct)),
             policy.CreatedAt, policy.UpdatedAt, policy.OnboardingRequired,
             policy.CourseId is { } course ? new PolicyTraining(course, policy.TrainingFirst) : null, policy.ReviewWindowDays,
             manage || history ? PolicyReviews.StateOf(policy, await ReviewedAsync(policy, ct), clock.UtcNow) : null);
@@ -570,7 +571,8 @@ public sealed class PolicyRegister(
     public async Task<RegisterRights> RightsAsync(CancellationToken ct)
     {
         await entitlements.DemandAsync(Capabilities.PolicyCore, ct);
-        return new RegisterRights((await authz.CoverageAsync(Permissions.PolicyManage, ct)).Any);
+        var manages = (await authz.CoverageAsync(Permissions.PolicyManage, ct)).Any;
+        return new RegisterRights(manages, manages && await entitlements.IsEnabledAsync(Capabilities.PolicyExemptions, ct));
     }
 
     /// <summary>

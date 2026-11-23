@@ -3583,7 +3583,9 @@
       "bookingRequest": "Booking request",
       "aiAction": "AI app action",
       "agentAccess": "Agent access request",
-      "assetAccess": "Brand asset access"
+      "assetAccess": "Brand asset access",
+      "policyReview": "Policy review",
+      "policyExemption": "Policy exemption"
     },
     "delegation": {
       "none": "No delegation set. Your approvals stay with you.",
@@ -5096,7 +5098,8 @@
     "nav": {
       "label": "Policies",
       "my": "My policies",
-      "register": "Policy register"
+      "register": "Policy register",
+      "exemptions": "Exemptions"
     },
     "status": {
       "draft": "Draft",
@@ -5218,7 +5221,8 @@
       "analytics": "Analytics",
       "reviews": "Scheduled review",
       "reviewsOverdue": "Scheduled review (overdue)",
-      "questions": "Comprehension questions"
+      "questions": "Comprehension questions",
+      "exemptions": "Exemptions"
     },
     "create": {
       "title": "New policy",
@@ -5402,7 +5406,8 @@
       "next": "Next",
       "showing": "{from} to {to} of {total}",
       "failed": "The people could not be loaded. Try again.",
-      "needsFollowUp": "Needs follow-up"
+      "needsFollowUp": "Needs follow-up",
+      "exemptUntil": "Exempt until {date}"
     },
     "person": {
       "register": "Policies",
@@ -5414,7 +5419,12 @@
       "due": "Version {number} due by {date}",
       "overdue": "Version {number} overdue since {date}",
       "accepted": "Accepted version {number} on {date}",
-      "notAsked": "Not asked to accept yet"
+      "notAsked": "Not asked to accept yet",
+      "exemptions": "Exemptions",
+      "exemptionScope": "Covers",
+      "exemptionEnds": "Ends",
+      "exemptionPerson": "This person",
+      "exemptionUnit": "Everyone in {unit}"
     },
     "training": {
       "title": "Linked training",
@@ -5540,6 +5550,66 @@
         "en": "English",
         "ar": "Arabic"
       }
+    },
+    "exemptions": {
+      "register": "Policies",
+      "title": "Exemptions",
+      "heading": "Exemptions to {name}",
+      "description": "Ask to be exempted from this policy for a time, with a reason. The policy owner decides first, then compliance.",
+      "requestTitle": "Ask for an exemption",
+      "requestIntro": "Say why the policy cannot apply to you for now and until when. It ends on its own on that date.",
+      "for": "Who is it for",
+      "forMe": "Me",
+      "forPerson": "Someone else",
+      "forUnit": "A whole unit",
+      "forUnitHint": "Everyone in the unit and the units under it.",
+      "person": "Person",
+      "unit": "Unit",
+      "choosePerson": "Choose the person first.",
+      "reason": "Reason",
+      "reasonHint": "Up to 2000 characters. The owner and compliance read it.",
+      "endsOn": "Last day of the exemption",
+      "endsOnHint": "From today and within one year.",
+      "submit": "Send the request",
+      "busy": "Sending",
+      "failed": "Something went wrong. Try again.",
+      "asked": "Your request was sent. The policy owner decides first, then compliance.",
+      "all": "All exemptions",
+      "mine": "Your requests and exemptions",
+      "none": "No exemptions yet.",
+      "policy": "Policy",
+      "who": "Who",
+      "ends": "Ends",
+      "status": "Status",
+      "decision": "Decision",
+      "unitScope": "Everyone in {unit}",
+      "askedBy": "asked by {name} on {date}",
+      "decidedBy": "{name} on {date}",
+      "noDecision": "Not decided yet",
+      "withdraw": "Withdraw",
+      "withdrawQuestion": "Withdraw this request? It leaves the approvers' inbox.",
+      "withdrawConfirm": "Withdraw request",
+      "cancel": "Keep it",
+      "statuses": {
+        "pending": "Waiting for a decision",
+        "approved": "Approved",
+        "rejected": "Not approved",
+        "withdrawn": "Withdrawn",
+        "expired": "Ended"
+      },
+      "registerTitle": "Exemption register",
+      "registerDescription": "Exemptions to the policies you manage, with who they cover, the reason, who approved and when they end.",
+      "registerEmpty": "No exemptions match.",
+      "filter": "Show",
+      "filters": {
+        "live": "Pending and approved",
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Not approved",
+        "withdrawn": "Withdrawn",
+        "expired": "Ended"
+      },
+      "policyName": "{code} {name}"
     }
   },
   "ai": {
