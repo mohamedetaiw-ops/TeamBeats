@@ -1,6 +1,6 @@
 # Spec 025 evidence (R1 and R2)
 
-R1 and the R2 scope (User Stories 5 to 8, FR-012 to FR-017, the AI change summary, paper import, the long leave pause and the manager dashboard) are built. The spec stays Approved, not Implemented, until the two parts left from R1 are built: fixed attestation cycles (the second half of FR-008, T022) and controlled document policies (the second half of FR-003, T023). R3 (change impact analysis with AI, regulator change feeds) is not started. Defaults, deviations and gaps of each slice are in the spec 025 sections of `docs/architecture/r1-implementation-notes.md` and `docs/architecture/r2-implementation-notes.md`.
+R1 and the R2 scope (User Stories 5 to 8, FR-012 to FR-017, the AI change summary, paper import, the long leave pause and the manager dashboard) are built. The spec stays Approved, not Implemented, until the last part left from R1 is built: controlled document policies (the second half of FR-003, T023). Fixed attestation cycles (FR-008, T022) are built. R3 (change impact analysis with AI, regulator change feeds) is not started. Defaults, deviations and gaps of each slice are in the spec 025 sections of `docs/architecture/r1-implementation-notes.md` and `docs/architecture/r2-implementation-notes.md`.
 
 | Requirement | Status | Evidence |
 |---|---|---|
@@ -11,7 +11,7 @@ R1 and the R2 scope (User Stories 5 to 8, FR-012 to FR-017, the AI change summar
 | FR-005 binding language, variants approved together | Met | `PolicyApprovalTests.Owners_editors_and_submitters_never_approve_and_every_language_is_approved_together`, `PolicyRulesTests.A_version_is_complete_only_with_every_clause_in_every_locale_and_the_binding_one` |
 | FR-006 campaigns with audience, deadline, text, reminders, escalation, late joiners, leavers, exclusions | Met | `PolicyCampaignTests` (all) |
 | FR-007 immutable attestation with hash, no delegation | Met | `PolicyCampaignTests.A_campaign_asks_its_audience_and_each_attestation_is_a_fixed_record_...`, `PolicyRulesTests.The_attestation_hash_is_sha256_hex`; the comprehension result comes with US6 (R2) |
-| FR-008 re-attestation on material change | Met for material change | `PolicyCampaignTests.Late_joiners_get_their_own_due_date_leavers_are_marked_and_a_material_revision_leaves_the_choice_to_compliance`; fixed cycles are R2 |
+| FR-008 re-attestation on material change and on a fixed cycle | Met | `PolicyCampaignTests.Late_joiners_get_their_own_due_date_leavers_are_marked_and_a_material_revision_leaves_the_choice_to_compliance`, `PolicyCycleTests` (both), `policy-cycle.spec.ts` (en and ar, axe) |
 | FR-012 scheduled reviews with four outcomes, overdue tracking | Met | `PolicyReviewTests` (all three), `policy-authoring.spec.ts` (answer a scheduled review, en and ar, axe) |
 | FR-013 comprehension checks with question banks, pass marks, attempts, accessible delivery | Met | `PolicyCheckTests` (both), `policy-checks.spec.ts` (keyboard, axe, en and ar) |
 | FR-014 exemptions with request, route, scope, reason, expiry and reminders | Met | `PolicyExemptionTests` (all three), `policy-exemptions.spec.ts` (en and ar, axe) |

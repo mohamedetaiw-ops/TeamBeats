@@ -35,7 +35,7 @@ export type PolicyReading = { policy: PolicySummary; version: VersionView; super
 
 export type RouteStep = { names?: Names | null; approvers?: string[] | null; complianceOfficers?: boolean };
 
-export type PolicyRights = { manage: boolean; edit: boolean; review: boolean; history: boolean; compliance: boolean; ask: boolean; analytics: boolean; comprehension?: boolean; exemptions?: boolean; controls?: boolean; paper?: boolean; pause?: boolean };
+export type PolicyRights = { manage: boolean; edit: boolean; review: boolean; history: boolean; compliance: boolean; ask: boolean; analytics: boolean; comprehension?: boolean; exemptions?: boolean; controls?: boolean; paper?: boolean; pause?: boolean; cycle?: boolean };
 
 export type RegisterRights = { create: boolean; exemptions?: boolean; evidence?: boolean; team?: boolean };
 
@@ -79,6 +79,8 @@ export type PolicyView = {
   createdAt: string;
   updatedAt: string;
   onboardingRequired: boolean;
+  /** The fixed re-attestation cycle in months, for the owner and compliance officers (spec 025 FR-008). */
+  attestationCycleMonths?: number | null;
   /** The training course linked to the policy (spec 028 US4), and whether attesting waits for it. */
   training?: { courseId: string; beforeAttestation: boolean } | null;
   /** Days before the review date when the owner gets the review task (spec 025 US5). */

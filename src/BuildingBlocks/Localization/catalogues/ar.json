@@ -2745,5 +2745,6 @@
   "validation.policies.pause_until": "اختر يوم عودة الشخص، من الغد حتى سنة قادمة.",
   "validation.policies.pause_reason": "اذكر سببًا لا يتجاوز 500 حرف.",
   "conflict.policies.pause_not_owed": "لا يوجد ما يقر به هذا الشخص في هذه الحملة.",
-  "conflict.policies.already_paused": "موعد هذا الشخص متوقف من قبل."
+  "conflict.policies.already_paused": "موعد هذا الشخص متوقف من قبل.",
+  "validation.policies.cycle_months": "اختر دورة من 1 إلى 60 شهرًا، أو بلا دورة."
 }

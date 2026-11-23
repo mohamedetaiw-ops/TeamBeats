@@ -5,6 +5,7 @@ import { campaignsHref, nameIn, policyHref, type CampaignView, type PolicyView }
 import { Header } from "@/components/shell/Header";
 import { PoliciesNav } from "./PoliciesNav";
 import { CampaignsPanel } from "./CampaignsPanel";
+import { CycleSetting } from "./CycleSetting";
 import { PageHeader } from "@/components/ui/PageHeader";
 
 /** The campaigns page of a policy, for its owner and compliance officers (spec 025 US2); others find nothing. */
@@ -39,6 +40,7 @@ export async function CampaignsPage({ id, focus }: { id: string; focus: string |
         <PageHeader title={t("heading", { name })} icon="policy" nav={<PoliciesNav current={null} />} />
         <CampaignsPanel policyId={p.id} initial={campaigns.data} canLaunch={p.currentVersion !== null && p.status !== "retired"} focus={focus}
           canCheck={p.rights.comprehension ?? false} />
+        {p.rights.cycle ? <CycleSetting policyId={p.id} initial={p.attestationCycleMonths ?? null} /> : null}
       </main>
     </>
   );

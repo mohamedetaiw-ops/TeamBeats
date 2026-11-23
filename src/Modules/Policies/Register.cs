@@ -36,17 +36,21 @@ internal sealed record PolicyRow(
     bool OnboardingRequired,
     Guid? CourseId,
     bool TrainingFirst,
-    int ReviewWindowDays)
+    int ReviewWindowDays,
+    int? AttestationCycleMonths = null,
+    Guid? CycleSetBy = null)
 {
     public const string Columns =
         "id, code, names::text, category_id, owner_user_id, org_unit_id, audience::text, classification, binding_locale, route::text, review_months, related, status, " +
-        "current_version, effective_from, next_review_at, created_at, updated_at, onboarding_required, course_id, training_first, review_window_days";
+        "current_version, effective_from, next_review_at, created_at, updated_at, onboarding_required, course_id, training_first, review_window_days, " +
+        "attestation_cycle_months, cycle_set_by";
 
     public static PolicyRow Read(NpgsqlDataReader r) => new(r.GetGuid(0), r.GetString(1), PolicyJson.Read<Dictionary<string, string>>(r.GetString(2)),
         r.Get<Guid?>("category_id"), r.GetGuid(4), r.Get<Guid?>("org_unit_id"), PolicyJson.Read<ContentAudience>(r.GetString(6)), r.GetString(7),
         r.Get<string>("binding_locale"), PolicyJson.Read<List<RouteStepSetting>>(r.GetString(9)), r.GetInt32(10), r.GetFieldValue<Guid[]>(11), r.GetString(12),
         r.Get<int?>("current_version"), r.Get<DateTimeOffset?>("effective_from"), r.Get<DateTimeOffset?>("next_review_at"), r.GetFieldValue<DateTimeOffset>(16),
-        r.GetFieldValue<DateTimeOffset>(17), r.GetBoolean(18), r.Get<Guid?>("course_id"), r.GetBoolean(20), r.GetInt32(21));
+        r.GetFieldValue<DateTimeOffset>(17), r.GetBoolean(18), r.Get<Guid?>("course_id"), r.GetBoolean(20), r.GetInt32(21), r.Get<int?>("attestation_cycle_months"),
+        r.Get<Guid?>("cycle_set_by"));
 
     public AuthzTarget Target => OrgUnitId is { } unit ? AuthzTarget.OrgUnit(unit) : AuthzTarget.Tenant;
 
@@ -552,10 +556,12 @@ public sealed class PolicyRegister(
                 policy.CurrentVersion is not null && await entitlements.IsEnabledAsync(Capabilities.PolicyExemptions, ct),
                 await entitlements.IsEnabledAsync(Capabilities.PolicyEvidence, ct),
                 manage && policy.CurrentVersion is not null && policy.Status != PolicyStatuses.Retired && await entitlements.IsEnabledAsync(Capabilities.PolicyCampaigns, ct),
-                history),
+                history,
+                history && policy.Status != PolicyStatuses.Retired && await entitlements.IsEnabledAsync(Capabilities.PolicyCampaigns, ct)),
             policy.CreatedAt, policy.UpdatedAt, policy.OnboardingRequired,
             policy.CourseId is { } course ? new PolicyTraining(course, policy.TrainingFirst) : null, policy.ReviewWindowDays,
-            manage || history ? PolicyReviews.StateOf(policy, await ReviewedAsync(policy, ct), clock.UtcNow) : null);
+            manage || history ? PolicyReviews.StateOf(policy, await ReviewedAsync(policy, ct), clock.UtcNow) : null,
+            manage || history ? policy.AttestationCycleMonths : null);
     }
 
     /// <summary>Whether the review for the policy's current review date has an outcome (a revision may still be on its way).</summary>

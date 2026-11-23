@@ -220,22 +220,30 @@ public sealed class PolicyCampaigns(
         errors.ThrowIfAny();
 
         var narrowed = request.Audience is { IsEveryone: false } requested ? requested : null;
+        var campaignId = await InsertAsync(policy, number, narrowed, await EndOfAsync(day, ct), text, reminders, late, excluded, check, user, false, ct);
+        return await ViewAsync((await RowAsync(campaignId, ct))!, ct);
+    }
+
+    /// <summary>Writes a campaign and its members, audits the launch and sends the notices in batches.</summary>
+    private async Task<Guid> InsertAsync(PolicyRow policy, int number, ContentAudience? narrowed, DateTimeOffset deadline, Dictionary<string, string> text, int[] reminders,
+        int late, string[] excluded, CampaignCheck? check, Guid user, bool cycle, CancellationToken ct)
+    {
+        var id = policy.Id;
         var audience = narrowed ?? policy.AppliesTo;
-        var deadline = await EndOfAsync(day, ct);
         var targets = (await TargetsAsync(policy, narrowed, excluded, ct)).ToArray();
         var campaignId = Ids.New();
         var now = clock.UtcNow;
         await session.ExecAsync(
             """
             insert into policies.campaign (tenant_id, id, policy_id, version, audience, deadline, attestation_text, reminder_days, late_joiner_days,
-              excluded_membership_types, status, launched_by, launched_at, check_pass_percent, check_attempts, check_questions)
+              excluded_membership_types, status, launched_by, launched_at, check_pass_percent, check_attempts, check_questions, cycle)
             values (platform.current_tenant_id(), @campaignId, @id, @number, @audience, @deadline, @text, @reminders, @late, @excluded, 'open', @user, @now,
-              @pass, @attempts, @questions)
+              @pass, @attempts, @questions, @cycle)
             """,
             new
             {
                 campaignId, id, number, audience = new Jsonb(PolicyJson.Write(audience)), deadline, text = new Jsonb(PolicyJson.Write(text)), reminders, late, excluded, user, now,
-                pass = check?.PassPercent, attempts = check?.Attempts, questions = check?.Questions,
+                pass = check?.PassPercent, attempts = check?.Attempts, questions = check?.Questions, cycle,
             }, ct);
         await session.ExecAsync(
             """
@@ -243,13 +251,101 @@ public sealed class PolicyCampaigns(
             select platform.current_tenant_id(), @campaignId, u, @now, @deadline, 'open' from unnest(@targets) u
             """, new { campaignId, targets, now, deadline }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.PolicyCampaignLaunched, Securables.Policy, id.ToString(), TargetOrgUnitId: policy.OrgUnitId,
-            Changes: new { campaign = campaignId, version = number, audience = targets.Length, deadline, reminders, lateJoinerDays = late, excluded, check }), ct);
+            Changes: new { campaign = campaignId, version = number, audience = targets.Length, deadline, reminders, lateJoinerDays = late, excluded, check, cycle }), ct);
         // The notices go out in batches of their own, so the members commit at once however large the audience.
         foreach (var chunk in targets.Chunk(NoticeBatch))
         {
             await outbox.EnqueueAsync(new AttestationNoticeBatch(campaignId, AttestationDueTemplate, chunk, "launch"), ct);
         }
-        return await ViewAsync((await RowAsync(campaignId, ct))!, ct);
+        return campaignId;
+    }
+
+    public const int MaxCycleMonths = 60;
+
+    /// <summary>
+    /// Sets or clears the fixed re-attestation cycle of a policy (FR-008), for someone who runs its campaigns, with
+    /// <c>policy.campaigns</c>. The person who sets it is the one who launches each new campaign.
+    /// </summary>
+    public async Task<CycleView> SetCycleAsync(Guid id, CycleRequest request, CancellationToken ct)
+    {
+        await entitlements.DemandAsync(Capabilities.PolicyCampaigns, ct);
+        var user = context.RequireUser();
+        var policy = await RunsAsync(id, forUpdate: true, ct);
+        if (policy.Status == PolicyStatuses.Retired)
+        {
+            throw AppException.Conflict("conflict.policies.retired");
+        }
+        if (request.Months is < 1 or > MaxCycleMonths)
+        {
+            throw AppException.Validation("months", "validation.policies.cycle_months");
+        }
+        if (request.Months != policy.AttestationCycleMonths)
+        {
+            await session.ExecAsync(
+                "update policies.policy set attestation_cycle_months = @months::int, cycle_set_by = @by::uuid, updated_at = @now, row_version = row_version + 1 where id = @id",
+                new { id, months = request.Months, by = request.Months is null ? (Guid?)null : user, now = clock.UtcNow }, ct);
+            await audit.WriteAsync(new AuditEntry(AuditActions.PolicyChanged, Securables.Policy, id.ToString(), TargetOrgUnitId: policy.OrgUnitId,
+                Changes: new { before = new { cycleMonths = policy.AttestationCycleMonths }, after = new { cycleMonths = request.Months } }), ct);
+        }
+        return await CycleAsync(id, request.Months, ct);
+    }
+
+    private async Task<CycleView> CycleAsync(Guid id, int? months, CancellationToken ct)
+    {
+        var last = (await session.QuerySingleOrDefaultAsync("select max(launched_at) as last from policies.campaign where policy_id = @id", new { id },
+            r => new[] { r.Get<DateTimeOffset?>("last") }, ct))?[0];
+        return new CycleView(months, last, months is { } m && last is { } l ? l.AddMonths(m) : null);
+    }
+
+    /// <summary>
+    /// Launches the campaigns that fixed cycles ask for (FR-008): for each policy in force with a cycle, no open campaign
+    /// and a last campaign at least that many months old, a new campaign for the version in force with the last one's
+    /// audience, text, reminders, late joiner days, exclusions and check, and as long a time to attest. A policy that
+    /// never had a campaign waits for compliance to launch the first. Needs <c>policy.campaigns</c>.
+    /// </summary>
+    public async Task<int> RunCyclesAsync(DateTimeOffset now, int limit, CancellationToken ct)
+    {
+        if (!await entitlements.IsEnabledAsync(Capabilities.PolicyCampaigns, ct))
+        {
+            return 0;
+        }
+        var due = await session.QueryAsync(
+            $"""
+            select {PolicyRow.Columns} from policies.policy p
+            where p.attestation_cycle_months is not null and p.status <> 'retired' and p.current_version is not null
+              and not exists (select 1 from policies.campaign c where c.policy_id = p.id and c.status = 'open')
+              and (select max(c.launched_at) from policies.campaign c where c.policy_id = p.id) <= @now - make_interval(months => p.attestation_cycle_months)
+            order by p.id limit @limit
+            for update of p skip locked
+            """, new { now, limit }, PolicyRow.Read, ct);
+        var launched = 0;
+        foreach (var policy in due)
+        {
+            var number = policy.CurrentVersion!.Value;
+            if (await register.VersionByNumberAsync(policy.Id, number, ct) is not { } version
+                || await session.QuerySingleOrDefaultAsync($"select {CampaignRow.Columns} from policies.campaign where policy_id = @id order by launched_at desc, id limit 1",
+                    new { id = policy.Id }, CampaignRow.Read, ct) is not { } last)
+            {
+                continue;
+            }
+            var check = await session.QuerySingleOrDefaultAsync(
+                "select check_pass_percent, check_attempts, check_questions from policies.campaign where id = @id and check_pass_percent is not null",
+                new { id = last.Id }, r => new CampaignCheck(r.GetInt32(0), r.GetInt32(1), r.GetInt32(2)), ct);
+            if (check is not null && (await checks.SettingsAsync(version, new CheckSettings(check.PassPercent, check.Attempts, check.Questions), new ValidationErrors(), ct)) is null)
+            {
+                check = null;
+            }
+            var text = version.Locales.ToDictionary(l => l, l => last.Text.TryGetValue(l, out var t) && last.Version == number ? t : localizer.Get(DefaultTextKey, l),
+                StringComparer.Ordinal);
+            var days = Math.Max(1, (int)Math.Round((last.Deadline - last.LaunchedAt).TotalDays));
+            var zone = TimeZoneInfo.FindSystemTimeZoneById((await tenantSettings.GetLocaleSettingsAsync(ct)).TimeZone);
+            var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(now.UtcDateTime, zone));
+            var narrowed = PolicyJson.Write(last.Audience) == PolicyJson.Write(policy.AppliesTo) || last.Audience.IsEveryone ? null : last.Audience;
+            await InsertAsync(policy, number, narrowed, await EndOfAsync(today.AddDays(days), ct), text, last.ReminderDays, last.LateJoinerDays, last.Excluded,
+                check, policy.CycleSetBy!.Value, true, ct);
+            launched++;
+        }
+        return launched;
     }
 
     public async Task<IReadOnlyList<CampaignView>> ListAsync(Guid id, CancellationToken ct)

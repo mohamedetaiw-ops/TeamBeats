@@ -50,6 +50,7 @@ public sealed class PolicyMaintenanceWorker(IServiceScopeFactory scopes, IClock 
                 context.SetActor(ActorType.System, null);
                 await scope.ServiceProvider.GetRequiredService<PolicyApprovals>().RunDueAsync(now, 200, ct);
                 await scope.ServiceProvider.GetRequiredService<PolicyCampaigns>().RunDueAsync(now, 1000, ct);
+                await scope.ServiceProvider.GetRequiredService<PolicyCampaigns>().RunCyclesAsync(now, 50, ct);
                 await scope.ServiceProvider.GetRequiredService<PolicyReviews>().RunDueAsync(now, 200, ct);
                 await scope.ServiceProvider.GetRequiredService<PolicyExemptions>().RunDueAsync(now, 200, ct);
                 await scope.ServiceProvider.GetRequiredService<IDbSession>().CommitAsync(ct);
