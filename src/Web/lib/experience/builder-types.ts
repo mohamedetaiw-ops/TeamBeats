@@ -124,3 +124,42 @@ export type PickerItem = {
   placement: { minSpan: number; maxSpan: number; singleton: boolean; source?: string | null; view?: string } | null;
   labels: Record<string, string> | null;
 };
+
+/** One placement that differs between the release in force and a submission (spec 032 R2 T023). */
+export type PlacementChange = {
+  placementId: string;
+  componentRef: string;
+  change: "added" | "removed" | "moved" | "resized" | "changed";
+  fromRegion: string | null;
+  toRegion: string | null;
+};
+
+export type PageDiff = {
+  baseRelease: number | null;
+  fromTemplate: string | null;
+  toTemplate: string;
+  fromVariant: string | null;
+  toVariant: string;
+  changes: PlacementChange[];
+};
+
+export type PageSubmission = {
+  id: string;
+  pageId: string;
+  slug: string;
+  status: "pending" | "approved" | "returned" | "withdrawn";
+  revision: number;
+  submittedBy: string;
+  submittedAt: string;
+  reason: string | null;
+  decidedBy: string | null;
+  decidedAt: string | null;
+  comment: string | null;
+  release: number | null;
+  diff: PageDiff;
+  /** The caller may approve or return it. */
+  decide: boolean;
+};
+
+/** Whether a page goes live through approval, and its waiting and last decided submissions. */
+export type PageApprovalState = { required: boolean; pending: PageSubmission | null; last: PageSubmission | null };

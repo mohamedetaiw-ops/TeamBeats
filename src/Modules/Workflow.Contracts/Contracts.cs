@@ -17,6 +17,7 @@ public static class RouteSources
     public const string ExpenseRoute = "expense_route";
     public const string BookingRoute = "booking_route";
     public const string AgentRoute = "agent_route";
+    public const string PageRoute = "page_route";
 }
 
 /// <summary>Outcomes a user task can end with. Approve continues to the next step; reject and return end the instance.</summary>

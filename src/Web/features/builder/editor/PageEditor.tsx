@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import type { CatalogueTemplate, Finding, PageDefinition, PageView } from "@/lib/experience/builder-types";
+import type { CatalogueTemplate, Finding, PageApprovalState, PageDefinition, PageSubmission, PageView } from "@/lib/experience/builder-types";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { useDragHandle, type Drop, type DragTargets } from "@/lib/experience/drag";
@@ -62,12 +62,15 @@ export function PageEditor({
   tenantId,
   locales,
   catalogueItems,
+  approval = null,
 }: {
   page: PageView;
   template: CatalogueTemplate | undefined;
   tenantId: string;
   locales: string[];
   catalogueItems: model.PickerItem[];
+  /** Where an approval route covers the page (spec 032 R2 T023), it goes live through a submission instead. */
+  approval?: PageApprovalState | null;
 }) {
   const t = useTranslations("builder.editor");
   const tr = useTranslations("builder");
@@ -98,6 +101,7 @@ export function PageEditor({
   const [device, setDevice] = useState<"phone" | "tablet" | "desktop">("desktop");
   const [previewLocale, setPreviewLocale] = useState(locales.includes(uiLocale) ? uiLocale : (locales[0] ?? uiLocale));
   const [published, setPublished] = useState<number | null>(page.currentRelease);
+  const [pending, setPending] = useState<PageSubmission | null>(approval?.pending ?? null);
   const etag = useRef(restored?.etag ?? page.eTag);
   const focusAfter = useRef<string | null>(null);
   const cards = useRef(new Map<string, HTMLElement>());
@@ -252,6 +256,23 @@ export function PageEditor({
     setPublishing(true);
     try {
       if (dirty) await save(draft, etag.current);
+      if (approval?.required) {
+        const sent = await fetch(`/api/v1/experience/pages/${page.id}/submit`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ reason: reason.trim() || null }),
+        });
+        if (sent.ok) {
+          setPending((await sent.json()) as PageSubmission);
+          setReason("");
+          setAnnouncement(t("approval.submitted"));
+          return;
+        }
+        const problem = (await sent.json().catch(() => ({}))) as { findings?: Finding[] };
+        if (problem.findings) setFindings(problem.findings);
+        setAnnouncement(problem.findings ? t("publishBlocked") : t("approval.failed"));
+        return;
+      }
       const response = await fetch(`/api/v1/experience/pages/${page.id}/publish`, {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -269,6 +290,23 @@ export function PageEditor({
       setAnnouncement(t("publishBlocked"));
     } catch {
       setAnnouncement(t("publishFailed"));
+    } finally {
+      setPublishing(false);
+    }
+  }
+
+  async function withdraw() {
+    setPublishing(true);
+    try {
+      const response = await fetch(`/api/v1/experience/pages/${page.id}/withdraw`, { method: "POST" });
+      if (response.ok) {
+        setPending(null);
+        setAnnouncement(t("approval.withdrawn"));
+      } else {
+        setAnnouncement(t("approval.failed"));
+      }
+    } catch {
+      setAnnouncement(t("approval.failed"));
     } finally {
       setPublishing(false);
     }
@@ -556,13 +594,33 @@ export function PageEditor({
       <section className="builder-region builder-publish" aria-labelledby="builder-publish-title">
         <h2 id="builder-publish-title">{t("publishTitle")}</h2>
         <p>{published === null ? tr("pages.draftOnly") : tr("pages.published", { release: String(published) })}</p>
-        <div className="field">
-          <label htmlFor="builder-reason">{t("reason")}</label>
-          <input id="builder-reason" type="text" maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} />
-        </div>
-        <Button variant="primary" busy={publishing} busyLabel={t("publishing")} disabled={blocking > 0 || !!conflict} onClick={() => void publish()}>
-          {t("publish")}
-        </Button>
+        {approval?.required ? <p className="builder-template-description">{t("approval.required")}</p> : null}
+        {!pending && approval?.last?.status === "returned" ? (
+          <p className="notice" role="note" data-testid="builder-returned">
+            {t("approval.returned", { comment: approval.last.comment ?? "" })}
+          </p>
+        ) : null}
+        {pending ? (
+          <>
+            <p className="notice" role="status" data-testid="builder-pending">
+              {t("approval.pending")}{" "}
+              <a href={`/page-approvals/${page.id}`}>{t("approval.open")}</a>
+            </p>
+            <Button busy={publishing} busyLabel={t("publishing")} onClick={() => void withdraw()}>
+              {t("approval.withdraw")}
+            </Button>
+          </>
+        ) : (
+          <>
+            <div className="field">
+              <label htmlFor="builder-reason">{t("reason")}</label>
+              <input id="builder-reason" type="text" maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} />
+            </div>
+            <Button variant="primary" busy={publishing} busyLabel={t("publishing")} disabled={blocking > 0 || !!conflict} onClick={() => void publish()}>
+              {approval?.required ? t("approval.submit") : t("publish")}
+            </Button>
+          </>
+        )}
         {blocking > 0 ? <p className="builder-template-description">{t("fixFirst")}</p> : null}
       </section>
 

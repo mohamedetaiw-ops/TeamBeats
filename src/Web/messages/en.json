@@ -1253,7 +1253,8 @@
       "page": {
         "view": "View pages",
         "edit": "Edit pages",
-        "publish": "Publish pages"
+        "publish": "Publish pages",
+        "approve": "Approve pages"
       },
       "template": {
         "edit": "Edit templates",
@@ -2394,6 +2395,17 @@
         },
         "language": "Language and direction",
         "frame": "Preview on {device} in {language}"
+      },
+      "approval": {
+        "required": "This page goes live through approval. Submitting sends it to its approvers.",
+        "submit": "Submit for approval",
+        "submitted": "Sent for approval.",
+        "pending": "Waiting for approval.",
+        "open": "See the submission",
+        "withdraw": "Withdraw the submission",
+        "withdrawn": "Submission withdrawn.",
+        "returned": "Returned by the approver: {comment}",
+        "failed": "That did not work. Try again."
       }
     },
     "picker": {
@@ -2419,6 +2431,44 @@
         "image": "An uploaded image, written as asset: followed by its id.",
         "colorToken": "A brand color token, such as color.accent.base."
       }
+    },
+    "approval": {
+      "title": "Page approval",
+      "heading": "Approval of {page}",
+      "required": "An approval route covers this page.",
+      "notRequired": "No approval route covers this page now.",
+      "back": "Back to the page",
+      "noneTitle": "Nothing submitted",
+      "none": "This page has no submission yet.",
+      "offTitle": "Approval routes are not in your package",
+      "off": "Pages publish in one step.",
+      "status": "Status",
+      "statuses": {
+        "pending": "Waiting",
+        "approved": "Approved",
+        "returned": "Returned",
+        "withdrawn": "Withdrawn"
+      },
+      "submittedAt": "Submitted",
+      "reason": "Reason",
+      "comment": "Approver comment",
+      "release": "Release",
+      "changes": "What changes",
+      "firstRelease": "Compared with nothing: this is the first release.",
+      "against": "Compared with release {release}.",
+      "templateChanged": "The template changes too.",
+      "noChanges": "No placement changes.",
+      "change": {
+        "added": "Added",
+        "removed": "Removed",
+        "moved": "Moved",
+        "resized": "Resized",
+        "changed": "Changed"
+      },
+      "where": "in {region}",
+      "preview": "As it would go live",
+      "previewFrame": "Preview of the submitted page",
+      "decide": "Your decision"
     }
   },
   "templates": {
@@ -3585,7 +3635,8 @@
       "agentAccess": "Agent access request",
       "assetAccess": "Brand asset access",
       "policyReview": "Policy review",
-      "policyExemption": "Policy exemption"
+      "policyExemption": "Policy exemption",
+      "pageApproval": "Page approval"
     },
     "delegation": {
       "none": "No delegation set. Your approvals stay with you.",
