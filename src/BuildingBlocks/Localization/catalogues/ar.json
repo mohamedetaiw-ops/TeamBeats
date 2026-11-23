@@ -2787,5 +2787,6 @@
   "validation.page.fragment_out_of_scope": "هذا الجزء تابع لجزء آخر من المؤسسة ولا يمكن وضعه في هذه الصفحة.",
   "validation.page.fragment_id_too_long": "اختصر معرّف هذا الموضع حتى تتسع مكوّنات الجزء ضمن 40 حرفًا.",
   "builder.fragments.name": "جزء مشترك",
-  "builder.fragments.description": "مجموعة مشتركة من المكوّنات. تظهر تغييراتها في كل صفحة تضعها."
+  "builder.fragments.description": "مجموعة مشتركة من المكوّنات. تظهر تغييراتها في كل صفحة تضعها.",
+  "validation.template.document_format": "هذا ليس مستند قالب من TeamBeats، أو أنه من إصدار لا تستطيع المنصة قراءته."
 }

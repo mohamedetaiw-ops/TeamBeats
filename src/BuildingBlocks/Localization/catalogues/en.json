@@ -2787,5 +2787,6 @@
   "validation.page.fragment_out_of_scope": "This fragment belongs to another part of the organization and cannot be placed on this page.",
   "validation.page.fragment_id_too_long": "Shorten this placement's id so the fragment's components fit within 40 characters.",
   "builder.fragments.name": "Fragment",
-  "builder.fragments.description": "A shared set of components. Changes to it show on every page that places it."
+  "builder.fragments.description": "A shared set of components. Changes to it show on every page that places it.",
+  "validation.template.document_format": "This is not a TeamBeats template document, or it is from a version this platform cannot read."
 }

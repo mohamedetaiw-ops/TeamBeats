@@ -4133,6 +4133,50 @@
         }
       }
     },
+    "/api/v1/experience/templates/{id}/export": {
+      "get": {
+        "tags": [
+          "Experience: pages"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/experience/templates/import": {
+      "post": {
+        "tags": [
+          "Experience: pages"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplateImportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/experience/templates/{id}/draft": {
       "put": {
         "tags": [
@@ -44941,6 +44985,91 @@
           }
         }
       },
+      "TemplateDocument": {
+        "required": [
+          "format",
+          "formatVersion",
+          "id",
+          "basedOn",
+          "basedOnVersion",
+          "names",
+          "descriptions",
+          "variants",
+          "regions"
+        ],
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "formatVersion": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "id": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "basedOn": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "basedOnVersion": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "names": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "descriptions": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "variants": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "regions": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/TemplateRegion"
+            }
+          }
+        }
+      },
       "TemplateDraftRequest": {
         "required": [
           "names",
@@ -44985,6 +45114,31 @@
             "items": {
               "$ref": "#/components/schemas/TemplateRegion"
             }
+          }
+        }
+      },
+      "TemplateImportRequest": {
+        "required": [
+          "document",
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "document": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TemplateDocument"
+              }
+            ]
+          },
+          "id": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
