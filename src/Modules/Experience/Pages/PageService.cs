@@ -742,7 +742,8 @@ public sealed partial class PageService(
         return snapshot;
     }
 
-    private async Task<ReleaseView> InsertReleaseAsync(PageRow page, PageDefinition definition, string? reason, int? rollbackOf, CancellationToken ct)
+    private async Task<ReleaseView> InsertReleaseAsync(PageRow page, PageDefinition definition, string? reason, int? rollbackOf, CancellationToken ct,
+        Guid? publishedBy = null)
     {
         if (reason is { Length: > 500 })
         {
@@ -751,7 +752,8 @@ public sealed partial class PageService(
         // The page row lock serializes publishes, so release numbers never collide.
         var current = await session.ScalarAsync<int?>("select current_release from experience.page where id = @id for update", new { id = page.Id }, ct);
         var release = (current ?? 0) + 1;
-        var actor = context.RequireUser();
+        // A scheduled release goes live as the system, published by the person who scheduled it (R2 T025).
+        var actor = publishedBy ?? context.RequireUser();
         var now = clock.UtcNow;
         await session.ExecAsync(
             """
@@ -763,9 +765,11 @@ public sealed partial class PageService(
         return new ReleaseView(release, now, actor, reason, rollbackOf);
     }
 
-    private async Task<List<Finding>> ValidateAsync(PageRow page, PageDefinition definition, ValidationMode mode, CancellationToken ct)
+    /// <param name="system">At a scheduled go-live there is no editor: components are checked as for viewers (enablement and package), the
+    /// editor's permissions having been checked when the release was scheduled.</param>
+    private async Task<List<Finding>> ValidateAsync(PageRow page, PageDefinition definition, ValidationMode mode, CancellationToken ct, bool system = false)
     {
-        var availability = await AvailabilityAsync(page.OrgUnitId, ct);
+        var availability = await AvailabilityAsync(page.OrgUnitId, ct, viewer: system);
         var rules = (await audiences.RulesAsync(ct)).Keys.Select(k => k.ToString()).ToHashSet(StringComparer.Ordinal);
         var template = definition.Template is { } named && named.Id == page.TemplateId && named.Version == page.TemplateVersion ? await templates.FindAsync(named, ct) : null;
         var findings = PageValidator.Validate(definition, template, catalogue, registry, availability, mode, rules,

@@ -421,3 +421,23 @@
   align-items: center;
   overflow-wrap: anywhere;
 }
+
+/* Scheduled releases (spec 032 R2 T025): below the publish action, inside the same panel. */
+.builder-schedule {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin-block-start: var(--tb-space-md);
+  padding-block-start: var(--tb-space-md);
+  border-block-start: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.builder-schedule h3 {
+  margin: 0;
+  font-size: var(--tb-font-size-md);
+}
+
+.builder-schedule-errors {
+  margin: 0;
+  padding-inline-start: var(--tb-space-md);
+  color: var(--tb-color-state-danger);
+}

@@ -2762,5 +2762,11 @@
   "notifications.template.experience.page_approved.title": "Your page is live",
   "notifications.template.experience.page_approved.body": "{page} was approved and published.",
   "notifications.template.experience.page_returned.title": "Your page was returned",
-  "notifications.template.experience.page_returned.body": "{page} was returned: {comment}"
+  "notifications.template.experience.page_returned.body": "{page} was returned: {comment}",
+  "validation.page.schedule_time": "Choose a go-live time in the future.",
+  "validation.page.schedule_expiry": "The end time must come after the go-live time.",
+  "conflict.page.scheduled": "This page already has a scheduled release. Cancel it first.",
+  "conflict.page.not_scheduled": "This page has no scheduled release.",
+  "notifications.template.experience.page_schedule_failed.title": "A scheduled page did not go live",
+  "notifications.template.experience.page_schedule_failed.body": "{page} was not published at its time because of problems on the page. The release in force stays."
 }

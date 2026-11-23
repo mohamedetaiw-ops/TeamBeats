@@ -8,6 +8,7 @@ import { Icon } from "@/components/ui/Icon";
 import { useDragHandle, type Drop, type DragTargets } from "@/lib/experience/drag";
 import * as model from "./model";
 import { ImpactDialog } from "./ImpactDialog";
+import { ScheduleRelease } from "./ScheduleRelease";
 import { Picker } from "./Picker";
 import { PropertyForm } from "./PropertyForm";
 
@@ -641,6 +642,16 @@ export function PageEditor({
             <Button variant="primary" busy={publishing} busyLabel={t("publishing")} disabled={blocking > 0 || !!conflict} onClick={() => void review()}>
               {approval?.required ? t("approval.submit") : t("publish")}
             </Button>
+            {/* Under an approval route a page goes live through approval, so it is not scheduled here (R2 T025). */}
+            {approval?.required ? null : (
+              <ScheduleRelease
+                pageId={page.id}
+                disabled={blocking > 0 || !!conflict}
+                beforeSchedule={async () => {
+                  if (dirty) await save(draft, etag.current);
+                }}
+              />
+            )}
           </>
         )}
         {blocking > 0 ? <p className="builder-template-description">{t("fixFirst")}</p> : null}
