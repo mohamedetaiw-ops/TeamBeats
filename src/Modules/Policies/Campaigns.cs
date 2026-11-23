@@ -89,6 +89,8 @@ public sealed class PolicyCampaigns(
 
     public static string AttestLink(Guid policyId) => $"/policies/{policyId}?attest=1";
 
+    public static string CampaignsLink(Guid policyId) => $"/policies/{policyId}/campaigns";
+
     public static string CampaignLink(Guid policyId, Guid campaignId) => $"/policies/{policyId}/campaigns/{campaignId}";
 
     private async Task<DateTimeOffset> EndOfAsync(DateOnly day, CancellationToken ct)

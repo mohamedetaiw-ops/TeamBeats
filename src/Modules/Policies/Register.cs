@@ -35,17 +35,18 @@ internal sealed record PolicyRow(
     DateTimeOffset UpdatedAt,
     bool OnboardingRequired,
     Guid? CourseId,
-    bool TrainingFirst)
+    bool TrainingFirst,
+    int ReviewWindowDays)
 {
     public const string Columns =
         "id, code, names::text, category_id, owner_user_id, org_unit_id, audience::text, classification, binding_locale, route::text, review_months, related, status, " +
-        "current_version, effective_from, next_review_at, created_at, updated_at, onboarding_required, course_id, training_first";
+        "current_version, effective_from, next_review_at, created_at, updated_at, onboarding_required, course_id, training_first, review_window_days";
 
     public static PolicyRow Read(NpgsqlDataReader r) => new(r.GetGuid(0), r.GetString(1), PolicyJson.Read<Dictionary<string, string>>(r.GetString(2)),
         r.Get<Guid?>("category_id"), r.GetGuid(4), r.Get<Guid?>("org_unit_id"), PolicyJson.Read<ContentAudience>(r.GetString(6)), r.GetString(7),
         r.Get<string>("binding_locale"), PolicyJson.Read<List<RouteStepSetting>>(r.GetString(9)), r.GetInt32(10), r.GetFieldValue<Guid[]>(11), r.GetString(12),
         r.Get<int?>("current_version"), r.Get<DateTimeOffset?>("effective_from"), r.Get<DateTimeOffset?>("next_review_at"), r.GetFieldValue<DateTimeOffset>(16),
-        r.GetFieldValue<DateTimeOffset>(17), r.GetBoolean(18), r.Get<Guid?>("course_id"), r.GetBoolean(20));
+        r.GetFieldValue<DateTimeOffset>(17), r.GetBoolean(18), r.Get<Guid?>("course_id"), r.GetBoolean(20), r.GetInt32(21));
 
     public AuthzTarget Target => OrgUnitId is { } unit ? AuthzTarget.OrgUnit(unit) : AuthzTarget.Tenant;
 
@@ -317,6 +318,10 @@ public sealed class PolicyRegister(
         {
             errors.Add("reviewMonths", "validation.policies.review_months");
         }
+        if (request.ReviewWindowDays is { } window && window is < PolicyReviews.MinWindowDays or > PolicyReviews.MaxWindowDays)
+        {
+            errors.Add("reviewWindowDays", "validation.policies.review_window");
+        }
         if (request.CategoryId is { } category && await session.ScalarAsync<int>("select count(*)::int from policies.category where id = @category", new { category }, ct) == 0)
         {
             errors.Add("categoryId", "validation.policies.category");
@@ -387,9 +392,9 @@ public sealed class PolicyRegister(
         await session.ExecAsync(
             """
             insert into policies.policy (tenant_id, id, code, names, category_id, owner_user_id, org_unit_id, audience, classification, binding_locale, route,
-              review_months, related, status, created_by, created_at, updated_at, onboarding_required)
+              review_months, related, status, created_by, created_at, updated_at, onboarding_required, review_window_days)
             values (platform.current_tenant_id(), @id, @code, @names, @category, @owner, @unit, @audience, @classification, @binding, @route, @months, @related,
-              'draft', @user, @now, @now, @onboarding)
+              'draft', @user, @now, @now, @onboarding, @window)
             """,
             new
             {
@@ -397,6 +402,7 @@ public sealed class PolicyRegister(
                 audience = new Jsonb(PolicyJson.Write(request.Audience ?? ContentAudience.Everyone)), classification = request.Classification ?? "internal",
                 binding = request.BindingLocale, route = new Jsonb(PolicyJson.Write(request.Route ?? [])), months = request.ReviewMonths ?? 12,
                 related = (request.Related ?? []).Distinct().ToArray(), user, now, onboarding = request.OnboardingRequired ?? false,
+                window = request.ReviewWindowDays ?? PolicyReviews.DefaultWindowDays,
             }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.PolicyCreated, Securables.Policy, id.ToString(), TargetOrgUnitId: request.OrgUnitId,
             Changes: new { code = request.Code!.Trim(), names, owner, orgUnitId = request.OrgUnitId, request.Classification, request.BindingLocale, route = request.Route?.Count ?? 0,
@@ -434,7 +440,7 @@ public sealed class PolicyRegister(
             """
             update policies.policy set code = @code, names = @names, category_id = @category, owner_user_id = @owner, org_unit_id = @unit, audience = @audience,
               classification = @classification, binding_locale = @binding, route = @route, review_months = @months, related = @related, updated_at = @now,
-              onboarding_required = @onboarding, row_version = row_version + 1
+              onboarding_required = @onboarding, review_window_days = @window, row_version = row_version + 1
             where id = @id
             """,
             new
@@ -443,6 +449,7 @@ public sealed class PolicyRegister(
                 audience = new Jsonb(PolicyJson.Write(request.Audience ?? ContentAudience.Everyone)), classification = request.Classification ?? policy.Classification,
                 binding = request.BindingLocale, route = new Jsonb(PolicyJson.Write(request.Route ?? [])), months = request.ReviewMonths ?? policy.ReviewMonths,
                 related = (request.Related ?? []).Distinct().ToArray(), now = clock.UtcNow, onboarding = request.OnboardingRequired ?? policy.OnboardingRequired,
+                window = request.ReviewWindowDays ?? policy.ReviewWindowDays,
             }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.PolicyChanged, Securables.Policy, id.ToString(), TargetOrgUnitId: request.OrgUnitId,
             Changes: new
@@ -510,8 +517,14 @@ public sealed class PolicyRegister(
             new PolicyRights(manage, edit && policy.Status != PolicyStatuses.Retired, review, history, await FollowsPeopleAsync(ct), await AsksAsync(policy, ct),
                 history && policy.CurrentVersion is not null && await entitlements.IsEnabledAsync(Capabilities.AnalyticsCore, ct)),
             policy.CreatedAt, policy.UpdatedAt, policy.OnboardingRequired,
-            policy.CourseId is { } course ? new PolicyTraining(course, policy.TrainingFirst) : null);
+            policy.CourseId is { } course ? new PolicyTraining(course, policy.TrainingFirst) : null, policy.ReviewWindowDays,
+            manage || history ? PolicyReviews.StateOf(policy, await ReviewedAsync(policy, ct), clock.UtcNow) : null);
     }
+
+    /// <summary>Whether the review for the policy's current review date has an outcome (a revision may still be on its way).</summary>
+    internal async Task<bool> ReviewedAsync(PolicyRow policy, CancellationToken ct) =>
+        policy.NextReviewAt is { } due && await session.ScalarAsync<int>(
+            "select count(*)::int from policies.policy_review where policy_id = @id and due_at = @due and completed_at is not null", new { id = policy.Id, due }, ct) > 0;
 
     /// <summary>
     /// Links a published training course to the policy, or unlinks it (spec 028 US4 scenario 2): compliance officers who
@@ -570,15 +583,17 @@ public sealed class PolicyRegister(
         var coverage = await authz.CoverageAsync(Permissions.PolicyManage, ct);
         var rows = await session.QueryAsync(
             $"""
-            select {PolicyRow.Columns}, (select v.state from policies.policy_version v where v.policy_id = policy.id and v.state in ('draft', 'in_review')) as working
+            select {PolicyRow.Columns}, (select v.state from policies.policy_version v where v.policy_id = policy.id and v.state in ('draft', 'in_review')) as working,
+              exists (select 1 from policies.policy_review r where r.policy_id = policy.id and r.due_at = policy.next_review_at and r.completed_at is not null) as reviewed
             from policies.policy
             where (@category::uuid is null or category_id = @category) and (@status::text is null or status = @status)
               and (@q::text is null or code ilike '%' || @q || '%' or names::text ilike '%' || @q || '%')
             order by lower(code), id limit @limit
             """, new { category, status, q = string.IsNullOrWhiteSpace(q) ? null : q.Trim().Replace("%", "").Replace("_", ""), limit = ListMax },
-            r => (Row: PolicyRow.Read(r), Working: r.Get<string>("working")), ct);
+            r => (Row: PolicyRow.Read(r), Working: r.Get<string>("working"), Reviewed: r.GetBoolean(r.GetOrdinal("reviewed"))), ct);
         var list = new List<PolicyListItem>();
-        foreach (var (p, working) in rows)
+        var now = clock.UtcNow;
+        foreach (var (p, working, reviewed) in rows)
         {
             var manage = p.OrgUnitId is { } unit ? coverage.Covers(unit) : coverage.WholeTenant;
             var mine = p.Owner == user;
@@ -587,7 +602,7 @@ public sealed class PolicyRegister(
                 continue;
             }
             list.Add(new PolicyListItem(p.Id, p.Code, p.Names, p.CategoryId, await PersonAsync(p.Owner, ct), p.OrgUnitId, p.Classification, p.Status, p.CurrentVersion,
-                p.EffectiveFrom, p.NextReviewAt, manage || mine ? working : null));
+                p.EffectiveFrom, p.NextReviewAt, manage || mine ? working : null, manage || mine ? PolicyReviews.StateOf(p, reviewed, now) : null));
         }
         return list;
     }

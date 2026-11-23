@@ -5135,7 +5135,14 @@
       "reviewWas": "review was due {date}",
       "late": "Late",
       "allStatus": "{count, plural, other {All # policies are {status}}}",
-      "allOwner": "Owner: {owner}"
+      "allOwner": "Owner: {owner}",
+      "dueSoon": "{count, plural, one {# policy is due for review within 30 days} other {# policies are due for review within 30 days}}",
+      "reviewDue": "review due {date}",
+      "reviewState": {
+        "open": "Review open",
+        "due_soon": "Due soon",
+        "overdue": "Overdue for review"
+      }
     },
     "my": {
       "title": "My policies",
@@ -5205,7 +5212,9 @@
       "campaigns": "Attestation campaigns",
       "compliance": "Compliance",
       "scheduled": "Version {number} is approved and comes into force on {date}.",
-      "analytics": "Analytics"
+      "analytics": "Analytics",
+      "reviews": "Scheduled review",
+      "reviewsOverdue": "Scheduled review (overdue)"
     },
     "create": {
       "title": "New policy",
@@ -5228,7 +5237,9 @@
       "busy": "Creating",
       "failed": "The policy could not be created. Try again.",
       "onboarding": "Required at onboarding",
-      "onboardingHint": "New joiners are asked to accept it during their onboarding journey."
+      "onboardingHint": "New joiners are asked to accept it during their onboarding journey.",
+      "reviewWindow": "Review window (days)",
+      "reviewWindowHint": "The owner gets the review task this many days before the review date."
     },
     "editor": {
       "register": "Policies",
@@ -5408,6 +5419,64 @@
       "saving": "Saving…",
       "saved": "Linked training saved.",
       "failed": "The link could not be saved."
+    },
+    "reviews": {
+      "register": "Policy register",
+      "title": "Scheduled review",
+      "heading": "Scheduled review: {name}",
+      "description": "Review the policy on its cycle and record the outcome.",
+      "cycle": "Review cycle",
+      "every": "Review every",
+      "months": "{count, plural, one {# month} other {# months}}",
+      "window": "Review window",
+      "days": "{count, plural, one {# day} other {# days}}",
+      "next": "Next review",
+      "none": "None",
+      "state": {
+        "open": "Review open",
+        "due_soon": "Due soon",
+        "overdue": "Overdue for review"
+      },
+      "noOpen": "No review is open. The next one opens before {date}.",
+      "history": "Review history",
+      "historyEmpty": "No review has been recorded yet.",
+      "due": "Review date",
+      "outcome": "Outcome",
+      "reviewer": "Reviewer",
+      "completed": "Recorded",
+      "nextAfter": "Next review",
+      "system": "Recorded by a new version",
+      "outcomes": {
+        "no_change": "No change",
+        "minor_update": "Minor update",
+        "major_revision": "Major revision",
+        "retire": "Retire",
+        "revised": "New version in force"
+      },
+      "hints": {
+        "no_change": "The policy stays as it is. The next review date moves forward and nobody is asked to attest again.",
+        "minor_update": "Starts a draft from the version in force for small corrections. It goes through the approval route.",
+        "major_revision": "Starts a draft for a material change. It goes through the approval route, and once it is in force you decide on re-attestation.",
+        "retire": "Retires the policy. It leaves My policies and new campaigns; its versions stay on record.",
+        "retireAsk": "Asks the compliance officers to retire the policy."
+      },
+      "open": "Open review",
+      "dueOn": "Review of version {number} due {date}.",
+      "overdueSince": "Review of version {number} was due {date} and is overdue.",
+      "note": "Note (optional)",
+      "noteHint": "Say why, for the review history.",
+      "chooseFirst": "Choose an outcome first.",
+      "submit": "Record outcome",
+      "busy": "Recording",
+      "failed": "The outcome could not be recorded. Try again.",
+      "openDraft": "Open the draft",
+      "done": {
+        "no_change": "Recorded. The next review is on {date}.",
+        "minor_update": "Recorded. A draft is ready for your minor update.",
+        "major_revision": "Recorded. A draft is ready for your revision.",
+        "retire": "Recorded.",
+        "revised": "Recorded."
+      }
     }
   },
   "ai": {

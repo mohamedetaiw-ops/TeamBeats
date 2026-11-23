@@ -2619,5 +2619,17 @@
   "notifications.template.analytics.report_failed.body": "{name} could not be made. Check its filters and try again.",
   "validation.analytics.sentiment_package": "Sentiment is not in your package.",
   "validation.analytics.language": "Choose English or Arabic for the summary.",
-  "validation.analytics.locale": "Choose a language code such as en or ar."
+  "validation.analytics.locale": "Choose a language code such as en or ar.",
+  "conflict.policies.review_done": "This review already has an outcome.",
+  "notifications.template.policies.review_due.title": "A policy you own is due for review",
+  "notifications.template.policies.review_due.body": "Review the policy and record the outcome: no change, minor update, major revision or retire.",
+  "notifications.template.policies.review_overdue.title": "A policy review is overdue",
+  "notifications.template.policies.review_overdue.body": "The review date passed with no outcome. Open the review and record what happens next.",
+  "notifications.template.policies.review_retire.title": "A policy owner asked to retire their policy",
+  "notifications.template.policies.review_retire.body": "The owner chose retire in the scheduled review. Open the policy and retire it if you agree.",
+  "notifications.template.policies.review_reattest.title": "Your revised policy is in force",
+  "notifications.template.policies.review_reattest.body": "The major revision from the review is in force. Decide whether to launch a new attestation campaign.",
+  "validation.policies.review_window": "Set a review window between 1 and 365 days.",
+  "validation.policies.review_outcome": "Choose an outcome for the review.",
+  "validation.policies.review_note": "Keep the note to 2000 characters."
 }

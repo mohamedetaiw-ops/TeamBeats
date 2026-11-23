@@ -23,6 +23,7 @@ export function NewPolicyForm({ locales }: { locales: string[] }) {
   const [names, setNames] = useState<Record<string, string>>({});
   const [binding, setBinding] = useState("");
   const [reviewMonths, setReviewMonths] = useState("12");
+  const [reviewWindow, setReviewWindow] = useState("60");
   const [onboarding, setOnboarding] = useState(false);
   const [approver, setApprover] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -41,6 +42,7 @@ export function NewPolicyForm({ locales }: { locales: string[] }) {
           names: Object.fromEntries(Object.entries(names).filter(([, v]) => v.trim())),
           bindingLocale: binding || null,
           reviewMonths: Number(reviewMonths) || null,
+          reviewWindowDays: Number(reviewWindow) || null,
           onboardingRequired: onboarding,
           route: approver ? [{ approvers: [approver] }] : null,
         }),
@@ -91,6 +93,11 @@ export function NewPolicyForm({ locales }: { locales: string[] }) {
       <div className="field">
         <label htmlFor={`${ids}-review`}>{t("reviewMonths")}</label>
         <input id={`${ids}-review`} type="number" min={1} max={60} value={reviewMonths} onChange={(e) => setReviewMonths(e.target.value)} dir="ltr" />
+      </div>
+      <div className="field">
+        <label htmlFor={`${ids}-window`}>{t("reviewWindow")}</label>
+        <input id={`${ids}-window`} type="number" min={1} max={365} value={reviewWindow} onChange={(e) => setReviewWindow(e.target.value)} dir="ltr" aria-describedby={`${ids}-window-hint`} />
+        <p id={`${ids}-window-hint`} className="field-hint">{t("reviewWindowHint")}</p>
       </div>
       <Checkbox label={t("onboarding")} hint={t("onboardingHint")} name="policyOnboarding" checked={onboarding} onChange={(e) => setOnboarding(e.target.checked)} />
       <PersonPicker label={t("approver")} value={approver} onChange={setApprover} />

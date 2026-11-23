@@ -2619,5 +2619,17 @@
   "notifications.template.analytics.report_failed.body": "تعذر إعداد {name}. راجع عوامل التصفية وحاول مرة أخرى.",
   "validation.analytics.sentiment_package": "تحليل المشاعر غير مشمول في باقتك.",
   "validation.analytics.language": "اختر العربية أو الإنجليزية للملخص.",
-  "validation.analytics.locale": "اختر رمز لغة مثل en أو ar."
+  "validation.analytics.locale": "اختر رمز لغة مثل en أو ar.",
+  "conflict.policies.review_done": "سُجلت نتيجة هذه المراجعة من قبل.",
+  "notifications.template.policies.review_due.title": "حان موعد مراجعة سياسة تملكها",
+  "notifications.template.policies.review_due.body": "راجع السياسة وسجل النتيجة: بلا تغيير، أو تحديث بسيط، أو تعديل جوهري، أو إيقاف.",
+  "notifications.template.policies.review_overdue.title": "تأخرت مراجعة سياسة",
+  "notifications.template.policies.review_overdue.body": "مر موعد المراجعة دون نتيجة. افتح المراجعة وسجل الخطوة التالية.",
+  "notifications.template.policies.review_retire.title": "طلب مالك سياسة إيقاف سياسته",
+  "notifications.template.policies.review_retire.body": "اختار المالك الإيقاف في المراجعة الدورية. افتح السياسة وأوقفها إن وافقت.",
+  "notifications.template.policies.review_reattest.title": "أصبحت سياستك المعدلة سارية",
+  "notifications.template.policies.review_reattest.body": "أصبح التعديل الجوهري الناتج عن المراجعة ساريًا. قرر إن كنت ستبدأ حملة إقرار جديدة.",
+  "validation.policies.review_window": "حدد نافذة مراجعة بين يوم و365 يومًا.",
+  "validation.policies.review_outcome": "اختر نتيجة للمراجعة.",
+  "validation.policies.review_note": "اجعل الملاحظة في حدود 2000 حرف."
 }
