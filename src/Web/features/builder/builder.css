@@ -447,3 +447,79 @@
   max-inline-size: 24rem;
   margin-block-end: var(--tb-space-sm);
 }
+
+/* Pages area management screens (spec 032 R2 T032): approval routes, fragments, feature controls, upgrades, revisions. */
+.builder-manage {
+  display: grid;
+  gap: var(--tb-space-lg);
+  margin-block-start: var(--tb-space-md);
+}
+
+.builder-manage-form {
+  display: grid;
+  gap: var(--tb-space-sm);
+  max-inline-size: 48rem;
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+}
+
+.builder-manage-form h2,
+.builder-manage-form h3 {
+  margin: 0;
+  font-size: var(--tb-font-size-md);
+}
+
+.builder-manage-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: var(--tb-space-sm);
+  align-items: start;
+}
+
+.builder-manage-people {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.builder-manage-people legend {
+  margin-block-end: var(--tb-space-xs);
+  font-weight: var(--tb-font-weight-bold);
+}
+
+.builder-manage-list {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding-inline-start: var(--tb-space-md);
+  overflow-wrap: anywhere;
+}
+
+.builder-manage-people .builder-manage-list {
+  padding-inline-start: 0;
+  list-style: none;
+}
+
+.builder-manage-people .builder-manage-list > li,
+.builder-revision {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tb-space-sm);
+}
+
+.builder-manage-inline {
+  display: grid;
+  gap: var(--tb-space-xs);
+}
+
+.builder-revisions {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin-block-start: var(--tb-space-md);
+}

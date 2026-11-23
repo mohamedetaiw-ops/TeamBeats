@@ -6,6 +6,7 @@ import { getCatalogue, listTemplates } from "@/lib/experience/client";
 import { templateName } from "@/lib/experience/builder-types";
 import { StateView } from "@/components/ui/StateView";
 import { NewTemplateForm } from "@/features/templates/NewTemplateForm";
+import { ImportTemplate } from "@/features/templates/TemplateTransfer";
 import "@/features/builder/builder.css";
 import { AdminHeader } from "@/components/shell/AdminHeader";
 
@@ -64,6 +65,7 @@ export default async function TemplatesPage() {
         </div>
       )}
       <NewTemplateForm bases={platform.map((x) => ({ id: x.id, name: x.name, description: x.description }))} />
+      <ImportTemplate />
     </>
   );
 }

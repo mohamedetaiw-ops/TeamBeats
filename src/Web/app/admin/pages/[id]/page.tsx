@@ -7,6 +7,7 @@ import { pagePath, unitName } from "@/lib/experience/builder-types";
 import { LayoutPreview } from "@/features/builder/LayoutPreview";
 import { EditorMount } from "@/features/builder/editor/EditorMount";
 import { TemplateChange } from "@/features/builder/TemplateChange";
+import { DraftRevisions } from "@/features/builder/DraftRevisions";
 import "@/features/builder/builder.css";
 
 /**
@@ -81,6 +82,7 @@ export default async function BuilderPage({ params }: { params: Promise<{ id: st
         catalogueItems={items.data}
         approval={approval.ok ? approval.data : null}
       />
+      <DraftRevisions pageId={page.data.id} />
     </>
   );
 }

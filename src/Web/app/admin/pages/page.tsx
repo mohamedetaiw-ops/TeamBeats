@@ -8,6 +8,7 @@ import { StateView } from "@/components/ui/StateView";
 import { Badge } from "@/components/ui/Badge";
 import "@/features/builder/builder.css";
 import { AdminHeader } from "@/components/shell/AdminHeader";
+import { PagesNav } from "@/features/builder/manage/PagesNav";
 
 /**
  * Pages (spec 032 US1): the pages the editor may change, newest change first, with their template, scope and release.
@@ -44,6 +45,7 @@ export default async function PagesPage() {
           </Link>
         }
       />
+      <PagesNav current="pages" />
       {pages.data.length === 0 ? (
         <StateView kind="empty" title={t("pages.empty")} message={t("pages.emptyMessage")} />
       ) : (

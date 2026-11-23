@@ -6,7 +6,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/components/ui/FormField";
 import type { ProblemErrors } from "@/lib/brand/types";
-import { COMPONENT_CATEGORIES, PROTECTIONS, type RegionPolicy, type TenantTemplate } from "@/lib/experience/builder-types";
+import { COMPONENT_CATEGORIES, PROTECTIONS, type ImpactReport, type RegionPolicy, type TenantTemplate } from "@/lib/experience/builder-types";
+import { ImpactDialog } from "@/features/builder/editor/ImpactDialog";
 
 type Unit = { id: string; name: string; level: number };
 type Region = { id: string; policy: RegionPolicy };
@@ -34,6 +35,7 @@ export function TemplateDesigner({ template, baseVariants, units }: { template: 
   const [status, setStatus] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [impact, setImpact] = useState<ImpactReport | null>(null);
   const fieldError = (field: string) => errors[field]?.[0]?.message;
   const when = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" });
 
@@ -66,6 +68,20 @@ export function TemplateDesigner({ template, baseVariants, units }: { template: 
     } finally {
       setBusy(null);
     }
+  }
+
+  const doRelease = () => void send("release", "/release", "POST", null, t("releasedNow"));
+
+  /** Shows what the release reaches first when the plan includes impact reports (spec 032 R2 T024, FR-054). */
+  async function release() {
+    setBusy("release");
+    const response = await fetch(`/api/v1/experience/templates/${encodeURIComponent(template.id)}/impact`, { cache: "no-store" }).catch(() => null);
+    setBusy(null);
+    if (response?.ok) {
+      setImpact((await response.json()) as ImpactReport);
+      return;
+    }
+    doRelease();
   }
 
   const save = () =>
@@ -167,13 +183,25 @@ export function TemplateDesigner({ template, baseVariants, units }: { template: 
         <Button variant="primary" onClick={save} busy={busy === "save"} busyLabel={t("saving")}>
           {draft ? t("saveDraft") : t("saveNewVersion")}
         </Button>
-        <Button onClick={() => void send("release", "/release", "POST", null, t("releasedNow"))} busy={busy === "release"} busyLabel={t("releasing")} disabled={!draft}>
+        <Button onClick={() => void release()} busy={busy === "release"} busyLabel={t("releasing")} disabled={!draft}>
           {t("release")}
         </Button>
         <Button variant="destructive" onClick={() => void send("deprecate", "/deprecate", "POST", null, t("deprecatedNow"))} busy={busy === "deprecate"} busyLabel={t("deprecating")} disabled={!released}>
           {t("deprecate")}
         </Button>
       </div>
+      {impact ? (
+        <ImpactDialog
+          report={impact}
+          submit={false}
+          busy={busy === "release"}
+          onCancel={() => setImpact(null)}
+          onConfirm={() => {
+            setImpact(null);
+            doRelease();
+          }}
+        />
+      ) : null}
       <p role="status" className="builder-template-description">
         {status}
       </p>
