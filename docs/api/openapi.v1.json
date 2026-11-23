@@ -14157,6 +14157,39 @@
         }
       }
     },
+    "/api/v1/policies/{id}/onboarding": {
+      "put": {
+        "tags": [
+          "Policies"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OnboardingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/policies/{id}/training": {
       "put": {
         "tags": [
@@ -38547,6 +38580,20 @@
             "type": [
               "null",
               "string"
+            ]
+          }
+        }
+      },
+      "OnboardingRequest": {
+        "required": [
+          "required"
+        ],
+        "type": "object",
+        "properties": {
+          "required": {
+            "type": [
+              "null",
+              "boolean"
             ]
           }
         }

@@ -85,6 +85,13 @@ public static class PoliciesModule
             return Results.Ok(view);
         });
 
+        root.MapPut("/{id:guid}/onboarding", async (Guid id, OnboardingRequest request, PolicyRegister register, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await register.SetOnboardingAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
         root.MapPut("/{id:guid}/training", async (Guid id, TrainingRequest request, PolicyRegister register, Learning.Contracts.ILearningObligations training,
             IDbSession session, CancellationToken ct) =>
         {
