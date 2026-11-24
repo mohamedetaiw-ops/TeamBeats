@@ -148,7 +148,7 @@ public sealed class RunService(IDbSession session, ITenantContext context, EvalA
     {
         var user = context.RequireUser();
         var enabled = (await tenantSettings.GetLocaleSettingsAsync(ct)).EnabledLocales;
-        var languages = CaseRules.Locales.Where(enabled.Contains).ToList();
+        var languages = CaseRules.All.Where(enabled.Contains).ToList();
         var tenant = await settings.TenantRulesAsync(ct);
         var demoted = await calibration.DemotedAsync(ct);
         var persona = (await personas.DefaultAsync(personaUnit, ct)).Id;

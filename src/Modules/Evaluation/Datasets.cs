@@ -26,7 +26,8 @@ public sealed record CaseView(int N, string Input, string Locale, Guid? PersonaI
 
 public sealed record DatasetVersionView(int Number, int CaseCount, string Classification, IReadOnlyList<string> Locales, string Source, Guid CreatedBy, DateTimeOffset CreatedAt);
 
-public sealed record DatasetView(Guid Id, Guid? AgentId, Dictionary<string, string> Names, int Version, IReadOnlyList<DatasetVersionView> Versions, IReadOnlyList<CaseView> Cases, bool CanEdit, Guid? OrgUnitId = null);
+public sealed record DatasetView(Guid Id, Guid? AgentId, Dictionary<string, string> Names, int Version, IReadOnlyList<DatasetVersionView> Versions, IReadOnlyList<CaseView> Cases, bool CanEdit, Guid? OrgUnitId = null,
+    IReadOnlyList<string>? Locales = null);
 
 /// <summary>
 /// Golden datasets (US2, FR-005). A dataset belongs to an agent and its unit. Versions never change: every edit or
@@ -34,8 +35,11 @@ public sealed record DatasetView(Guid Id, Guid? AgentId, Dictionary<string, stri
 /// classification of its cases.
 /// </summary>
 public sealed class DatasetService(IDbSession session, ITenantContext context, EvalAccess access, IOrganizationHierarchy org, IEntitlementService entitlements,
-    IAuditWriter audit, IClock clock)
+    ITenantSettingsReader tenantSettings, IAuditWriter audit, IClock clock)
 {
+    /// <summary>The case locales offered to the tenant (US1 scenario 6).</summary>
+    private async Task<IReadOnlyList<string>> LocalesAsync(CancellationToken ct) => CaseRules.Offered((await tenantSettings.GetLocaleSettingsAsync(ct)).EnabledLocales);
+
     public const int MaxImportBytes = 2 * 1024 * 1024;
 
     internal static async Task<IReadOnlyList<DatasetSummary>> SummariesAsync(IDbSession session, Guid agentId, CancellationToken ct) =>
@@ -154,7 +158,7 @@ public sealed class DatasetService(IDbSession session, ITenantContext context, E
         {
             throw AppException.NotFound();
         }
-        return new DatasetView(id, d.Agent, d.Names, number, versions, await CasesAsync(id, number, ct), canEdit, d.Unit);
+        return new DatasetView(id, d.Agent, d.Names, number, versions, await CasesAsync(id, number, ct), canEdit, d.Unit, await LocalesAsync(ct));
     }
 
     internal async Task<IReadOnlyList<CaseView>> CasesAsync(Guid id, int version, CancellationToken ct) =>
@@ -180,9 +184,10 @@ public sealed class DatasetService(IDbSession session, ITenantContext context, E
         {
             errors.Add("cases", "validation.eval.cases_too_many");
         }
+        var locales = await LocalesAsync(ct);
         for (var i = 0; i < input.Count && i < CaseRules.MaxCases; i++)
         {
-            if (CaseRules.Check(input[i], $"cases[{i}]", errors) is { } c)
+            if (CaseRules.Check(input[i], $"cases[{i}]", errors, locales) is { } c)
             {
                 cases.Add(c);
             }
@@ -205,7 +210,7 @@ public sealed class DatasetService(IDbSession session, ITenantContext context, E
             throw AppException.NotFound();
         }
         var errors = new ValidationErrors();
-        var checkedCase = CaseRules.Check(input, "case", errors);
+        var checkedCase = CaseRules.Check(input, "case", errors, await LocalesAsync(ct));
         errors.ThrowIfAny();
         var cases = (await CasesAsync(id, d.Version, ct))
             .Select(c => new CaseInput(c.Input, c.Locale, c.PersonaId, c.Expect, [.. c.Tags], c.Severity, c.Classification))
@@ -287,10 +292,11 @@ public sealed class DatasetService(IDbSession session, ITenantContext context, E
         };
         var errors = new List<ImportError>(rows.Errors);
         var valid = new List<(int Row, CaseInput Case)>();
+        var locales = await LocalesAsync(ct);
         foreach (var (row, input) in rows.Rows)
         {
             var e = new ValidationErrors();
-            if (CaseRules.Check(input, "case", e) is { } c)
+            if (CaseRules.Check(input, "case", e, locales) is { } c)
             {
                 valid.Add((row, c));
             }

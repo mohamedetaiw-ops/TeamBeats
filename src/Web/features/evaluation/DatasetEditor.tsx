@@ -282,7 +282,7 @@ export function DatasetEditor({ initial, personas, latest }: { initial: DatasetV
             <div className="field">
               <label htmlFor={`${ids}-locale`}>{t("locale")}</label>
               <select id={`${ids}-locale`} value={draft.locale} onChange={(e) => field("locale", e.target.value)}>
-                {LOCALES.map((l) => (
+                {(view.locales ?? LOCALES).map((l) => (
                   <option key={l} value={l}>
                     {t(`locales.${l}`)}
                   </option>

@@ -183,7 +183,18 @@ export type CaseView = CaseInput & { n: number };
 
 export type DatasetVersion = { number: number; caseCount: number; classification: string; locales: string[]; source: string; createdBy: string; createdAt: string };
 
-export type DatasetView = { id: string; agentId: string; names: Localized; version: number; versions: DatasetVersion[]; cases: CaseView[]; canEdit: boolean };
+export type DatasetView = {
+  id: string;
+  agentId: string | null;
+  names: Localized;
+  version: number;
+  versions: DatasetVersion[];
+  cases: CaseView[];
+  canEdit: boolean;
+  orgUnitId?: string | null;
+  /** The case locales the server offers this tenant (spec 034 US1 scenario 6). */
+  locales?: string[];
+};
 
 export type ImportPreview = { importId: string; baseVersion: number; valid: number; errors: { row: number; field: string; key: string; message: string | null }[]; sample: CaseInput[] };
 
