@@ -39,6 +39,7 @@ public static class NotificationsModule
         services.AddScoped<EmailDelivery>();
         services.AddScoped<IExternalEmail, ExternalEmail>();
         services.AddScoped<SlackDelivery>();
+        services.AddScoped<TeamsDelivery>();
         // Push (spec 030 US2): subscriptions follow the session that made them.
         services.AddScoped<PushSubscriptions>();
         services.AddScoped<PushDelivery>();

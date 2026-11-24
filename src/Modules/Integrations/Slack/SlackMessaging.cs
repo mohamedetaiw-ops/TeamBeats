@@ -2,11 +2,8 @@ using System.Text.Json;
 using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Modules.Integrations.Contracts;
 using TeamBeats.Modules.Integrations.Runtime;
-using Microsoft.Extensions.Options;
-using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
-using TeamBeats.TenantContext;
 
 namespace TeamBeats.Modules.Integrations.Slack;
 
@@ -15,29 +12,10 @@ namespace TeamBeats.Modules.Integrations.Slack;
 /// recorded in run history and held by the connection's rate limit and circuit breaker. A tenant uses one Slack
 /// workspace: the oldest enabled Slack connection.
 /// </summary>
-public sealed class SlackMessaging(IDbSession session, IConnectorRuntime runtime, IEntitlementService entitlements, IClock clock, ITenantContext context,
-    IOptions<HostResolutionOptions> hosts, ITenantRegistry tenants)
+public sealed class SlackMessaging(IDbSession session, IConnectorRuntime runtime, IEntitlementService entitlements, IClock clock, TenantLinks links)
     : ISlackMessaging, IConnectionDependents
 {
-    /// <summary>The https address of a path on the tenant's own host; anything else is refused.</summary>
-    private async Task<string?> AbsoluteAsync(string? path, CancellationToken ct)
-    {
-        if (path is null)
-        {
-            return null;
-        }
-        if (!path.StartsWith('/') || path.StartsWith("//", StringComparison.Ordinal) || path.Contains('\\'))
-        {
-            throw new ArgumentException("Links must be paths on the tenant host.", nameof(path));
-        }
-        var h = hosts.Value;
-        if (h.Mode == InstallationMode.Dedicated)
-        {
-            return $"https://{h.BaseDomain}{path}";
-        }
-        var tenant = await tenants.FindByIdAsync(context.RequireTenant(), ct) ?? throw AppException.NotFound();
-        return $"https://{tenant.Key}.{h.BaseDomain}{path}";
-    }
+    private async Task<string?> AbsoluteAsync(string? path, CancellationToken ct) => path is null ? null : await links.AbsoluteAsync(path, ct);
 
     private async Task<Guid?> ConnectionAsync(CancellationToken ct)
     {

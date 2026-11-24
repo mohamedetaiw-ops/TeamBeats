@@ -2530,6 +2530,7 @@
   "integrations.permission.sites_selected": "قراءة مواقع SharePoint التي تسمح بها فقط، لإبقاء المكتبات المتصلة والبحث محدّثة",
   "integrations.permission.files_read_all": "السماح لكل موظف بتصفح ملفات SharePoint ومعاينتها وتنزيلها إذا كان يستطيع فتحها في SharePoint",
   "integrations.permission.files_read_write_all": "السماح لكل موظف برفع الملفات وإعادة تسمية العناصر في مكتبات SharePoint المتصلة حيث يسمح له SharePoint بذلك",
+  "integrations.permission.teams_activity_send": "إرسال الإشعارات إلى موجز النشاط في Teams لكل شخص، دون قراءة المحادثات أو القنوات",
   "integrations.test.site_missing": "أحد مواقع SharePoint المسموح بها لم يعد ممنوحًا للتطبيق",
   "conflict.documents.connected_library": "هذا غير متاح لمكتبة متصلة. يبقى المحتوى وإعداداته في SharePoint.",
   "validation.documents.connected_item": "اختر ملفًا أو مجلدًا من هذه المكتبة.",

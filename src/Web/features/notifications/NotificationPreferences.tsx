@@ -26,6 +26,7 @@ export function NotificationPreferences({ initial }: { initial: Preferences }) {
   const [result, setResult] = useState<{ ok: boolean; messages: string[] } | null>(null);
   const [linking, setLinking] = useState(false);
   const slack = prefs.slack.available;
+  const teams = prefs.teamsAvailable;
   const push = prefs.push.available && prefs.push.publicKey !== null;
   // What this browser allows is only known after hydration: "unknown" renders nothing until then.
   const [device, setDevice] = useState<"unknown" | "unsupported" | "blocked" | "off" | "on">("unknown");
@@ -93,7 +94,7 @@ export function NotificationPreferences({ initial }: { initial: Preferences }) {
     }
   }
 
-  function setCategory(category: string, change: { email?: boolean; digest?: boolean; slack?: boolean; push?: boolean }) {
+  function setCategory(category: string, change: { email?: boolean; digest?: boolean; slack?: boolean; push?: boolean; teams?: boolean }) {
     setPrefs((p) => ({ ...p, categories: p.categories.map((c) => (c.category === category ? { ...c, ...change } : c)) }));
   }
 
@@ -107,7 +108,14 @@ export function NotificationPreferences({ initial }: { initial: Preferences }) {
         body: JSON.stringify({
           categories: prefs.categories
             .filter((c) => !c.mandatory)
-            .map((c) => ({ category: c.category, email: c.email, digest: c.email && c.digest, ...(slack ? { slack: c.slack } : {}), ...(push ? { push: c.push } : {}) })),
+            .map((c) => ({
+              category: c.category,
+              email: c.email,
+              digest: c.email && c.digest,
+              ...(slack ? { slack: c.slack } : {}),
+              ...(push ? { push: c.push } : {}),
+              ...(teams ? { teams: c.teams } : {}),
+            })),
           quietHours: quiet ? { start, end } : null,
           digestTime: prefs.digestTime,
           timeZone: prefs.timeZone,
@@ -174,6 +182,7 @@ export function NotificationPreferences({ initial }: { initial: Preferences }) {
               <th scope="col">{t("digest")}</th>
               {slack ? <th scope="col">{t("slack")}</th> : null}
               {push ? <th scope="col">{t("push")}</th> : null}
+              {teams ? <th scope="col">{t("teams")}</th> : null}
             </tr>
           </thead>
           <tbody>
@@ -220,6 +229,17 @@ export function NotificationPreferences({ initial }: { initial: Preferences }) {
                       checked={c.push}
                       disabled={c.mandatory}
                       onChange={(e) => setCategory(c.category, { push: e.target.checked })}
+                    />
+                  </td>
+                ) : null}
+                {teams ? (
+                  <td>
+                    <input
+                      type="checkbox"
+                      aria-label={t("teamsFor", { category: tc(c.category) })}
+                      checked={c.teams}
+                      disabled={c.mandatory}
+                      onChange={(e) => setCategory(c.category, { teams: e.target.checked })}
                     />
                   </td>
                 ) : null}

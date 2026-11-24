@@ -1006,7 +1006,8 @@
         "ai_agents_department": "قوالب وكلاء الإدارات",
         "ai_agents_marketplace": "سوق الوكلاء",
         "ai_agents_advanced": "قوالب الوكلاء المتقدمة",
-        "ai_governance_security_center": "مركز أمان الوكلاء"
+        "ai_governance_security_center": "مركز أمان الوكلاء",
+        "notifications_teams": "الإشعارات في Microsoft Teams"
       },
       "searchLabel": "البحث في الإمكانات",
       "searchPlaceholder": "ابحث بالاسم",
@@ -3435,7 +3436,9 @@
       "pushTurnedOff": "لن يتلقى هذا الجهاز الإشعارات الفورية بعد الآن.",
       "pushDenied": "لم يسمح المتصفح بالإشعارات. يمكنك السماح بها من إعدادات الموقع في المتصفح.",
       "pushUnsupported": "لا يمكن لهذا الجهاز عرض الإشعارات الفورية. على iPhone وiPad أضف TeamBeats إلى الشاشة الرئيسية أولًا. سيصلك البريد الإلكتروني في هذه الأثناء.",
-      "pushBlocked": "الإشعارات محظورة لـ TeamBeats في هذا المتصفح. اسمح بها من إعدادات الموقع في المتصفح لتشغيل الإشعارات الفورية."
+      "pushBlocked": "الإشعارات محظورة لـ TeamBeats في هذا المتصفح. اسمح بها من إعدادات الموقع في المتصفح لتشغيل الإشعارات الفورية.",
+      "teams": "Teams",
+      "teamsFor": "Teams لفئة {category}"
     },
     "settings": {
       "title": "الإشعارات",
@@ -10471,7 +10474,8 @@
         "free_busy": "أوقات التوفر والانشغال",
         "office_editing": "التحرير في Office عبر المتصفح",
         "sharepoint_documents": "مستندات SharePoint",
-        "sharepoint_upload": "الرفع إلى SharePoint"
+        "sharepoint_upload": "الرفع إلى SharePoint",
+        "teams": "إشعارات Teams"
       },
       "featureOn": "مفعلة",
       "featureOff": "متوقفة",
@@ -10491,7 +10495,8 @@
         "files_read_write": "قراءة ملفات OneDrive الخاصة بالموظف وتغييرها، فقط للنسخة التي يحررها في المتصفح",
         "sites_selected": "قراءة مواقع SharePoint التي تسمح بها فقط، لإبقاء المكتبات المتصلة والبحث محدّثة",
         "files_read_all": "السماح لكل موظف بتصفح ملفات SharePoint ومعاينتها وتنزيلها إذا كان يستطيع فتحها في SharePoint",
-        "files_read_write_all": "السماح لكل موظف برفع الملفات وإعادة تسمية العناصر في مكتبات SharePoint المتصلة حيث يسمح له SharePoint بذلك"
+        "files_read_write_all": "السماح لكل موظف برفع الملفات وإعادة تسمية العناصر في مكتبات SharePoint المتصلة حيث يسمح له SharePoint بذلك",
+        "teams_activity_send": "إرسال الإشعارات إلى موجز النشاط في Teams لكل شخص، دون قراءة المحادثات أو القنوات"
       },
       "application": "تطبيق",
       "delegated": "نيابة عن الموظف",

@@ -2530,6 +2530,7 @@
   "integrations.permission.sites_selected": "Read the SharePoint sites you allow, and only those, to keep connected libraries and search in step",
   "integrations.permission.files_read_all": "Let each employee browse, preview and download SharePoint files they can already open in SharePoint",
   "integrations.permission.files_read_write_all": "Let each employee upload files and rename items in connected SharePoint libraries where SharePoint lets them",
+  "integrations.permission.teams_activity_send": "Send notifications to each person's Teams activity feed, without reading chats or channels",
   "integrations.test.site_missing": "An allowed SharePoint site is no longer granted to the application",
   "conflict.documents.connected_library": "This is not available for a connected library. The content and its settings stay in SharePoint.",
   "validation.documents.connected_item": "Choose a file or folder of this library.",

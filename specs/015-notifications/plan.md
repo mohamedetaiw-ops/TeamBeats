@@ -18,6 +18,15 @@ Grouping is applied when the in-app row is written: an existing row with the sam
 ## R2 channels
 `IChannelSender` per channel: email (R1), Teams (Microsoft 365 connection through `Integrations.Contracts`), web push (030 adapter), Slack and SMS (017 runtime), and a signage feed endpoint that reads published announcements through the 009 contract.
 
+### R2 build slices
+Push (spec 030) and Slack direct messages (spec 017) were built with those specs; signage screens exist per content site (spec 009 R2). The rest of R2 is built in these slices:
+
+1. **Teams activity notifications (T011).** A Microsoft 365 connection feature `teams` with the application permission `TeamsActivity.Send` only, behind capability `notifications.teams` (on in every package). `ITeamsMessaging` in Integrations.Contracts finds the person by the Entra object ID their account is linked under (directory sync or Entra sign-in), never by email, and posts to `users/{id}/teamwork/sendActivityNotification`. The link opens in the TeamBeats Teams app when the platform registers one (`Integrations:Microsoft365:TeamsAppId`), otherwise in the browser. A person turns Teams on per category; mandatory categories go to Teams whenever it is available. When Teams cannot reach the person (app not installed, no linked account, connection or feature off), the delivery is dropped with `teams_not_installed`, `teams_not_linked` or `teams_off` and the message goes by email (US5 scenario 3); technical failures retry for up to 2 hours like Slack.
+2. **Teams quick actions (T010, T011 rest).** Approve and reject from a Teams message, through a Teams bot that calls the spec 016 endpoints as the person, with step-up handed back to TeamBeats.
+3. **SMS for mandatory messages (T012 rest).** An SMS gateway connector for frontline staff without email or app, at most one SMS per message, metered by a usage limit.
+4. **Signage by location (T013).** Screens registered to a location, showing announcements marked for signage, with withdrawal and revocation inside 1 minute.
+5. **Delivery reports (T014).** Counts by channel for audience sends.
+
 ## Email outside the tenant's accounts
 `IExternalEmail` (spec 022 FR-016, pre-boarding) sends one email now to an address that is not an account: same templates and tenant relay, the tenant's default language, no inbox entry and no queue. The calling module keeps its own state and retries when the outcome is `retry`; a `bounced` address is not paused here because no account owns it.
 

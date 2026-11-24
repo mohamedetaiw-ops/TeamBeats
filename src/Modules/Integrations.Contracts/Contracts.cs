@@ -23,6 +23,9 @@ public static class Microsoft365Features
 
     /// <summary>Uploads, new versions and renames in connected SharePoint libraries as the person (spec 011 FR-029).</summary>
     public const string SharePointUpload = "sharepoint_upload";
+
+    /// <summary>Notifications in the Microsoft Teams activity feed (spec 015 US5).</summary>
+    public const string Teams = "teams";
 }
 
 /// <summary>Connection status (spec 006 FR-014).</summary>
@@ -776,6 +779,38 @@ public interface ISlackMessaging
     Task<IReadOnlyList<SlackChannel>> ChannelsAsync(CancellationToken ct = default);
 
     Task<SlackSendOutcome> ShareAsync(string channelId, string text, string link, string key, CancellationToken ct = default);
+}
+
+/// <summary>What happened to a Teams activity notification.</summary>
+public enum TeamsSendOutcome
+{
+    Sent,
+
+    /// <summary>Teams or Microsoft Graph did not answer, or throttled; retry later.</summary>
+    Transient,
+
+    /// <summary>The TeamBeats app is not installed for the person, or Microsoft 365 does not know them.</summary>
+    NotInstalled,
+
+    /// <summary>The person has no Microsoft 365 account linked by directory sync.</summary>
+    NotLinked,
+
+    /// <summary>No enabled Microsoft 365 connection with the Teams feature granted, or not in the package.</summary>
+    Unavailable,
+}
+
+/// <summary>
+/// Microsoft Teams for product modules (spec 015 US5, FR-019): activity feed notifications to people synced from the
+/// tenant's Microsoft 365 directory. The tenant comes from context and its enabled Microsoft 365 connection with the
+/// Teams feature granted is used. Links are paths on the tenant's own host; the notification opens them in the
+/// TeamBeats app inside Teams.
+/// </summary>
+public interface ITeamsMessaging
+{
+    /// <summary>True when the tenant can send Teams notifications at all.</summary>
+    Task<bool> AvailableAsync(CancellationToken ct = default);
+
+    Task<TeamsSendOutcome> SendActivityAsync(Guid userId, string title, string text, string link, CancellationToken ct = default);
 }
 
 /// <summary>Directions of a clock punch in the time and attendance contract.</summary>

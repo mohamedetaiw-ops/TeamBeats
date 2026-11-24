@@ -42791,6 +42791,12 @@
               "null",
               "boolean"
             ]
+          },
+          "teams": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },

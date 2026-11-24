@@ -19,7 +19,7 @@ export type NotificationPage = { items: NotificationItem[]; nextCursor: string |
 
 export type NotificationFilter = "all" | "unread" | "mandatory";
 
-export type CategoryPreference = { category: string; mandatory: boolean; email: boolean; digest: boolean; slack: boolean; push: boolean };
+export type CategoryPreference = { category: string; mandatory: boolean; email: boolean; digest: boolean; slack: boolean; push: boolean; teams: boolean };
 
 export type Preferences = {
   categories: CategoryPreference[];
@@ -31,6 +31,8 @@ export type Preferences = {
   slack: { available: boolean; linked: boolean };
   /** Web Push (spec 030 US2): available when the plan includes it and the installation has a VAPID key; devices counts this person's. */
   push: PushStatus;
+  /** Teams activity notifications (spec 015 US5): available when the organization turned on Teams in its Microsoft 365 connection. */
+  teamsAvailable: boolean;
 };
 
 export type RelaySettings = { host: string; port: number; username: string | null; secretReference: string | null; startTls: boolean };
