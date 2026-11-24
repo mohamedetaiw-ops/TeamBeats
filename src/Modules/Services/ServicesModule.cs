@@ -31,6 +31,7 @@ public static class ServicesModule
         services.AddScoped<Attachments>();
         services.AddScoped<IRequestFacts, RequestFactsReader>();
         services.AddScoped<Tasks>();
+        services.AddScoped<TeamBeats.Modules.Notifications.Contracts.INotificationActionHandler, TaskQuickActions>();
         services.AddScoped<RouteEnds>();
         services.AddScoped<Delegations>();
         services.AddScoped<Agents.Contracts.IAgentTool, RequestStatusTool>();

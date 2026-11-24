@@ -2913,5 +2913,15 @@
   "conflict.theme.extension_exists": "في هذا النطاق امتداد بهذا المفتاح بالفعل",
   "conflict.theme.extension_approved": "لا يمكن تغيير امتداد معتمد. احذفه واقترح امتدادا جديدا.",
   "conflict.theme.extension_reviewed": "تمت مراجعة هذا الامتداد بالفعل",
-  "authz.denied.extension_own_proposal": "يجب أن يراجع هذا الامتداد شخص غير الذي اقترحه"
+  "authz.denied.extension_own_proposal": "يجب أن يراجع هذا الامتداد شخص غير الذي اقترحه",
+  "notifications.teams.open": "فتح في TeamBeats",
+  "notifications.teams.reason": "السبب (مطلوب للرفض)",
+  "notifications.teams.quick.done": "تم تسجيل ردك في TeamBeats.",
+  "notifications.teams.quick.closed": "لم يعد هذا بانتظارك. ربما رد عليه شخص آخر أو تم سحبه.",
+  "notifications.teams.quick.denied": "لم يعد بإمكانك الرد على هذا. افتحه في TeamBeats لمعرفة السبب.",
+  "notifications.teams.quick.step_up": "تطلب مؤسستك إكمال هذا في TeamBeats. افتحه هناك للتأكيد.",
+  "notifications.teams.quick.reason_required": "اكتب السبب في المربع، ثم اضغط رفض مرة أخرى.",
+  "notifications.teams.quick.expired": "انتهت صلاحية هذا الزر أو سبق استخدامه. افتح TeamBeats لرؤية آخر حالة.",
+  "services.quick.approve": "موافقة",
+  "services.quick.reject": "رفض"
 }

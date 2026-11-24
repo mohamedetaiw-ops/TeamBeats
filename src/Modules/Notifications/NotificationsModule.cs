@@ -9,6 +9,7 @@ using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Localization;
 using TeamBeats.Messaging;
 using TeamBeats.Modules.Identity.Contracts;
+using TeamBeats.Modules.Integrations.Contracts;
 using TeamBeats.Modules.Notifications.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
@@ -43,6 +44,7 @@ public static class NotificationsModule
         services.AddScoped<IExternalEmail, ExternalEmail>();
         services.AddScoped<SlackDelivery>();
         services.AddScoped<TeamsDelivery>();
+        services.AddScoped<QuickActions>();
         services.AddScoped<SmsDelivery>();
         services.AddScoped<SignageScreens>();
         // Push (spec 030 US2): subscriptions follow the session that made them.
@@ -249,8 +251,55 @@ public static class NotificationsModule
             return Results.Ok(feed);
         }).RequireRateLimiting(SignageRateLimit).WithTags("Notifications: signage");
 
+        // The Teams bot (spec 015 FR-018): Bot Framework posts every activity to this one address on the platform host. A
+        // call counts only with a valid Bot Framework token; a quick action then names its tenant in its own token.
+        app.MapPost(TeamsBotPath, async (HttpRequest request, ITenantContext context, TenantContextAccessor accessor, ITeamsBot bot,
+            QuickActions actions, ITenantRegistry tenants, IDbSession session, CancellationToken ct) =>
+        {
+            if (context.Host.Kind != HostScopeKind.Platform)
+            {
+                throw AppException.NotFound();
+            }
+            string body;
+            using (var reader = new StreamReader(request.Body))
+            {
+                var buffer = new char[MaxBotBody + 1];
+                var read = await reader.ReadBlockAsync(buffer, ct);
+                if (read > MaxBotBody)
+                {
+                    return Results.StatusCode(StatusCodes.Status413PayloadTooLarge);
+                }
+                body = new string(buffer, 0, read);
+            }
+            var call = await bot.ReadAsync(request.Headers.Authorization.ToString() is { Length: > 0 } auth ? auth : null, body, ct);
+            if (!call.Authentic)
+            {
+                return Results.Unauthorized();
+            }
+            if (call.Action is not { } pressed)
+            {
+                return Results.Ok();
+            }
+            if (QuickActions.TenantOf(pressed.Token) is not { } tenantId || await tenants.FindByIdAsync(tenantId, ct) is not { Status: TenantLifecycleStatus.Active })
+            {
+                return Results.Ok();
+            }
+            accessor.SetTenant(tenantId);
+            accessor.SetActor(ActorType.System, null);
+            var reply = await bot.ReplyAsync(await actions.RunAsync(pressed, ct), ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(reply);
+        }).RequireRateLimiting(TeamsBotRateLimit).WithTags("Notifications: Teams bot");
+
         return app;
     }
+
+    public const string TeamsBotPath = "/api/v1/notifications/teams/bot";
+
+    /// <summary>The Teams bot endpoint: limit calls per client address.</summary>
+    public const string TeamsBotRateLimit = "notifications.teams_bot";
+
+    private const int MaxBotBody = 64 * 1024;
 
     /// <summary>
     /// Development, test and staging only (mapped by the development host): the captured mailbox, and a sample

@@ -226,6 +226,18 @@
         }
       }
     },
+    "/api/v1/notifications/teams/bot": {
+      "post": {
+        "tags": [
+          "Notifications: Teams bot"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/me/leave": {
       "get": {
         "tags": [
@@ -48935,6 +48947,9 @@
     },
     {
       "name": "Notifications: signage"
+    },
+    {
+      "name": "Notifications: Teams bot"
     },
     {
       "name": "Leave"

@@ -12,7 +12,7 @@ namespace TeamBeats.DevFakes;
 /// tokens with the signed-in user's mail, calendar, free/busy and the directory's rooms (spec 018). Used by tests and,
 /// loaded from a scenario file, by the development host and staging. All directories, people and numbers are fictional.
 /// </summary>
-public sealed class FakeMicrosoftGraph : HttpMessageHandler
+public sealed partial class FakeMicrosoftGraph : HttpMessageHandler
 {
     public const string ClientId = "0b1e2f3a-4c5d-4e6f-8a9b-0c1d2e3f4a5b";
     public const string ClientSecret = "fictional-platform-app-secret";
@@ -373,6 +373,10 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
             return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
         }
         var uri = request.RequestUri!;
+        if (await BotAsync(request, uri, cancellationToken) is { } bot)
+        {
+            return bot;
+        }
         if (uri.Host == "login.microsoftonline.com" && uri.AbsolutePath.EndsWith("/oauth2/v2.0/token", StringComparison.Ordinal))
         {
             var directory = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries)[0];
