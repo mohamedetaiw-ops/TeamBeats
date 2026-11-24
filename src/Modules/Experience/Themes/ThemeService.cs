@@ -359,7 +359,7 @@ public sealed partial class ThemeService(
         {
             var values = resolved.Variants[v.Key];
             return new ThemeVariant(v.Mode, v.Density,
-                $"/api/v1/experience/theme.css?scope={name}&mode={v.Mode}&density={v.Density}&v={Hash(ThemeEngine.Css(values))}", values);
+                $"/api/v1/experience/theme.css?scope={name}&mode={v.Mode}&density={v.Density}&v={Hash(ThemeEngine.Css(values, resolved.Extensions.GetValueOrDefault(v.Key)))}", values);
         }).ToList();
         var history = (await authz.CheckAsync(Permissions.ConfigHistoryView, unit is { } u ? AuthzTarget.OrgUnit(u) : AuthzTarget.Tenant, ct)).Allowed;
         return new EffectiveTheme(name, brand.Id, brand.Version, assets, variants, locks, history ? resolved.Provenance : null);
@@ -375,7 +375,7 @@ public sealed partial class ThemeService(
         }
         var unit = await ReadableScopeAsync(scope, ct);
         var (resolved, _, _, _) = await CachedAsync(unit, ct);
-        var css = ThemeEngine.Css(resolved.Variants[$"{m}.{d}"]);
+        var css = ThemeEngine.Css(resolved.Variants[$"{m}.{d}"], resolved.Extensions.GetValueOrDefault($"{m}.{d}"));
         return (css, Hash(css));
     }
 
@@ -395,6 +395,7 @@ public sealed partial class ThemeService(
         var (layers, brand) = await LayersAsync(unit, ct, null, null);
         var locks = await LocksForAsync(unit, ct);
         var resolved = ThemeEngine.Resolve(layers, locks.ToDictionary(l => l.Key, l => (l.Value.Depth, l.Value.Scope)));
+        resolved = resolved with { Extensions = await ExtensionPropertiesAsync(unit, resolved, ct) };
         foreach (var token in resolved.InvalidTokens)
         {
             InvalidTokens.Add(1, new KeyValuePair<string, object?>("token", token));
@@ -667,11 +668,12 @@ public sealed partial class ThemeService(
         Guid? unit = scope == TenantScope ? null : Guid.TryParse(scope, out var g) ? g : throw AppException.NotFound();
         if (unit is { } u)
         {
-            await entitlements.DemandAsync(Capabilities.ExperienceOrgBranding, ct);
+            // Another tenant's organization is not found, whatever this tenant's package allows.
             if (!await hierarchy.UnitExistsAsync(u, ct))
             {
                 throw AppException.NotFound();
             }
+            await entitlements.DemandAsync(Capabilities.ExperienceOrgBranding, ct);
         }
         var target = unit is { } id ? AuthzTarget.OrgUnit(id) : AuthzTarget.Tenant;
         if ((await authz.CheckAsync(permission, target, ct)).Allowed

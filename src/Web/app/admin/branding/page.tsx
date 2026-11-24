@@ -53,9 +53,14 @@ export default async function BrandingPage({ searchParams }: { searchParams: Pro
         section="branding"
         description={t("intro")}
         actions={
-          <ButtonLink href={`/admin/branding/preview?brand=${encodeURIComponent(brand.data.id)}`} variant="secondary" icon="eye">
-            {t("previewPage.open")}
-          </ButtonLink>
+          <>
+            <ButtonLink href={`/admin/branding/preview?brand=${encodeURIComponent(brand.data.id)}`} variant="secondary" icon="eye">
+              {t("previewPage.open")}
+            </ButtonLink>
+            <ButtonLink href={`/admin/branding/governance?brand=${encodeURIComponent(brand.data.id)}`} variant="secondary" icon="policy">
+              {t("governance.open")}
+            </ButtonLink>
+          </>
         }
       />
       <BrandManager

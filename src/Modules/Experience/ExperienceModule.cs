@@ -532,6 +532,60 @@ public static class ExperienceModule
             return Results.Ok(brand);
         });
 
+        // Drift report (spec 033 R2 T022, FR-015): what has drifted from the rules, with scope, token and remediation.
+        x.MapGet("/drift", async (ThemeService themes, CancellationToken ct) => Results.Ok(await themes.DriftAsync(ct)));
+
+        // Reviewed token extensions (spec 033 R2 T022, FR-013): proposed by a theme editor, approved by another publisher.
+        x.MapGet("/token-extensions", async (string? scope, ThemeService themes, IDbSession session, CancellationToken ct) =>
+        {
+            var list = await themes.ListExtensionsAsync(scope ?? ThemeService.TenantScope, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(list);
+        });
+
+        x.MapPost("/token-extensions", async (TokenExtensionRequest request, ThemeService themes, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await themes.ProposeExtensionAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/experience/token-extensions/{view.Id}", view);
+        });
+
+        x.MapPut("/token-extensions/{id:guid}", async (Guid id, TokenExtensionRequest request, ThemeService themes, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await themes.UpdateExtensionAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        x.MapPost("/token-extensions/{id:guid}/review", async (Guid id, TokenExtensionReview review, ThemeService themes, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await themes.ReviewExtensionAsync(id, review, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        x.MapDelete("/token-extensions/{id:guid}", async (Guid id, ThemeService themes, IDbSession session, CancellationToken ct) =>
+        {
+            await themes.RemoveExtensionAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        // Portable tokens (spec 033 R2 T022, FR-014): the brand's tokens as a DTCG 2025.10 token file, and back into the draft.
+        x.MapGet("/brands/{id:guid}/tokens", async (Guid id, ThemeService themes, HttpContext http, CancellationToken ct) =>
+        {
+            var file = await themes.ExportTokensAsync(id, ct);
+            http.Response.Headers.ContentDisposition = $"attachment; filename=\"brand-{id:N}.tokens.json\"";
+            return Results.Text(file.ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = true }), "application/design-tokens+json");
+        });
+
+        x.MapPut("/brands/{id:guid}/tokens", async (Guid id, System.Text.Json.Nodes.JsonNode? file, ThemeService themes, IDbSession session, CancellationToken ct) =>
+        {
+            var draft = await themes.ImportTokensAsync(id, file, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(draft);
+        });
+
         x.MapGet("/brands/{id:guid}/draft/impact", async (Guid id, string? scope, ThemeService themes, ImpactReports impacts, CancellationToken ct) =>
             Results.Ok(await themes.BrandImpactAsync(id, scope, impacts, ct)));
 

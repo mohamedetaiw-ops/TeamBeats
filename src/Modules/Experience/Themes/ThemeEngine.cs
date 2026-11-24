@@ -14,7 +14,12 @@ public sealed record TokenSource(string Layer, Guid? ScopeOrgUnitId, Guid? Brand
 public sealed record ResolvedTheme(
     IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> Variants,
     IReadOnlyDictionary<string, TokenSource> Provenance,
-    IReadOnlyList<string> InvalidTokens);
+    IReadOnlyList<string> InvalidTokens)
+{
+    /// <summary>The CSS properties of the reviewed token extensions that apply (spec 033 R2 T022, FR-013), per variant.</summary>
+    public IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> Extensions { get; init; } =
+        new Dictionary<string, IReadOnlyDictionary<string, string>>();
+}
 
 public sealed record ContrastFinding(string Code, string Severity, string Token, string Against, string Mode, double Ratio, double Required);
 
@@ -351,13 +356,18 @@ public static class ThemeEngine
         return properties;
     }
 
-    public static string Css(IReadOnlyDictionary<string, string> values)
+    public static string Css(IReadOnlyDictionary<string, string> values, IReadOnlyDictionary<string, string>? extensions = null)
     {
         var css = new StringBuilder(":root{");
         var properties = Properties(values);
         foreach (var token in TokenSchema.All)
         {
             css.Append(token.CssName).Append(':').Append(properties[token.CssName]).Append(';');
+        }
+        // Extension names are checked keys and values are typed token values, so nothing else can enter the sheet.
+        foreach (var (name, value) in extensions ?? new Dictionary<string, string>())
+        {
+            css.Append(name).Append(':').Append(value).Append(';');
         }
         css.Append("--tb-font-family-body:var(--tb-font-family-latin);--tb-font-family-heading:var(--tb-font-family-heading-latin);}");
         css.Append(":root:lang(ar){--tb-font-family-body:var(--tb-font-family-arabic);--tb-font-family-heading:var(--tb-font-family-heading-arabic);}");

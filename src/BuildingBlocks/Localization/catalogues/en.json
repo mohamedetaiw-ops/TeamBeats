@@ -2836,5 +2836,15 @@
   "notifications.template.tenancy.domain.stopped.title": "A custom domain stopped working",
   "notifications.template.tenancy.domain.stopped.body": "The DNS record that proves {host} belongs to this workspace is gone, so the domain is no longer served. People can still use the workspace's own address. Add the record again and verify the domain.",
   "notifications.template.tenancy.domain.certificate.title": "A custom domain certificate needs attention",
-  "notifications.template.tenancy.domain.certificate.body": "The certificate for {host} ends soon or could not be read. People can still use the workspace's own address. Check that the domain still points to TeamBeats."
+  "notifications.template.tenancy.domain.certificate.body": "The certificate for {host} ends soon or could not be read. People can still use the workspace's own address. Check that the domain still points to TeamBeats.",
+  "validation.theme.dtcg_invalid": "This is not a design token file. Export one from TeamBeats or another tool that writes the DTCG format.",
+  "validation.theme.dtcg_type_mismatch": "This token has a different type in TeamBeats",
+  "validation.theme.extension_key": "Use 2 to 32 lowercase letters, digits or underscores, starting with a letter",
+  "validation.theme.extension_type": "Choose a color, dimension, number, duration or shadow",
+  "validation.theme.extension_limit": "This scope already has 20 token extensions. Remove one first.",
+  "validation.theme.extension_description": "Keep the description to 200 characters or fewer",
+  "conflict.theme.extension_exists": "This scope already has an extension with that key",
+  "conflict.theme.extension_approved": "An approved extension cannot be changed. Remove it and propose a new one.",
+  "conflict.theme.extension_reviewed": "This extension was already reviewed",
+  "authz.denied.extension_own_proposal": "Someone other than the person who proposed it must review this extension"
 }
