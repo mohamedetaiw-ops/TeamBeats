@@ -81,7 +81,7 @@ public static class AnalyticsModule
 
         // The analytics workspace (spec 021 US2): dashboards and the metric query, scoped to the viewer's analytics coverage.
         analytics.MapGet("/workspace", async (Workspace workspace, CancellationToken ct) => Results.Ok(await workspace.GetAsync(ct)));
-        analytics.MapPost("/query", async (MetricQuery query, Workspace workspace, CancellationToken ct) => Results.Ok(await workspace.QueryAsync(query, ct)));
+        analytics.MapPost("/query", async (MetricQuery query, Workspace workspace, CancellationToken ct) => Results.Ok(await workspace.QueryAsync(query, ct))).WithMetadata(TeamBeats.Entitlements.Contracts.ReadOnlySafeMetadata.Instance);
 
         // Campaign analytics (spec 021 US2, T011): Content decides who may see a campaign; the package needs analytics.advanced.
         analytics.MapGet("/campaigns", async (CampaignAnalytics campaigns, CancellationToken ct) => Results.Ok(await campaigns.ListAsync(ct)));

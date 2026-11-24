@@ -1991,6 +1991,39 @@
         }
       }
     },
+    "/api/v1/platform/tenants/{tenantId}/contract": {
+      "put": {
+        "tags": [
+          "Platform: packages"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContractRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/platform/tenants/{tenantId}/addons": {
       "get": {
         "tags": [
@@ -35891,6 +35924,31 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "ContractRequest": {
+        "required": [
+          "endsAt",
+          "graceDays"
+        ],
+        "type": "object",
+        "properties": {
+          "endsAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "graceDays": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },

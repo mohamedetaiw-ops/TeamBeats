@@ -21,7 +21,7 @@ Depends on 001 Phase 1. R0 tasks first; R2 tasks in the last phase.
 ## Phase 4: R2
 - [x] T011 [US3] Usage counters, atomic quota check with tolerance max(1%, 10), exhaustion notification once per period; deny, grace and warn enforcement; AI Gateway decided through it
 - [x] T012 [US4] Add-ons, overrides with expiry, precedence resolution; platform routes, audit, `EntitlementsChanged`
-- [ ] T013 [US4] Expiry: 30-day grace, then read-only flag
+- [x] T013 [US4] Expiry: 30-day grace, then read-only flag; contract route, state in the plan view, write refusal with `entitlement.expired`
 - [x] T014 Plan and usage admin page
 
 ## Final phase

@@ -213,6 +213,26 @@ public interface IEntitlementService
     /// the plan page; nothing is consumed.
     /// </summary>
     Task<QuotaDecision> CheckUsageAsync(string capabilityKey, long used, long amount = 1, CancellationToken ct = default);
+
+    /// <summary>The subscription's contract state (spec 005 US4 scenario 3): active, in grace after the contract end, or read only after grace.</summary>
+    Task<SubscriptionState> StateAsync(CancellationToken ct = default);
+}
+
+public sealed record SubscriptionState(string State, DateTimeOffset? ContractEndsAt, DateTimeOffset? GraceEndsAt)
+{
+    public const string Active = "active";
+    public const string Grace = "grace";
+    public const string ReadOnly = "read_only";
+
+    public static SubscriptionState For(DateTimeOffset? contractEndsAt, int graceDays, DateTimeOffset now)
+    {
+        if (contractEndsAt is not { } ends)
+        {
+            return new(Active, null, null);
+        }
+        var graceEnds = ends.AddDays(graceDays);
+        return new(now < ends ? Active : now < graceEnds ? Grace : ReadOnly, ends, graceEnds);
+    }
 }
 
 /// <summary>
