@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import { useTranslations } from "next-intl";
+import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/components/ui/FormField";
 import { problemMessages } from "@/lib/notifications/types";
@@ -165,6 +166,11 @@ export function PolicyEditor({ initial, etag }: { initial: SecurityPolicy; etag:
 
       <section className="security-section" aria-labelledby="security-mfa-title">
         <h2 id="security-mfa-title">{t("mfa.title")}</h2>
+        {policy.mfaClaimsUnavailable ? (
+          <Alert tone="warning" title={t("mfa.noClaimsTitle")}>
+            <p>{t.has(`mfa.noClaims.${policy.mfaProvider}`) ? t(`mfa.noClaims.${policy.mfaProvider}`) : t("mfa.noClaims.other")}</p>
+          </Alert>
+        ) : null}
         <div className="field">
           <label htmlFor={mfaId}>
             <input

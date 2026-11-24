@@ -6,6 +6,8 @@ export type SecurityPolicy = {
   networkZones: Record<string, string[]>;
   requireMfa: boolean;
   mfaClaimSeen: boolean;
+  mfaProvider: string;
+  mfaClaimsUnavailable: boolean;
   stepUpMinutes: number;
   idleMinutes: number;
   absoluteHours: number;

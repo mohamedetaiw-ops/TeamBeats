@@ -45,13 +45,13 @@ Depends on 001 Phase 1 and ADR-0007. R0 tasks first, R1 tasks marked.
 - [x] T026 [US6] Directory admin page (connections, scope, attribute and group mapping, last runs, sync now)
 
 ## Phase 7: R2 (not in R0/R1)
-- [ ] T018 Google OIDC, SAML 2.0, SCIM extension point (IAM-005, IAM-006, IAM-010); split into T033 to T036
+- [x] T018 Google OIDC, SAML 2.0, SCIM extension point (IAM-005, IAM-006, IAM-010); split into T033 to T036
 - [x] T027 [US5] AD FS sign-in (OIDC and SAML) linked on `objectGUID`; missing claim refused with admin detail; works with no internet access on on-premises installs; OIDC in T033, SAML in T034
 - [x] T028 [US6] On-premises AD DS sync over LDAPS through the connector framework and outbound sync agent; plain LDAP refused (spec 017 T015, PR #154)
 - [x] T033 [US4] [US5] Google and AD FS sign-in over OIDC: provider kinds, hosted domains and `hd` check for Google, `objectGUID` linked under the AD DS connection for AD FS, last refused reason kept for the admin, admin page kind choice, sign-in button by kind; tests
 - [x] T034 [US4] [US5] SAML 2.0 sign-in (SP-initiated, HTTP-POST, signed response or assertion, audience, recipient, `InResponseTo`, replay) for generic (Google Workspace included as a custom SAML app) and AD FS relying parties; SP metadata; admin page; tests including signature wrapping
 - [x] T035 SCIM 2.0 provisioning extension point: `IProvisioningTarget` contract (find, create, update, deactivate and reactivate user, group membership) behind the directory sync use cases, `identity.scim` capability for the later endpoint, no endpoint (FR-008); tests including the tenant boundary
-- [ ] T036 Security page note on providers that send no MFA claims (Google) and MFA mapping per provider kind
+- [x] T036 Security page note on providers that send no MFA claims (Google) and MFA mapping per provider kind
 
 ## Final phase
 - [ ] T019 Audit events for sign-in outcomes, config changes, directory connection changes and directory sync outcomes; OpenAPI; spec evidence
