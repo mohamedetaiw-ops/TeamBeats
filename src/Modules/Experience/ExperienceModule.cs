@@ -56,6 +56,7 @@ public static class ExperienceModule
         services.AddScoped<AppManifest>();
         services.AddScoped<Sharing.OrgSharing>();
         services.AddScoped<Delegation.Delegations>();
+        services.AddScoped<Starter.Starters>();
         services.AddSingleton<Offline.OfflineKeySource>();
         services.AddScoped<Offline.OfflineBundles>();
         services.AddScoped<ShellService>();
@@ -386,7 +387,32 @@ public static class ExperienceModule
         MapPersonalizationEndpoints(app);
         MapSharingEndpoints(app);
         MapDelegationEndpoints(app);
+        MapStarterEndpoints(app);
         return app;
+    }
+
+    /// <summary>The starter wizard for a new organization (spec 033 R2 T020, FR-027): everything it makes stays a draft until published.</summary>
+    private static void MapStarterEndpoints(IEndpointRouteBuilder app)
+    {
+        var x = app.MapGroup("/api/v1/experience/starters").RequireTenantUser().WithTags("Experience: starter wizard");
+        x.MapPost("", async (Starter.StarterRequest request, Starter.Starters starters, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await starters.CreateAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/experience/starters/{view.Id}", view);
+        });
+        x.MapGet("/for/{unit:guid}", async (Guid unit, Starter.Starters starters, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await starters.ForUnitAsync(unit, ct);
+            await session.CommitAsync(ct);
+            return view is null ? Results.NoContent() : Results.Ok(view);
+        });
+        x.MapPost("/{id:guid}/publish", async (Guid id, Starter.Starters starters, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await starters.PublishAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
     }
 
     /// <summary>Delegated experience administration per organization (spec 033 R2 T019, FR-020).</summary>

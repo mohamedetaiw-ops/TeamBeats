@@ -7095,6 +7095,74 @@
         }
       }
     },
+    "/api/v1/experience/starters": {
+      "post": {
+        "tags": [
+          "Experience: starter wizard"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StarterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/experience/starters/for/{unit}": {
+      "get": {
+        "tags": [
+          "Experience: starter wizard"
+        ],
+        "parameters": [
+          {
+            "name": "unit",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/experience/starters/{id}/publish": {
+      "post": {
+        "tags": [
+          "Experience: starter wizard"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/me/notifications": {
       "get": {
         "tags": [
@@ -44832,6 +44900,96 @@
           }
         }
       },
+      "StarterPageRequest": {
+        "required": [
+          "templateId",
+          "slug",
+          "title"
+        ],
+        "type": "object",
+        "properties": {
+          "templateId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "slug": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "StarterRequest": {
+        "required": [
+          "orgUnitId",
+          "fromBrandId",
+          "design",
+          "navigation",
+          "language",
+          "pages",
+          "adminUserId"
+        ],
+        "type": "object",
+        "properties": {
+          "orgUnitId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "fromBrandId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "design": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "navigation": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "language": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "pages": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/StarterPageRequest"
+            }
+          },
+          "adminUserId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
       "StartProcessRequest": {
         "required": [
           "businessKey",
@@ -47026,6 +47184,9 @@
     },
     {
       "name": "Experience: delegation"
+    },
+    {
+      "name": "Experience: starter wizard"
     },
     {
       "name": "Notifications: my notifications"

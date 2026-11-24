@@ -73,6 +73,7 @@ export const routes: readonly Route[] = [
   { path: "/admin/organization", tier: "other" },
   { path: "/admin/organization/directory", tier: "other" },
   { path: "/admin/organization/delegates", tier: "other" },
+  { path: "/admin/organization/starter", tier: "other" },
   { path: "/admin/pages", tier: "other" },
   { path: "/admin/pages/[id]", tier: "detail" },
   { path: "/admin/pages/controls", tier: "other" },

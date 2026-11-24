@@ -2821,5 +2821,11 @@
   "validation.experience.share_own_line": "هذه المؤسسة تراه بالفعل لأنها في فرع المالك",
   "validation.experience.delegation_area": "اختر الصفحات أو الهوية أو التنقل",
   "validation.experience.delegation_user": "اختر شخصًا نشطًا في هذه المؤسسة ليس ضيفًا",
-  "validation.experience.delegation_self": "لا يمكنك التفويض لنفسك"
+  "validation.experience.delegation_self": "لا يمكنك التفويض لنفسك",
+  "validation.experience.starter_language": "اختر إحدى لغات مساحة العمل",
+  "validation.experience.starter_design": "اختر أحد التصميمات",
+  "validation.experience.starter_navigation": "اختر أحد أنماط التنقل",
+  "validation.experience.starter_pages": "اختر من صفحة واحدة إلى ثماني صفحات بداية",
+  "conflict.experience.starter_exists": "لهذه المنظمة بداية بالفعل. عدّل ما أنشأته بدلا من ذلك.",
+  "conflict.experience.starter_published": "هذه البداية منشورة بالفعل"
 }

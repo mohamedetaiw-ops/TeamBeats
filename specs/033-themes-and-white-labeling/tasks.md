@@ -39,7 +39,7 @@ R2 covers User Stories 2, 6, 7 and 8, US3 scenario 3 and US4 delegation and shar
 - [x] T017 High contrast mode: a platform high contrast token set used when the brand defines none, chosen by the person or by `prefers-contrast: more` and forced colors; every design (Beats, Atlas, Pulse, Studio) passes contrast checks in it
 - [x] T018 [US3 scenario 3] Locale-specific branding: logo lockup and title per locale, switched with the locale
 - [x] T019 [US4 scenarios 3 to 5] Delegated brand editing for one organization and sharing policies for pages and navigation groups, with owner labels and no merged permissions
-- [ ] T020 [US6] Starter wizard for a new organization: brand preset, shell, navigation pattern, language and starter pages from templates, created as drafts owned by the new organization's admin
+- [x] T020 [US6] Starter wizard for a new organization: brand preset, shell, navigation pattern, language and starter pages from templates, created as drafts owned by the new organization's admin
 - [ ] T021 [US7] Custom domains (FR-010): DNS verification, managed certificates, per-domain app title, browser metadata and sign-in presentation; an unverified domain is never served
 - [ ] T022 [US8] Drift report and portable tokens: non-compliant asset usage, conflicting overrides and inaccessible elements with remediation; DTCG 2025.10 export and import keeping aliases and modes; reviewed token extensions within scope, never free CSS
 - [ ] T023 OpenAPI, R2 implementation notes, e2e with axe in `ar` and `en`, spec evidence

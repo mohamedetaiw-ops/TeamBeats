@@ -158,6 +158,8 @@ public static class AuditActions
     public const string BrandAssetUploaded = "brand.asset_uploaded";
     public const string ExperienceShareChanged = "experience.share_changed";
     public const string ExperienceDelegationChanged = "experience.delegation_changed";
+    public const string ExperienceStarterCreated = "experience.starter_created";
+    public const string ExperienceStarterPublished = "experience.starter_published";
 
     // 008
     public const string ShellPublished = "shell.published";
