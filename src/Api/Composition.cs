@@ -222,7 +222,7 @@ public static class ApiComposition
                 "screens:" + (http.Connection.RemoteIpAddress?.ToString() ?? "anonymous"),
                 _ => new FixedWindowRateLimiterOptions { PermitLimit = 120, Window = TimeSpan.FromMinutes(1) }));
             // The Teams bot (spec 015 FR-018) is one address for every tenant: Bot Framework calls it, so the limit is generous.
-            o.AddPolicy(TeamBeats.Modules.Notifications.NotificationsModule.TeamsBotRateLimit, http => RateLimitPartition.GetFixedWindowLimiter(
+            o.AddPolicy(TeamBeats.Modules.Integrations.Microsoft365.TeamsBotEndpoint.RateLimit, http => RateLimitPartition.GetFixedWindowLimiter(
                 "teamsbot:" + (http.Connection.RemoteIpAddress?.ToString() ?? "anonymous"),
                 _ => new FixedWindowRateLimiterOptions { PermitLimit = 600, Window = TimeSpan.FromMinutes(1) }));
             // People search is a scraping path (spec 010 FR-017): limit per user.

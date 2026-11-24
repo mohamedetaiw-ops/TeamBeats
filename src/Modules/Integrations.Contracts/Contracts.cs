@@ -825,6 +825,12 @@ public interface ITeamsMessaging
     /// Microsoft 365 connection with Teams granted, and the person is linked under that Entra object ID.
     /// </summary>
     Task<bool> IsPersonAsync(Guid userId, string entraTenantId, string aadObjectId, CancellationToken ct = default);
+
+    /// <summary>
+    /// A card in the chat a message came from (spec 014 US8), for the person it came from. Sent only while the tenant can
+    /// still reach the person in Teams.
+    /// </summary>
+    Task<TeamsSendOutcome> ReplyAsync(Guid userId, TeamsConversation conversation, TeamsCard card, CancellationToken ct = default);
 }
 
 /// <summary>A button of a Teams card: its verb, its label in the person's language and the opaque token it sends back.</summary>
@@ -834,7 +840,37 @@ public sealed record TeamsCardAction(string Verb, string Label, string Token, bo
 /// A Teams bot card: title, text and the TeamBeats link, the quick actions, and the label of the reason field shown
 /// when an action needs one. Texts are already in the person's language.
 /// </summary>
-public sealed record TeamsCard(string Title, string Text, string Link, string OpenLabel, IReadOnlyList<TeamsCardAction> Actions, string? ReasonLabel, bool Rtl = false);
+public sealed record TeamsCard(string Title, string Text, string Link, string OpenLabel, IReadOnlyList<TeamsCardAction> Actions, string? ReasonLabel, bool Rtl = false,
+    IReadOnlyList<TeamsCardLink>? Links = null);
+
+/// <summary>A further link on a card, such as a source an answer cites: its label and a path on the tenant host.</summary>
+public sealed record TeamsCardLink(string Label, string Link);
+
+/// <summary>
+/// The chat a message came from, as Bot Framework named it in a call whose token was checked: the reply goes back there.
+/// </summary>
+public sealed record TeamsConversation(string ServiceUrl, string ConversationId);
+
+/// <summary>A chat message to the bot, after the Bot Framework token was checked.</summary>
+public sealed record TeamsBotMessage(string EntraTenantId, string AadObjectId, string Text, string? Locale, TeamsConversation Conversation);
+
+/// <summary>
+/// A person wrote to the TeamBeats bot in Teams (spec 014 US8): the tenant and person were found from their Teams
+/// account, and the chat to answer in is named. The assistant answers it as that person.
+/// </summary>
+public sealed record TeamsChatReceived(Guid UserId, string Text, string Locale, string ServiceUrl, string ConversationId) : IIntegrationEvent;
+
+/// <summary>
+/// Quick action buttons on Teams cards (spec 015 FR-018), run by the Notifications module, which mints their tokens.
+/// </summary>
+public interface ITeamsCardActions
+{
+    /// <summary>The tenant a button token names, or null when it is not a button token.</summary>
+    Guid? TenantOf(string token);
+
+    /// <summary>Runs a press with the tenant in context; the caller commits.</summary>
+    Task<TeamsCardReply> RunAsync(TeamsBotAction pressed, CancellationToken ct = default);
+}
 
 /// <summary>What the card shows after a quick action: the outcome in the person's language, and a TeamBeats link when there is one.</summary>
 public sealed record TeamsCardReply(string Text, string? Link, string? OpenLabel, bool Rtl = false);
@@ -842,8 +878,8 @@ public sealed record TeamsCardReply(string Text, string? Link, string? OpenLabel
 /// <summary>A quick action pressed in Teams, as the bot received it after the Bot Framework token was checked.</summary>
 public sealed record TeamsBotAction(string EntraTenantId, string AadObjectId, string Verb, string Token, string? Reason);
 
-/// <summary>A call to the bot endpoint: whether Bot Framework signed it, and the quick action it carries, if any.</summary>
-public sealed record TeamsBotCall(bool Authentic, TeamsBotAction? Action);
+/// <summary>A call to the bot endpoint: whether Bot Framework signed it, and the quick action or chat message it carries, if any.</summary>
+public sealed record TeamsBotCall(bool Authentic, TeamsBotAction? Action, TeamsBotMessage? Message = null);
 
 /// <summary>
 /// The TeamBeats Teams bot (spec 015 FR-018): reads what Teams posts to the bot endpoint and answers it. A call counts

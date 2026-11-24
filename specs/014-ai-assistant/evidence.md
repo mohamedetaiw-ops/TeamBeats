@@ -1,6 +1,6 @@
 # Spec 014 evidence (R1 and R2)
 
-The spec stays Approved, not Implemented, until the assistant panel in the shell (T007) and the Teams app (US8, FR-018, built with spec 015 US5) are done, and R3 proactive suggestions follow. R2 covers US5 to US7, FR-015 to FR-017, FR-020 and FR-022. Defaults, deviations and gaps are in the spec 014 sections of `docs/architecture/r1-implementation-notes.md` and `docs/architecture/r2-implementation-notes.md`.
+The spec stays Approved, not Implemented, until the assistant panel in the shell (T007) is done and R3 proactive suggestions follow. R2 covers US5 to US8, FR-015 to FR-018, FR-020 and FR-022. Defaults, deviations and gaps are in the spec 014 sections of `docs/architecture/r1-implementation-notes.md` and `docs/architecture/r2-implementation-notes.md`.
 
 | Requirement | Status | Evidence |
 |---|---|---|
@@ -24,5 +24,5 @@ The spec stays Approved, not Implemented, until the assistant panel in the shell
 | FR-015 files scanned, classified, kept to their conversation, refused above the ceiling, deleted with it | Met | `AssistantFileTests.A_file_is_scanned_classified_and_cited_only_in_its_conversation`, `Infected_unreadable_unknown_and_above_policy_files_are_refused_with_the_reason`, `A_file_no_turn_used_goes_after_a_day_and_delete_all_takes_every_file`; `assistant.spec.ts` (en and ar, axe) |
 | FR-016 voice through the gateway, confirmed before sending, audio not stored | Met | `AssistantVoiceTests.A_spoken_question_comes_back_as_text_to_edit_and_nothing_is_kept`, `An_answer_is_read_aloud_for_its_owner_only_without_citation_markers`, `Workplace_has_no_voice`; `assistant.spec.ts` (en and ar, axe) |
 | FR-017 personal answers only from tools over the person's records, with source and time | Met | `AssistantPersonalToolsTests.My_HR_helper_reads_only_the_persons_own_leave_and_cites_it`; template suite `template.my_hr_helper` |
-| FR-018 Teams assistant on the same contracts | Not yet | Built with spec 015 US5 (the Teams app), T016 |
+| FR-018 Teams assistant on the same contracts | Met; answers draw on Internal content at most | `TeamsAssistantTests.The_answer_and_its_sources_come_back_to_the_chat_and_a_follow_up_continues_the_conversation`, `Teams_answers_draw_on_internal_content_at_most`, `Unknown_ambiguous_and_unentitled_people_get_a_short_answer_and_nothing_else`, `Forged_chat_messages_are_refused` |
 | FR-022 guests refused unless allowed, then only their spaces | Met | `AssistantGuestTests.Guests_are_refused_unless_allowed_and_then_cite_only_their_spaces` |

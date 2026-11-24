@@ -34,7 +34,7 @@ public sealed class QuickActions(
     ITenantSettingsReader tenantSettings,
     ISecurityPolicy securityPolicy,
     ILocalizer localizer,
-    IAuditWriter audit)
+    IAuditWriter audit) : ITeamsCardActions
 {
     public static readonly TimeSpan Lifetime = TimeSpan.FromDays(7);
 
@@ -74,6 +74,8 @@ public sealed class QuickActions(
         return buttons;
     }
 
+    Guid? ITeamsCardActions.TenantOf(string token) => TenantOf(token);
+
     /// <summary>The tenant a token names, or null when it is not one of ours.</summary>
     public static Guid? TenantOf(string token)
     {
@@ -87,7 +89,7 @@ public sealed class QuickActions(
     /// Runs a pressed action and says what happened, in the person's language. The tenant must already be in context
     /// (from <see cref="TenantOf"/>); the caller commits.
     /// </summary>
-    public async Task<TeamsCardReply> RunAsync(TeamsBotAction pressed, CancellationToken ct)
+    public async Task<TeamsCardReply> RunAsync(TeamsBotAction pressed, CancellationToken ct = default)
     {
         var tenantLocale = await tenantSettings.GetLocaleSettingsAsync(ct);
         var pending = (await session.QueryAsync(

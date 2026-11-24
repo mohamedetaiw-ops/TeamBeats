@@ -1012,7 +1012,8 @@
         "notifications_teams": "Notifications in Microsoft Teams",
         "notifications_sms": "SMS for mandatory notifications",
         "notifications_sms_monthly_messages": "SMS messages a month",
-        "notifications_signage": "Signage screens for locations"
+        "notifications_signage": "Signage screens for locations",
+        "ai_assistant_teams": "Assistant in Microsoft Teams"
       },
       "searchLabel": "Search capabilities",
       "searchPlaceholder": "Search by name",

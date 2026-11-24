@@ -87,6 +87,18 @@
         }
       }
     },
+    "/api/v1/integrations/teams/bot": {
+      "post": {
+        "tags": [
+          "Integrations: Teams bot"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/integrations/consent/callback": {
       "get": {
         "tags": [
@@ -218,18 +230,6 @@
               "type": "string"
             }
           }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
-    "/api/v1/notifications/teams/bot": {
-      "post": {
-        "tags": [
-          "Notifications: Teams bot"
         ],
         "responses": {
           "200": {
@@ -48925,6 +48925,9 @@
       "name": "Tenant: plan"
     },
     {
+      "name": "Integrations: Teams bot"
+    },
+    {
       "name": "Integrations: connections"
     },
     {
@@ -48947,9 +48950,6 @@
     },
     {
       "name": "Notifications: signage"
-    },
-    {
-      "name": "Notifications: Teams bot"
     },
     {
       "name": "Leave"

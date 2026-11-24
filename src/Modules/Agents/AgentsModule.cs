@@ -55,6 +55,8 @@ public static class AgentsModule
         services.AddMessageHandler<Identity.Contracts.UserDeprovisioned, AgentOwnerHandler>("agents.owner_left");
         services.AddMessageHandler<Identity.Contracts.UserDeprovisioned, AgentMemoryLeavers>("agents.memory_leaver");
         services.AddMessageHandler<Identity.Contracts.UserDeprovisioned, AgentBriefingLeavers>("agents.briefing_leaver");
+        services.AddMessageHandler<Identity.Contracts.UserDeprovisioned, TeamsChatLeavers>("agents.teams_chat_leaver");
+        services.AddMessageHandler<Integrations.Contracts.TeamsChatReceived, TeamsAssistantChat>("agents.teams_chat");
         services.AddScoped<Contracts.IAgentCatalog, AgentCatalog>();
         services.AddScoped<Contracts.IAgentEvaluationRuntime, AgentEvaluationRuntime>();
         services.AddScoped<Contracts.IAssistantEvaluationRuntime, AssistantEvaluationRuntime>();
