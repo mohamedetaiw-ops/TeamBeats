@@ -371,7 +371,11 @@ public static class ThemeEngine
         }
         css.Append("--tb-font-family-body:var(--tb-font-family-latin);--tb-font-family-heading:var(--tb-font-family-heading-latin);}");
         css.Append(":root:lang(ar){--tb-font-family-body:var(--tb-font-family-arabic);--tb-font-family-heading:var(--tb-font-family-heading-arabic);}");
-        css.Append(":root:lang(ur){--tb-font-family-body:var(--tb-font-family-urdu);--tb-font-family-heading:var(--tb-font-family-body);}");
+        // Nastaliq sits on a sloping baseline with tall ascenders and deep descenders, so Urdu lines are a third taller than
+        // the theme's (spec 007 R2). The theme's own values are scaled; a self-reference to the token would be a cycle.
+        css.Append(":root:lang(ur){--tb-font-family-body:var(--tb-font-family-urdu);--tb-font-family-heading:var(--tb-font-family-body);")
+            .Append("--tb-font-line-height-body:calc(").Append(properties["--tb-font-line-height-body"]).Append(" * 4 / 3);")
+            .Append("--tb-font-line-height-heading:calc(").Append(properties["--tb-font-line-height-heading"]).Append(" * 4 / 3);}");
         css.Append(":root:lang(hi){--tb-font-family-body:var(--tb-font-family-devanagari);--tb-font-family-heading:var(--tb-font-family-body);}");
         return css.ToString();
     }
