@@ -3,14 +3,14 @@
 Depends on 001 Phase 1 and ADR-0007. R0 tasks first, R1 tasks marked.
 
 ## Phase 1: Foundations (R0)
-- [ ] T001 Migration: `user`, `external_identity`, `idp_config`, `session` (RLS); `verified_domain` (platform, RLS exception)
-- [ ] T002 Server-side session store, opaque cookie (secure, HTTP-only, SameSite=Lax), session validation middleware with 30 s cache and event eviction
+- [x] T001 Migration: `user`, `external_identity`, `idp_config`, `session` (RLS); `verified_domain` (platform, RLS exception)
+- [x] T002 Server-side session store, opaque cookie (secure, HTTP-only, SameSite=Lax), session validation middleware with 30 s cache and event eviction
 
 ## Phase 2: User Story 1, dev sign-in (P1, R0)
-- [ ] T003 [P] [US1] Test: production configuration with dev sign-in enabled fails startup
-- [ ] T004 [P] [US1] CI script and test: production image must not contain `Identity.DevAuth.dll` or `/dev-signin`
-- [ ] T005 [US1] `Identity.DevAuth` assembly with seeded fictional users; referenced only by `Api.DevHost`
-- [ ] T006 [US1] Startup guard in `Api`
+- [x] T003 [P] [US1] Test: production configuration with dev sign-in enabled fails startup
+- [x] T004 [P] [US1] CI script and test: production image must not contain `Identity.DevAuth.dll` or `/dev-signin`
+- [x] T005 [US1] `Identity.DevAuth` assembly with seeded fictional users; referenced only by `Api.DevHost`
+- [x] T006 [US1] Startup guard in `Api`
 
 ## Phase 2b: User Story 7, staging test account (P1, R0)
 - [x] T029 [P] [US7] Tests: one-click `admin` sign-in gives a tenant administrator session; unknown username refused and audited; email and platform dev sign-in refused in test account mode; staging refuses open mode or a missing test account; production host refuses test accounts and a test tenant; cross-tenant refusal; tenant seeded once
@@ -19,19 +19,19 @@ Depends on 001 Phase 1 and ADR-0007. R0 tasks first, R1 tasks marked.
 - [x] T032 [US7] Test employee direct link: `Dev:Fakes:SignInLinks` (`employee` is Ahmed Mansour in `appsettings.Staging.json`), `/dev/fake/signin/{name}` and one-time pick on the fake Microsoft page, startup check that each link names an enabled scenario person, "Sign in as test employee" link in the web app; tests for employee session without admin rights, cross-tenant refusal, unknown link, disabled person, production guard
 
 ## Phase 3: User Story 3, session invalidation (P1, R0)
-- [ ] T007 [P] [US3] Tests: sign-out ends session; disabled membership rejected on next request; role change effective within 5 minutes; suspended tenant sessions rejected
-- [ ] T008 [US3] Revocation on `MembershipDisabled`, `TenantSuspended`; `roles_version` bump on `RoleAssignmentChanged`
+- [x] T007 [P] [US3] Tests: sign-out ends session; disabled membership rejected on next request; role change effective within 5 minutes; suspended tenant sessions rejected
+- [x] T008 [US3] Revocation on `MembershipDisabled`, `TenantSuspended`; `roles_version` bump on `RoleAssignmentChanged`
 
 ## Phase 4: Tenant-scoped identity (R0)
-- [ ] T009 [P] Test: same issuer and subject in tenants A and B creates two unrelated users (ADR-0005)
-- [ ] T010 [P] Test: session cookie from tenant A rejected on tenant B host
+- [x] T009 [P] Test: same issuer and subject in tenants A and B creates two unrelated users (ADR-0005)
+- [x] T010 [P] Test: session cookie from tenant A rejected on tenant B host
 - [x] T011 IdP configuration admin API and screen (secret stored as secret-manager reference); screen at `/admin/identity` with directory sync settings and runs
 
 ## Phase 5: User Story 2, Entra ID (P1, R1)
 - [x] T012 [P] [US2] Tests: wrong issuer, wrong audience, expired, bad signature, missing nonce, replay
 - [x] T013 [P] [US2] Tests: disabled membership shows no-access and audits; JIT allowed domain creates membership; JIT disabled refuses
 - [x] T014 [P] [US2] Tests: group-to-role mapping applied; unknown groups ignored
-- [ ] T015 [US2] Dynamic per-tenant OIDC handler; tenant discovery by host then email domain
+- [x] T015 [US2] Dynamic per-tenant OIDC handler; tenant discovery by host then email domain
 - [x] T016 [US2] Sign-in, no-access, suspended and IdP-unavailable pages (localized, RTL)
 - [x] T017 [US2] Open redirect and login CSRF protections with tests
 
@@ -42,12 +42,16 @@ Depends on 001 Phase 1 and ADR-0007. R0 tasks first, R1 tasks marked.
 - [x] T023 [P] [US6] Tests: disable in directory disables membership and revokes sessions; product admin cannot re-enable; re-enable restores the same user
 - [x] T024 [P] [US6] Tests: groups kept in step and mapped to roles; product groups untouched; unreachable directory changes nothing and alerts after 3 failures; threshold breach stops the run
 - [x] T025 [US6] Graph delta reader, sync job on the outbox worker, `IDirectoryReader` contract for specs 002 and 010
-- [ ] T026 [US6] Directory admin page (connections, scope, attribute and group mapping, last runs, sync now)
+- [x] T026 [US6] Directory admin page (connections, scope, attribute and group mapping, last runs, sync now)
 
 ## Phase 7: R2 (not in R0/R1)
-- [ ] T018 Google OIDC, SAML 2.0, SCIM extension point (IAM-005, IAM-006, IAM-010)
-- [ ] T027 [US5] AD FS sign-in (OIDC and SAML) linked on `objectGUID`; missing claim refused with admin detail; works with no internet access on on-premises installs
-- [ ] T028 [US6] On-premises AD DS sync over LDAPS through the connector framework and outbound sync agent; plain LDAP refused
+- [ ] T018 Google OIDC, SAML 2.0, SCIM extension point (IAM-005, IAM-006, IAM-010); split into T033 to T036
+- [ ] T027 [US5] AD FS sign-in (OIDC and SAML) linked on `objectGUID`; missing claim refused with admin detail; works with no internet access on on-premises installs; OIDC in T033, SAML in T034
+- [x] T028 [US6] On-premises AD DS sync over LDAPS through the connector framework and outbound sync agent; plain LDAP refused (spec 017 T015, PR #154)
+- [x] T033 [US4] [US5] Google and AD FS sign-in over OIDC: provider kinds, hosted domains and `hd` check for Google, `objectGUID` linked under the AD DS connection for AD FS, last refused reason kept for the admin, admin page kind choice, sign-in button by kind; tests
+- [ ] T034 [US4] [US5] SAML 2.0 sign-in (SP-initiated, HTTP-POST, signed response or assertion, audience, recipient, `InResponseTo`, replay) for generic, Google and AD FS relying parties; SP metadata; admin page; tests including signature wrapping
+- [ ] T035 SCIM 2.0 provisioning extension point: `IProvisioningTarget` contract (create, update, deactivate user, group membership) behind the directory sync use cases, `identity.scim` capability, no endpoint (FR-008)
+- [ ] T036 Security page note on providers that send no MFA claims (Google) and MFA mapping per provider kind
 
 ## Final phase
 - [ ] T019 Audit events for sign-in outcomes, config changes, directory connection changes and directory sync outcomes; OpenAPI; spec evidence

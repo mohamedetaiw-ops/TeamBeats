@@ -44,10 +44,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
   }
   const t = await getTranslations("signin");
   const mode = devSignInMode();
-  const [options, site] = await Promise.all([
-    apiGet<SignInOptions>("/api/v1/auth/signin/options"),
-    apiGet<SitePresentation>("/api/v1/site/presentation"),
-  ]);
+  const [options, site] = await Promise.all([apiGet<SignInOptions>("/api/v1/auth/signin/options"), apiGet<SitePresentation>("/api/v1/site/presentation")]);
   const sso = options.ok && options.data.sso;
   // A verified custom domain signs people in under its own name and message (spec 033 R2 T021).
   const own = site.ok && site.data.customDomain ? site.data : null;
@@ -58,7 +55,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
       <OfflineWipe />
       {sso ? (
         <a className="button" href={returnTo ? `/api/v1/auth/signin/sso?returnTo=${encodeURIComponent(returnTo)}` : "/api/v1/auth/signin/sso"}>
-          {t("ssoMicrosoft")}
+          {t(options.data.kind === "google" ? "ssoGoogle" : options.data.kind === "adfs" ? "ssoAdfs" : "ssoMicrosoft")}
         </a>
       ) : null}
       {mode ? <DevSignInForm mode={mode} testAccount={process.env.TEAMBEATS_TEST_ACCOUNT || "admin"} returnTo={returnTo} /> : null}

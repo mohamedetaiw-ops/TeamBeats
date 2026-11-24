@@ -48,8 +48,8 @@ public sealed class SsoService(
     public static readonly TimeSpan StateLifetime = TimeSpan.FromMinutes(10);
     public static readonly TimeSpan ClockSkew = TimeSpan.FromMinutes(5);
 
-    /// <summary>The provider key of the MFA claim mapping (spec 026 section 6).</summary>
-    public const string Provider = "entra";
+    /// <summary>The MFA claim mapping of spec 026 section 6 is keyed by the provider kind; this is the Entra ID one.</summary>
+    public const string Provider = IdentityProviderStore.KindEntra;
 
     public async Task<SsoStep> StartAsync(TenantInfo tenant, string callbackUri, string? returnTo, CancellationToken ct, bool stepUp = false)
     {
@@ -181,16 +181,20 @@ public sealed class SsoService(
         }
         catch (OidcTokenRejectedException rejected)
         {
-            await FailAsync(rejected.Reason, config.Issuer, ct);
+            await FailAsync(rejected.Reason, config.Issuer, ct, config);
             return Problem(SsoProblems.Failed);
         }
 
-        // Entra ID: the link key is the object ID, which directory sync also sees; sub differs per app registration (FR-003).
-        if (!token.TryGetPayloadValue<string>("oid", out var subject) || string.IsNullOrEmpty(subject))
+        // The link key per provider (FR-003): Entra ID's object ID and AD FS's objectGUID are what directory sync sees;
+        // Google's sub is stable per account. A refused token names its reason for the admin (US5 scenario 2).
+        var link = LinkFor(config, token);
+        if (link.Problem is { } problem)
         {
-            await FailAsync("subject_missing", config.Issuer, ct);
+            await FailAsync(problem, config.Issuer, ct, config);
             return Problem(SsoProblems.Failed);
         }
+        var subject = link.Subject!;
+        var linkIssuer = link.Issuer!;
         // Step-up needs proof the provider authenticated the user just now, not an older single sign-on session.
         if (pending.StepUp && !(token.TryGetPayloadValue<long>("auth_time", out var authTime)
                 && DateTimeOffset.FromUnixTimeSeconds(authTime) >= clock.UtcNow - ClockSkew))
@@ -203,24 +207,31 @@ public sealed class SsoService(
 
         // Authentication assurance (spec 026 US2 scenario 1): MFA stays with the identity provider; this checks it happened.
         var amr = token.Claims.Where(c => c.Type == "amr").Select(c => c.Value).ToList();
-        if (!await assurance.CheckMfaAsync(Provider, amr, Claim(token, "acr"), ct) && (await securityPolicy.GetAsync(ct)).RequireMfa)
+        if (!await assurance.CheckMfaAsync(config.Kind, amr, Claim(token, "acr"), ct) && (await securityPolicy.GetAsync(ct)).RequireMfa)
         {
             context.SetActor(ActorType.Anonymous, null);
             await audit.WriteAsync(new AuditEntry(AuditActions.SecurityMfaMissing, "user", null, AuditOutcome.Denied,
-                Changes: new { issuer = config.Issuer, method = "entra", amr }), ct);
+                Changes: new { issuer = config.Issuer, method = config.Kind, amr }), ct);
             return Problem(SsoProblems.MfaRequired);
         }
 
-        var email = Claim(token, "email") ?? Claim(token, "preferred_username") ?? string.Empty;
-        var name = Claim(token, "name") ?? email;
+        var email = Claim(token, "email") ?? Claim(token, "preferred_username") ?? Claim(token, "upn") ?? string.Empty;
+        var name = Claim(token, "name") ?? Claim(token, "unique_name") ?? email;
+        // Only Entra ID sends group object IDs; AD FS and Google groups come from directory sync instead.
         var overage = token.TryGetPayloadValue<Dictionary<string, object>>("_claim_names", out var names) && names.ContainsKey("groups");
-        IReadOnlyList<string>? groups = overage ? null : token.Claims.Where(c => c.Type == "groups").Select(c => c.Value).ToList();
+        IReadOnlyList<string>? groups = config.Kind != IdentityProviderStore.KindEntra || overage
+            ? null
+            : token.Claims.Where(c => c.Type == "groups").Select(c => c.Value).ToList();
 
         // While the directory is synced, it decides who has an account: JIT is off and synced users link by object ID (US6 scenario 3).
         var jit = config.JitEnabled && !await directorySync.IsActiveAsync(ct);
         var policy = new ProviderSignInPolicy(config.Id, jit, config.JitDomains, groups, config.GroupRoleMap);
         var previous = (Session: context.SessionId, User: context.ActorId);
-        var result = await signIn.SignInAsync(tenant, config.Issuer, subject.ToLowerInvariant(), email, name, "entra", "admin", ct, policy);
+        var result = await signIn.SignInAsync(tenant, linkIssuer, subject, email, name, config.Kind, "admin", ct, policy);
+        if (result.Outcome == SignInOutcome.Succeeded && config.LastProblem is not null)
+        {
+            await providers.ClearProblemAsync(config.Id, ct);
+        }
         if (pending.StepUp && result.Outcome == SignInOutcome.Succeeded)
         {
             await audit.WriteAsync(new AuditEntry(AuditActions.SecurityStepUpCompleted, "user", context.ActorId?.ToString()), ct);
@@ -283,16 +294,70 @@ public sealed class SsoService(
         return token;
     }
 
+    /// <summary>The issuer and immutable subject a token links under, or the reason it cannot link (spec 003 FR-003).</summary>
+    public sealed record SubjectLink(string? Issuer, string? Subject, string? Problem);
+
+    public static SubjectLink LinkFor(IdentityProviderConfig config, JsonWebToken token)
+    {
+        switch (config.Kind)
+        {
+            case IdentityProviderStore.KindEntra:
+                return Claim(token, "oid") is { } oid ? new(config.Issuer, oid.ToLowerInvariant(), null) : new(null, null, "subject_missing");
+            case IdentityProviderStore.KindGoogle:
+                // Any Google account carries this issuer: only accounts of the tenant's own Workspace domains get in.
+                var hd = Claim(token, "hd")?.ToLowerInvariant();
+                if (hd is null || !(config.HostedDomains ?? []).Contains(hd, StringComparer.Ordinal))
+                {
+                    return new(null, null, "hosted_domain_mismatch");
+                }
+                return Claim(token, "sub") is { } sub ? new(config.Issuer, sub, null) : new(null, null, "subject_missing");
+            case IdentityProviderStore.KindAdfs:
+                // Linked under the AD DS connection's issuer, so it meets the user that connection synced and no other.
+                if (config.DirectoryConnectionId is not { } connection)
+                {
+                    return new(null, null, "directory_connection_missing");
+                }
+                return ObjectGuid(Claim(token, "objectGUID") ?? Claim(token, "objectguid")) is { } guid
+                    ? new(Directory.DirectorySyncService.OnPremIssuer(connection), guid, null)
+                    : new(null, null, "object_guid_missing");
+            default:
+                return new(null, null, "kind_unsupported");
+        }
+    }
+
+    /// <summary>
+    /// AD FS sends <c>objectGUID</c> as base64 of its 16 bytes from the default attribute store, or as text when a claim
+    /// rule formats it. Both become the standard form that the sync agent links by.
+    /// </summary>
+    public static string? ObjectGuid(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return null;
+        }
+        if (Guid.TryParseExact(value, "D", out var text))
+        {
+            return text.ToString("D");
+        }
+        Span<byte> bytes = stackalloc byte[18];
+        return Convert.TryFromBase64String(value, bytes, out var written) && written == 16 ? new Guid(bytes[..16]).ToString("D") : null;
+    }
+
     private static string? Claim(JsonWebToken token, string type) =>
         token.TryGetPayloadValue<string>(type, out var value) && !string.IsNullOrWhiteSpace(value) ? value.Trim() : null;
 
     private static SsoStep Problem(string reason) => new(SsoProblems.PagePath(reason));
 
-    private async Task FailAsync(string reason, string? issuer, CancellationToken ct)
+    private async Task FailAsync(string reason, string? issuer, CancellationToken ct, IdentityProviderConfig? rejectedBy = null)
     {
         context.SetActor(ActorType.Anonymous, null);
         await audit.WriteAsync(new AuditEntry(AuditActions.SignInFailed, "user", null, AuditOutcome.Failure,
-            Changes: new { reason, issuer, method = "entra" }), ct);
+            Changes: new { reason, issuer, method = rejectedBy?.Kind ?? "sso" }), ct);
+        if (rejectedBy is not null)
+        {
+            // The provider sent a token it should not have: keep why, so the admin can fix the provider's setup.
+            await providers.RecordProblemAsync(rejectedBy.Id, reason, ct);
+        }
     }
 
     private static string Random() => Base64UrlEncoder.Encode(RandomNumberGenerator.GetBytes(32));
