@@ -217,6 +217,10 @@ public static class ApiComposition
             o.AddPolicy(TeamBeats.Modules.Content.ContentModule.SignageRateLimit, http => RateLimitPartition.GetFixedWindowLimiter(
                 "signage:" + (http.Connection.RemoteIpAddress?.ToString() ?? "anonymous"),
                 _ => new FixedWindowRateLimiterOptions { PermitLimit = 120, Window = TimeSpan.FromMinutes(1) }));
+            // A location signage screen opens its feed the same way (spec 015 FR-021).
+            o.AddPolicy(TeamBeats.Modules.Notifications.NotificationsModule.SignageRateLimit, http => RateLimitPartition.GetFixedWindowLimiter(
+                "screens:" + (http.Connection.RemoteIpAddress?.ToString() ?? "anonymous"),
+                _ => new FixedWindowRateLimiterOptions { PermitLimit = 120, Window = TimeSpan.FromMinutes(1) }));
             // People search is a scraping path (spec 010 FR-017): limit per user.
             o.AddPolicy(PeopleModule.SearchRateLimit, http => RateLimitPartition.GetFixedWindowLimiter(
                 http.RequestServices.GetRequiredService<ITenantContext>().ActorId?.ToString() ?? http.Connection.RemoteIpAddress?.ToString() ?? "anonymous",

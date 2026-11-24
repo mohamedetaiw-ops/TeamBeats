@@ -37,6 +37,7 @@ export const adminSectionIcons: Record<string, IconName> = {
   agents: "chat",
   evaluation: "eye",
   analytics: "trend-up",
+  signage: "megaphone",
   kiosks: "home",
   api: "external",
 };

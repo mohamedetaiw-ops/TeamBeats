@@ -121,6 +121,8 @@ export type ItemView = {
   reviewDueAt: string | null;
   pinned: boolean;
   featured: boolean;
+  /** Shown on the signage screens of the places it targets (spec 015 US7); announcements only. */
+  signage?: boolean;
   publishedVersion: number | null;
   draftVersion: number | null;
   publishAt: string | null;

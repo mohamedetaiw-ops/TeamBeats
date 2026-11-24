@@ -85,6 +85,7 @@ export function ItemEditor({ initial, site, units, locales }: { initial: ItemVie
   const [classification, setClassification] = useState(initial.classification);
   const [pinned, setPinned] = useState(initial.pinned);
   const [featured, setFeatured] = useState(initial.featured);
+  const [signage, setSignage] = useState(initial.signage ?? false);
   const clause = initial.audience.anyOf?.[0];
   const [everyone, setEveryone] = useState(!initial.audience.anyOf?.length);
   const [audienceUnits, setAudienceUnits] = useState<string[]>(clause?.orgUnits?.map((u) => u.id) ?? []);
@@ -136,6 +137,7 @@ export function ItemEditor({ initial, site, units, locales }: { initial: ItemVie
       classification,
       pinned,
       featured,
+      ...(item.type === "announcement" ? { signage } : {}),
       audience: audience(),
       variants,
       changeNote: note.trim() === "" ? null : note,
@@ -313,6 +315,17 @@ export function ItemEditor({ initial, site, units, locales }: { initial: ItemVie
           <input type="checkbox" checked={featured} disabled={locked} onChange={(e) => setFeatured(e.target.checked)} />
           {t("featured")}
         </label>
+        {item.type === "announcement" ? (
+          <label className="content-check">
+            <input type="checkbox" checked={signage} disabled={locked} onChange={(e) => setSignage(e.target.checked)} aria-describedby={`${ids}-signage-hint`} />
+            {t("signage")}
+          </label>
+        ) : null}
+        {item.type === "announcement" ? (
+          <p id={`${ids}-signage-hint`} className="content-meta">
+            {t("signageHint")}
+          </p>
+        ) : null}
       </Widget>
 
       <fieldset className="content-card" disabled={locked}>

@@ -67,6 +67,9 @@ public static class Permissions
 
     public const string NotificationsManage = "notifications.manage";
 
+    // Spec 015 US7 (R2): location administrators register the signage screens of their locations.
+    public const string NotificationsSignageManage = "notifications.signage_manage";
+
     public const string HrCalendarManage = "hr.calendar_manage";
 
     /// <summary>Spec 019: HR sync results, unmatched people, held runs and org codes, at tenant scope.</summary>
@@ -238,7 +241,7 @@ public static class Permissions
         PageView, PageEdit, PagePublish, PageApprove, TemplateEdit, TemplateDistribute, ComponentEnable, FeatureControlManage, ConfigHistoryView,
         ThemeEdit, ThemePublish, ConfigLockManage,
         ShellEdit, NavigationEdit, HelpEdit, PersonalizationPolicy, PersonalLayoutEdit,
-        NotificationsManage,
+        NotificationsManage, NotificationsSignageManage,
         HrCalendarManage, HrIntegrationManage, HrManage, FinanceProcess,
         PeopleView, PeopleHrView, PeopleManage,
         SecurityManage, SecurityView, SecurityRespond,
@@ -302,6 +305,8 @@ public static class BuiltInRoles
     public const string AnalyticsViewer = "analytics_viewer";
     public const string DeviceAdministrator = "device_administrator";
     public const string KioskUser = "kiosk_user";
+    /// <summary>Spec 015 US7 (R2): registers and revokes the signage screens of the locations it is given.</summary>
+    public const string LocationAdministrator = "location_administrator";
     /// <summary>Spec 033 R2 T019: applies and overrides brands for the organizations it is given (delegated brand administration).</summary>
     public const string BrandPublisher = "brand_publisher";
     /// <summary>Spec 033 R2 T019: edits the navigation of the organizations it is given (delegated navigation administration).</summary>

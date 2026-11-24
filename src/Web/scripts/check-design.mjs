@@ -73,7 +73,7 @@ for (const file of walk(root)) {
 
 // Rule 6: the page header on every page. A page passes when it renders PageHeader itself or hands the whole page to
 // one feature component that does. Full-screen surfaces with no shell (sign-in, kiosk, signage, previews) are exempt.
-const headerExempt = /^app\/(signin|kiosk|signage|offline|preview|dev|ui-gallery|letters\/verify|preboarding|app-consent|release)\//;
+const headerExempt = /^app\/(signin|kiosk|signage|offline|preview|dev|ui-gallery|letters\/verify|preboarding|screens|app-consent|release)\//;
 const baselinePath = join(root, "scripts/page-header-baseline.json");
 const baseline = new Set(JSON.parse(readFileSync(baselinePath, "utf8")));
 const usesHeader = (file, seen = new Set()) => {

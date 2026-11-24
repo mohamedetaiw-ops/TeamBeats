@@ -59,3 +59,20 @@ export async function problemMessages(response: Response): Promise<string[]> {
     return [];
   }
 }
+
+/** A signage screen of a location (spec 015 US7). The address is returned only when it is made or replaced. */
+export type SignageScreen = {
+  id: string;
+  name: string;
+  orgUnitId: string;
+  location: string | null;
+  createdAt: string;
+  rotatedAt: string | null;
+  lastSeenAt: string | null;
+};
+
+export type SignageScreenAddress = { screen: SignageScreen; path: string };
+
+export type SignageAnnouncement = { id: string; locale: string; title: string; summary: string | null; publishedAt: string };
+
+export type LocationSignageFeed = { name: string; refreshSeconds: number; items: SignageAnnouncement[] };

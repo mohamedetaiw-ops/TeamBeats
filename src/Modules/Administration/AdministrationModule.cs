@@ -40,6 +40,7 @@ public static class AdministrationModule
         ("shell", Permissions.ShellEdit, "/admin/shell"),
         ("help", Permissions.HelpEdit, "/admin/help"),
         ("notifications", Permissions.NotificationsManage, "/admin/notifications"),
+        ("signage", Permissions.NotificationsSignageManage, "/admin/signage"),
         ("calendars", Permissions.HrCalendarManage, "/admin/calendars"),
         ("leave", Permissions.HrManage, "/admin/leave"),
         ("journeys", Permissions.HrManage, "/admin/journeys"),
@@ -70,7 +71,7 @@ public static class AdministrationModule
     /// </summary>
     public static readonly IReadOnlyDictionary<string, string> Groups = new Dictionary<string, string>(StringComparer.Ordinal)
     {
-        ["tenant_settings"] = "workspace", ["plan"] = "workspace", ["notifications"] = "workspace", ["kiosks"] = "workspace",
+        ["tenant_settings"] = "workspace", ["plan"] = "workspace", ["notifications"] = "workspace", ["signage"] = "workspace", ["kiosks"] = "workspace",
         ["organization"] = "people", ["users"] = "people", ["roles"] = "people", ["identity"] = "people", ["people"] = "people",
         ["hr_integration"] = "hr", ["calendars"] = "hr", ["leave"] = "hr", ["journeys"] = "hr", ["attendance"] = "hr",
         ["letters"] = "hr", ["data_changes"] = "hr", ["expenses"] = "hr",
@@ -220,6 +221,7 @@ public sealed class AdministrationNavigation(IAuthorizationService authz, TeamBe
     private static readonly IReadOnlyDictionary<string, string> Capability = new Dictionary<string, string>
     {
         ["kiosks"] = TeamBeats.Entitlements.Contracts.Capabilities.MobileKiosk,
+        ["signage"] = TeamBeats.Entitlements.Contracts.Capabilities.NotificationsSignage,
         ["processes"] = TeamBeats.Entitlements.Contracts.Capabilities.WorkflowBpmn,
         ["decisions"] = TeamBeats.Entitlements.Contracts.Capabilities.WorkflowBpmn,
         ["process_operations"] = TeamBeats.Entitlements.Contracts.Capabilities.WorkflowBpmn,

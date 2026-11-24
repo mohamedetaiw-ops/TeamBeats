@@ -57,6 +57,8 @@ public static class BuiltInRoleDefinitions
         new(BuiltInRoles.AnalyticsViewer, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.AnalyticsView]),
         new(BuiltInRoles.DeviceAdministrator, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PeopleView, P.DeviceManage]),
         new(BuiltInRoles.KioskUser, Delegable: true, DelegatedAdmin: false, [P.KioskSignIn]),
+        // Spec 015 US7: the signage screens of a location, given on that location's org unit.
+        new(BuiltInRoles.LocationAdministrator, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.NotificationsSignageManage]),
         // Spec 035 FR-011: what an integration usually needs to read, and nothing an app may not hold.
         new(BuiltInRoles.AppReader, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PageView, P.ContentView, P.DocView, P.PeopleView], AssignableToApps: true),
         // Spec 035 US1 scenario 4 and requests:submit: the request roles an app can hold, never any approval or management.
