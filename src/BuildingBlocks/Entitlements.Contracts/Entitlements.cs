@@ -197,6 +197,32 @@ public interface IEntitlementService
 
     /// <summary>Throws 403 <c>entitlement.not_in_package</c>, distinct from <c>authz.denied</c> (ENT-007).</summary>
     Task DemandAsync(string capabilityKey, CancellationToken ct = default);
+
+    /// <summary>
+    /// Meters <paramref name="amount"/> of a limit capability this period and decides atomically (spec 005 US3, FR-006):
+    /// nothing is counted when refused. The counter is the meter; give back a reservation a later step refused with
+    /// <see cref="ReleaseAsync"/>.
+    /// </summary>
+    Task<QuotaDecision> ConsumeAsync(string capabilityKey, long amount = 1, CancellationToken ct = default);
+
+    Task ReleaseAsync(string capabilityKey, long amount = 1, CancellationToken ct = default);
+
+    /// <summary>
+    /// Decides for a module that keeps its own meter (such as the AI Gateway's call records): <paramref name="used"/> is
+    /// this period's usage so far, and the call would add <paramref name="amount"/>. The period's usage is recorded for
+    /// the plan page; nothing is consumed.
+    /// </summary>
+    Task<QuotaDecision> CheckUsageAsync(string capabilityKey, long used, long amount = 1, CancellationToken ct = default);
+}
+
+/// <summary>
+/// A quota decision. <see cref="OverLimit"/> is true when the request is allowed past the limit by a grace or warn
+/// enforcement, so the caller may warn. <see cref="Reason"/> is <c>not_in_package</c> or <c>quota_exhausted</c> when refused.
+/// </summary>
+public sealed record QuotaDecision(bool Allowed, long Used, long? Limit, bool OverLimit = false, string? Reason = null)
+{
+    public const string NotInPackage = "not_in_package";
+    public const string QuotaExhausted = "quota_exhausted";
 }
 
 /// <summary>Used by tenant creation (spec 001 FR-004).</summary>
