@@ -1007,7 +1007,9 @@
         "ai_agents_marketplace": "Agent marketplace",
         "ai_agents_advanced": "Advanced agent templates",
         "ai_governance_security_center": "Agent Security Center",
-        "notifications_teams": "Notifications in Microsoft Teams"
+        "notifications_teams": "Notifications in Microsoft Teams",
+        "notifications_sms": "SMS for mandatory notifications",
+        "notifications_sms_monthly_messages": "SMS messages a month"
       },
       "searchLabel": "Search capabilities",
       "searchPlaceholder": "Search by name",
@@ -10155,6 +10157,7 @@
       "servicenow": "ServiceNow",
       "jira_service_management": "Jira Service Management",
       "slack": "Slack",
+      "sms": "SMS gateway",
       "clock_import": "Clock data import",
       "finance_rest": "Finance hand-off",
       "google_workspace": "Google Workspace",
@@ -10185,6 +10188,7 @@
       "webhook": "Send signed events to another system and receive signed deliveries from it.",
       "onprem_ad": "Read users and groups from Active Directory in your own network, through a sync agent you install there.",
       "slack": "Send notifications as Slack direct messages to people who link their account, and share content links to a channel.",
+      "sms": "Sends mandatory notifications as text messages to people who have no work email and no app, to the mobile number in the directory.",
       "clock_import": "Reads clock data files from an SFTP server every day, or takes CSV files you upload, and matches each row to a person by employee number.",
       "finance_rest": "Sends approved expense claims to your finance system over REST and reads back their payment status.",
       "google_workspace": "Reads users and groups for directory sync, and files in chosen shared drives, through a service account with domain-wide delegation.",
@@ -10218,6 +10222,17 @@
       "baseUrlHint": "Usually https://slack.com/api. The host must be on the allowlist.",
       "botToken": "Bot token reference",
       "botTokenHint": "The reference of the bot token in your secret manager, such as secret://tenants/your-tenant-id/slack-bot. Never enter the token itself."
+    },
+    "sms": {
+      "addTitle": "Add an SMS gateway connection",
+      "addIntro": "Enter the REST address of your SMS gateway, the reference of its API key in your secret manager, and the sender name or number people see. TeamBeats posts each message to the gateway address followed by /messages, with the key as a bearer token. Add the gateway's host to the allowlist first.",
+      "formLabel": "SMS gateway settings",
+      "baseUrl": "Gateway address",
+      "baseUrlHint": "An https address whose host is on the allowlist.",
+      "apiKey": "API key reference",
+      "apiKeyHint": "The reference of the API key in your secret manager, such as secret://tenants/your-tenant-id/sms. Never enter the key itself.",
+      "sender": "Sender",
+      "senderHint": "A name of up to 11 letters and digits, or a number in international form such as +971500000000."
     },
     "settings": {
       "name": "Connection name",

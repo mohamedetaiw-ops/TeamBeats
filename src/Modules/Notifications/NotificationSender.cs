@@ -25,6 +25,8 @@ public sealed class NotificationSender(
     PreferenceService preferences,
     ISlackMessaging slack,
     ITeamsMessaging teams,
+    ISmsMessaging sms,
+    IDirectoryReader directory,
     ILogger<NotificationSender> logger) : INotificationSender
 {
     public static readonly TimeSpan DedupeWindow = TimeSpan.FromHours(1);
@@ -152,6 +154,13 @@ public sealed class NotificationSender(
         var pushUsers = (await session.QueryAsync(
             "select distinct user_id from notifications.push_subscription where user_id = any(@userIds)",
             new { userIds = rows.Select(r => r.UserId).ToArray() }, r => r.GetGuid(0), ct)).ToHashSet();
+        // SMS (US6 scenario 2, FR-020): mandatory messages only, for people with neither email nor a device with push.
+        var smsCandidates = mandatory
+            ? rows.Where(r => string.IsNullOrWhiteSpace(accounts.GetValueOrDefault(r.UserId)?.Email) && !pushUsers.Contains(r.UserId)).Select(r => r.UserId).ToList()
+            : [];
+        var phones = smsCandidates.Count > 0 && await sms.AvailableAsync(ct)
+            ? await directory.MobilePhonesAsync(smsCandidates, ct)
+            : new Dictionary<Guid, string>();
         foreach (var (notificationId, userId) in rows)
         {
             var choice = await preferences.ChannelChoiceAsync(userId, request.Category, mandatory, ct);
@@ -179,6 +188,10 @@ public sealed class NotificationSender(
             if (choice.Teams && (teamsAvailable ??= await teams.AvailableAsync(ct)))
             {
                 deliveries.Add((notificationId, userId, NotificationChannels.Teams, "pending", null, await ReleaseAsync()));
+            }
+            if (phones.ContainsKey(userId))
+            {
+                deliveries.Add((notificationId, userId, NotificationChannels.Sms, "pending", null, await ReleaseAsync()));
             }
         }
         if (deliveries.Count == 0)

@@ -35,6 +35,7 @@ import { GoogleSettingsForm, type GoogleBody } from "./GoogleSettingsForm";
 import { HrRestSettingsForm, HrSftpSettingsForm, type HrSftpBody } from "./HrSettingsForm";
 import { OnPremSettingsForm, type OnPremBody } from "./OnPremSettingsForm";
 import { SlackSettingsForm, type SlackBody } from "./SlackSettingsForm";
+import { SmsSettingsForm, type SmsBody } from "./SmsSettingsForm";
 import { WebhookSettingsForm, type WebhookBody } from "./WebhookSettingsForm";
 import { Checks, Messages, ProductMark, StatusBadge, TestLine } from "./parts";
 import { send } from "./request";
@@ -202,10 +203,12 @@ function setupHeading(kind: ConnectionType): { title: string; intro: string } {
       return { title: "lms.addTitle", intro: "lms.addIntro" };
     case "slack":
       return { title: "slack.addTitle", intro: "slack.addIntro" };
+    case "sms":
+      return { title: "sms.addTitle", intro: "sms.addIntro" };
   }
 }
 
-type Body = SettingsBody | WebhookBody | OnPremBody | SlackBody | ClockBody | GoogleBody | HrSftpBody | Record<string, unknown>;
+type Body = SettingsBody | WebhookBody | OnPremBody | SlackBody | SmsBody | ClockBody | GoogleBody | HrSftpBody | Record<string, unknown>;
 
 /**
  * Step 2: the settings of the chosen type. Saving creates the connection turned off (spec 017 US1) and moves on to the
@@ -238,6 +241,7 @@ export function SetupStep({ kind, catalogue, webhookEvents }: { kind: Connection
   else if (isTicketing(kind))
     form = <ConnectionSettingsForm authTypes={TICKETING_KINDS[kind].auth} desk={TICKETING_KINDS[kind].desk} submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;
   else if (kind === "slack") form = <SlackSettingsForm submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;
+  else if (kind === "sms") form = <SmsSettingsForm submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;
   else if (kind === "clock_import") form = <ClockSettingsForm submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;
   else if (kind === "google_workspace") form = <GoogleSettingsForm submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;
   else if (kind === "finance_rest") form = <FinanceSettingsForm submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;

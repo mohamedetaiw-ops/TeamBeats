@@ -1319,6 +1319,7 @@
   "validation.slack.no_email": "لا يحتوي ملفك الشخصي على بريد عمل، لذلك تعذر العثور على حسابك في Slack.",
   "validation.slack.channel": "اختر قناة في Slack.",
   "validation.slack.note_too_long": "يمكن أن تصل الملاحظة إلى 500 حرف.",
+  "validation.sms.sender_invalid": "أدخل اسم مرسل من 11 حرفًا ورقمًا كحد أقصى، أو رقمًا بالصيغة الدولية.",
   "conflict.slack.unavailable": "Slack غير متصل بمؤسستك.",
   "conflict.slack.unreachable": "تعذر الوصول إلى Slack. يرجى المحاولة لاحقًا.",
   "conflict.slack.channel_unavailable": "لا يستطيع TeamBeats النشر في هذه القناة. ادعُ تطبيق TeamBeats إلى القناة، ثم حاول مرة أخرى.",

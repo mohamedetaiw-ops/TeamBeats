@@ -18,6 +18,7 @@ const LOOKS: Record<ConnectionType, Look> = {
   microsoft365: { group: "workplace", mark: "/connectors/microsoft.svg", icon: "building" },
   google_workspace: { group: "workplace", mark: "/connectors/google.svg", icon: "globe" },
   slack: { group: "workplace", mark: "/connectors/slack.svg", icon: "chat" },
+  sms: { group: "workplace", icon: "phone" },
   onprem_ad: { group: "workplace", mark: "/connectors/microsoft.svg", icon: "building" },
   servicenow: { group: "service_desk", icon: "inbox" },
   jira_service_management: { group: "service_desk", mark: "/connectors/atlassian.svg", icon: "inbox" },

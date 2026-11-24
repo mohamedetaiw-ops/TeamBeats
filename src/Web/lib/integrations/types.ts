@@ -159,7 +159,7 @@ export const CHECK_RESULTS = [
 ] as const;
 
 /** Connector pack kinds with their own name on these pages. */
-export const PACK_KINDS = ["custom_rest", "webhook", "onprem_ad", "servicenow", "jira_service_management", "slack", "clock_import", "finance_rest", "google_workspace", "hr_rest", "hr_sftp", "lms_rest"] as const;
+export const PACK_KINDS = ["custom_rest", "webhook", "onprem_ad", "servicenow", "jira_service_management", "slack", "sms", "clock_import", "finance_rest", "google_workspace", "hr_rest", "hr_sftp", "lms_rest"] as const;
 
 /** Settings of a clock data connection (spec 017 US7). Columns are header names, or numbers from 1 without a header row. */
 export type ClockColumns = {

@@ -49,6 +49,21 @@ public sealed class DirectoryReader(IDbSession session) : IDirectoryReader
         return new DirectorySnapshot(connectionId.Value, people, containers.Select(c => c.Container).ToList());
     }
 
+    public async Task<IReadOnlyDictionary<Guid, string>> MobilePhonesAsync(IReadOnlyCollection<Guid> userIds, CancellationToken ct = default)
+    {
+        if (userIds.Count == 0)
+        {
+            return new Dictionary<Guid, string>();
+        }
+        var rows = await session.QueryAsync(
+            """
+            select l.user_id, d.attributes->>'mobilePhone'
+            from identity.directory_user_link l join identity.directory_user d on d.connection_id = l.connection_id and d.directory_id = l.directory_id
+            where l.user_id = any(@ids) and not l.disabled_by_directory and d.account_enabled and coalesce(d.attributes->>'mobilePhone', '') <> ''
+            """, new { ids = userIds.Distinct().ToArray() }, r => (User: r.GetGuid(0), Phone: r.GetString(1)), ct);
+        return rows.GroupBy(r => r.User).ToDictionary(g => g.Key, g => g.First().Phone);
+    }
+
     /// <summary>Graph reports the hire date as a date and time; only the date is kept.</summary>
     private static DateOnly? HireDate(string? value) =>
         DateTimeOffset.TryParse(value, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal, out var d)

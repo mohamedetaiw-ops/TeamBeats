@@ -141,6 +141,12 @@ public static class Capabilities
 
     /// <summary>Microsoft Teams activity notifications (spec 015 US5, R2).</summary>
     public const string NotificationsTeams = "notifications.teams";
+
+    /// <summary>SMS for mandatory messages to people without email or app (spec 015 US6, R2).</summary>
+    public const string NotificationsSms = "notifications.sms";
+
+    /// <summary>SMS per calendar month (spec 015 section 9: SMS has a usage limit).</summary>
+    public const string NotificationsSmsMonthlyMessages = "notifications.sms_monthly_messages";
     public const string PeopleDirectory = "people.directory";
     public const string PeopleCustomFields = "people.custom_fields";
     public const string SecurityIpRules = "security.ip_rules";
