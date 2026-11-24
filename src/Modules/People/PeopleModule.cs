@@ -31,6 +31,7 @@ public static class PeopleModule
         services.AddScoped<IProfiles>(sp => sp.GetRequiredService<Profiles>());
         services.AddScoped<PeopleService>();
         services.AddScoped<ProfilePhotos>();
+        services.AddScoped<DirectoryProfilePhotos>();
         services.AddScoped<TeamBeats.Modules.Agents.Contracts.IAgentTool, FindPersonTool>();
         services.AddScoped<TeamBeats.Modules.Agents.Contracts.IAgentTool, GetPersonTool>();
         services.AddScoped<IEmployeeNumbers, EmployeeNumbers>();
@@ -39,6 +40,7 @@ public static class PeopleModule
         services.AddScoped<HrProfiles>();
         services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IComponentRegistration, PeopleComponents>();
         services.AddMessageHandler<DirectorySynced, ApplyDirectoryProfiles>("people.directory_profiles");
+        services.AddMessageHandler<DirectorySynced, ApplyDirectoryPhotos>("people.directory_photos");
         services.AddMessageHandler<TeamBeats.Modules.Integrations.Contracts.HrSyncCompleted, ApplyHrProfiles>("people.hr_profiles");
         services.AddMessageHandler<TeamBeats.Modules.Integrations.Contracts.EmployeeManagerChanged, ApplyHrManager>("people.hr_manager");
         services.AddMessageHandler<UserProfileSynced, RefreshProfileOnSync>("people.profile_synced");

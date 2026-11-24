@@ -13,4 +13,4 @@ Depends on 002, 003, 004, 006, 007, 008, 032. All R1 user stories.
 - [x] T009 Directory page, profile page, org chart with list view, My team, personal profile settings, in English and Arabic, RTL; e2e with axe
 - [x] T010 Wire the reporting line into spec 016 line manager approval and Team requests, spec 009 and 025 manager lists, and spec 018 availability visibility
 - [x] T011 Performance tests; OpenAPI; R1 implementation notes; spec evidence
-- [ ] T012 [US3] Directory photos: use the Entra ID photo, resized the same way, for a person who has not uploaded one (US3 scenario 3)
+- [x] T012 [US3] Directory photos: use the Entra ID photo, resized the same way, for a person who has not uploaded one (US3 scenario 3)

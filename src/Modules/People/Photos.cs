@@ -1,12 +1,20 @@
 using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Messaging;
+using TeamBeats.Modules.Integrations.Contracts;
 using TeamBeats.Modules.People.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
 using TeamBeats.TenantContext;
 
 namespace TeamBeats.Modules.People;
+
+/// <summary>Where a person's photo came from.</summary>
+public static class PhotoSources
+{
+    public const string Own = "own";
+    public const string Directory = "directory";
+}
 
 /// <summary>The person's photo after a change: the link to show, or null when the profile shows initials.</summary>
 public sealed record PhotoView(string? Photo);
@@ -63,17 +71,30 @@ public sealed class ProfilePhotos(
         {
             throw AppException.Conflict("conflict.people.photo_processing");
         }
+        var version = await StoreAsync(userId, clean, PhotoSources.Own, null, ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.PeopleProfileUpdated, "person", userId.ToString(), TargetOrgUnitId: row.PrimaryUnitId,
+            Changes: new { fields = new[] { Field } }), ct);
+        await outbox.EnqueueAsync(new ProfileUpdated(userId, [Field]), ct);
+        return new PhotoView(Url(userId, version));
+    }
+
+    /// <summary>
+    /// Resizes a checked image at every size, keeps the files under the tenant's object path, and makes it the person's
+    /// photo from <paramref name="source"/>; the previous files go. Returns the new photo version.
+    /// </summary>
+    private async Task<int> StoreAsync(Guid userId, CleanImage clean, string source, string? directoryTag, CancellationToken ct)
+    {
         var current = await session.QuerySingleOrDefaultAsync(
             "select photo_version from people.profile where user_id = @u for update", new { u = userId }, r => r.Get<int?>("photo_version"), ct);
         var version = (current ?? 0) + 1;
-        var source = $"data:{clean.ContentType};base64,{Convert.ToBase64String(clean.Data)}";
+        var data = $"data:{clean.ContentType};base64,{Convert.ToBase64String(clean.Data)}";
         var made = new List<string>();
         try
         {
             foreach (var size in Sizes)
             {
                 // A square crop from the middle, so faces stay centred and every avatar has the same shape.
-                var html = $"<!doctype html><html><head><meta charset=\"utf-8\"><style>html,body{{margin:0;background:transparent}}img{{display:block;width:{size}px;height:{size}px;object-fit:cover}}</style></head><body><img src=\"{source}\" alt=\"\"></body></html>";
+                var html = $"<!doctype html><html><head><meta charset=\"utf-8\"><style>html,body{{margin:0;background:transparent}}img{{display:block;width:{size}px;height:{size}px;object-fit:cover}}</style></head><body><img src=\"{data}\" alt=\"\"></body></html>";
                 await using var png = await converter.HtmlToPngAsync(html, size, size, ct) ?? throw AppException.Conflict("conflict.people.photo_processing");
                 var key = Key(userId, version, size);
                 await storage.PutAsync(key, png, "image/png", ct);
@@ -89,16 +110,49 @@ public sealed class ProfilePhotos(
             throw;
         }
         await session.ExecAsync(
-            "update people.profile set photo_version = @version, photo_updated_at = now(), version = version + 1, updated_at = now() where user_id = @u",
-            new { version, u = userId }, ct);
+            """
+            update people.profile set photo_version = @version, photo_source = @source, directory_photo_tag = @tag, photo_updated_at = now(),
+              version = version + 1, updated_at = now()
+            where user_id = @u
+            """, new { version, source, tag = directoryTag, u = userId }, ct);
         if (current is { } old)
         {
             await DeleteFilesAsync(userId, old, ct);
         }
-        await audit.WriteAsync(new AuditEntry(AuditActions.PeopleProfileUpdated, "person", userId.ToString(), TargetOrgUnitId: row.PrimaryUnitId,
-            Changes: new { fields = new[] { Field } }), ct);
-        await outbox.EnqueueAsync(new ProfileUpdated(userId, [Field]), ct);
-        return new PhotoView(Url(userId, version));
+        return version;
+    }
+
+    /// <summary>
+    /// Applies what the directory holds as the photo of a person who has not uploaded one (US3 scenario 3): a new photo
+    /// is checked and resized like an upload; a photo the directory no longer has goes. A person's own upload is never
+    /// replaced. Returns true when the shown photo changed.
+    /// </summary>
+    internal async Task<bool> ApplyDirectoryAsync(Guid userId, DirectoryPhoto photo, CancellationToken ct)
+    {
+        var source = await session.QuerySingleOrDefaultAsync(
+            "select photo_source from people.profile where user_id = @u for update", new { u = userId }, r => r.Get<string?>("photo_source"), ct);
+        if (source == PhotoSources.Own || photo.State == DirectoryPhotoState.Unchanged)
+        {
+            return false;
+        }
+        if (photo.State == DirectoryPhotoState.None)
+        {
+            await session.ExecAsync("update people.profile set directory_photo_tag = null where user_id = @u", new { u = userId }, ct);
+            return source == PhotoSources.Directory && await ClearAsync(userId, ct);
+        }
+        CleanImage clean;
+        try
+        {
+            clean = PhotoCleaner.Clean(photo.ContentType, photo.Data ?? [], MaxBytes, MaxSide, "file", "validation.people.photo_size", "validation.people.photo_type");
+        }
+        catch (AppException)
+        {
+            // Not an image we take: remember its tag so it is not read again, and keep what shows now.
+            await session.ExecAsync("update people.profile set directory_photo_tag = @tag where user_id = @u", new { tag = photo.Tag, u = userId }, ct);
+            return false;
+        }
+        await StoreAsync(userId, clean, PhotoSources.Directory, photo.Tag, ct);
+        return true;
     }
 
     public async Task<PhotoView> RemoveOwnAsync(CancellationToken ct)
@@ -153,9 +207,15 @@ public sealed class ProfilePhotos(
         {
             return false;
         }
+        // A removed directory photo keeps its tag, so it does not come back until the directory has a new one; after an
+        // upload is removed the directory photo is read again at the next sync.
         await session.ExecAsync(
-            "update people.profile set photo_version = null, photo_updated_at = now(), version = version + 1, updated_at = now() where user_id = @u",
-            new { u = userId }, ct);
+            """
+            update people.profile set photo_version = null, photo_source = null,
+              directory_photo_checked_at = case when photo_source = 'own' then null else directory_photo_checked_at end,
+              photo_updated_at = now(), version = version + 1, updated_at = now()
+            where user_id = @u
+            """, new { u = userId }, ct);
         await DeleteFilesAsync(userId, old, ct);
         return true;
     }

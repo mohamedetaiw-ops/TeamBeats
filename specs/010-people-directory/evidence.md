@@ -1,6 +1,6 @@
-# Spec 010 evidence (R1)
+# Spec 010 evidence
 
-The spec stays Approved, not Implemented, until photo upload and directory photos (part of T007) are done. The reporting line is wired into line manager approval and Team requests (016), manager lists (009, 025) and free and busy visibility (018).
+Photo upload (T007) and directory photos (T012) are done. The reporting line is wired into line manager approval and Team requests (016), manager lists (009, 025) and free and busy visibility (018).
 
 | Requirement | Status | Evidence |
 |---|---|---|
@@ -16,7 +16,7 @@ The spec stays Approved, not Implemented, until photo upload and directory photo
 | PPL-010 people component | Met | `PageCompositionTests.Picker_lists_registered_components_and_explains_ineligible_ones`, `The_people_component_reads_a_named_set_and_bad_ids_are_refused`, `people.spec.ts` |
 | PPL-011 location dimension | Met | `Renaming_a_location_keeps_its_key`, `PeopleSearchTextTests.Location_keys_ignore_case_and_spacing` |
 | PPL-012 events | Met | `Directory_sync_sets_profiles_...` (`ReportingLineChanged`, `LocationAdded` in the outbox), `Employees_edit_their_own_editable_fields_...` (`ProfileUpdated`) |
-| PPL-013 photos | Open | Needs an image library decision (r1-implementation-notes) |
+| PPL-013 photos | Met | `PeoplePhotoTests` (type, size, metadata, resize, tenant only, removal with audit); `DirectoryPhotoTests` (directory photo for people without an upload, changes, own upload wins, removed photo stays removed, bad images and outages change nothing) |
 | PPL-014 free and busy visibility | Met | `MailCalendarTests.Free_and_busy_shows_status_blocks_only_for_a_visible_colleague` (no `people.view`, no free and busy) |
 | PPL-015 contact actions from visible fields | Met | Profile page builds actions from returned fields only; `Visibility_rules_apply_in_profiles_and_search` |
 | PPL-016 tenant fields | Met | `The_policy_is_for_administrators_custom_fields_need_the_capability_and_stale_versions_conflict` |

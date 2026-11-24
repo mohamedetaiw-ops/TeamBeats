@@ -40,6 +40,7 @@ public static class IntegrationsModule
         services.AddScoped<IConnectionFeatures, ConnectionFeatures>();
         services.AddScoped<IConnectedSystems, ConnectedSystems>();
         services.AddScoped<IDirectorySource, MicrosoftDirectorySource>();
+        services.AddScoped<IDirectoryPhotos, MicrosoftDirectoryPhotos>();
         services.AddSingleton<TokenProtector>();
         services.AddScoped<DelegatedTokenStore>();
         services.AddScoped<DelegatedAccessService>();
