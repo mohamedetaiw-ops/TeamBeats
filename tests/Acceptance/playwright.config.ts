@@ -38,6 +38,15 @@ export default defineConfig({
         // The accessibility conformance gate of spec 038 (tests/Acceptance/a11y), its own CI job. Its findings are
         // deterministic and named in the failure message, so it needs no retry and no trace, which keeps the report small.
         { name: "a11y", testDir: "./a11y", retries: 0, use: { ...devices["Desktop Chrome"], launchOptions: hosts, trace: "off" } },
+        // The design suite in Firefox and WebKit (spec 036 T012), run nightly by the cross-browser workflow with
+        // E2E_CROSS_BROWSER=1. Both resolve *.localhost to this machine themselves or through the system resolver, so
+        // they need no host mapping; the pixel baselines are Chromium's, so that run ignores snapshots.
+        ...(process.env.E2E_CROSS_BROWSER
+          ? [
+              { name: "firefox", testDir: "./specs", testMatch: /design-system\.spec\.ts/, use: { ...devices["Desktop Firefox"] } },
+              { name: "webkit", testDir: "./specs", testMatch: /design-system\.spec\.ts/, use: { ...devices["Desktop Safari"] } },
+            ]
+          : []),
       ],
   webServer: local
     ? [

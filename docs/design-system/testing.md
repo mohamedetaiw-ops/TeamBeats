@@ -80,7 +80,7 @@ Developers validate that the site is technically sound: smooth navigation, quick
 | Theme accessibility | Every design and brand passes contrast | `ThemeEngineTests`, `DesignPresetTests`, the brand editor's blocking checks |
 | Performance | LCP, INP, CLS, theme size | `performance.spec.ts`, Web Vitals in staging, CSS size test |
 | Security | CSP, rendering, tenant isolation | CSP guard on every e2e test, `secure-rendering.spec.ts`, cross-tenant suite |
-| Cross-browser | Chromium in CI on every pull request; Firefox, Safari and mobile Safari before each release | Manual pass on the release checklist until the browser matrix decision in `docs/testing/e2e-plan.md` |
+| Cross-browser | Chromium in CI on every pull request; Firefox, Safari and mobile Safari before each release | The design suite in Firefox and WebKit every night (`cross-browser.yml`, not blocking pull requests); a manual mobile Safari pass on the release checklist |
 | Dynamic content | Empty, long, Arabic, mixed direction and failing data | Fixtures with long strings, failure injection per placement (spec 032) |
 
 ## Post-development test (design and development together)
