@@ -1,11 +1,11 @@
 "use client";
 
-import { useId, useSyncExternalStore, type ReactNode } from "react";
+import { useId, useState, useSyncExternalStore, type KeyboardEvent, type ReactNode } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Drawer } from "./Dialog";
 import { CloseButton, IconButton } from "./IconButton";
 import { Icon, type IconName } from "./Icon";
-import { addDays, fromIso, monthGrid, monthStart, firstWeekday } from "./dates";
+import { addDays, fromIso, monthGrid, monthStart, firstWeekday, weekdayOf } from "./dates";
 
 /**
  * The calendar parts of spec 036 DLS-069 to DLS-074, built for the unified calendar of spec 037 and usable by any
@@ -110,6 +110,37 @@ export function LayerChips({
   );
 }
 
+/**
+ * Keyboard moves between the day buttons of a week strip or month (DLS-071, DLS-072): one day is in the tab order and
+ * the arrow keys move focus across the shown days (left and right mirror in right to left), Home and End go to the
+ * start and end of the week, up and down move by a week where there are weeks. Enter or Space selects the day.
+ */
+function useDayFocus(shown: readonly string[], preferred: readonly (string | null | undefined)[], weekStart: number, weeks: boolean) {
+  const [focused, setFocused] = useState<string | null>(null);
+  const current = focused && shown.includes(focused) ? focused : (preferred.find((d) => d && shown.includes(d)) ?? shown[0]);
+  function onKeyDown(event: KeyboardEvent<HTMLElement>) {
+    const from = (event.target as HTMLElement).closest<HTMLElement>("[data-date]")?.dataset.date;
+    if (!from) return;
+    const rtl = getComputedStyle(event.currentTarget).direction === "rtl";
+    const fromWeekStart = (weekdayOf(from) - weekStart + 7) % 7;
+    const moves: Record<string, number> = {
+      ArrowRight: rtl ? -1 : 1,
+      ArrowLeft: rtl ? 1 : -1,
+      Home: -fromWeekStart,
+      End: 6 - fromWeekStart,
+      ...(weeks ? { ArrowDown: 7, ArrowUp: -7 } : {}),
+    };
+    const step = moves[event.key];
+    if (step === undefined) return;
+    event.preventDefault();
+    const next = addDays(from, step);
+    if (!shown.includes(next)) return;
+    setFocused(next);
+    event.currentTarget.querySelector<HTMLElement>(`[data-date="${next}"]`)?.focus();
+  }
+  return { tabIndex: (date: string) => (date === current ? 0 : -1), onKeyDown, onFocus: setFocused };
+}
+
 export type StripDay = { date: string; markers: readonly Swatch[]; count: number };
 
 /** Week strip (DLS-071): seven days, weekday initial and number, up to four markers and a hidden count. */
@@ -133,13 +164,18 @@ export function WeekStrip({
   const initial = new Intl.DateTimeFormat(locale, { weekday: "narrow", timeZone: "UTC" });
   const number = new Intl.DateTimeFormat(locale, { day: "numeric", timeZone: "UTC" });
   const full = new Intl.DateTimeFormat(locale, { dateStyle: "full", timeZone: "UTC" });
+  const shown = days.map((d) => d.date);
+  const keys = useDayFocus(shown, [selected, today], shown[0] ? weekdayOf(shown[0]) : 0, false);
   return (
-    <ol className="ui-cal-strip" aria-label={label}>
+    <ol className="ui-cal-strip" aria-label={label} onKeyDown={keys.onKeyDown}>
       {days.map((d) => (
         <li key={d.date}>
           <button
             type="button"
             className="ui-cal-strip-day"
+            data-date={d.date}
+            tabIndex={keys.tabIndex(d.date)}
+            onFocus={() => keys.onFocus(d.date)}
             aria-pressed={d.date === selected}
             aria-current={d.date === today ? "date" : undefined}
             onClick={() => onSelect(d.date)}
@@ -312,10 +348,11 @@ export function RangeMonth({
   const number = new Intl.DateTimeFormat(locale, { day: "numeric", timeZone: "UTC" });
   const full = new Intl.DateTimeFormat(locale, { dateStyle: "full", timeZone: "UTC" });
   const inMonth = (d: string) => d.slice(0, 7) === start.slice(0, 7);
+  const keys = useDayFocus(weeks.flat(), [selected, today, start], first, true);
 
   return (
     <div className="ui-cal-month" data-items={items ? true : undefined}>
-      <table aria-label={title}>
+      <table aria-label={title} onKeyDown={keys.onKeyDown}>
         <thead>
           <tr>
             {weeks[0]!.map((d) => (
@@ -338,6 +375,9 @@ export function RangeMonth({
                       <button
                         type="button"
                         className="ui-cal-month-day"
+                        data-date={d}
+                        tabIndex={keys.tabIndex(d)}
+                        onFocus={() => keys.onFocus(d)}
                         aria-current={d === today ? "date" : undefined}
                         aria-pressed={d === selected}
                         onClick={() => onSelect(d)}
