@@ -140,6 +140,31 @@ public sealed class DatasetService(IDbSession session, ITenantContext context, E
         return await GetAsync(id, null, ct);
     }
 
+    /// <summary>
+    /// Adds a case promoted from the review queue (US1 scenario 5, US8 scenario 3) as a new version of a dataset of the
+    /// agent, source <c>review</c>. The caller has checked that the person may review the agent and redacted the case.
+    /// </summary>
+    internal async Task<int> AppendReviewedCaseAsync(Guid id, Guid agentId, CaseInput input, CancellationToken ct)
+    {
+        var d = await LoadAsync(id, ct);
+        if (d.Agent != agentId)
+        {
+            throw AppException.NotFound();
+        }
+        var errors = new ValidationErrors();
+        var checkedCase = CaseRules.Check(input, "case", errors);
+        errors.ThrowIfAny();
+        var cases = (await CasesAsync(id, d.Version, ct))
+            .Select(c => new CaseInput(c.Input, c.Locale, c.PersonaId, c.Expect, [.. c.Tags], c.Severity, c.Classification))
+            .ToList();
+        if (cases.Count >= CaseRules.MaxCases)
+        {
+            throw AppException.Conflict("conflict.eval.cases_too_many");
+        }
+        cases.Add(checkedCase!);
+        return await WriteVersionAsync(id, d, cases, "review", ct);
+    }
+
     private async Task CheckPersonasAsync(IReadOnlyList<CaseInput> cases, Action<int, string> fail, CancellationToken ct)
     {
         var ids = cases.Where(c => c.PersonaId is not null).Select(c => c.PersonaId!.Value).Distinct().ToArray();

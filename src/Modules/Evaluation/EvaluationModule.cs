@@ -47,6 +47,9 @@ public static class EvaluationModule
         services.AddScoped<ProductionRetention>();
         services.AddScoped<DriftDetector>();
         services.AddScoped<DriftAlerts>();
+        services.AddScoped<ReviewService>();
+        services.AddScoped<Workflow.Contracts.IPersonalTaskSource, ReviewTasks>();
+        services.AddMessageHandler<Agents.Contracts.AgentRunFeedbackGiven, ReviewQueue>("evaluation.review_feedback");
         services.AddScoped<ProductionSampler>();
         services.RemoveAll<Agents.Contracts.IProductionSampler>();
         services.AddScoped<Agents.Contracts.IProductionSampler>(sp => sp.GetRequiredService<ProductionSampler>());
@@ -200,6 +203,22 @@ public static class EvaluationModule
         root.MapGet("/agents/{agentId:guid}/production", async (Guid agentId, ProductionResults results, CancellationToken ct) =>
             Results.Ok(await results.ForAgentAsync(agentId, ct)));
         root.MapGet("/agents/{agentId:guid}/drift", async (Guid agentId, DriftAlerts alerts, CancellationToken ct) => Results.Ok(await alerts.ForAgentAsync(agentId, ct)));
+
+        // Human review queue (R2 T020, US8): flagged production samples for evaluation reviewers in scope.
+        root.MapGet("/review", async (string? status, ReviewService reviews, CancellationToken ct) => Results.Ok(await reviews.ListAsync(status, ct)));
+        root.MapGet("/review/{id:guid}", async (Guid id, ReviewService reviews, CancellationToken ct) => Results.Ok(await reviews.GetAsync(id, ct)));
+        root.MapPost("/review/{id:guid}/decision", async (Guid id, ReviewDecisionRequest request, ReviewService reviews, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await reviews.DecideAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+        root.MapPost("/review/{id:guid}/promote", async (Guid id, ReviewPromoteRequest request, ReviewService reviews, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await reviews.PromoteAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
 
         root.MapGet("/gates", async (Guid agentId, int version, GateService gates, CancellationToken ct) => Results.Ok(await gates.GetAsync(agentId, version, ct)));
         root.MapPost("/gates/{runId:guid}/override", async (Guid runId, GateOverrideRequest request, GateService gates, IDbSession session, CancellationToken ct) =>

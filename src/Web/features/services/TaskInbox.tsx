@@ -26,6 +26,7 @@ const sourceIcons: Record<string, IconName> = {
   agent_review: "spark",
   agent_prepared: "spark",
   eval_follow_up: "spark",
+  eval_review: "spark",
   external_action: "spark",
   leave: "leave",
   leave_change: "leave",
@@ -121,6 +122,8 @@ export function TaskInbox({ items, meId, units }: { items: InboxItem[]; meId: st
         return t("preparedByAi");
       case "eval_follow_up":
         return t("evalFollowUp");
+      case "eval_review":
+        return t("evalReview");
       case "leave":
         return t("leaveApproval");
       case "leave_change":

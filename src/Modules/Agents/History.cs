@@ -2,6 +2,7 @@ using System.Text.Json;
 using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Entitlements.Contracts;
+using TeamBeats.Messaging;
 using TeamBeats.Modules.Agents.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
@@ -29,7 +30,7 @@ public sealed record AssistantSettingsRequest(int? RetentionDays, bool? GuestsAl
 /// for 25 months with the turn ID as its reference, and holds no conversation text (section 8).
 /// </summary>
 public sealed class AssistantHistory(IDbSession session, ITenantContext context, IEntitlementService entitlements, IAuthorizationService authz,
-    IAuditWriter audit, IClock clock, AssistantGuests guests)
+    IAuditWriter audit, IClock clock, AssistantGuests guests, IOutbox outbox)
 {
     public const int DefaultRetentionDays = 30;
     public const int MaxRetentionDays = 365;
@@ -127,6 +128,11 @@ public sealed class AssistantHistory(IDbSession session, ITenantContext context,
         if (saved == 0)
         {
             throw AppException.NotFound();
+        }
+        // Only a turn an agent run answered can have a production sample to flag (spec 034 US8 scenario 2).
+        if (request.Helpful == false && await session.ScalarAsync<Guid?>("select run_id from agents.turn where id = @turn", new { turn = turnId }, ct) is { } runId)
+        {
+            await outbox.EnqueueAsync(new AgentRunFeedbackGiven(runId, false), ct);
         }
     }
 

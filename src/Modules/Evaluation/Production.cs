@@ -164,6 +164,7 @@ public sealed class ProductionPolicyService(IDbSession session, ITenantContext c
             await session.ExecAsync(
                 """
                 update evaluation.production_sample set content = case when @days = 0 then null else content end,
+                  judge = case when @days = 0 then (select coalesce(jsonb_object_agg(k, v - 'reason'), '{}') from jsonb_each(judge) as e(k, v)) else judge end,
                   content_expires_at = case when @days = 0 then null else least(content_expires_at, sampled_at + make_interval(days => @days)) end
                 where content is not null and status = 'scored'
                 """, new { days = next.RetentionDays }, ct);
@@ -275,7 +276,8 @@ public sealed class ProductionSampler(IDbSession session, IEntitlementService en
 /// deterministic metrics count. After scoring, the content is dropped unless the tenant retains samples and the run was
 /// Public or Internal.
 /// </summary>
-public sealed class ProductionScorer(IDbSession session, EvaluationJudge judge, ProductionPolicyService policies, IClock clock, ILogger<ProductionScorer> logger)
+public sealed class ProductionScorer(IDbSession session, EvaluationJudge judge, ProductionPolicyService policies, ReviewQueue reviews, IClock clock,
+    ILogger<ProductionScorer> logger)
     : IMessageHandler<ProductionSampleCaptured>
 {
     public async Task HandleAsync(ProductionSampleCaptured message, CancellationToken ct)
@@ -307,6 +309,7 @@ public sealed class ProductionScorer(IDbSession session, EvaluationJudge judge, 
             ["denials"] = new(CaseMetricStates.Scored, s.Denials),
         };
         var mode = s.Mode;
+        var judged = new Dictionary<string, JudgeVerdict>(StringComparer.Ordinal);
         if (s.Content is { } text && JsonSerializer.Deserialize<ProductionContent>(text, EvalJson.Options) is { } content)
         {
             var record = new EvalRunRecord(s.Run, s.Status, s.Outcome, null, content.Answer, s.Language, s.Model, s.In, s.Out, s.Latency, content.Steps, content.Read,
@@ -314,6 +317,13 @@ public sealed class ProductionScorer(IDbSession session, EvaluationJudge judge, 
             var classification = Enum.TryParse<DataClassification>(s.Classification, ignoreCase: true, out var level) ? level : DataClassification.Confidential;
             var verdicts = await judge.JudgeAsync(["groundedness", "relevance"], s.Language, content.Question, new CaseExpectations(), record, classification, ct,
                 content.Evidence.Length == 0 ? null : content.Evidence);
+            foreach (var (key, v) in verdicts)
+            {
+                if (v is not null)
+                {
+                    judged[key] = v;
+                }
+            }
             foreach (var (key, value) in ProductionSampling.Score(record, verdicts))
             {
                 metrics[key] = value;
@@ -327,15 +337,18 @@ public sealed class ProductionScorer(IDbSession session, EvaluationJudge judge, 
         var keep = s.Content is not null && ProductionSampling.Retains(s.Classification, policy.RetentionDays);
         await session.ExecAsync(
             """
-            update evaluation.production_sample set status = 'scored', mode = @mode, metrics = @metrics, scored_at = @now,
+            update evaluation.production_sample set status = 'scored', mode = @mode, metrics = @metrics, judge = @judge, scored_at = @now,
               content = case when @keep then content else null end,
               content_expires_at = case when @keep then @expires else null end
             where id = @id
             """, new
             {
                 id = message.SampleId, mode, metrics = Jsonb.From(metrics), now = clock.UtcNow, keep,
+                // The judge's reason can quote the content, so it is kept only as long as the content is.
+                judge = Jsonb.From(judged.ToDictionary(j => j.Key, j => new StoredVerdict(j.Value.Verdict, j.Value.Score, keep ? j.Value.Reason : null))),
                 expires = s.SampledAt.AddDays(policy.RetentionDays),
             }, ct);
+        await reviews.FlagAsync(message.SampleId, ct);
         logger.LogDebug("Production sample {SampleId} scored in mode {Mode}", message.SampleId, mode);
     }
 }
@@ -384,7 +397,11 @@ public sealed class ProductionRetention(IDbSession session)
     {
         await session.ExecAsync("delete from evaluation.production_day where day < @day", new { day = DateOnly.FromDateTime(now.UtcDateTime).AddDays(-7) }, ct);
         return await session.ExecAsync(
-            "update evaluation.production_sample set content = null, content_expires_at = null where content is not null and content_expires_at <= @now",
+            """
+            update evaluation.production_sample set content = null, content_expires_at = null,
+              judge = (select coalesce(jsonb_object_agg(k, v - 'reason'), '{}') from jsonb_each(judge) as e(k, v))
+            where content is not null and content_expires_at <= @now
+            """,
             new { now }, ct);
     }
 }
