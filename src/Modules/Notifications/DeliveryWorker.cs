@@ -8,7 +8,7 @@ using TeamBeats.TenantContext;
 namespace TeamBeats.Modules.Notifications;
 
 /// <summary>
-/// Runs email, Slack, Teams and push delivery for every tenant, each in its own scope, transaction and tenant context: due deliveries every
+/// Runs email, Slack, Teams, SMS and push delivery for every tenant, each in its own scope, transaction and tenant context: due deliveries every
 /// 5 seconds, digests every minute, retention once a day. Hosted by the worker, and by the development host when
 /// <c>Notifications:Delivery:InProcess</c> is true.
 /// </summary>
@@ -32,6 +32,7 @@ public sealed class NotificationDeliveryWorker(IServiceScopeFactory scopes, IClo
                 await delivery.DeliverDueAsync(now, 100, ct);
                 await services.GetRequiredService<SlackDelivery>().DeliverDueAsync(now, 100, ct);
                 await services.GetRequiredService<TeamsDelivery>().DeliverDueAsync(now, 100, ct);
+                await services.GetRequiredService<SmsDelivery>().DeliverDueAsync(now, 100, ct);
                 await services.GetRequiredService<PushDelivery>().DeliverDueAsync(now, 100, ct);
                 if (digest)
                 {

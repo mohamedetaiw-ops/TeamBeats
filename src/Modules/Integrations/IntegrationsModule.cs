@@ -73,6 +73,9 @@ public static class IntegrationsModule
         services.AddScoped<Runtime.TenantLinks>();
         services.AddScoped<Slack.SlackMessaging>();
         services.AddScoped<ITeamsMessaging, Microsoft365.TeamsActivity>();
+        services.AddScoped<Sms.SmsPack>();
+        services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Sms.SmsPack>());
+        services.AddScoped<ISmsMessaging, Sms.SmsMessaging>();
         services.AddScoped<ISlackMessaging>(sp => sp.GetRequiredService<Slack.SlackMessaging>());
         services.AddScoped<IConnectionDependents>(sp => sp.GetRequiredService<Slack.SlackMessaging>());
         services.AddScoped<ClockData.IClockFileSource, ClockData.SshNetClockFileSource>();

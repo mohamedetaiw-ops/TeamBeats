@@ -53,7 +53,7 @@ public sealed class ConnectorRuntime(
         {
             return new ConnectorCallResult(null, ConnectorOutcomes.Refused, ErrorClass: ConnectorErrorClasses.ConnectionMissing);
         }
-        var start = await StartAsync(call, "inline", RuntimePolicy.InlineAttempts, ct);
+        var start = await StartAsync(call, "inline", RuntimePolicy.InlineAttempts, ct, resolved?.Action.KeepInput ?? true);
         if (start.Answer is not null)
         {
             return start.Answer;
@@ -381,10 +381,10 @@ public sealed class ConnectorRuntime(
     private sealed record Start(Guid? RunId, ConnectorCallResult? Answer);
 
     /// <summary>Claims the run for this key: a new row, a failed one run again, or the stored answer of a finished or running one.</summary>
-    private async Task<Start> StartAsync(ConnectorCall call, string mode, int maxAttempts, CancellationToken ct)
+    private async Task<Start> StartAsync(ConnectorCall call, string mode, int maxAttempts, CancellationToken ct, bool keepInput = true)
     {
         var now = clock.UtcNow;
-        var input = new Jsonb(call.Input.ValueKind == JsonValueKind.Undefined ? "{}" : call.Input.GetRawText());
+        var input = new Jsonb(!keepInput || call.Input.ValueKind == JsonValueKind.Undefined ? "{}" : call.Input.GetRawText());
         var id = await session.ScalarAsync<Guid?>(
             """
             insert into integrations.run (tenant_id, id, connection_id, action, mode, idempotency_key, correlation_id, status, max_attempts, input, created_at)

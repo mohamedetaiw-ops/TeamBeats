@@ -813,6 +813,33 @@ public interface ITeamsMessaging
     Task<TeamsSendOutcome> SendActivityAsync(Guid userId, string title, string text, string link, CancellationToken ct = default);
 }
 
+/// <summary>What happened to an SMS.</summary>
+public enum SmsSendOutcome
+{
+    Sent,
+    Transient,
+
+    /// <summary>The gateway refused the number, or it is not in international form.</summary>
+    NumberRefused,
+
+    /// <summary>No enabled SMS connection, or SMS is not in the package.</summary>
+    Unavailable,
+    Failed,
+}
+
+/// <summary>
+/// SMS for notification delivery (spec 015 US6 scenario 2, FR-019, FR-020) through the tenant's SMS gateway connection
+/// (spec 017). Numbers are taken as the directory holds them and sent in E.164 form; one that cannot be read so is refused. <paramref name="key"/> of <see cref="SendAsync"/> is the idempotency key: a key
+/// that already succeeded is not sent again, which keeps one SMS per message and person.
+/// </summary>
+public interface ISmsMessaging
+{
+    Task<bool> AvailableAsync(CancellationToken ct = default);
+
+    /// <summary>Sends <paramref name="text"/> with the link (a path on the tenant host) after it, cut to fit one SMS.</summary>
+    Task<SmsSendOutcome> SendAsync(string phone, string text, string link, string key, CancellationToken ct = default);
+}
+
 /// <summary>Directions of a clock punch in the time and attendance contract.</summary>
 public static class ClockDirections
 {

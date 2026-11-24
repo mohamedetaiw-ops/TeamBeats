@@ -124,6 +124,12 @@ public interface IDirectoryReader
 {
     /// <summary>The snapshot for the tenant's directory connection, or null when directory sync is not set up.</summary>
     Task<DirectorySnapshot?> ReadAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// The mobile phone the directory holds for each of these people, as written there; people without one, or not
+    /// synced, are left out. Only for delivering messages to the person (spec 015 US6), never for display.
+    /// </summary>
+    Task<IReadOnlyDictionary<Guid, string>> MobilePhonesAsync(IReadOnlyCollection<Guid> userIds, CancellationToken ct = default);
 }
 
 /// <summary>Published after each successful directory sync run.</summary>

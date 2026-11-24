@@ -11,6 +11,8 @@ namespace TeamBeats.Modules.Integrations.Runtime;
 /// <paramref name="Inputs"/> are the fields a caller may map (FR-008, FR-009); the pack sends nothing else. Actions with
 /// no declared inputs (a webhook delivery, for example) cannot be used as a route step or an
 /// agent tool. <paramref name="JobTimeout"/> lets a long read (a full HR sync) run longer than the usual job attempt.
+/// <paramref name="KeepInput"/> false keeps the input out of run history, even for a failed run, when it holds personal
+/// data such as a phone number; such a run cannot be replayed, and its caller retries with the input again.
 /// </summary>
 public sealed record ConnectorActionDefinition(
     string Name,
@@ -18,7 +20,8 @@ public sealed record ConnectorActionDefinition(
     bool Idempotent,
     IReadOnlyList<string> BusinessErrors,
     IReadOnlyList<ConnectorInput>? Inputs = null,
-    TimeSpan? JobTimeout = null);
+    TimeSpan? JobTimeout = null,
+    bool KeepInput = true);
 
 /// <summary>What a pack learns about the connection it calls. Secrets stay references; the pack reads them through the secret store.</summary>
 public sealed record PackConnection(Guid TenantId, Guid Id, string Kind, int PackVersion, string? ExternalId, JsonElement Settings);

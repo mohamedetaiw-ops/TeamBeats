@@ -1007,7 +1007,9 @@
         "ai_agents_marketplace": "سوق الوكلاء",
         "ai_agents_advanced": "قوالب الوكلاء المتقدمة",
         "ai_governance_security_center": "مركز أمان الوكلاء",
-        "notifications_teams": "الإشعارات في Microsoft Teams"
+        "notifications_teams": "الإشعارات في Microsoft Teams",
+        "notifications_sms": "رسائل SMS للإشعارات الإلزامية",
+        "notifications_sms_monthly_messages": "رسائل SMS في الشهر"
       },
       "searchLabel": "البحث في الإمكانات",
       "searchPlaceholder": "ابحث بالاسم",
@@ -10155,6 +10157,7 @@
       "servicenow": "ServiceNow",
       "jira_service_management": "Jira Service Management",
       "slack": "Slack",
+      "sms": "بوابة رسائل SMS",
       "clock_import": "استيراد بيانات الحضور",
       "finance_rest": "التسليم إلى المالية",
       "google_workspace": "Google Workspace",
@@ -10185,6 +10188,7 @@
       "webhook": "أرسل أحداثًا موقعة إلى نظام آخر واستقبل منه تسليمات موقعة.",
       "onprem_ad": "اقرأ المستخدمين والمجموعات من Active Directory في شبكتك، عبر وكيل مزامنة تثبّته هناك.",
       "slack": "إرسال الإشعارات كرسائل مباشرة في Slack للأشخاص الذين يربطون حساباتهم، ومشاركة روابط المحتوى في قناة.",
+      "sms": "ترسل الإشعارات الإلزامية كرسائل نصية إلى من ليس لديهم بريد عمل ولا يستخدمون التطبيق، على رقم الجوال المسجل في الدليل.",
       "clock_import": "يقرأ ملفات بيانات الحضور من خادم SFTP يوميًا، أو يأخذ ملفات CSV ترفعها، ويطابق كل صف مع موظف حسب الرقم الوظيفي.",
       "finance_rest": "يرسل مطالبات المصروفات المعتمدة إلى نظام المالية عبر REST ويقرأ حالة الدفع.",
       "google_workspace": "يقرأ المستخدمين والمجموعات لمزامنة الدليل، والملفات في مساحات مشتركة تختارها، عبر حساب خدمة بتفويض على مستوى النطاق.",
@@ -10218,6 +10222,17 @@
       "baseUrlHint": "عادةً https://slack.com/api. يجب أن يكون المضيف في قائمة السماح.",
       "botToken": "مرجع رمز البوت",
       "botTokenHint": "مرجع رمز البوت في مدير الأسرار، مثل secret://tenants/your-tenant-id/slack-bot. لا تُدخل الرمز نفسه أبدًا."
+    },
+    "sms": {
+      "addTitle": "إضافة اتصال ببوابة رسائل SMS",
+      "addIntro": "أدخل عنوان REST لبوابة الرسائل، ومرجع مفتاح API الخاص بها في مدير الأسرار، واسم المرسل أو رقمه الذي يظهر للمستلمين. ترسل TeamBeats كل رسالة إلى عنوان البوابة متبوعًا بـ /messages، مع المفتاح كرمز Bearer. أضف مضيف البوابة إلى قائمة السماح أولًا.",
+      "formLabel": "إعدادات بوابة رسائل SMS",
+      "baseUrl": "عنوان البوابة",
+      "baseUrlHint": "عنوان https يكون مضيفه في قائمة السماح.",
+      "apiKey": "مرجع مفتاح API",
+      "apiKeyHint": "مرجع مفتاح API في مدير الأسرار، مثل secret://tenants/your-tenant-id/sms. لا تُدخل المفتاح نفسه أبدًا.",
+      "sender": "المرسل",
+      "senderHint": "اسم من 11 حرفًا ورقمًا كحد أقصى، أو رقم بالصيغة الدولية مثل ‎+971500000000."
     },
     "settings": {
       "name": "اسم الاتصال",

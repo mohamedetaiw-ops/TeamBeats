@@ -15,6 +15,7 @@ import { HrRestSettingsForm, HrSftpSettingsForm, type HrSftpBody } from "./HrSet
 import { GoogleSettingsForm, type GoogleBody } from "./GoogleSettingsForm";
 import { OnPremSettingsForm, type OnPremBody } from "./OnPremSettingsForm";
 import { SlackSettingsForm, type SlackBody } from "./SlackSettingsForm";
+import { SmsSettingsForm, type SmsBody } from "./SmsSettingsForm";
 import { WebhookSettingsForm, type WebhookBody } from "./WebhookSettingsForm";
 import { Checks, Messages, StatusBadge } from "./parts";
 import { send } from "./request";
@@ -143,6 +144,19 @@ export function ConnectionDetail({ initial, webhookEvents = [] }: { initial: Pac
             submitLabel={t("detail.save")}
             busy={busy === "save"}
             onSubmit={(body: SlackBody) => void run<PackConnection>("save", "PATCH", base, body, (v) => (setView(v), t("detail.saved")))}
+          />
+        </section>
+      ) : null}
+
+      {view.kind === "sms" ? (
+        <section className="connections-section" aria-labelledby="settings-heading">
+          <h2 id="settings-heading">{t("detail.settings")}</h2>
+          <SmsSettingsForm
+            key={JSON.stringify(view.settings)}
+            initial={view}
+            submitLabel={t("detail.save")}
+            busy={busy === "save"}
+            onSubmit={(body: SmsBody) => void run<PackConnection>("save", "PATCH", base, body, (v) => (setView(v), t("detail.saved")))}
           />
         </section>
       ) : null}

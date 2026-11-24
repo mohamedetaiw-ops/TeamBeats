@@ -146,8 +146,9 @@ public static class NotificationChannels
     public const string Slack = "slack";
     public const string Push = "push";
     public const string Teams = "teams";
+    public const string Sms = "sms";
 
-    public static readonly IReadOnlyList<string> All = [InApp, Email, Slack, Push, Teams];
+    public static readonly IReadOnlyList<string> All = [InApp, Email, Slack, Push, Teams, Sms];
 }
 
 /// <summary>A device allowed push notifications for this person (spec 030 section 12). Only the platform family is told, never the device.</summary>
