@@ -188,6 +188,13 @@
   margin-block-end: var(--tb-space-lg);
 }
 
+/* Quota bars on the plan page (spec 005 R2 T014 extended). */
+.admin-plan-usage {
+  display: grid;
+  gap: var(--tb-space-md);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+}
+
 .admin-capability-text {
   display: grid;
   gap: var(--tb-space-xs);

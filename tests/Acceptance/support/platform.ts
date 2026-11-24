@@ -71,3 +71,13 @@ export async function createTenant(prefix: string, defaultLocale: "ar" | "en", p
   await platform.dispose();
   return { id: created.id, key, defaultLocale, adminEmail };
 }
+
+/** A platform operator call that changes a tenant's contract (spec 005 R2: add-ons, overrides, contract end). */
+export async function platformPut(path: string, data: unknown): Promise<void> {
+  const platform = await platformClient();
+  const response = await platform.put(path, { data });
+  if (!response.ok()) {
+    throw new Error(`PUT ${path} failed with ${response.status()}: ${await response.text()}`);
+  }
+  await platform.dispose();
+}
