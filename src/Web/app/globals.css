@@ -16,6 +16,10 @@
   color-scheme: dark;
 }
 
+:root[data-mode="high_contrast"] {
+  color-scheme: light;
+}
+
 * {
   box-sizing: border-box;
 }

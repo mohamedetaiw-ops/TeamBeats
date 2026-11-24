@@ -23,7 +23,7 @@ public static class TokenTypes
 
 /// <summary>
 /// One token value as stored and sent: <c>$value</c> applies to every mode and density, <c>$modes</c> holds the values that
-/// differ (<c>dark</c> for colors and shadows, <c>compact</c> for spacing and type sizes). Close to DTCG 2025.10 so the R2
+/// differ (<c>dark</c> for colors and shadows, <c>high_contrast</c> for colors, <c>compact</c> for spacing and type sizes). Close to DTCG 2025.10 so the R2
 /// export is a projection.
 /// </summary>
 public sealed record TokenValue(
@@ -38,6 +38,9 @@ public sealed record TokenDefinition(string Name, string Type, string Light, str
 
     public bool AllowsDark => Type is TokenTypes.Color or TokenTypes.Shadow;
 
+    /// <summary>Colors may set their own high contrast value (spec 033 R2 T017); other tokens follow the light value there.</summary>
+    public bool AllowsHighContrast => Type is TokenTypes.Color;
+
     public bool AllowsCompact => Name.StartsWith("space.", StringComparison.Ordinal) || Name.StartsWith("font.size.", StringComparison.Ordinal);
 }
 
@@ -45,10 +48,13 @@ public static class ThemeModes
 {
     public const string Light = "light";
     public const string Dark = "dark";
+
+    /// <summary>High contrast (spec 033 R2 T017): the light layout with colors from the brand's high contrast values or the platform set.</summary>
+    public const string HighContrast = "high_contrast";
     public const string Comfortable = "comfortable";
     public const string Compact = "compact";
 
-    public static readonly IReadOnlyList<string> Modes = [Light, Dark];
+    public static readonly IReadOnlyList<string> Modes = [Light, Dark, HighContrast];
     public static readonly IReadOnlyList<string> Densities = [Comfortable, Compact];
 }
 
@@ -271,7 +277,8 @@ public static partial class TokenSchema
             }
             foreach (var (mode, modeValue) in value!.Modes ?? new Dictionary<string, string>())
             {
-                var allowed = (mode == ThemeModes.Dark && token.AllowsDark) || (mode == ThemeModes.Compact && token.AllowsCompact);
+                var allowed = (mode == ThemeModes.Dark && token.AllowsDark) || (mode == ThemeModes.Compact && token.AllowsCompact)
+                    || (mode == ThemeModes.HighContrast && token.AllowsHighContrast);
                 if (!allowed)
                 {
                     errors.Add($"{field}.{mode}", "validation.theme.mode_not_allowed");

@@ -42,7 +42,7 @@ export function ThemePreviewer({
   const [device, setDevice] = useState<(typeof devices)[number]>("desktop");
   const [failed, setFailed] = useState(false);
   const [loading, setLoading] = useState(false);
-  const modeName = (m: string) => (["light", "dark", "comfortable", "compact"].includes(m) ? tb(`modes.${m}`) : m);
+  const modeName = (m: string) => (["light", "dark", "high_contrast", "comfortable", "compact"].includes(m) ? tb(`modes.${m}`) : m);
 
   async function load(nextScope: string, nextSource: string) {
     setScope(nextScope);
@@ -97,6 +97,7 @@ export function ThemePreviewer({
           options={[
             { value: "light", label: modeName("light") },
             { value: "dark", label: modeName("dark") },
+            { value: "high_contrast", label: modeName("high_contrast") },
           ]}
         />
         <SegmentedControl

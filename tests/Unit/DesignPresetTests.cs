@@ -28,7 +28,7 @@ public sealed class DesignPresetTests
 
     [Theory]
     [MemberData(nameof(Keys))]
-    public void Every_design_passes_every_contrast_and_text_size_check_in_light_and_dark(string key)
+    public void Every_design_passes_every_contrast_and_text_size_check_in_light_dark_and_high_contrast(string key)
     {
         var theme = ThemeEngine.Resolve([Brand(0, Preset(key))], NoLocks);
         Assert.Empty(theme.InvalidTokens);
@@ -240,7 +240,7 @@ public sealed class DesignPresetTests
     public void The_current_menu_link_is_legible_in_every_design_and_mode(string key)
     {
         var theme = ThemeEngine.Resolve([Brand(0, Preset(key))], NoLocks);
-        foreach (var mode in new[] { "light", "dark" })
+        foreach (var mode in new[] { "light", "dark", "high_contrast" })
         {
             var v = theme.Variants[$"{mode}.comfortable"];
             var alpha = double.Parse(v["state.pressed.opacity"], System.Globalization.CultureInfo.InvariantCulture);

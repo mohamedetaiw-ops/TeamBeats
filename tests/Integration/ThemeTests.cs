@@ -256,7 +256,7 @@ public sealed class ThemeTests(TenantWorld world)
     {
         var t = world.A;
         var theme = await ThemeAsync(t, "tenant", "employee_holding");
-        Assert.Equal(4, theme.GetProperty("variants").GetArrayLength());
+        Assert.Equal(6, theme.GetProperty("variants").GetArrayLength());
         var dark = theme.GetProperty("variants").EnumerateArray().Single(v => v.GetProperty("mode").GetString() == "dark"
             && v.GetProperty("density").GetString() == "compact");
         var response = await t["employee_holding"].Client.GetAsync(dark.GetProperty("cssUrl").GetString());
@@ -424,7 +424,7 @@ public sealed class ThemeTests(TenantWorld world)
         Assert.Equal(preview.GetProperty("light").EnumerateObject().Count(), tokens.Count);
         var accent = tokens.Single(x => x.GetProperty("name").GetString() == "color.accent.base");
         Assert.Equal("color", accent.GetProperty("group").GetString());
-        Assert.Equal(["dark"], accent.GetProperty("modes").EnumerateArray().Select(m => m.GetString()));
+        Assert.Equal(["dark", "high_contrast"], accent.GetProperty("modes").EnumerateArray().Select(m => m.GetString()));
         Assert.Contains("logo", schema.GetProperty("assetSlots").EnumerateArray().Select(m => m.GetString()));
     }
 }

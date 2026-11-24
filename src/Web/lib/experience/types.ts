@@ -43,7 +43,7 @@ export type RenderedPage = {
 };
 
 export type ThemeVariant = {
-  mode: "light" | "dark";
+  mode: "light" | "dark" | "high_contrast";
   density: "comfortable" | "compact";
   cssUrl: string;
   /** Resolved token values by token name, including the design choices `design.preset` and `layout.navigation`. */

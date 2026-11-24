@@ -1483,7 +1483,8 @@
       "light": "Light",
       "dark": "Dark",
       "comfortable": "Comfortable",
-      "compact": "Compact"
+      "compact": "Compact",
+      "high_contrast": "High contrast"
     },
     "groups": {
       "color": "Colors",
@@ -2053,7 +2054,8 @@
         "label": "Appearance",
         "system": "System",
         "light": "Light",
-        "dark": "Dark"
+        "dark": "Dark",
+        "high_contrast": "High contrast"
       },
       "density": {
         "label": "Density",

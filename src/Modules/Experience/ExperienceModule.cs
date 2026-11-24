@@ -510,7 +510,7 @@ public static class ExperienceModule
         x.MapGet("/tokens", () => Results.Ok(new
         {
             tokens = TokenSchema.All.Select(t => new TokenSchemaEntry(t.Name, t.Name.Split('.')[0], t.Type, t.CssName, t.Light, t.Dark, t.Compact, t.Script,
-                [.. (t.AllowsDark ? new[] { ThemeModes.Dark } : []), .. (t.AllowsCompact ? new[] { ThemeModes.Compact } : [])])),
+                [.. (t.AllowsDark ? new[] { ThemeModes.Dark } : []), .. (t.AllowsHighContrast ? new[] { ThemeModes.HighContrast } : []), .. (t.AllowsCompact ? new[] { ThemeModes.Compact } : [])])),
             assetSlots = ThemeService.Slots,
             fonts = TokenSchema.ApprovedFonts,
             easings = TokenSchema.Easings.Keys,

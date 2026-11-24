@@ -1,4 +1,4 @@
-import { expect, signInWithDevForm, test } from "../support/fixtures";
+import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
 import { tenantApi } from "../support/pages";
 import { createTenant, type TestTenant } from "../support/platform";
 import { msg } from "../support/messages";
@@ -7,7 +7,8 @@ import { hostOrigin } from "../support/stack";
 /**
  * Spec 033 T010: the web app reads only the generated --tb-* tokens. Signed-out pages keep the platform defaults, a
  * signed-in page takes the tenant theme in light and dark, and the theme loads before the first paint, so it causes
- * no layout shift.
+ * no layout shift. R2 T017: high contrast follows the device in system mode or a personal choice, and a brand without
+ * its own high contrast values gets the platform set.
  */
 const accent = (page: import("@playwright/test").Page) =>
   page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--tb-color-accent-base").trim());
@@ -65,5 +66,24 @@ test.describe("tenant theme", () => {
     await page.getByRole("button", { name: msg("en", "shell.settings.open") }).click();
     await page.getByRole("radiogroup", { name: msg("en", "shell.settings.mode.label") }).getByRole("radio", { name: msg("en", "shell.settings.mode.system") }).check();
     await expect.poll(() => accent(page)).toBe("#5eead4");
+  });
+
+  test("high contrast follows the device in system mode and the personal choice", async ({ page }, testInfo) => {
+    await signInWithDevForm(page, tenant.key, tenant.adminEmail, "en");
+    await page.goto(`${hostOrigin(tenant.key)}/`);
+    await page.getByRole("button", { name: msg("en", "shell.settings.open") }).click();
+    const modes = page.getByRole("radiogroup", { name: msg("en", "shell.settings.mode.label") });
+    await modes.getByRole("radio", { name: msg("en", "shell.settings.mode.system") }).check();
+    // The brand sets no high contrast accent, so the platform one applies.
+    await page.emulateMedia({ colorScheme: "light", contrast: "more" });
+    await expect.poll(() => accent(page)).toBe("#0000a8");
+    await page.emulateMedia({ colorScheme: "light", contrast: "no-preference" });
+    await expect.poll(() => accent(page)).toBe("#0f766e");
+
+    await modes.getByRole("radio", { name: msg("en", "shell.settings.mode.high_contrast") }).check();
+    await expect(page.locator("html")).toHaveAttribute("data-mode", "high_contrast");
+    await expect.poll(() => accent(page)).toBe("#0000a8");
+    await page.keyboard.press("Escape");
+    await expectAccessible(page, testInfo, "high-contrast-home");
   });
 });

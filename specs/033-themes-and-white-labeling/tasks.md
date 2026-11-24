@@ -36,7 +36,7 @@ R2 covers User Stories 2, 6, 7 and 8, US3 scenario 3 and US4 delegation and shar
 - [x] T014 [US2] Theme lifecycle: draft, submit, approval route (spec 024 engine, spec 016 inbox), schedule, publish, versioned releases and revert that keeps placements and personal layouts; invisible to employees until published; tests
 - [x] T015 [US2 scenario 4] Theme impact report from the spec 032 impact service: inheriting scopes, pages, audience variants and overridden values, with a preview of a representative child scope and cancel
 - [x] T016 [US2 scenario 1] Preview on the standard shell, sample templates and sample components in light, dark and high contrast, at three viewports, in LTR and RTL, with the contrast and state checks; preview as an organization
-- [ ] T017 High contrast mode: a platform high contrast token set used when the brand defines none, chosen by the person or by `prefers-contrast: more` and forced colors; every design (Beats, Atlas, Pulse, Studio) passes contrast checks in it
+- [x] T017 High contrast mode: a platform high contrast token set used when the brand defines none, chosen by the person or by `prefers-contrast: more` and forced colors; every design (Beats, Atlas, Pulse, Studio) passes contrast checks in it
 - [ ] T018 [US3 scenario 3] Locale-specific branding: logo lockup and title per locale, switched with the locale
 - [ ] T019 [US4 scenarios 3 to 5] Delegated brand editing for one organization and sharing policies for pages and navigation groups, with owner labels and no merged permissions
 - [ ] T020 [US6] Starter wizard for a new organization: brand preset, shell, navigation pattern, language and starter pages from templates, created as drafts owned by the new organization's admin

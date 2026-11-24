@@ -6,7 +6,7 @@ using Xunit;
 
 namespace TeamBeats.Unit.Tests;
 
-/// <summary>Spec 033: typed token validation, alias cycles, contrast math, resolution order with locks, fallback and CSS size.</summary>
+/// <summary>Spec 033: typed token validation, alias cycles, contrast math, resolution order with locks, fallback, CSS size and high contrast.</summary>
 public sealed class ThemeEngineTests
 {
     private static readonly Dictionary<string, (int Depth, Guid? Scope)> NoLocks = new();
@@ -100,7 +100,7 @@ public sealed class ThemeEngineTests
     public void Platform_defaults_are_complete_and_pass_every_check()
     {
         var theme = ThemeEngine.Resolve([new ThemeLayer(0, null, "brand", null, null, new Dictionary<string, TokenValue>())], NoLocks);
-        Assert.Equal(4, theme.Variants.Count);
+        Assert.Equal(6, theme.Variants.Count);
         Assert.All(theme.Variants.Values, v => Assert.Equal(TokenSchema.All.Count, v.Count));
         Assert.Empty(ThemeEngine.Check(theme, strict: true));
         Assert.Empty(theme.InvalidTokens);
@@ -228,5 +228,55 @@ public sealed class ThemeEngineTests
             }
             Assert.True(buffer.Length < 30 * 1024, $"{buffer.Length} bytes");
         }
+    }
+
+    [Fact]
+    public void The_platform_high_contrast_set_covers_every_color_and_reaches_seven_to_one_for_text()
+    {
+        var colors = TokenSchema.All.Where(t => t.Type == TokenTypes.Color).Select(t => t.Name).Order(StringComparer.Ordinal).ToList();
+        Assert.Equal(colors, HighContrast.Colors.Keys.Order(StringComparer.Ordinal).ToList());
+        Assert.All(HighContrast.Colors.Values, v => Assert.NotNull(TokenSchema.ParseColor(v)));
+        var hc = ThemeEngine.Resolve([new ThemeLayer(0, null, "brand", null, null, new Dictionary<string, TokenValue>())], NoLocks).Variants["high_contrast.comfortable"];
+        Assert.True(ThemeEngine.Ratio(hc["color.text.primary"], hc["color.surface.base"]) >= 7);
+        Assert.True(ThemeEngine.Ratio(hc["color.text.secondary"], hc["color.surface.base"]) >= 7);
+        Assert.True(ThemeEngine.Ratio(hc["color.shell.text"], hc["color.shell.background"]) >= 7);
+        Assert.True(ThemeEngine.Ratio(hc["color.link"], hc["color.surface.base"]) >= 7);
+        Assert.True(ThemeEngine.Ratio(hc["color.accent.text"], hc["color.accent.base"]) >= 7);
+    }
+
+    [Fact]
+    public void High_contrast_takes_the_brands_own_value_and_never_its_everyday_colors()
+    {
+        var theme = ThemeEngine.Resolve([new ThemeLayer(0, null, "brand", null, null, new Dictionary<string, TokenValue>
+        {
+            ["color.accent.base"] = new("#fde68a", new Dictionary<string, string> { ["dark"] = "#fde68a" }),
+            ["color.link"] = new("#0f766e", new Dictionary<string, string> { ["high_contrast"] = "#003d38" }),
+            ["space.md"] = V("20px"),
+        })], NoLocks);
+        var hc = theme.Variants["high_contrast.comfortable"];
+        Assert.Equal(HighContrast.Colors["color.accent.base"], hc["color.accent.base"]);
+        Assert.Equal("#003d38", hc["color.link"]);
+        Assert.Equal("#0f766e", theme.Variants["light.comfortable"]["color.link"]);
+        // Layout, type and spacing follow the light values.
+        Assert.Equal("20px", hc["space.md"]);
+        Assert.Equal(theme.Variants["light.compact"]["space.md"], theme.Variants["high_contrast.compact"]["space.md"]);
+        Assert.DoesNotContain(ThemeEngine.Check(theme, strict: false), f => f.Mode == "high_contrast" && f.Severity == ThemeEngine.Blocking);
+    }
+
+    [Fact]
+    public void A_high_contrast_value_is_allowed_on_colors_only_and_is_checked()
+    {
+        var errors = Errors(new()
+        {
+            ["color.link"] = new TokenValue("#0f766e", new Dictionary<string, string> { ["high_contrast"] = "red" }),
+            ["space.md"] = new TokenValue("16px", new Dictionary<string, string> { ["high_contrast"] = "18px" }),
+        });
+        Assert.Equal(["validation.theme.color_invalid"], errors["tokens.color.link.high_contrast"]);
+        Assert.Equal(["validation.theme.mode_not_allowed"], errors["tokens.space.md.high_contrast"]);
+        var shell = ThemeEngine.Resolve([new ThemeLayer(0, null, "brand", null, null, new Dictionary<string, TokenValue>
+        {
+            ["color.shell.text"] = new("#17152e", new Dictionary<string, string> { ["high_contrast"] = "#111111" }),
+        })], NoLocks);
+        Assert.Contains(ThemeEngine.Check(shell, strict: false), f => f.Mode == "high_contrast" && f.Token == "color.shell.text" && f.Severity == ThemeEngine.Blocking);
     }
 }

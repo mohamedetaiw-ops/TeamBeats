@@ -53,7 +53,7 @@ public static class ThemeEngine
         foreach (var (name, value) in DesignPresets.Tokens(preset))
         {
             var token = TokenSchema.ByName[name];
-            raw[name] = VariantKeys().ToDictionary(v => v.Key, v => Pick(value, v.Mode, v.Density) ?? PlatformValue(token, v.Mode, v.Density));
+            raw[name] = VariantKeys().ToDictionary(v => v.Key, v => Pick(token, value, v.Mode, v.Density) ?? PlatformValue(token, v.Mode, v.Density));
             provenance[name] = new TokenSource("design", null, null, null, null, false);
         }
 
@@ -73,7 +73,7 @@ public static class ThemeEngine
             var presetTokens = DesignPresets.Tokens(lockedPreset);
             var fromDesign = presetTokens.TryGetValue(name, out var presetValue);
             raw[name] = VariantKeys().ToDictionary(v => v.Key,
-                v => (fromDesign ? Pick(presetValue!, v.Mode, v.Density) : null) ?? PlatformValue(token, v.Mode, v.Density));
+                v => (fromDesign ? Pick(token, presetValue!, v.Mode, v.Density) : null) ?? PlatformValue(token, v.Mode, v.Density));
             provenance[name] = new TokenSource(fromDesign ? "design" : "platform", null, null, null, lockAt.Scope, true);
         }
 
@@ -95,7 +95,13 @@ public static class ThemeEngine
                 var ok = true;
                 foreach (var (key, mode, density) in VariantKeys())
                 {
-                    var v = Pick(value, mode, density);
+                    var v = Pick(token, value, mode, density);
+                    if (v is null && mode == ThemeModes.HighContrast)
+                    {
+                        // A color without its own high contrast value keeps what is below it: the platform set by default.
+                        values[key] = raw[name][key];
+                        continue;
+                    }
                     if (v is null || TokenSchema.Check(token, v) is not null)
                     {
                         ok = false;
@@ -171,7 +177,8 @@ public static class ThemeEngine
         {
             foreach (var (name, value) in layer.Tokens.Where(t => raw.ContainsKey(t.Key)))
             {
-                raw[name] = VariantKeys().ToDictionary(v => v.Key, v => Pick(value, v.Mode, v.Density) ?? raw[name][v.Key]);
+                var token = TokenSchema.ByName[name];
+                raw[name] = VariantKeys().ToDictionary(v => v.Key, v => Pick(token, value, v.Mode, v.Density) ?? raw[name][v.Key]);
             }
         }
         return TokenSchema.All.Where(t => VariantKeys().Any(v => Dealias(t.Name, v.Key, raw, []) is null)).Select(t => t.Name).ToList();
@@ -191,10 +198,19 @@ public static class ThemeEngine
     }
 
     private static string PlatformValue(TokenDefinition token, string mode, string density) =>
-        (mode == ThemeModes.Dark ? token.Dark : null) ?? (density == ThemeModes.Compact ? token.Compact : null) ?? token.Light;
+        (mode == ThemeModes.HighContrast && token.AllowsHighContrast ? HighContrast.Colors[token.Name] : null)
+        ?? (mode == ThemeModes.Dark ? token.Dark : null) ?? (density == ThemeModes.Compact ? token.Compact : null) ?? token.Light;
 
-    private static string? Pick(TokenValue value, string mode, string density)
+    /// <summary>
+    /// The value a layer gives a variant, or null when it gives none. In high contrast a color needs its own
+    /// <c>high_contrast</c> value: the brand's everyday colors are not used there.
+    /// </summary>
+    private static string? Pick(TokenDefinition token, TokenValue value, string mode, string density)
     {
+        if (mode == ThemeModes.HighContrast && token.AllowsHighContrast)
+        {
+            return value.Modes?.TryGetValue(ThemeModes.HighContrast, out var high) == true ? high : null;
+        }
         if (mode == ThemeModes.Dark && value.Modes?.TryGetValue(ThemeModes.Dark, out var dark) == true)
         {
             return dark;

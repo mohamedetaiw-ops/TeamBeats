@@ -195,7 +195,7 @@ export function BrandManager({
   }
 
   const fieldError = (field: string) => errors[field]?.[0]?.message;
-  const modeName = (mode: string) => (["light", "dark", "comfortable", "compact"].includes(mode) ? t(`modes.${mode}`) : mode);
+  const modeName = (mode: string) => (["light", "dark", "high_contrast", "comfortable", "compact"].includes(mode) ? t(`modes.${mode}`) : mode);
 
   function input(entry: TokenSchemaEntry, mode: string | null) {
     const value = mode === null ? (tokens[entry.name]?.$value ?? "") : (tokens[entry.name]?.$modes?.[mode] ?? "");
