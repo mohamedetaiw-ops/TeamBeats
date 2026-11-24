@@ -5768,6 +5768,37 @@
         }
       }
     },
+    "/api/v1/experience/move-impact/{orgUnitId}": {
+      "get": {
+        "tags": [
+          "Experience: themes"
+        ],
+        "parameters": [
+          {
+            "name": "orgUnitId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "parentId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/experience/token-extensions": {
       "get": {
         "tags": [

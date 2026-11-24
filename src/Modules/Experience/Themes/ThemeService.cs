@@ -416,9 +416,9 @@ public sealed partial class ThemeService(
 
     /// <summary>Platform, then the tenant brand and overrides, then each unit from the root down (spec 033 resolver order).</summary>
     private async Task<(List<ThemeLayer> Layers, BrandRow Brand)> LayersAsync(Guid? unit, CancellationToken ct, AssignmentRow? assignmentOverride,
-        (Guid Id, Dictionary<string, TokenValue> Tokens)? brandOverride)
+        (Guid Id, Dictionary<string, TokenValue> Tokens)? brandOverride, List<Guid?>? chainOverride = null)
     {
-        var chain = await ChainAsync(unit, ct);
+        var chain = chainOverride ?? await ChainAsync(unit, ct);
         var assignments = (await AssignmentsAsync(ct)).Where(a => a.Scope != assignmentOverride?.Scope || assignmentOverride is null).ToList();
         if (assignmentOverride is not null)
         {
@@ -463,9 +463,9 @@ public sealed partial class ThemeService(
     }
 
     /// <summary>Locks that apply at a scope: its own and every ancestor's, with the shallowest lock winning.</summary>
-    private async Task<Dictionary<string, (int Depth, Guid? Scope)>> LocksForAsync(Guid? unit, CancellationToken ct)
+    private async Task<Dictionary<string, (int Depth, Guid? Scope)>> LocksForAsync(Guid? unit, CancellationToken ct, List<Guid?>? chainOverride = null)
     {
-        var chain = await ChainAsync(unit, ct);
+        var chain = chainOverride ?? await ChainAsync(unit, ct);
         var rows = await session.QueryAsync("select scope_org_unit_id, setting from experience.experience_lock", null,
             r => new LockRow(r.Get<Guid?>("scope_org_unit_id"), r.GetString(1)), ct);
         var result = new Dictionary<string, (int, Guid?)>(StringComparer.Ordinal);

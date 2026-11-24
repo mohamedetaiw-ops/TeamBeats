@@ -56,6 +56,7 @@ public static class ExperienceModule
         services.AddScoped<AppManifest>();
         services.AddScoped<Sharing.OrgSharing>();
         services.AddScoped<Delegation.Delegations>();
+        services.AddScoped<Sharing.MoveImpacts>();
         services.AddScoped<Starter.Starters>();
         services.AddSingleton<Offline.OfflineKeySource>();
         services.AddScoped<Offline.OfflineBundles>();
@@ -534,6 +535,14 @@ public static class ExperienceModule
 
         // Drift report (spec 033 R2 T022, FR-015): what has drifted from the rules, with scope, token and remediation.
         x.MapGet("/drift", async (ThemeService themes, CancellationToken ct) => Results.Ok(await themes.DriftAsync(ct)));
+
+        // The experience impact of moving an organization (spec 033 US5, FR-025), shown before the move is confirmed.
+        x.MapGet("/move-impact/{orgUnitId:guid}", async (Guid orgUnitId, Guid? parentId, Sharing.MoveImpacts impacts, IDbSession session, CancellationToken ct) =>
+        {
+            var impact = await impacts.ForAsync(orgUnitId, parentId, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(impact);
+        });
 
         // Reviewed token extensions (spec 033 R2 T022, FR-013): proposed by a theme editor, approved by another publisher.
         x.MapGet("/token-extensions", async (string? scope, ThemeService themes, IDbSession session, CancellationToken ct) =>

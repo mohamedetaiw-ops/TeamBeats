@@ -210,7 +210,7 @@ What was built for R1, slice by slice, and where it differs from the specs and p
 | Invalid older values | A value that fails its type at render time is skipped, so the inherited value stays, and `theme.invalid_token` is counted and logged. |
 | Tenant settings reader | `ITenantSettingsReader` gained `GetBrandingAsync` (primary color and whether a logo exists) for seeding. The plan said the contract gains nothing; reading the color needs one method. |
 | Brand asset upload | Brands hold asset references (`tenant:logo` or `asset:{id}`). Upload with the spec 001 validator comes with the brand manager page (T011). |
-| Experience impact on unit moves (US5) | The resolver follows the new parent once the move is saved. The impact preview before confirming is not built. |
+| Experience impact on unit moves (US5) | The resolver follows the new parent once the move is saved. The impact preview before confirming came in R2 (see the R2 notes, spec 033 T023). |
 
 ## Page renderer in the web app (spec 032 T015 to T017)
 
