@@ -18,6 +18,39 @@
         }
       }
     },
+    "/api/v1/site/presentation": {
+      "get": {
+        "tags": [
+          "Site"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/domains/tls-allowed": {
+      "get": {
+        "tags": [
+          "Site"
+        ],
+        "parameters": [
+          {
+            "name": "domain",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/auth/signout": {
       "post": {
         "tags": [
@@ -899,6 +932,117 @@
       "post": {
         "tags": [
           "Organization"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/tenant/domains": {
+      "get": {
+        "tags": [
+          "Tenant: custom domains"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Tenant: custom domains"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddDomainRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/tenant/domains/{id}/verify": {
+      "post": {
+        "tags": [
+          "Tenant: custom domains"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/tenant/domains/{id}/presentation": {
+      "put": {
+        "tags": [
+          "Tenant: custom domains"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DomainPresentationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/tenant/domains/{id}": {
+      "delete": {
+        "tags": [
+          "Tenant: custom domains"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -31500,6 +31644,20 @@
           }
         }
       },
+      "AddDomainRequest": {
+        "required": [
+          "host"
+        ],
+        "type": "object",
+        "properties": {
+          "host": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "AddMembershipRequest": {
         "required": [
           "userId",
@@ -36001,6 +36159,43 @@
                 "$ref": "#/components/schemas/ControlledSettings"
               }
             ]
+          }
+        }
+      },
+      "DomainPresentationRequest": {
+        "required": [
+          "appTitle",
+          "description",
+          "signInMessage"
+        ],
+        "type": "object",
+        "properties": {
+          "appTitle": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "description": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "signInMessage": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
           }
         }
       },
@@ -47072,6 +47267,9 @@
       "name": "Platform: tenants"
     },
     {
+      "name": "Site"
+    },
+    {
       "name": "Auth"
     },
     {
@@ -47121,6 +47319,9 @@
     },
     {
       "name": "Organization"
+    },
+    {
+      "name": "Tenant: custom domains"
     },
     {
       "name": "Tenant: identity"

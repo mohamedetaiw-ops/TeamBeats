@@ -50,6 +50,10 @@ public sealed class CrossTenantSuite(TenantWorld world, ITestOutputHelper output
         "GET /api/v1/kiosk/device",
         "POST /api/v1/kiosk/enrol",
         "POST /api/v1/kiosk/signin",
+        // Spec 033 FR-010: the sign-in page of a custom domain shows its title and message before anyone signs in, and the
+        // edge asks whether to issue a certificate for a host. Both answer only for verified domains; CustomDomainTests covers them.
+        "GET /api/v1/site/presentation",
+        "GET /api/v1/domains/tls-allowed",
     ];
 
     private IReadOnlyList<(string Method, string Pattern)> TenantRoutes() =>

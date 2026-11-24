@@ -49,13 +49,20 @@ public static class SessionAuthenticationMiddleware
                     }
                 }
             }
-            else if (match == HostMatch.TenantKey)
+            else
             {
                 var registry = services.GetRequiredService<ITenantRegistry>();
-                var tenant = await registry.FindByKeyAsync(key!, http.RequestAborted);
+                // A host outside the installation's own names is served only when it is a verified custom domain (spec 033 FR-010).
+                var customDomain = match == HostMatch.None ? http.Request.Host.Host.Trim().TrimEnd('.').ToLowerInvariant() : null;
+                var tenant = match == HostMatch.TenantKey
+                    ? await registry.FindByKeyAsync(key!, http.RequestAborted)
+                    : !string.IsNullOrEmpty(customDomain)
+                      && await services.GetRequiredService<ICustomDomainResolver>().TenantForHostAsync(customDomain, http.RequestAborted) is { } routed
+                        ? await registry.FindByIdAsync(routed, http.RequestAborted)
+                        : null;
                 if (tenant is not null)
                 {
-                    context.SetHost(HostScope.ForTenant(tenant));
+                    context.SetHost(customDomain is null ? HostScope.ForTenant(tenant) : HostScope.ForCustomDomain(tenant, customDomain));
                     if (tenant.Status != TenantLifecycleStatus.Active && !IsSignInPath(http.Request.Path))
                     {
                         // Suspended or closed: every request is refused; data is retained (spec 001 US3).

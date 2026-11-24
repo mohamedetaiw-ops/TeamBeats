@@ -7,6 +7,7 @@ import { direction, isLocale } from "@/i18n/locales";
 import { getTenantTheme } from "@/lib/experience/client";
 import { ThemeLinks } from "@/components/shell/ThemeLinks";
 import { getPreferences } from "@/lib/shell/client";
+import { apiGet, type SitePresentation } from "@/lib/api";
 // Default brand fonts (spec 033, ADR-0019): self-hosted, one file per script subset, fetched only when a page uses
 // characters of that script.
 import "@fontsource/readex-pro/400.css";
@@ -48,7 +49,10 @@ import { AppUpdate } from "@/features/app/AppUpdate";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("app");
-  return { title: t("name") };
+  // A verified custom domain names the app itself and describes it to browsers (spec 033 R2 T021, FR-010).
+  const site = await apiGet<SitePresentation>("/api/v1/site/presentation");
+  const own = site.ok && site.data.customDomain ? site.data : null;
+  return { title: own?.appTitle ?? t("name"), description: own?.description ?? undefined, applicationName: own?.appTitle ?? t("name") };
 }
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
