@@ -743,6 +743,7 @@
   "validation.quota.not_a_limit": "لا يوجد حصة للتطبيق إلا في القدرات من نوع الحد.",
   "validation.quota.mode_invalid": "اختر الرفض أو المهلة أو التحذير.",
   "validation.quota.grace_invalid": "المهلة نسبة مئوية من 1 إلى 100.",
+  "validation.contract.grace_days": "المهلة من 0 إلى 365 يومًا.",
   "validation.grant.limit_invalid": "الحد رقم صحيح يساوي صفرًا أو أكثر، ولا تقبله إلا القدرات من نوع الحد.",
   "validation.grant.end_required": "يحتاج التجاوز التعاقدي إلى تاريخ انتهاء.",
   "validation.grant.end_before_start": "يجب أن يكون تاريخ الانتهاء بعد تاريخ البدء.",

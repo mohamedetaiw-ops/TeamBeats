@@ -247,6 +247,8 @@ public static class ApiComposition
         // The authorization server and bearer tokens of the public API (spec 035) after the host's tenant is known.
         app.UseOAuthServer();
         app.UsePublicApiTokens();
+        // After the contract and its grace end, the tenant is read only (spec 005 US4).
+        app.UseSubscriptionExpiry();
         app.UseSharedDeviceRules();
         app.UseStepUp();
         app.UseRateLimiter();

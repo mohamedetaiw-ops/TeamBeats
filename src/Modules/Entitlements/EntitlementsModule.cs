@@ -62,6 +62,16 @@ public static class EntitlementsModule
             return Results.NoContent();
         });
 
+        platform.MapPut("/tenants/{tenantId:guid}/contract", async (Guid tenantId, ContractRequest request,
+            PackageCatalogue catalogue, ITenantRegistry registry, TenantContextAccessor context, IDbSession session, CancellationToken ct) =>
+        {
+            var tenant = await registry.FindByIdAsync(tenantId, ct) ?? throw AppException.NotFound();
+            context.SetTenant(tenant.Id);
+            await catalogue.SetContractAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
         platform.MapGrantEndpoints();
         platform.MapEnforcementEndpoint();
 
@@ -86,18 +96,33 @@ public sealed record PackageVersionView(string PackageKey, int Version, string S
 /// <param name="Sources">Where each effective value comes from: <c>package</c>, <c>addon</c> or <c>override</c> (FR-004).</param>
 public sealed record TenantEntitlementsView(string PackageKey, int Version, DateTimeOffset StartsAt, IReadOnlyDictionary<string, CapabilityValue> Capabilities,
     IReadOnlyDictionary<string, string>? Sources = null, IReadOnlyList<GrantView>? Addons = null, IReadOnlyList<GrantView>? Overrides = null,
-    IReadOnlyList<QuotaUsageView>? Usage = null);
+    IReadOnlyList<QuotaUsageView>? Usage = null, SubscriptionState? Contract = null);
 
 /// <summary>
 /// Resolves effective entitlements for the current tenant: the active subscription's package version, then active
 /// add-ons, then active contract overrides (FR-004). Unknown keys fail closed (ENT-005).
 /// </summary>
-public sealed class EntitlementService(IDbSession session, ITenantContext context, QuotaMeter quotas, ILogger<EntitlementService> logger)
+public sealed class EntitlementService(IDbSession session, ITenantContext context, QuotaMeter quotas, IClock clock, ILogger<EntitlementService> logger)
     : IEntitlementService, ISubscriptionProvisioning
 {
     private Dictionary<string, CapabilityValue>? _resolved;
     private Dictionary<string, string>? _sources;
     private HashSet<string>? _catalogue;
+    private SubscriptionState? _state;
+
+    public async Task<SubscriptionState> StateAsync(CancellationToken ct = default)
+    {
+        context.RequireTenant();
+        if (_state is not null)
+        {
+            return _state;
+        }
+        var row = await session.QuerySingleOrDefaultAsync(
+            "select contract_ends_at, expiry_grace_days from entitlements.subscription where status = 'active'", null,
+            r => (Ends: r.Get<DateTimeOffset?>("contract_ends_at"), Grace: r.GetInt32(1)), ct);
+        _state = SubscriptionState.For(row.Ends, row == default ? 30 : row.Grace, clock.UtcNow);
+        return _state;
+    }
 
     private async Task<Dictionary<string, CapabilityValue>> ResolveAsync(CancellationToken ct)
     {
@@ -192,7 +217,7 @@ public sealed class EntitlementService(IDbSession session, ITenantContext contex
             ?? throw AppException.NotFound();
         return new TenantEntitlementsView(sub.Key, sub.Version, sub.Starts, resolved, _sources,
             await ContractGrants.ListAsync(session, ContractGrants.Addon, ct), await ContractGrants.ListAsync(session, ContractGrants.Override, ct),
-            await quotas.UsageAsync(resolved, ct));
+            await quotas.UsageAsync(resolved, ct), await StateAsync(ct));
     }
 
     public async Task<bool> PublishedPackageExistsAsync(string packageKey, CancellationToken ct = default) =>
@@ -291,6 +316,27 @@ public sealed class PackageCatalogue(IDbSession session, ITenantContext context,
         await outbox.EnqueueAsync(new PackagePublished(packageKey, version), ct);
     }
 
+    /// <summary>Sets the contract end date and grace of the current-context tenant's subscription (spec 005 US4 scenario 3).</summary>
+    public async Task SetContractAsync(ContractRequest request, CancellationToken ct)
+    {
+        var grace = request.GraceDays ?? 30;
+        if (grace is < 0 or > 365)
+        {
+            throw AppException.Validation("graceDays", "validation.contract.grace_days");
+        }
+        var updated = await session.ExecAsync(
+            "update entitlements.subscription set contract_ends_at = @e, expiry_grace_days = @g where status = 'active'",
+            new { e = request.EndsAt, g = grace }, ct);
+        if (updated == 0)
+        {
+            throw AppException.NotFound();
+        }
+        var changes = new { contractEndsAt = request.EndsAt, graceDays = grace };
+        await audit.WriteAsync(new AuditEntry(AuditActions.SubscriptionChanged, "subscription", context.TenantId.ToString(), Changes: changes), ct);
+        await audit.WritePlatformAsync(new AuditEntry(AuditActions.SubscriptionChanged, "subscription", context.TenantId.ToString(), Changes: changes), context.TenantId, ct);
+        await outbox.EnqueueAsync(new EntitlementsChanged(context.RequireTenant(), []), ct);
+    }
+
     /// <summary>Moves the current-context tenant to a package version. Tenants never change their own subscription.</summary>
     public async Task ChangeSubscriptionAsync(string packageKey, int? version, CancellationToken ct)
     {
@@ -311,10 +357,16 @@ public sealed class PackageCatalogue(IDbSession session, ITenantContext context,
             join entitlements.package_version pv on pv.id = s.package_version_id where s.status = 'active'
             """, null, r => $"{r.GetString(0)}/{r.GetInt32(1)}", ct);
 
+        // The contract end and its grace carry over to the new package version.
+        var contract = await session.QuerySingleOrDefaultAsync(
+            "select contract_ends_at, expiry_grace_days from entitlements.subscription where status = 'active'", null,
+            r => (Ends: r.Get<DateTimeOffset?>("contract_ends_at"), Grace: r.GetInt32(1)), ct);
         await session.ExecAsync("update entitlements.subscription set status = 'ended', ends_at = now() where status = 'active'", null, ct);
         await session.ExecAsync(
-            "insert into entitlements.subscription (tenant_id, id, package_version_id, starts_at, status) values (@t, @id, @v, now(), 'active')",
-            new { t = context.RequireTenant(), id = Ids.New(), v = target.Id }, ct);
+            """
+            insert into entitlements.subscription (tenant_id, id, package_version_id, starts_at, status, contract_ends_at, expiry_grace_days)
+            values (@t, @id, @v, now(), 'active', @ends, @grace)
+            """, new { t = context.RequireTenant(), id = Ids.New(), v = target.Id, ends = contract.Ends, grace = contract == default ? 30 : contract.Grace }, ct);
 
         var changes = new { from = previous, to = $"{packageKey}/{target.Version}" };
         await audit.WriteAsync(new AuditEntry(AuditActions.SubscriptionChanged, "subscription", context.TenantId.ToString(), Changes: changes), ct);
@@ -323,6 +375,8 @@ public sealed class PackageCatalogue(IDbSession session, ITenantContext context,
         await outbox.EnqueueAsync(new EntitlementsChanged(context.RequireTenant(), []), ct);
     }
 }
+
+public sealed record ContractRequest(DateTimeOffset? EndsAt, int? GraceDays);
 
 [PlatformMessage]
 public sealed record PackagePublished(string PackageKey, int Version) : IIntegrationEvent;

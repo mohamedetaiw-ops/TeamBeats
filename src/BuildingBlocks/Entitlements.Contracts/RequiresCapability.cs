@@ -15,3 +15,15 @@ public static class RequiresCapabilityExtensions
             return await next(ctx);
         });
 }
+
+/// <summary>Marks a POST that only reads (a query or a preview), so it keeps working while an expired tenant is read only (spec 005 US4).</summary>
+public sealed class ReadOnlySafeMetadata
+{
+    public static readonly ReadOnlySafeMetadata Instance = new();
+}
+
+public static class ReadOnlySafeExtensions
+{
+    public static TBuilder ReadOnlySafe<TBuilder>(this TBuilder builder) where TBuilder : IEndpointConventionBuilder =>
+        builder.WithMetadata(ReadOnlySafeMetadata.Instance);
+}

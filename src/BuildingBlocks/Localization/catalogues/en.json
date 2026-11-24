@@ -743,6 +743,7 @@
   "validation.quota.not_a_limit": "Only limit capabilities have a quota to enforce.",
   "validation.quota.mode_invalid": "Choose deny, grace or warn.",
   "validation.quota.grace_invalid": "Grace is a percentage from 1 to 100.",
+  "validation.contract.grace_days": "Grace is from 0 to 365 days.",
   "validation.grant.limit_invalid": "A limit is a whole number of zero or more, and only limit capabilities take one.",
   "validation.grant.end_required": "A contract override needs an end date.",
   "validation.grant.end_before_start": "The end date must be after the start date.",
