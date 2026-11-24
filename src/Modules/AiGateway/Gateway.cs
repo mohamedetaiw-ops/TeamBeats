@@ -76,14 +76,15 @@ public sealed class AiGatewayService(
             return (null, AiDenials.InvalidRequest);
         }
 
-        // 1. Entitlement and the monthly request quota, counted from the call records of the metering step. Judge calls of
-        // platform suites are charged to the platform and do not count.
+        // 1. Entitlement and the monthly request quota (spec 005 US3), counted from the call records of the metering step
+        // and decided by the entitlement service with the tenant's enforcement. Judge calls of platform suites are charged
+        // to the platform and do not count.
         if (!await entitlements.IsEnabledAsync(Capabilities.AiAssistant, ct))
         {
             return (null, AiDenials.NotInPackage);
         }
-        if (!platformCharged && await entitlements.GetLimitAsync(Capabilities.AiAssistantMonthlyRequests, ct) is { } limit &&
-            await UsageRecorder.MonthCountAsync(session, clock.UtcNow, ct) >= limit)
+        if (!platformCharged && await entitlements.GetLimitAsync(Capabilities.AiAssistantMonthlyRequests, ct) is not null &&
+            !(await entitlements.CheckUsageAsync(Capabilities.AiAssistantMonthlyRequests, await UsageRecorder.MonthCountAsync(session, clock.UtcNow, ct), 1, ct)).Allowed)
         {
             return (null, AiDenials.QuotaExhausted);
         }

@@ -142,6 +142,16 @@ internal static class GrantEndpoints
         }
     }
 
+    public static void MapEnforcementEndpoint(this RouteGroupBuilder platform) =>
+        platform.MapPut("/tenants/{tenantId:guid}/enforcement/{key}", async (Guid tenantId, string key, EnforcementRequest request, QuotaEnforcement enforcement,
+            ITenantRegistry registry, TenantContextAccessor context, IDbSession session, CancellationToken ct) =>
+        {
+            await EnterAsync(tenantId, registry, context, ct);
+            var view = await enforcement.SetAsync(key, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
     private static async Task EnterAsync(Guid tenantId, ITenantRegistry registry, TenantContextAccessor context, CancellationToken ct)
     {
         var tenant = await registry.FindByIdAsync(tenantId, ct) ?? throw AppException.NotFound();

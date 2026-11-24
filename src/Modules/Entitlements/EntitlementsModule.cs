@@ -25,6 +25,9 @@ public static class EntitlementsModule
         services.AddScoped<ISubscriptionProvisioning>(sp => sp.GetRequiredService<EntitlementService>());
         services.AddScoped<PackageCatalogue>();
         services.AddScoped<ContractGrants>();
+        services.AddScoped<QuotaMeter>();
+        services.AddScoped<QuotaEnforcement>();
+        services.AddMessageHandler<QuotaExhausted, QuotaExhaustedNotifier>("entitlements.quota_exhausted");
         return services;
     }
 
@@ -60,6 +63,7 @@ public static class EntitlementsModule
         });
 
         platform.MapGrantEndpoints();
+        platform.MapEnforcementEndpoint();
 
         app.MapGet("/api/v1/tenant/entitlements", async (IAuthorizationService authz, EntitlementService service, CancellationToken ct) =>
         {
@@ -81,13 +85,14 @@ public sealed record PackageVersionView(string PackageKey, int Version, string S
 
 /// <param name="Sources">Where each effective value comes from: <c>package</c>, <c>addon</c> or <c>override</c> (FR-004).</param>
 public sealed record TenantEntitlementsView(string PackageKey, int Version, DateTimeOffset StartsAt, IReadOnlyDictionary<string, CapabilityValue> Capabilities,
-    IReadOnlyDictionary<string, string>? Sources = null, IReadOnlyList<GrantView>? Addons = null, IReadOnlyList<GrantView>? Overrides = null);
+    IReadOnlyDictionary<string, string>? Sources = null, IReadOnlyList<GrantView>? Addons = null, IReadOnlyList<GrantView>? Overrides = null,
+    IReadOnlyList<QuotaUsageView>? Usage = null);
 
 /// <summary>
 /// Resolves effective entitlements for the current tenant: the active subscription's package version, then active
 /// add-ons, then active contract overrides (FR-004). Unknown keys fail closed (ENT-005).
 /// </summary>
-public sealed class EntitlementService(IDbSession session, ITenantContext context, ILogger<EntitlementService> logger)
+public sealed class EntitlementService(IDbSession session, ITenantContext context, QuotaMeter quotas, ILogger<EntitlementService> logger)
     : IEntitlementService, ISubscriptionProvisioning
 {
     private Dictionary<string, CapabilityValue>? _resolved;
@@ -150,6 +155,31 @@ public sealed class EntitlementService(IDbSession session, ITenantContext contex
         }
     }
 
+    public async Task<QuotaDecision> ConsumeAsync(string capabilityKey, long amount = 1, CancellationToken ct = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount);
+        if (!await IsEnabledAsync(capabilityKey, ct))
+        {
+            return new QuotaDecision(false, 0, null, Reason: QuotaDecision.NotInPackage);
+        }
+        return await quotas.ConsumeAsync(capabilityKey, amount, await GetLimitAsync(capabilityKey, ct), ct);
+    }
+
+    public async Task ReleaseAsync(string capabilityKey, long amount = 1, CancellationToken ct = default)
+    {
+        context.RequireTenant();
+        await quotas.ReleaseAsync(capabilityKey, amount, ct);
+    }
+
+    public async Task<QuotaDecision> CheckUsageAsync(string capabilityKey, long used, long amount = 1, CancellationToken ct = default)
+    {
+        if (!await IsEnabledAsync(capabilityKey, ct))
+        {
+            return new QuotaDecision(false, used, null, Reason: QuotaDecision.NotInPackage);
+        }
+        return await quotas.CheckUsageAsync(capabilityKey, used, amount, await GetLimitAsync(capabilityKey, ct), ct);
+    }
+
     public async Task<TenantEntitlementsView> DescribeAsync(CancellationToken ct)
     {
         var resolved = await ResolveAsync(ct);
@@ -161,7 +191,8 @@ public sealed class EntitlementService(IDbSession session, ITenantContext contex
             """, null, r => new { Key = r.GetString(0), Version = r.GetInt32(1), Starts = r.GetFieldValue<DateTimeOffset>(2) }, ct)
             ?? throw AppException.NotFound();
         return new TenantEntitlementsView(sub.Key, sub.Version, sub.Starts, resolved, _sources,
-            await ContractGrants.ListAsync(session, ContractGrants.Addon, ct), await ContractGrants.ListAsync(session, ContractGrants.Override, ct));
+            await ContractGrants.ListAsync(session, ContractGrants.Addon, ct), await ContractGrants.ListAsync(session, ContractGrants.Override, ct),
+            await quotas.UsageAsync(resolved, ct));
     }
 
     public async Task<bool> PublishedPackageExistsAsync(string packageKey, CancellationToken ct = default) =>
