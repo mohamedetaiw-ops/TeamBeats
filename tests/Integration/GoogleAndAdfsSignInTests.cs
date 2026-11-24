@@ -118,6 +118,26 @@ public sealed class GoogleAndAdfsSignInTests(TenantWorld world)
         await AssertInvalidAsync(await SaveAsync(t, new { kind = "okta", issuer = "https://x.example", clientId = "x", secretRef }), "kind", "validation.idp.kind_unsupported");
     }
 
+    /// <summary>Spec 003 T036, spec 026 FR-004: Google sends no MFA claim, so the security page says so and MFA cannot be required.</summary>
+    [Fact]
+    public async Task Security_page_says_google_sends_no_mfa_claim_and_mfa_cannot_be_required()
+    {
+        var t = await GoogleTenantAsync();
+        var admin = t["admin"].Client;
+        var policy = await (await admin.GetAsync("/api/v1/security/policy")).ReadAsync<JsonElement>();
+        Assert.Equal("google", policy.GetProperty("mfaProvider").GetString());
+        Assert.True(policy.GetProperty("mfaClaimsUnavailable").GetBoolean());
+        Assert.False(policy.GetProperty("mfaClaimSeen").GetBoolean());
+        var refused = await admin.PutAsJsonAsync("/api/v1/security/policy", new { requireMfa = true });
+        Assert.Equal(HttpStatusCode.BadRequest, refused.StatusCode);
+        Assert.Contains("validation.security.mfa_not_seen", await refused.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+
+        // A tenant without single sign-on keeps the default mapping and no note.
+        var plain = await (await world.A["admin"].Client.GetAsync("/api/v1/security/policy")).ReadAsync<JsonElement>();
+        Assert.Equal("entra", plain.GetProperty("mfaProvider").GetString());
+        Assert.False(plain.GetProperty("mfaClaimsUnavailable").GetBoolean());
+    }
+
     private static async Task AssertInvalidAsync(HttpResponseMessage response, string field, string key)
     {
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);

@@ -3775,7 +3775,12 @@
         "hint": "Recommended: on. People who sign in without a second factor are refused.",
         "notSeen": "Sign in once with a second factor through your identity provider before you can turn this on, so nobody is locked out.",
         "stepUp": "Fresh sign-in window for sensitive actions, in minutes",
-        "stepUpHint": "Recommended: 10 minutes or less. Sensitive actions ask for a fresh sign-in after this."
+        "stepUpHint": "Recommended: 10 minutes or less. Sensitive actions ask for a fresh sign-in after this.",
+        "noClaimsTitle": "Your identity provider does not report a second factor",
+        "noClaims": {
+          "google": "Google Workspace does not tell TeamBeats whether a second factor was used, so multi-factor sign-in cannot be required here while people sign in with Google. Enforce 2-Step Verification in the Google Admin console instead.",
+          "other": "Your identity provider does not tell TeamBeats whether a second factor was used, so multi-factor sign-in cannot be required here. Enforce it at the provider instead."
+        }
       },
       "sessions": {
         "title": "Sessions",

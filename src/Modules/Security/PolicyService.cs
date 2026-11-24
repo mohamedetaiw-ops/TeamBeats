@@ -31,7 +31,9 @@ public sealed record SecurityPolicyView(
     int OfflineMaxMb,
     int OfflineDays,
     IReadOnlyList<string> GuestAllowDomains,
-    IReadOnlyList<string> GuestBlockDomains)
+    IReadOnlyList<string> GuestBlockDomains,
+    string MfaProvider = PolicyService.DefaultProvider,
+    bool MfaClaimsUnavailable = false)
 {
     public string ETag => PolicyService.ETag(Version);
 }
@@ -73,11 +75,19 @@ public sealed partial class PolicyService(
     IOutbox outbox,
     IClock clock,
     PolicyStore store,
-    ISignInHistory signIns)
+    ISignInHistory signIns,
+    ISignInMethods signInMethods)
 {
     public const int MaxZones = 20;
     public const int MaxDomains = 200;
-    public const string Provider = "entra";
+    /// <summary>The MFA claim mapping used while no single sign-on provider is set up.</summary>
+    public const string DefaultProvider = "entra";
+
+    /// <summary>
+    /// Provider kinds whose tokens never say whether MFA happened: Google sends no <c>amr</c> (spec 003 plan, R2). While
+    /// one of them signs people in, MFA cannot be required here; the customer enforces it at the provider.
+    /// </summary>
+    public static readonly IReadOnlyList<string> NoMfaClaimKinds = ["google"];
 
     public static string ETag(int version) => $"\"v{version}\"";
 
@@ -102,8 +112,12 @@ public sealed partial class PolicyService(
         throw AppException.Denied();
     }
 
+    private async Task<string> MfaProviderAsync(CancellationToken ct) => (await signInMethods.CurrentAsync(ct)).ProviderKind ?? DefaultProvider;
+
+    /// <summary>A sign-in through the current provider has shown its MFA claim; the claim of an earlier provider does not count.</summary>
     private async Task<bool> MfaClaimSeenAsync(CancellationToken ct) =>
-        await session.ScalarAsync<bool>("select exists (select 1 from security.mfa_claim_mapping where provider = @p and seen_at is not null)", new { p = Provider }, ct);
+        await session.ScalarAsync<bool>("select exists (select 1 from security.mfa_claim_mapping where provider = @p and seen_at is not null)",
+            new { p = await MfaProviderAsync(ct) }, ct);
 
     public async Task<SecurityPolicyView> GetAsync(CancellationToken ct)
     {
@@ -112,10 +126,14 @@ public sealed partial class PolicyService(
         return await ViewAsync(policy, ct);
     }
 
-    private async Task<SecurityPolicyView> ViewAsync(SecurityPolicySnapshot p, CancellationToken ct) =>
-        new(p.IpAllow, p.IpBlock, p.AdminIpAllow, p.NetworkZones, p.RequireMfa, await MfaClaimSeenAsync(ct), p.StepUpMinutes, p.IdleMinutes,
+    private async Task<SecurityPolicyView> ViewAsync(SecurityPolicySnapshot p, CancellationToken ct)
+    {
+        var provider = await MfaProviderAsync(ct);
+        return new(p.IpAllow, p.IpBlock, p.AdminIpAllow, p.NetworkZones, p.RequireMfa, await MfaClaimSeenAsync(ct), p.StepUpMinutes, p.IdleMinutes,
             p.AbsoluteHours, p.MaxSessions, p.RememberDeviceDays, await entitlements.IsEnabledAsync(Capabilities.SecurityIpRulesScoped, ct), Caller(),
-            Math.Max(p.Version, 1), p.OfflineMaxItems, p.OfflineMaxMb, p.OfflineDays, p.GuestAllowDomains ?? [], p.GuestBlockDomains ?? []);
+            Math.Max(p.Version, 1), p.OfflineMaxItems, p.OfflineMaxMb, p.OfflineDays, p.GuestAllowDomains ?? [], p.GuestBlockDomains ?? [],
+            provider, NoMfaClaimKinds.Contains(provider));
+    }
 
     /// <summary>Guest domain rules (section 14): lower case domain names, no duplicates, at most 200.</summary>
     private static List<string> Domains(IReadOnlyList<string>? input, IReadOnlyList<string>? current, string field, ValidationErrors errors)

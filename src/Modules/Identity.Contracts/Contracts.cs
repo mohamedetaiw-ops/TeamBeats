@@ -55,9 +55,10 @@ public sealed record SignInAddress(Guid UserId, string Address);
 /// <summary>
 /// Which ways in the tenant has (spec 026 FR-017 posture): an enabled single sign-on provider, and development sign-in.
 /// MemberDomains are the email domains the provider turns into members on first sign-in: the tenant's own domains, whose
-/// people are members and never guests (spec 026 edge case).
+/// people are members and never guests (spec 026 edge case). ProviderKind is the enabled provider's kind (such as
+/// <c>entra</c>, <c>google</c>, <c>adfs</c>, <c>generic</c>), the key of its MFA claim mapping (spec 026 FR-004).
 /// </summary>
-public sealed record SignInMethods(bool SsoEnabled, bool DevSignInEnabled, IReadOnlyList<string>? MemberDomains = null);
+public sealed record SignInMethods(bool SsoEnabled, bool DevSignInEnabled, IReadOnlyList<string>? MemberDomains = null, string? ProviderKind = null);
 
 public interface ISignInMethods
 {

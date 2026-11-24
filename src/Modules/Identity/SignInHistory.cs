@@ -24,6 +24,6 @@ public sealed class SignInMethodsReader(Sso.IdentityProviderStore providers, Mic
     {
         var provider = await providers.GetEnabledAsync(ct);
         return new(provider is not null, Microsoft.Extensions.Configuration.ConfigurationBinder.GetValue<bool>(configuration, DevSignInKey),
-            provider is { JitEnabled: true } ? provider.JitDomains : []);
+            provider is { JitEnabled: true } ? provider.JitDomains : [], provider?.Kind);
     }
 }
