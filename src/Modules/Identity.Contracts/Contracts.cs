@@ -160,7 +160,7 @@ public sealed record ProvisionUpdate(IReadOnlyList<string> Changed, bool EmailKe
 /// The provisioning extension point (spec 003 FR-008, IAM-010), shaped after SCIM 2.0: find, create, update and
 /// deactivate a user, and set a group's members. Directory sync (US6) runs on it today; a SCIM endpoint can be added
 /// later on the same operations behind the <c>identity.scim</c> capability without new user rules. Tenant comes
-/// from context. Deactivation keeps the tenant's last administrator and revokes the user's sessions at once.
+/// from context. Audit entries name the source connection (spec 003 section 13). Deactivation keeps the tenant's last administrator and revokes the user's sessions at once.
 /// </summary>
 public interface IProvisioningTarget
 {
@@ -170,12 +170,12 @@ public interface IProvisioningTarget
     /// <summary>Creates the user with a sign-in identity and an employee membership, or links the user that already signed in with that ID.</summary>
     Task<(ProvisionOutcome Outcome, Guid? UserId)> CreateOrLinkUserAsync(ProvisioningSource source, ProvisionedUser user, CancellationToken ct);
 
-    Task<ProvisionUpdate> UpdateUserAsync(Guid userId, ProvisionedUser user, CancellationToken ct);
+    Task<ProvisionUpdate> UpdateUserAsync(ProvisioningSource source, Guid userId, ProvisionedUser user, CancellationToken ct);
 
     /// <summary>False when the user is the tenant's last administrator and stays active.</summary>
-    Task<bool> DeactivateUserAsync(Guid userId, string via, CancellationToken ct);
+    Task<bool> DeactivateUserAsync(ProvisioningSource source, Guid userId, CancellationToken ct);
 
-    Task ReactivateUserAsync(Guid userId, CancellationToken ct);
+    Task ReactivateUserAsync(ProvisioningSource source, Guid userId, CancellationToken ct);
 
     /// <summary>Sets the members of the source-owned group with this key, creating it when needed; returns the group's ID.</summary>
     Task<Guid> SetGroupMembersAsync(string groupKey, string displayName, IReadOnlyList<Guid> members, CancellationToken ct);

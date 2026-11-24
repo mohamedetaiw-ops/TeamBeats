@@ -47,11 +47,11 @@ public sealed class ProvisioningTargetTests(TenantWorld world)
             (await InTenantAsync(t, p => p.CreateOrLinkUserAsync(Source(issuer), new ProvisionedUser("ext-2", "Other", $"dina@{t.Key}.example"), CancellationToken.None))).Outcome);
         Assert.Equal(ProvisionOutcome.Skipped, (await InTenantAsync(t, p => p.CreateOrLinkUserAsync(Source(issuer), new ProvisionedUser("ext-3", "No mail", null), CancellationToken.None))).Outcome);
 
-        var renamed = await InTenantAsync(t, p => p.UpdateUserAsync(id.Value, new ProvisionedUser("ext-1", "Dina Saleh", $"dina.saleh@{t.Key}.example"), CancellationToken.None));
+        var renamed = await InTenantAsync(t, p => p.UpdateUserAsync(Source(issuer), id.Value, new ProvisionedUser("ext-1", "Dina Saleh", $"dina.saleh@{t.Key}.example"), CancellationToken.None));
         Assert.Equal(["display_name", "email"], renamed.Changed);
         Assert.False(renamed.EmailKept);
         // An email another account holds is not taken over; the old one stays.
-        var clash = await InTenantAsync(t, p => p.UpdateUserAsync(id.Value, new ProvisionedUser("ext-1", "Dina Saleh", t["admin"].Email), CancellationToken.None));
+        var clash = await InTenantAsync(t, p => p.UpdateUserAsync(Source(issuer), id.Value, new ProvisionedUser("ext-1", "Dina Saleh", t["admin"].Email), CancellationToken.None));
         Assert.Empty(clash.Changed);
         Assert.True(clash.EmailKept);
         Assert.Equal($"dina.saleh@{t.Key}.example", await world.Database.TenantScalarAsync<string>(t.Id, "select email from identity.user_account where id = @u", ("u", id!.Value)));
@@ -62,16 +62,20 @@ public sealed class ProvisioningTargetTests(TenantWorld world)
     {
         var t = await world.CreateTenantAsync("pv-" + Guid.NewGuid().ToString("N")[..8], "workplace_plus");
         var employee = await world.SeedUserAsync(t, "erin", MembershipTypes.Employee);
+        var source = Source("urn:test");
 
-        Assert.True(await InTenantAsync(t, p => p.DeactivateUserAsync(employee.Id, "directory", CancellationToken.None)));
+        Assert.True(await InTenantAsync(t, p => p.DeactivateUserAsync(source, employee.Id, CancellationToken.None)));
+        // The audit entry names the source connection (spec 003 section 13).
+        Assert.Equal(source.ConnectionId.ToString(), await world.Database.TenantScalarAsync<string>(t.Id,
+            "select changes->>'connection' from audit.audit_event where action = 'identity.disabled_by_directory' and target_id = @u", ("u", employee.Id.ToString())));
         Assert.Equal("disabled", await StatusAsync(t, employee.Id));
         Assert.Equal(0L, await world.Database.TenantScalarAsync<long>(t.Id, "select count(*) from identity.user_session where user_id = @u and revoked_at is null", ("u", employee.Id)));
         Assert.Equal(System.Net.HttpStatusCode.Unauthorized, (await employee.Client.GetAsync("/api/v1/me")).StatusCode);
 
-        await InTenantAsync(t, async p => { await p.ReactivateUserAsync(employee.Id, CancellationToken.None); return true; });
+        await InTenantAsync(t, async p => { await p.ReactivateUserAsync(Source("urn:test"), employee.Id, CancellationToken.None); return true; });
         Assert.Equal("active", await StatusAsync(t, employee.Id));
 
-        Assert.False(await InTenantAsync(t, p => p.DeactivateUserAsync(t["admin"].Id, "directory", CancellationToken.None)));
+        Assert.False(await InTenantAsync(t, p => p.DeactivateUserAsync(Source("urn:test"), t["admin"].Id, CancellationToken.None)));
         Assert.Equal("active", await StatusAsync(t, t["admin"].Id));
     }
 
@@ -100,8 +104,8 @@ public sealed class ProvisioningTargetTests(TenantWorld world)
         var (outcome, other) = await InTenantAsync(b, p => p.CreateOrLinkUserAsync(Source(issuer), new ProvisionedUser("ext-1", "Dina", $"dina@{a.Key}.example"), CancellationToken.None));
         Assert.Equal(ProvisionOutcome.Created, outcome);
         Assert.NotEqual(id, other);
-        await Assert.ThrowsAsync<AppException>(() => InTenantAsync(b, p => p.UpdateUserAsync(id!.Value, new ProvisionedUser("ext-1", "Changed", null), CancellationToken.None)));
-        await Assert.ThrowsAsync<AppException>(() => InTenantAsync(b, p => p.DeactivateUserAsync(id!.Value, "directory", CancellationToken.None)));
+        await Assert.ThrowsAsync<AppException>(() => InTenantAsync(b, p => p.UpdateUserAsync(Source(issuer), id!.Value, new ProvisionedUser("ext-1", "Changed", null), CancellationToken.None)));
+        await Assert.ThrowsAsync<AppException>(() => InTenantAsync(b, p => p.DeactivateUserAsync(Source(issuer), id!.Value, CancellationToken.None)));
         Assert.Equal("active", await StatusAsync(a, id!.Value));
         Assert.Equal("Dina", await world.Database.TenantScalarAsync<string>(a.Id, "select display_name from identity.user_account where id = @u", ("u", id!.Value)));
     }
