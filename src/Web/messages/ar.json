@@ -1032,16 +1032,26 @@
         "off": "متوقف",
         "notSet": "غير مُعد",
         "intro": "يسجّل الأشخاص الدخول بحساب العمل لدى مزوّد الهوية الخاص بكم. اختر المزوّد وسجّل TeamBeats لديه، ثم أدخل بياناته هنا.",
+        "protocol": "البروتوكول",
+        "protocols": {
+          "oidc": "OpenID Connect",
+          "saml": "SAML 2.0"
+        },
         "kind": "مزوّد الهوية",
         "kinds": {
           "entra": "Microsoft Entra ID",
           "google": "Google Workspace",
-          "adfs": "AD FS (Active Directory المحلي)"
+          "adfs": "AD FS (Active Directory المحلي)",
+          "generic": "أي موفّر SAML 2.0"
         },
         "kindHints": {
           "entra": "حسابات Microsoft الخاصة بالعمل، ومنها Active Directory المتزامن مع Entra ID.",
           "google": "حسابات نطاقات Google Workspace الخاصة بكم.",
           "adfs": "حسابات النطاق عبر AD FS الخاص بكم، لـ Active Directory دون Entra ID."
+        },
+        "samlKindHints": {
+          "generic": "أي موفّر هوية يدعم SAML 2.0، مثل Okta أو PingFederate أو Shibboleth.",
+          "adfs": "حسابات النطاق عبر علاقة الثقة الخاصة بك في AD FS، لـ Active Directory دون Entra ID."
         },
         "displayName": "اسم الزر",
         "displayNameHint": "يظهر في صفحة تسجيل الدخول، مثل: تسجيل الدخول عبر Contoso",
@@ -1059,6 +1069,22 @@
         },
         "hostedDomains": "نطاقات Google Workspace",
         "hostedDomainsHint": "لا يدخل إلا أصحاب الحسابات في هذه النطاقات. نطاق في كل سطر، مثل contoso.com",
+        "spEntityId": "معرّف TeamBeats (معرّف الكيان)",
+        "spAcs": "عنوان الرد (خدمة استهلاك التأكيد)",
+        "spMetadata": "افتح بيانات تعريف TeamBeats",
+        "spMetadataHint": "أدخل هذه القيم في موفّر الهوية، أو أعطه عنوان بيانات تعريف TeamBeats.",
+        "entityId": "معرّف كيان موفّر الهوية",
+        "entityIdHints": {
+          "generic": "جهة الإصدار التي يذكرها موفّر الهوية في بيانات التعريف، مثل https://idp.contoso.com/saml",
+          "adfs": "عادةً http://adfs.contoso.com/adfs/services/trust"
+        },
+        "ssoUrl": "عنوان تسجيل الدخول الموحّد",
+        "ssoUrlHints": {
+          "generic": "العنوان الذي يرسل إليه TeamBeats الأشخاص لتسجيل الدخول، بربط HTTP-Redirect",
+          "adfs": "عادةً https://adfs.contoso.com/adfs/ls/"
+        },
+        "certificates": "شهادات التوقيع",
+        "certificatesHint": "شهادات توقيع الرموز لدى موفّر الهوية، بصيغة PEM أو base64. أضف الشهادة التالية قبل تبديلها؛ حتى ثلاث شهادات.",
         "adfsConnection": "اتصال Active Directory",
         "adfsConnectionHint": "يسجّل AD FS دخول الأشخاص الذين يزامنهم هذا الاتصال، ويطابقهم بـ objectGUID. أضف في AD FS قاعدة مطالبة ترسل objectGUID.",
         "adfsNoConnection": "أعدّ مزامنة الدليل من Active Directory المحلي أدناه أولًا.",
@@ -1092,6 +1118,11 @@
           "expired": "انتهت صلاحية الرمز. تحقق من ساعات خوادم مزوّد الهوية.",
           "bad_signature": "لم يطابق توقيع الرمز المفاتيح المنشورة لدى مزوّد الهوية.",
           "code_rejected": "رفض مزوّد الهوية معرّف العميل أو سر العميل.",
+          "name_id_not_persistent": "عرّف رد SAML الشخص بمعرّف مؤقت أو ببريد إلكتروني. أرسل NameID دائمًا.",
+          "encrypted_assertion_unsupported": "كان رد SAML مشفّرًا. أوقف تشفير التأكيد لـ TeamBeats؛ فالتوقيع يحميه.",
+          "wrong_destination": "كان رد SAML موجّهًا إلى عنوان رد آخر. تحقّق من عنوان الرد المُدخل لدى موفّر الهوية.",
+          "assertion_count": "لم يحمل رد SAML تأكيدًا واحدًا بالضبط.",
+          "idp_error": "ردّ موفّر الهوية بخطأ بدلًا من تسجيل دخول الشخص.",
           "other": "أرسل مزوّد الهوية رمزًا لم يقبله TeamBeats ({reason})."
         }
       },

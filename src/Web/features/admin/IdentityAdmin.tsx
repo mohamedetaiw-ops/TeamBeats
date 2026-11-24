@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Alert } from "@/components/ui/Alert";
 import { Badge } from "@/components/ui/Badge";
@@ -18,10 +18,36 @@ import { ResultAlert, useAdminAction, useWhen } from "./shared";
 
 const RETURN = "/admin/identity";
 const SOURCES = ["entra", "adds", "google"] as const;
-const KINDS = ["entra", "google", "adfs"] as const;
-type Kind = (typeof KINDS)[number];
+const PROTOCOLS = ["oidc", "saml"] as const;
+type Protocol = (typeof PROTOCOLS)[number];
+// The providers each protocol offers; Google is offered over OpenID Connect only.
+const KINDS = { oidc: ["entra", "google", "adfs"], saml: ["generic", "adfs"] } as const;
+type Kind = "entra" | "google" | "adfs" | "generic";
 // Refusal reasons with their own explanation; any other reason is shown by its code.
-const PROBLEMS = ["object_guid_missing", "hosted_domain_mismatch", "subject_missing", "wrong_issuer", "wrong_audience", "expired", "bad_signature", "code_rejected"];
+const PROBLEMS = [
+  "object_guid_missing",
+  "hosted_domain_mismatch",
+  "subject_missing",
+  "wrong_issuer",
+  "wrong_audience",
+  "expired",
+  "bad_signature",
+  "code_rejected",
+  "name_id_not_persistent",
+  "encrypted_assertion_unsupported",
+  "wrong_destination",
+  "assertion_count",
+  "idp_error",
+];
+const noChange = () => () => {};
+const METADATA_PATH = "/api/v1/auth/signin/saml/metadata";
+const ACS_PATH = "/api/v1/auth/signin/saml/acs";
+
+// Signing certificates as pasted: PEM blocks, or base64 bodies separated by a blank line.
+const certificates = (text: string) => {
+  const pem = text.match(/-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/gu);
+  return (pem ?? text.split(/\n\s*\n/u)).map((c) => c.trim()).filter(Boolean);
+};
 
 const lines = (text: string) =>
   text
@@ -31,7 +57,7 @@ const lines = (text: string) =>
 
 /**
  * Sign-in settings (spec 003 US2, US4, US5, US6): the workspace's single sign-on through Microsoft Entra ID, Google
- * Workspace or AD FS, who may join on first sign-in, the Entra groups that grant roles, why the provider's last token
+ * Workspace or AD FS over OpenID Connect, or any SAML 2.0 provider (AD FS included), who may join on first sign-in, the Entra groups that grant roles, why the provider's last token
  * was refused, and directory sync with its schedule, safety threshold and recent runs. Saving either asks for a fresh
  * sign-in, and the client secret is only ever a secret manager reference (spec 006 FR-012).
  */
@@ -53,7 +79,22 @@ export function IdentityAdmin({
   const when = useWhen();
   const { busy, result, run } = useAdminAction(RETURN);
   const [provider, setProvider] = useState(initialProvider);
-  const [kind, setKind] = useState<Kind>(KINDS.includes(initialProvider?.kind as Kind) ? (initialProvider!.kind as Kind) : "entra");
+  const [protocol, setProtocol] = useState<Protocol>(initialProvider?.protocol === "saml" ? "saml" : "oidc");
+  const [kind, setKind] = useState<Kind>(
+    (KINDS[initialProvider?.protocol === "saml" ? "saml" : "oidc"] as readonly string[]).includes(initialProvider?.kind ?? "")
+      ? (initialProvider!.kind as Kind)
+      : initialProvider?.protocol === "saml"
+        ? "generic"
+        : "entra",
+  );
+  const [ssoUrl, setSsoUrl] = useState(initialProvider?.ssoUrl ?? "");
+  const [certs, setCerts] = useState((initialProvider?.certificates ?? []).join("\n\n"));
+  // The addresses the identity provider needs are on this workspace's own host.
+  const origin = useSyncExternalStore(
+    noChange,
+    () => window.location.origin,
+    () => "",
+  );
   const [hosted, setHosted] = useState((initialProvider?.hostedDomains ?? []).join("\n"));
   const [displayName, setDisplayName] = useState(initialProvider?.displayName ?? "");
   const [issuer, setIssuer] = useState(initialProvider?.issuer ?? "");
@@ -79,16 +120,20 @@ export function IdentityAdmin({
       "PUT",
       "/api/v1/tenant/identity-provider",
       {
+        protocol,
         kind,
         issuer: issuer.trim(),
-        clientId: clientId.trim(),
-        secretRef: secretRef.trim(),
+        // SAML has no client: the provider signs its answers with the certificates below.
+        clientId: saml ? "" : clientId.trim(),
+        secretRef: saml ? "" : secretRef.trim(),
+        ssoUrl: saml ? ssoUrl.trim() : null,
+        certificates: saml ? certificates(certs) : [],
         displayName: displayName.trim() || null,
         jitEnabled: jit,
         jitDomains: lines(domains),
-        groupRoleMap: kind === "entra" ? mappings.map((m) => ({ ...m, groupId: m.groupId.trim(), scopeId: m.scopeType === "tenant" ? null : m.scopeId })) : [],
+        groupRoleMap: !saml && kind === "entra" ? mappings.map((m) => ({ ...m, groupId: m.groupId.trim(), scopeId: m.scopeType === "tenant" ? null : m.scopeId })) : [],
         enabled,
-        hostedDomains: kind === "google" ? lines(hosted) : [],
+        hostedDomains: !saml && kind === "google" ? lines(hosted) : [],
         // AD FS signs in the people of the on-premises Active Directory connection that directory sync reads.
         directoryConnectionId: kind === "adfs" ? adConnection : null,
       },
@@ -124,6 +169,12 @@ export function IdentityAdmin({
   const source = settings?.source ?? "entra";
   const adConnection = settings?.source === "adds" ? settings.connectionId : null;
   const problem = provider?.lastProblem ?? null;
+  const saml = protocol === "saml";
+  const kinds = KINDS[protocol] as readonly Kind[];
+  const chooseProtocol = (next: Protocol) => {
+    setProtocol(next);
+    if (!(KINDS[next] as readonly Kind[]).includes(kind)) setKind(KINDS[next][0]);
+  };
 
   return (
     <div className="admin-screen">
@@ -149,27 +200,53 @@ export function IdentityAdmin({
           }}
         >
           <RadioGroup
+            legend={t("sso.protocol")}
+            name="protocol"
+            value={protocol}
+            onChange={(e) => chooseProtocol(e.target.value as Protocol)}
+            options={PROTOCOLS.map((p) => ({ value: p, label: t(`sso.protocols.${p}`) }))}
+          />
+          <RadioGroup
             legend={t("sso.kind")}
             name="kind"
             value={kind}
             cards
             onChange={(e) => setKind(e.target.value as Kind)}
-            options={KINDS.map((k) => ({ value: k, label: t(`sso.kinds.${k}`), hint: t(`sso.kindHints.${k}`) }))}
+            options={kinds.map((k) => ({ value: k, label: t(`sso.kinds.${k}`), hint: t(saml ? `sso.samlKindHints.${k}` : `sso.kindHints.${k}`) }))}
           />
           <FormField label={t("sso.displayName")} hint={t("sso.displayNameHint")} name="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
-          <FormField label={t("sso.issuer")} hint={kind === "entra" ? t("sso.issuerHint") : t(`sso.issuerHints.${kind}`)} name="issuer" dir="ltr" required value={issuer} onChange={(e) => setIssuer(e.target.value)} />
-          {/* Long identifiers get the full row so they read in full (DLS-097). */}
-          <FormField label={t("sso.clientId")} hint={kind === "entra" ? t("sso.clientIdHint") : t(`sso.clientIdHints.${kind}`)} name="clientId" dir="ltr" required value={clientId} onChange={(e) => setClientId(e.target.value)} />
-          <FormField
-            label={t("sso.secretRef")}
-            hint={t("sso.secretRefHint", { prefix: `secret://tenants/${tenantId}/` })}
-            name="secretRef"
-            dir="ltr"
-            required
-            value={secretRef}
-            onChange={(e) => setSecretRef(e.target.value)}
-          />
-          {kind === "google" ? (
+          {saml ? (
+            <>
+              <FactList
+                facts={[
+                  { key: "entityId", label: t("sso.spEntityId"), value: <span dir="ltr">{origin + METADATA_PATH}</span> },
+                  { key: "acs", label: t("sso.spAcs"), value: <span dir="ltr">{origin + ACS_PATH}</span> },
+                ]}
+              />
+              <p className="admin-meta">
+                {t("sso.spMetadataHint")} <a href={METADATA_PATH}>{t("sso.spMetadata")}</a>
+              </p>
+              <FormField label={t("sso.entityId")} hint={t(`sso.entityIdHints.${kind}`)} name="issuer" dir="ltr" required value={issuer} onChange={(e) => setIssuer(e.target.value)} />
+              <FormField label={t("sso.ssoUrl")} hint={t(`sso.ssoUrlHints.${kind}`)} name="ssoUrl" dir="ltr" required value={ssoUrl} onChange={(e) => setSsoUrl(e.target.value)} />
+              <TextAreaField label={t("sso.certificates")} hint={t("sso.certificatesHint")} name="certificates" dir="ltr" rows={6} required value={certs} onChange={(e) => setCerts(e.target.value)} />
+            </>
+          ) : (
+            <>
+              <FormField label={t("sso.issuer")} hint={kind === "entra" ? t("sso.issuerHint") : t(`sso.issuerHints.${kind}`)} name="issuer" dir="ltr" required value={issuer} onChange={(e) => setIssuer(e.target.value)} />
+              {/* Long identifiers get the full row so they read in full (DLS-097). */}
+              <FormField label={t("sso.clientId")} hint={kind === "entra" ? t("sso.clientIdHint") : t(`sso.clientIdHints.${kind}`)} name="clientId" dir="ltr" required value={clientId} onChange={(e) => setClientId(e.target.value)} />
+              <FormField
+                label={t("sso.secretRef")}
+                hint={t("sso.secretRefHint", { prefix: `secret://tenants/${tenantId}/` })}
+                name="secretRef"
+                dir="ltr"
+                required
+                value={secretRef}
+                onChange={(e) => setSecretRef(e.target.value)}
+              />
+            </>
+          )}
+          {!saml && kind === "google" ? (
             <TextAreaField label={t("sso.hostedDomains")} hint={t("sso.hostedDomainsHint")} name="hostedDomains" dir="ltr" rows={3} required value={hosted} onChange={(e) => setHosted(e.target.value)} />
           ) : null}
           {kind === "adfs" && adConnection ? (
@@ -187,7 +264,7 @@ export function IdentityAdmin({
             {jit ? <TextAreaField label={t("sso.domains")} hint={t("sso.domainsHint")} name="domains" dir="ltr" rows={3} value={domains} onChange={(e) => setDomains(e.target.value)} /> : null}
           </fieldset>
 
-          {kind === "entra" ? (
+          {!saml && kind === "entra" ? (
             <fieldset className="admin-fieldset">
               <legend>{t("sso.groupsTitle")}</legend>
               <p className="admin-meta">{t("sso.groupsHint")}</p>

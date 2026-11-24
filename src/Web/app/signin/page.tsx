@@ -55,7 +55,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
       <OfflineWipe />
       {sso ? (
         <a className="button" href={returnTo ? `/api/v1/auth/signin/sso?returnTo=${encodeURIComponent(returnTo)}` : "/api/v1/auth/signin/sso"}>
-          {t(options.data.kind === "google" ? "ssoGoogle" : options.data.kind === "adfs" ? "ssoAdfs" : "ssoMicrosoft")}
+          {t(options.data.kind === "google" ? "ssoGoogle" : options.data.kind === "adfs" || options.data.kind === "generic" ? "ssoAdfs" : "ssoMicrosoft")}
         </a>
       ) : null}
       {mode ? <DevSignInForm mode={mode} testAccount={process.env.TEAMBEATS_TEST_ACCOUNT || "admin"} returnTo={returnTo} /> : null}

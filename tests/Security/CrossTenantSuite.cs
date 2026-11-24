@@ -26,6 +26,10 @@ public sealed class CrossTenantSuite(TenantWorld world, ITestOutputHelper output
         "GET /api/v1/auth/signin/options",
         "GET /api/v1/auth/signin/sso",
         "GET /api/v1/auth/signin/sso/callback",
+        // Spec 003 IAM-006: the SAML provider reads the metadata and posts its signed answer back before any session exists;
+        // SamlSignInTests covers the signature, binding, replay and tenant boundary checks.
+        "GET /api/v1/auth/signin/saml/metadata",
+        "POST /api/v1/auth/signin/saml/acs",
         // Spec 017 FR-014: other systems call it with a signature instead of a session; WebhookTests covers its checks and the tenant boundary.
         "POST /api/v1/integrations/inbound/{connectionId:guid}",
         // Spec 017 FR-016: the on-premises sync agent enrols with a one-time code, then signs every request with its own key;

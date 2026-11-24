@@ -33,6 +33,7 @@ public static class IdentityModule
         services.AddScoped<Sso.IdentityProviderStore>();
         services.AddScoped<Sso.GroupRoleSync>();
         services.AddScoped<Sso.SsoService>();
+        services.AddScoped<Sso.SamlService>();
         services.AddScoped<UserDirectory>();
         services.AddScoped<IUserDirectory>(sp => sp.GetRequiredService<UserDirectory>());
         services.AddScoped<ITestIdentities, TestIdentities>();
@@ -62,6 +63,7 @@ public static class IdentityModule
         }).WithTags("Auth");
 
         app.MapSsoEndpoints();
+        app.MapSamlEndpoints();
         Kiosk.KioskEndpoints.MapKioskEndpoints(app);
         Directory.DirectoryEndpoints.MapDirectoryEndpoints(app);
 

@@ -1158,6 +1158,30 @@
         }
       }
     },
+    "/api/v1/auth/signin/saml/metadata": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/signin/saml/acs": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/kiosk/device": {
       "get": {
         "tags": [
@@ -38998,6 +39022,27 @@
               "string"
             ],
             "format": "uuid"
+          },
+          "protocol": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "ssoUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "certificates": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
           }
         }
       },

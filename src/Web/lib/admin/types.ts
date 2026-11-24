@@ -126,6 +126,9 @@ export type IdentityProvider = {
   directoryConnectionId: string | null;
   lastProblem: string | null;
   lastProblemAt: string | null;
+  protocol: string;
+  ssoUrl: string | null;
+  certificates: string[] | null;
 };
 
 export type DirectorySettings = {

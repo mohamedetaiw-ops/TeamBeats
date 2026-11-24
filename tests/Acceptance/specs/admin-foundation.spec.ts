@@ -18,8 +18,8 @@ async function openSection(page: Page, tenantKey: string, locale: LaunchLocale, 
 
 /** A card choice is picked by its label, as a person does; the radio itself sits under the card text. */
 async function pickKind(page: Page, label: string) {
-  await page.locator("label").filter({ hasText: label }).first().click();
-  await expect(page.getByRole("radio", { name: label })).toBeChecked();
+  await page.locator("label").filter({ hasText: new RegExp(`^${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "u") }).first().click();
+  await expect(page.getByRole("radio", { name: label, exact: true })).toBeChecked();
 }
 
 const saved = (page: Page, locale: LaunchLocale, key: string) => page.getByRole("status").filter({ hasText: msg(locale, key) });
@@ -196,6 +196,18 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByText(m("admin.identity.sso.adfsNoConnection"))).toBeVisible();
       await expect(page.getByLabel(m("admin.identity.sso.hostedDomains"))).toHaveCount(0);
       await expectAccessible(page, testInfo, `admin-identity-adfs-${locale}`);
+      // SAML 2.0: no client, the provider's addresses and signing certificates instead; Google stays OpenID Connect only.
+      await pickKind(page, m("admin.identity.sso.protocols.saml"));
+      // AD FS is offered over both protocols, so the choice stays.
+      await expect(page.getByRole("radio", { name: m("admin.identity.sso.kinds.adfs"), exact: true })).toBeChecked();
+      await pickKind(page, m("admin.identity.sso.kinds.generic"));
+      await expect(page.getByRole("radio", { name: m("admin.identity.sso.kinds.google"), exact: true })).toHaveCount(0);
+      await expect(page.getByLabel(m("admin.identity.sso.ssoUrl"))).toBeVisible();
+      await expect(page.getByLabel(m("admin.identity.sso.certificates"))).toBeVisible();
+      await expect(page.getByLabel(m("admin.identity.sso.clientId"))).toHaveCount(0);
+      await expect(page.getByRole("link", { name: m("admin.identity.sso.spMetadata") })).toHaveAttribute("href", "/api/v1/auth/signin/saml/metadata");
+      await expectAccessible(page, testInfo, `admin-identity-saml-${locale}`);
+      await pickKind(page, m("admin.identity.sso.protocols.oidc"));
       await pickKind(page, m("admin.identity.sso.kinds.entra"));
       await expect(page.getByRole("group", { name: m("admin.identity.sso.groupsTitle") })).toBeVisible();
 

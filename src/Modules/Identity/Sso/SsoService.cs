@@ -12,7 +12,8 @@ using TeamBeats.TenantContext;
 namespace TeamBeats.Modules.Identity.Sso;
 
 /// <summary>Where the browser goes after a sign-in step. Problems are reason codes the web app turns into localized pages.</summary>
-public sealed record SsoStep(string Location, string? BindingCookie = null, string? SessionToken = null);
+/// <param name="Saml">The binding cookie is for the SAML consumer, which the IdP reaches with a cross-site POST.</param>
+public sealed record SsoStep(string Location, string? BindingCookie = null, string? SessionToken = null, bool Saml = false);
 
 public static class SsoProblems
 {
@@ -43,7 +44,8 @@ public sealed class SsoService(
     IAuditWriter audit,
     IClock clock,
     TeamBeats.Modules.Security.Contracts.ISecurityPolicy securityPolicy,
-    TeamBeats.Modules.Security.Contracts.IAuthenticationAssurance assurance)
+    TeamBeats.Modules.Security.Contracts.IAuthenticationAssurance assurance,
+    SamlService saml)
 {
     public static readonly TimeSpan StateLifetime = TimeSpan.FromMinutes(10);
     public static readonly TimeSpan ClockSkew = TimeSpan.FromMinutes(5);
@@ -59,6 +61,11 @@ public sealed class SsoService(
             return new SsoStep(SsoProblems.PagePath(SsoProblems.TenantSuspended));
         }
         var config = await providers.GetEnabledAsync(ct);
+        if (config is { Protocol: SamlService.Protocol })
+        {
+            // SAML 2.0 (spec 003 US4, US5): the same start address, so sign-in and step-up do not care which protocol it is.
+            return await saml.StartAsync(tenant, config, new Uri(callbackUri).Authority, returnTo, stepUp, ct);
+        }
         if (config is null || !await entitlements.IsEnabledAsync(Capabilities.IdentityOidc, ct))
         {
             return new SsoStep(SsoProblems.PagePath(SsoProblems.NotConfigured));
@@ -126,7 +133,7 @@ public sealed class SsoService(
         var pending = await session.QuerySingleOrDefaultAsync(
             """
             update identity.oidc_login_state set consumed_at = now()
-            where state_hash = @h and consumed_at is null and expires_at > @now
+            where state_hash = @h and consumed_at is null and expires_at > @now and code_verifier <> ''
             returning idp_config_id, browser_binding_hash, nonce, code_verifier, return_path, step_up
             """, new { h = Hash(state), now = clock.UtcNow },
             r => new PendingSignIn(r.GetGuid(0), r.GetString(1), r.GetString(2), r.GetString(3), r.GetString(4), r.GetBoolean(5)), ct);
@@ -143,7 +150,7 @@ public sealed class SsoService(
         }
 
         var config = await providers.GetAsync(pending.IdpConfigId, ct);
-        if (config is not { Enabled: true })
+        if (config is not { Enabled: true, Protocol: "oidc" })
         {
             await FailAsync("provider_disabled", null, ct);
             return Problem(SsoProblems.NotConfigured);
