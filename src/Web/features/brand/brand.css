@@ -422,6 +422,13 @@
   justify-items: start;
 }
 
+.brand-review {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding-inline-start: var(--tb-space-lg);
+}
+
 .brand-releases {
   display: grid;
   gap: var(--tb-space-sm);

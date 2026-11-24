@@ -60,6 +60,8 @@ Testing the design before it goes to development is the cheapest place to find p
 - [ ] Phone, tablet and desktop; RTL and LTR; light and dark; four designs where relevant
 - [ ] Usability tested, findings addressed
 
+For a brand or theme, the publishing block of the brand manager shows the same checklist, worded for a brand, on every draft and while it waits for approval (spec 036 DLS-023). It guides the person who publishes and the approver; the blocking checks stay in the brand editor (contrast) and the impact report.
+
 ## For developers
 
 Developers validate that the site is technically sound: smooth navigation, quick loading, cross-platform compatibility, security, protection of user data and correct dynamic content.
