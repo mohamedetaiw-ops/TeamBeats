@@ -382,6 +382,8 @@
   "notifications.template.documents.review_waiting.title": "مستند حان موعد مراجعته",
   "notifications.template.evaluation.gate_overridden.body": "تجاوز أحد الناشرين فحص تقييم لم ينجح كي يُنشر إصدار من وكيلك. افتح الوكيل لترى ما الذي لم ينجح وأصلحه في الإصدار التالي.",
   "notifications.template.evaluation.gate_overridden.title": "تم تجاوز إخفاق في تقييم وكيلك",
+  "notifications.template.evaluation.drift_detected.body": "انخفضت {count} من درجات جودة وكيلك في الاستخدام الفعلي عن آخر فحص تقييم له. افتح تقييمه لترى الدرجات وأضعف الإجابات والنماذج المستخدمة، ويمكنك تثبيت النموذج أو تغييره من توجيه الذكاء الاصطناعي.",
+  "notifications.template.evaluation.drift_detected.title": "انخفضت جودة وكيلك",
   "notifications.template.evaluation.rubric_demoted.body": "اتفق نموذج الحكم مع المراجعين أقل من الهدف، لذا أصبحت فحوصه المانعة تحذيرات. افتح المعايرة لترى نسبة الاتفاق وتضيف تصنيفات.",
   "notifications.template.evaluation.rubric_demoted.title": "تم خفض معيار حكم",
   "notifications.template.policies.approval_waiting.body": "تم إرسال إصدار من سياسة للاعتماد. قارنه بالإصدار الساري ثم اعتمده أو أعده.",

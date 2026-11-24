@@ -389,7 +389,7 @@ public sealed class ProductionRetention(IDbSession session)
     }
 }
 
-/// <summary>Runs <see cref="ProductionRetention"/> for every active tenant every hour.</summary>
+/// <summary>Runs <see cref="ProductionRetention"/> and <see cref="DriftDetector"/> for every active tenant every hour.</summary>
 public sealed class ProductionRetentionWorker(IServiceScopeFactory scopes, IClock clock, ILogger<ProductionRetentionWorker> logger) : BackgroundService
 {
     public static readonly TimeSpan Tick = TimeSpan.FromHours(1);
@@ -417,6 +417,8 @@ public sealed class ProductionRetentionWorker(IServiceScopeFactory scopes, ICloc
                     context.SetTenant(tenant.Id);
                     context.SetActor(ActorType.System, null);
                     await scope.ServiceProvider.GetRequiredService<ProductionRetention>().PurgeAsync(clock.UtcNow, stoppingToken);
+                    // Drift against the last gate result (T019, FR-024), each hour so a regression shows within a day (SC-004).
+                    await scope.ServiceProvider.GetRequiredService<DriftDetector>().ScanAsync(stoppingToken);
                     await scope.ServiceProvider.GetRequiredService<IDbSession>().CommitAsync(stoppingToken);
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)

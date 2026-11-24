@@ -45,6 +45,8 @@ public static class EvaluationModule
         services.AddScoped<ProductionPolicyService>();
         services.AddScoped<ProductionResults>();
         services.AddScoped<ProductionRetention>();
+        services.AddScoped<DriftDetector>();
+        services.AddScoped<DriftAlerts>();
         services.AddScoped<ProductionSampler>();
         services.RemoveAll<Agents.Contracts.IProductionSampler>();
         services.AddScoped<Agents.Contracts.IProductionSampler>(sp => sp.GetRequiredService<ProductionSampler>());
@@ -197,6 +199,7 @@ public static class EvaluationModule
         });
         root.MapGet("/agents/{agentId:guid}/production", async (Guid agentId, ProductionResults results, CancellationToken ct) =>
             Results.Ok(await results.ForAgentAsync(agentId, ct)));
+        root.MapGet("/agents/{agentId:guid}/drift", async (Guid agentId, DriftAlerts alerts, CancellationToken ct) => Results.Ok(await alerts.ForAgentAsync(agentId, ct)));
 
         root.MapGet("/gates", async (Guid agentId, int version, GateService gates, CancellationToken ct) => Results.Ok(await gates.GetAsync(agentId, version, ct)));
         root.MapPost("/gates/{runId:guid}/override", async (Guid runId, GateOverrideRequest request, GateService gates, IDbSession session, CancellationToken ct) =>

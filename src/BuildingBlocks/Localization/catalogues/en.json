@@ -382,6 +382,8 @@
   "notifications.template.documents.review_waiting.title": "A document is due for review",
   "notifications.template.evaluation.gate_overridden.body": "A publisher overrode a failed evaluation check so a version of your agent could be published. Open the agent to see what failed and fix it in the next version.",
   "notifications.template.evaluation.gate_overridden.title": "An evaluation failure of your agent was overridden",
+  "notifications.template.evaluation.drift_detected.body": "{count} quality scores of your agent fell below its last evaluation check in real use. Open its evaluation to see the scores, the weakest answers and the models in use. You can pin or switch the model in AI routing.",
+  "notifications.template.evaluation.drift_detected.title": "Your agent's quality has dropped",
   "notifications.template.evaluation.rubric_demoted.body": "The judge agreed with your reviewers less often than the target, so its blocking checks now count as warnings. Open calibration to see the agreement and add labels.",
   "notifications.template.evaluation.rubric_demoted.title": "A judge rubric was demoted",
   "notifications.template.policies.approval_waiting.body": "A policy version was submitted for approval. Compare it with the version in force and approve or return it.",
