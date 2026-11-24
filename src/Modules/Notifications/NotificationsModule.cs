@@ -27,6 +27,9 @@ public static class NotificationsModule
 {
     public static readonly MigrationSource Migrations = new("notifications", typeof(NotificationsModule).Assembly);
 
+    /// <summary>A signage screen opens its feed with the token in its address (spec 015 FR-021): limit guessing per client address.</summary>
+    public const string SignageRateLimit = "notifications.signage";
+
     public static IServiceCollection AddNotificationsModule(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.Section));
@@ -41,6 +44,7 @@ public static class NotificationsModule
         services.AddScoped<SlackDelivery>();
         services.AddScoped<TeamsDelivery>();
         services.AddScoped<SmsDelivery>();
+        services.AddScoped<SignageScreens>();
         // Push (spec 030 US2): subscriptions follow the session that made them.
         services.AddScoped<PushSubscriptions>();
         services.AddScoped<PushDelivery>();
@@ -199,6 +203,51 @@ public static class NotificationsModule
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });
+
+        // Signage screens of a location (US7): location administrators register them on their units.
+        var screens = app.MapGroup("/api/v1/notifications/signage-screens").RequireTenantUser().InAdminArea().WithTags("Notifications: signage");
+        screens.MapGet("", async (SignageScreens service, CancellationToken ct) => Results.Ok(await service.ListAsync(ct)));
+        screens.MapPost("", async (SignageScreenRequest request, SignageScreens service, IDbSession session, CancellationToken ct) =>
+        {
+            var created = await service.CreateAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/notifications/signage-screens/{created.Screen.Id}", created);
+        });
+        screens.MapPut("/{id:guid}", async (Guid id, SignageScreenRequest request, SignageScreens service, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await service.UpdateAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+        screens.MapPost("/{id:guid}:rotate", async (Guid id, SignageScreens service, IDbSession session, CancellationToken ct) =>
+        {
+            var rotated = await service.RotateAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(rotated);
+        });
+        screens.MapDelete("/{id:guid}", async (Guid id, SignageScreens service, IDbSession session, CancellationToken ct) =>
+        {
+            await service.RevokeAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        // A screen reads its feed without a session. The tenant comes from the host and the token is the only thing that
+        // opens it; guessing is limited per client address.
+        app.MapGet("/api/v1/screens/{token}", async (string token, ITenantContext context, TenantContextAccessor accessor, SignageScreens service,
+            IDbSession session, HttpResponse response, CancellationToken ct) =>
+        {
+            if (context.Host.Kind != HostScopeKind.Tenant || context.Host.Tenant is not { Status: TenantLifecycleStatus.Active } tenant)
+            {
+                throw AppException.NotFound();
+            }
+            accessor.SetTenant(tenant.Id);
+            accessor.SetActor(ActorType.Anonymous, null);
+            var feed = await service.FeedAsync(token, ct);
+            await session.CommitAsync(ct);
+            response.Headers.CacheControl = "no-store";
+            return Results.Ok(feed);
+        }).RequireRateLimiting(SignageRateLimit).WithTags("Notifications: signage");
 
         return app;
     }

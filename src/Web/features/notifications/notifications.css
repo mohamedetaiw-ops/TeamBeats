@@ -306,3 +306,22 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+/* Signage screens of a location (spec 015 US7). */
+.notification-signage {
+  display: grid;
+  gap: var(--tb-space-lg);
+}
+
+.notification-signage-form {
+  display: grid;
+  gap: var(--tb-space-md);
+  max-inline-size: 40rem;
+}
+
+.notification-signage-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+  margin: 0;
+}

@@ -30,7 +30,8 @@ public sealed record ItemRequest(
     IReadOnlyDictionary<string, VariantInput>? Variants,
     string? ChangeNote,
     int? Version,
-    CriticalInput? Critical = null);
+    CriticalInput? Critical = null,
+    bool? Signage = null);
 
 /// <summary>When to go live and when to expire, as local times in the site's time zone (US1 scenario 3).</summary>
 /// <summary>SensitiveReason confirms a sensitive data warning (spec 026 US6 scenario 1).</summary>
@@ -63,7 +64,8 @@ public sealed record ItemView(
     bool InReview,
     CriticalSettings? Critical,
     bool OwnerReviewOpen = false,
-    bool RetirePending = false);
+    bool RetirePending = false,
+    bool Signage = false);
 
 /// <summary>What a reader sees: the published version in their language, or the fallback with a note (US5 scenario 2).</summary>
 public sealed record ReaderView(
@@ -106,7 +108,7 @@ internal sealed record ItemRow(
     ContentAudience Audience, bool Pinned, bool Featured, string Status, int? PublishedVersion, int? DraftVersion, DateTimeOffset? PublishAt,
     DateTimeOffset? ExpiresAt, DateTimeOffset? PublishedAt, DateTimeOffset? ExpiredAt, Guid CreatedBy, DateTimeOffset UpdatedAt, int Version,
     Guid? ReviewInstanceId = null, Guid? SubmittedBy = null, CriticalSettings? Critical = null, Guid? OwnerReviewInstanceId = null,
-    Guid? RetireInstanceId = null)
+    Guid? RetireInstanceId = null, bool Signage = false)
 {
     /// <summary>The draft waits for a decision. A live item stays published (and readable) while its next version is reviewed.</summary>
     public bool InReview => ReviewInstanceId is not null || Status == ContentStatuses.InReview;
@@ -151,7 +153,7 @@ public sealed class Items(
         """
         id, site_id, type, classification, primary_locale, owner_user_id, backup_owner_user_id, review_due_at, audience::text, pinned, featured, status,
         published_version, draft_version, publish_at, expires_at, published_at, expired_at, created_by, updated_at, row_version, review_instance_id, submitted_by, critical::text,
-        owner_review_instance_id, retire_instance_id
+        owner_review_instance_id, retire_instance_id, signage
         """;
 
     internal static ItemRow Read(NpgsqlDataReader r) => new(
@@ -160,7 +162,7 @@ public sealed class Items(
         r.Get<int?>("published_version"), r.Get<int?>("draft_version"), r.Get<DateTimeOffset?>("publish_at"), r.Get<DateTimeOffset?>("expires_at"),
         r.Get<DateTimeOffset?>("published_at"), r.Get<DateTimeOffset?>("expired_at"), r.GetGuid(18), r.GetFieldValue<DateTimeOffset>(19), r.GetInt32(20),
         r.Get<Guid?>("review_instance_id"), r.Get<Guid?>("submitted_by"), r.Get<string?>("critical") is { } c ? ContentJson.Read<CriticalSettings>(c) : null,
-        r.Get<Guid?>("owner_review_instance_id"), r.Get<Guid?>("retire_instance_id"));
+        r.Get<Guid?>("owner_review_instance_id"), r.Get<Guid?>("retire_instance_id"), r.GetBoolean(26));
 
     private const string VersionColumns = "number, variants::text, change_note, material, author_user_id, approver_user_id, created_at, updated_at, published_at, restored_from";
 
@@ -342,6 +344,15 @@ public sealed class Items(
         AudienceRules.Validate(request.Audience, "audience", errors);
     }
 
+    /// <summary>Only announcements go to signage screens (spec 015 US7); a screen shows the Public ones.</summary>
+    private static void ValidateSignage(bool? signage, string type, ValidationErrors errors)
+    {
+        if (signage == true && type != ContentTypes.Announcement)
+        {
+            errors.Add("signage", "validation.content.signage_type");
+        }
+    }
+
     /// <summary>
     /// Critical settings from the editor (FR-006): only on announcements, a modal or a banner, "remind me later" up to
     /// <see cref="CriticalSettings.MaxRemindLater"/> times (3 by default, section 6), and a deadline in the future given
@@ -468,6 +479,7 @@ public sealed class Items(
             primary = given.Keys.First();
         }
         ValidateSettings(request, errors);
+        ValidateSignage(request.Signage, type, errors);
         await ValidatePeopleAsync(request, errors, ct);
         var critical = await CriticalAsync(request.Critical, null, type, site, errors, ct);
         var variants = await CleanVariantsAsync(request.Variants, primary, null, errors, ct);
@@ -479,14 +491,15 @@ public sealed class Items(
         await session.ExecAsync(
             """
             insert into content.content_item (tenant_id, id, site_id, type, classification, primary_locale, owner_user_id, backup_owner_user_id, review_due_at,
-              audience, pinned, featured, critical, status, draft_version, created_at, created_by, updated_at)
+              audience, pinned, featured, critical, signage, status, draft_version, created_at, created_by, updated_at)
             values (platform.current_tenant_id(), @id, @site, @type, @classification, @primary, @owner, @backup, @reviewDue,
-              @audience, @pinned, @featured, @critical, 'draft', 1, @now, @user, @now)
+              @audience, @pinned, @featured, @critical, @signage, 'draft', 1, @now, @user, @now)
             """, new
             {
                 id, site = site.Id, type, classification = request.Classification ?? "internal", primary, owner = request.OwnerId, backup = request.BackupOwnerId,
                 reviewDue, audience = new Jsonb(ContentJson.Write(request.Audience ?? site.DefaultAudience)), pinned = request.Pinned ?? false,
                 featured = request.Featured ?? false, critical = critical is null ? null : new Jsonb(ContentJson.Write(critical)), now, user,
+                signage = request.Signage ?? false,
             }, ct);
         await InsertVersionAsync(id, 1, variants, request.ChangeNote, user, now, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.ContentCreated, "content_item", id.ToString(), TargetOrgUnitId: site.OrgUnitId,
@@ -532,6 +545,7 @@ public sealed class Items(
             errors.Add("type", "validation.content.fixed");
         }
         ValidateSettings(request, errors);
+        ValidateSignage(request.Signage, item.Type, errors);
         await ValidatePeopleAsync(request, errors, ct);
         var critical = await CriticalAsync(request.Critical, item.Critical, item.Type, site, errors, ct);
         var basis = item.DraftVersion ?? item.PublishedVersion;
@@ -544,7 +558,7 @@ public sealed class Items(
         await session.ExecAsync(
             """
             update content.content_item set classification = @classification, owner_user_id = @owner, backup_owner_user_id = @backup,
-              review_due_at = @reviewDue, audience = @audience, pinned = @pinned, featured = @featured, critical = @critical, draft_version = @draft,
+              review_due_at = @reviewDue, audience = @audience, pinned = @pinned, featured = @featured, critical = @critical, signage = @signage, draft_version = @draft,
               deadline_reminded_at = case when critical is distinct from @critical then null else deadline_reminded_at end, updated_at = @now, row_version = row_version + 1
             where id = @id
             """, new
@@ -553,6 +567,7 @@ public sealed class Items(
                 backup = request.BackupOwnerId ?? item.BackupOwnerId, reviewDue = request.ReviewDueOn is { } on ? ReviewAt(on, site) : item.ReviewDueAt,
                 audience = new Jsonb(ContentJson.Write(request.Audience ?? item.Audience)), pinned = request.Pinned ?? item.Pinned,
                 featured = request.Featured ?? item.Featured, critical = critical is null ? null : new Jsonb(ContentJson.Write(critical)), draft, now,
+                signage = request.Signage ?? item.Signage,
             }, ct);
         return await ViewAsync((await RowAsync(id, false, ct))!, ct);
     }
@@ -886,7 +901,7 @@ public sealed class Items(
             item.OwnerId is { } o ? await PersonAsync(o, ct) : null, item.BackupOwnerId is { } b ? await PersonAsync(b, ct) : null, item.ReviewDueAt,
             item.Pinned, item.Featured, item.PublishedVersion, item.DraftVersion, item.PublishAt, item.ExpiresAt, item.PublishedAt, item.ExpiredAt,
             version?.Variants ?? new Dictionary<string, ContentVariant>(), version?.ChangeNote, await PersonAsync(item.CreatedBy, ct), item.UpdatedAt, item.Version, item.InReview, item.Critical,
-            item.OwnerReviewInstanceId is not null, item.RetireInstanceId is not null);
+            item.OwnerReviewInstanceId is not null, item.RetireInstanceId is not null, item.Signage);
     }
 
     public async Task<ItemView> GetAsync(Guid id, CancellationToken ct) => await ViewAsync((await ManagedAsync(id, false, ct)).Item, ct);

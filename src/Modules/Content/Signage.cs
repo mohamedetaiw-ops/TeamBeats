@@ -157,3 +157,59 @@ public sealed class ContentSignage(
         return new SignageFeed(screen.Name, site.Names, list);
     }
 }
+
+/// <summary>
+/// Announcements for the location signage screens of spec 015 US7 (Notifications owns the screens). The audience is
+/// evaluated as for a person who is only a place: in the screen's unit and its parents, at the screen's location, with no
+/// groups, roles or membership type. Only live, Public announcements marked for signage on active sites are shown.
+/// </summary>
+public sealed class SignageAnnouncements(
+    IDbSession session,
+    IEntitlementService entitlements,
+    ITenantSettingsReader tenantSettings,
+    IOrganizationHierarchy hierarchy,
+    Items items,
+    Sites sites,
+    IClock clock) : Contracts.ISignageAnnouncements
+{
+    public const int MaxItems = 20;
+
+    public async Task<IReadOnlyList<Contracts.SignageAnnouncement>> ForPlaceAsync(Guid orgUnitId, string? location, int limit, CancellationToken ct = default)
+    {
+        if (!await entitlements.IsEnabledAsync(Capabilities.ContentCore, ct))
+        {
+            return [];
+        }
+        limit = Math.Clamp(limit, 1, MaxItems);
+        var place = new AudienceFacts(new HashSet<Guid> { orgUnitId }, (await hierarchy.GetAncestorsAndSelfAsync(orgUnitId, ct)).ToHashSet(),
+            string.IsNullOrWhiteSpace(location) ? null : location.Trim(), new HashSet<Guid>(), new HashSet<string>(), null);
+        var locales = await tenantSettings.GetLocaleSettingsAsync(ct);
+        var rows = await session.QueryAsync(
+            $"""
+            select {Items.Columns} from content.content_item
+            where signage and type = @type and status = 'published' and classification = 'public' and published_version is not null
+              and (expires_at is null or expires_at > @now)
+            order by pinned desc, published_at desc, id limit 200
+            """, new { type = ContentTypes.Announcement, now = clock.UtcNow }, Items.Read, ct);
+        var active = new Dictionary<Guid, bool>();
+        var list = new List<Contracts.SignageAnnouncement>();
+        foreach (var item in rows.Where(i => AudienceRules.Matches(i.Audience, place)))
+        {
+            if (!active.TryGetValue(item.SiteId, out var live))
+            {
+                live = active[item.SiteId] = await sites.RowAsync(item.SiteId, false, ct) is { Active: true };
+            }
+            if (!live || await items.VersionAsync(item.Id, item.PublishedVersion!.Value, ct) is not { } version)
+            {
+                continue;
+            }
+            var (locale, variant) = Items.Pick(version.Variants, locales.DefaultLocale, locales.DefaultLocale, item.PrimaryLocale);
+            list.Add(new Contracts.SignageAnnouncement(item.Id, locale, variant.Title, variant.Summary, item.PublishedAt ?? version.CreatedAt));
+            if (list.Count == limit)
+            {
+                break;
+            }
+        }
+        return list;
+    }
+}

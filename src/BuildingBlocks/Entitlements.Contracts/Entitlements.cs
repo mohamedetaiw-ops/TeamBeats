@@ -147,6 +147,9 @@ public static class Capabilities
 
     /// <summary>SMS per calendar month (spec 015 section 9: SMS has a usage limit).</summary>
     public const string NotificationsSmsMonthlyMessages = "notifications.sms_monthly_messages";
+
+    /// <summary>Signage screens that show a location's announcements (spec 015 US7, R2).</summary>
+    public const string NotificationsSignage = "notifications.signage";
     public const string PeopleDirectory = "people.directory";
     public const string PeopleCustomFields = "people.custom_fields";
     public const string SecurityIpRules = "security.ip_rules";

@@ -97,3 +97,17 @@ public interface IPublishedPages
     /// <summary>The item's published version when the caller may read it; otherwise null.</summary>
     Task<PublishedPage?> ReadableAsync(Guid itemId, CancellationToken ct = default);
 }
+
+/// <summary>A live announcement as a signage screen shows it: the title and summary in one locale, nothing else.</summary>
+public sealed record SignageAnnouncement(Guid Id, string Locale, string Title, string? Summary, DateTimeOffset PublishedAt);
+
+/// <summary>
+/// Announcements for the signage screens of spec 015 US7. A screen sits at one org unit and, optionally, one location;
+/// it shows the published, Public announcements marked for signage whose audience is everyone or reaches that place
+/// (an org unit clause covering the unit, or a location clause naming the location). A clause that also needs groups,
+/// roles or a membership type names people, not places, so it never reaches a screen. Tenant comes from context.
+/// </summary>
+public interface ISignageAnnouncements
+{
+    Task<IReadOnlyList<SignageAnnouncement>> ForPlaceAsync(Guid orgUnitId, string? location, int limit, CancellationToken ct = default);
+}

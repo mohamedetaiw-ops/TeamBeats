@@ -48,6 +48,8 @@ public static class ContentModule
         services.AddScoped<ContentCampaigns>();
         services.AddScoped<ContentRetention>();
         services.AddScoped<ContentSignage>();
+        services.AddScoped<SignageAnnouncements>();
+        services.AddScoped<Contracts.ISignageAnnouncements>(sp => sp.GetRequiredService<SignageAnnouncements>());
         services.AddMessageHandler<Contracts.ContentPublished, ContentMentions>("content.mentions");
         services.AddSingleton<Experience.Contracts.IComponentRegistration, ContentComponents>();
         services.AddMessageHandler<Identity.Contracts.UserDeprovisioned, ContentOwnerHandler>("content.owner_left");

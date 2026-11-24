@@ -118,6 +118,7 @@
       "pages": "Pages",
       "templates": "Templates",
       "notifications": "Notifications",
+      "signage": "Signage screens",
       "calendars": "Working calendars",
       "people": "Directory settings",
       "security": "Security policy",
@@ -710,7 +711,8 @@
         "process_analyst": "Process analyst",
         "records_manager": "Records manager",
         "brand_publisher": "Brand publisher",
-        "navigation_editor": "Navigation editor"
+        "navigation_editor": "Navigation editor",
+        "location_administrator": "Location administrator"
       },
       "tabs": "Roles and access sections",
       "unknownUnit": "a unit outside your view",
@@ -1009,7 +1011,8 @@
         "ai_governance_security_center": "Agent Security Center",
         "notifications_teams": "Notifications in Microsoft Teams",
         "notifications_sms": "SMS for mandatory notifications",
-        "notifications_sms_monthly_messages": "SMS messages a month"
+        "notifications_sms_monthly_messages": "SMS messages a month",
+        "notifications_signage": "Signage screens for locations"
       },
       "searchLabel": "Search capabilities",
       "searchPlaceholder": "Search by name",
@@ -1556,7 +1559,8 @@
         "edit": "Arrange own home"
       },
       "notifications": {
-        "manage": "Manage notifications"
+        "manage": "Manage notifications",
+        "signage_manage": "Manage signage screens"
       },
       "hr": {
         "calendar_manage": "Manage working calendars",
@@ -3500,7 +3504,40 @@
     },
     "markRead": "Mark as read",
     "emptyUnread": "You're all caught up.",
-    "emptyAction": "Nothing needs your action."
+    "emptyAction": "Nothing needs your action.",
+    "signage": {
+      "intro": "Screens at a location show the Public announcements marked for signage that are for everyone or for that place. Each screen gets its own address; open it on the screen's browser.",
+      "listTitle": "Screens",
+      "emptyTitle": "No screens yet",
+      "emptyMessage": "Register a screen to get its address.",
+      "name": "Screen name",
+      "unit": "Organization unit",
+      "unitHint": "The unit the screen belongs to, such as the warehouse. Announcements for this unit, or for a unit above it, show on the screen.",
+      "location": "Location",
+      "locationHint": "Optional. The location name used in people's profiles, such as Riyadh warehouse, so announcements for that location show too.",
+      "anyLocation": "Unit only",
+      "lastSeen": "Last seen",
+      "never": "Not yet",
+      "otherUnit": "A unit outside your view",
+      "actions": "Actions",
+      "rotate": "Replace the address of {name}",
+      "revoke": "Revoke {name}",
+      "revokeQuestion": "Revoke {name}? The screen stops showing announcements within a minute.",
+      "revokeConfirm": "Revoke",
+      "cancel": "Cancel",
+      "createTitle": "Register a screen",
+      "createIntro": "The address is shown once. Copy it to the screen's browser; replace it if it is lost or shared by mistake.",
+      "create": "Register screen",
+      "address": "Address of {name}",
+      "addressOnce": "This address is shown only now. Anyone with it can see what this screen shows.",
+      "addressDone": "Done",
+      "working": "Working",
+      "failed": "The change could not be saved."
+    },
+    "screen": {
+      "empty": "No announcements right now.",
+      "items": "Announcements"
+    }
   },
   "calendars": {
     "title": "Working calendars",
@@ -5159,6 +5196,8 @@
       },
       "pinned": "Pin to the top of feeds",
       "featured": "Feature",
+      "signage": "Show on signage screens",
+      "signageHint": "Screens at the places this announcement is for show it while it is live, when its classification is Public.",
       "audience": "Audience",
       "audienceHint": "The audience decides whose feeds show the item. Who may open it is checked separately.",
       "everyone": "Everyone",
