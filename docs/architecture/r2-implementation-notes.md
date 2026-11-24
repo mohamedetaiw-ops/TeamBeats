@@ -2445,3 +2445,12 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - Calibration labels stay in Arabic and English: production samples come from agents, which answer only in those languages.
 - The run table accepts the new locales (migration `evaluation/0015`).
 
+## Evaluation pages for R2 (spec 034 R2, T025; US7 to US10)
+
+- New pages under the evaluation section: Production (the sampling policy), Review queue (open and reviewed, and one item with its content and decision), Outcomes (per agent, a 7, 30 or 90 day window, and baselines), and By unit (pick an active unit, see the levels above and the rules in force with the level that set each, set the unit's own rules and datasets). An agent's dashboard links to its production quality with drift alerts and to its online comparisons.
+- Every page shows what the API returns. A package without the feature gets the API's `available: false` and the page says so; a reader without access gets not found. Edit controls follow the view's `canEdit`, `canPropose`, `canDecide`, `canStop` and `canPromote` flags, and the API checks each change again.
+- The person's opt-out from production evaluation is a section of personal settings, shown only where the package has production evaluation.
+- Sample content (question, answer, evidence, steps) shows only on a review item, and only when the API returns it; otherwise the page says whether it was not kept or not permitted.
+- A unit dataset opens in the same dataset editor as an agent's, with a link back to the unit.
+- Comparisons can only be proposed for an agent with a version in force; a draft agent shows the list only.
+

@@ -42,4 +42,4 @@ R2 covers User Stories 7 and 9, US8 scenarios 2 and 3, US10 organization level, 
 - [x] T022 [US9 scenario 1] Business outcome scoring (FR-027): tenant baselines per task type; completion, escalation, resolution without human help and estimated time saved per agent with the spec 021 minimum group size; never per employee
 - [x] T023 [US10] Organization level settings: business-specific datasets and stricter thresholds for a unit and below, the strictest rule applied
 - [x] T024 [US1 scenario 6] French, Urdu and Hindi datasets and platform cases for tenants with those locales (with spec 007 R2)
-- [ ] T025 Pages for production results, drift alerts, the review queue, comparisons and outcomes, in `ar` and `en`, RTL; OpenAPI, R2 implementation notes, e2e with axe, spec evidence
+- [x] T025 Pages for production results, drift alerts, the review queue, comparisons and outcomes, in `ar` and `en`, RTL; OpenAPI, R2 implementation notes, e2e with axe, spec evidence

@@ -30,9 +30,13 @@ export default async function EvaluationDatasetPage({ params, searchParams }: { 
       <h1>
         <bdi>{pickText(d.names, locale) || t("untitled")}</bdi>
       </h1>
-      <EvaluationTabs current="agents" />
+      <EvaluationTabs current={d.agentId ? "agents" : "units"} />
       <p>
-        <Link href={`/admin/evaluation/agents/${d.agentId}/suite`}>{t("dataset.back")}</Link>
+        {d.agentId ? (
+          <Link href={`/admin/evaluation/agents/${d.agentId}/suite`}>{t("dataset.back")}</Link>
+        ) : (
+          <Link href={`/admin/evaluation/units?unit=${d.orgUnitId ?? ""}`}>{t("dataset.backUnit")}</Link>
+        )}
       </p>
       <DatasetEditor key={d.version} initial={d} personas={personas.ok ? personas.data : []} latest={latest} />
       {d.versions.length > 0 ? (
