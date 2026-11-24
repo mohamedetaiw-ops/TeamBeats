@@ -47,7 +47,7 @@ export function OrganizationThemes({
 
   const scopeLabel = (value: string) => scopes.find((s) => s.value === value)?.label ?? t("otherScope");
   const settingLabel = (setting: string) =>
-    shellSettings.includes(setting) ? t(`shellSettings.${setting}`) : tokens.some((x) => x.name === setting) ? tb(`tokenNames.${setting}`) : setting;
+    shellSettings.includes(setting) ? t(`shellSettings.${setting}`) : tokens.some((x) => x.name === setting) && tb.has(`tokenNames.${setting}`) ? tb(`tokenNames.${setting}`) : setting;
   const lockedAbove = new Set((locks ?? []).filter((l) => l.inherited).map((l) => l.setting));
   const own = (locks ?? []).filter((l) => !l.inherited).map((l) => l.setting);
   const isTenant = scope === "tenant";

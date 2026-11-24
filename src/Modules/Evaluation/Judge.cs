@@ -45,7 +45,8 @@ public sealed class EvaluationJudge(IAiGateway gateway)
 
     private static string Escape(string text) => text.Replace("<", "&lt;", StringComparison.Ordinal).Replace(">", "&gt;", StringComparison.Ordinal);
 
-    public static string Prompt(Rubric rubric, string locale, string input, CaseExpectations expect, string answer) =>
+    /// <param name="evidence">For a production sample (spec 034 US7): the text the agent's tools returned, which a reference-free rubric judges the answer against.</param>
+    public static string Prompt(Rubric rubric, string locale, string input, CaseExpectations expect, string answer, string? evidence = null) =>
         $"""
         Rubric ({rubric.Version}): {rubric.Text}
         Expected language: {(locale == "ar" ? "Arabic" : "English")}
@@ -53,11 +54,11 @@ public sealed class EvaluationJudge(IAiGateway gateway)
         <untrusted_expected_answer>{Escape(expect.Answer ?? string.Empty)}</untrusted_expected_answer>
         <untrusted_key_facts>{Escape(string.Join(" | ", expect.KeyFacts ?? []))}</untrusted_key_facts>
         <untrusted_answer>{Escape(answer)}</untrusted_answer>
-        """;
+        """ + (evidence is null ? string.Empty : $"\n<untrusted_sources>{Escape(evidence)}</untrusted_sources>");
 
     /// <summary>Verdicts for the judged metrics of a case; a metric maps to null when it was not evaluated.</summary>
     public async Task<Dictionary<string, JudgeVerdict?>> JudgeAsync(IEnumerable<string> metrics, string locale, string input, CaseExpectations expect, EvalRunRecord run,
-        DataClassification classification, CancellationToken ct)
+        DataClassification classification, CancellationToken ct, string? evidence = null)
     {
         var verdicts = new Dictionary<string, JudgeVerdict?>(StringComparer.Ordinal);
         if (run.Answer is not { } answer || run.Status != "completed")
@@ -75,7 +76,7 @@ public sealed class EvaluationJudge(IAiGateway gateway)
                 continue;
             }
             var result = await gateway.ChatAsync(new AiRequest(AiUseCases.Evaluation,
-                [new AiMessage(AiRoles.System, System), new AiMessage(AiRoles.User, Prompt(rubric, locale, input, expect, answer))],
+                [new AiMessage(AiRoles.System, System), new AiMessage(AiRoles.User, Prompt(rubric, locale, input, expect, answer, evidence))],
                 classification, ResponseSchema: Schema, MaxTokens: 300, Temperature: 0, ModelUnderTest: run.Model), ct);
             verdicts[metric] = result.Completion is { } completion ? Read(completion, metric, rubric) : null;
         }

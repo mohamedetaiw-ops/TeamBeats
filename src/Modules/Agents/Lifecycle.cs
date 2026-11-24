@@ -20,6 +20,12 @@ public sealed class NoReleaseGate : IAgentReleaseGate
     public Task<AgentGateResult> ResultAsync(Guid agentId, int version, CancellationToken ct) => Task.FromResult(new AgentGateResult(GateStatuses.NotBuilt, false, []));
 }
 
+/// <summary>Used until spec 034 is wired in: no run is sampled for production evaluation.</summary>
+public sealed class NoProductionSampler : IProductionSampler
+{
+    public Task OfferAsync(ProductionRunFacts facts, Func<CancellationToken, Task<ProductionRunContent>> content, CancellationToken ct) => Task.CompletedTask;
+}
+
 public sealed record SubmitRequest(int? Revision);
 
 public sealed record DecisionRequest(int? Version, string? Reason);

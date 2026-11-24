@@ -133,6 +133,12 @@ internal sealed class RunState
 
     /// <summary>Which takeover of the run this is; a worker that resumes the run raises it, and an older holder rolls back.</summary>
     public int Attempt { get; set; }
+
+    /// <summary>The person's message, so production evaluation can read it once if the run is sampled (spec 034 US7).</summary>
+    public string? Question { get; set; }
+
+    /// <summary>The person the run serves, so production evaluation can honor their opt-out; never stored by evaluation.</summary>
+    public Guid? UserId { get; set; }
 }
 
 /// <summary>What a streamed run sends as it goes (020 T021): its ID first, each step, and the answer text as it arrives.</summary>
@@ -166,7 +172,8 @@ internal sealed record RunAgent(Guid Id, int Version, Guid OrgUnitId, AgentDefin
 /// </summary>
 public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntitlementService entitlements, IAuthorizationService authz,
     IOrganizationHierarchy org, IAuditWriter audit, IClock clock, IAiGateway gateway, ToolRegistry tools, UnitAgentPolicyService unitPolicies,
-    ISearchRetrieval retrieval, AgentMemory memory, MemoryRememberTool remember, AgentApprovals approvals, INotificationSender notifications)
+    ISearchRetrieval retrieval, AgentMemory memory, MemoryRememberTool remember, AgentApprovals approvals, INotificationSender notifications,
+    IProductionSampler sampler)
 {
     public const int MaxMessage = 2000;
     public const string PromptVersion = "agent.v1";
@@ -408,6 +415,8 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
             await ItemContextAsync(id, agent, source, item, language, state, ct);
         }
         state.Messages.Add(new AiMessage(AiRoles.User, message));
+        state.Question = message;
+        state.UserId = user;
         await session.ExecAsync(
             """
             insert into agents.run (tenant_id, id, agent_id, agent_version, user_id, org_unit_id, mode, status, language, classification, route_id,
@@ -1004,8 +1013,37 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
     {
         await session.ExecAsync("delete from agents.run_checkpoint where run_id = @runId", new { runId }, ct);
         await UpdateRunAsync(runId, state, status, outcome, reason, usage, true, ct, answer, cited);
+        if (agent.Mode == "run" && state.UserId is { } person)
+        {
+            await OfferAsync(runId, agent, person, state, status, outcome, reason, answer, language, usage, cited ?? [], ct);
+        }
         return new RunView(runId, agent.Id, agent.Version, agent.Mode, status, outcome, reason, answer, language, cited ?? [], null, answer is not null,
             InjectionDetector.HasLinks(answer));
+    }
+
+    /// <summary>Most text the evidence of a sampled run keeps for the judge (spec 034 US7).</summary>
+    public const int MaxEvidence = 12_000;
+
+    /// <summary>
+    /// A person's finished run goes to production evaluation (spec 034 US7), which decides by tenant policy whether to
+    /// sample it; the content is built only for a sampled run and handed over once, never stored here.
+    /// </summary>
+    private Task OfferAsync(Guid runId, RunAgent agent, Guid person, RunState state, string status, string? outcome, string? reason, string? answer, string language,
+        (string? Model, string? Provider, int In, int Out) usage, IReadOnlyList<RunCitation> cited, CancellationToken ct)
+    {
+        var facts = new ProductionRunFacts(runId, agent.Id, agent.Version, person, agent.OrgUnitId, status, outcome, reason, language, state.Classification,
+            usage.Model, usage.In, usage.Out, (int)Math.Min(int.MaxValue, state.ActiveSeconds * 1000), state.ToolCalls, state.Denials);
+        return sampler.OfferAsync(facts, async token =>
+        {
+            var steps = await session.QueryAsync(
+                "select n, kind, tool, decision, reason, parameters::text from agents.run_step where run_id = @id order by n", new { id = runId },
+                r => new EvalRunStep(r.GetInt32(0), r.GetString(1), r.Get<string?>("tool"), r.GetString(3), r.Get<string?>("reason"),
+                    r.Get<string?>("parameters") is { } p ? JsonDocument.Parse(p).RootElement.Clone() : null), token);
+            var evidence = string.Join("\n\n", state.Messages.Where(m => m.Role == AiRoles.Tool).Select(m => m.Content));
+            return new ProductionRunContent(state.Question ?? string.Empty, answer, evidence.Length > MaxEvidence ? evidence[..MaxEvidence] : evidence, steps,
+                state.Citations.Select(c => new EvalRunSource(c.N, c.Source, c.ItemId)).ToList(), cited.Select(c => new EvalRunSource(c.N, c.Source, c.ItemId)).ToList(),
+                agent.Definition.Escalation?.GetValueOrDefault(language));
+        }, ct);
     }
 
     private async Task UpdateRunAsync(Guid runId, RunState state, string status, string? outcome, string? reason, (string? Model, string? Provider, int In, int Out) usage,

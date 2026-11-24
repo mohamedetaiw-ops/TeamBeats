@@ -218,7 +218,8 @@ test.describe("installed app", () => {
     await prompt.getByRole("button", { name: msg("en", "app.update.later"), exact: true }).click();
     await expect(prompt).toHaveCount(0);
     // A freshly loaded page is the current release: it takes over silently and offers nothing (TB-02).
-    await page.goto(`${hostOrigin(tenant.key)}/people`);
+    // The page registers its own release's worker once it has hydrated, so wait for its scripts before going on.
+    await page.goto(`${hostOrigin(tenant.key)}/people`, { waitUntil: "networkidle" });
     // While no page is open the waiting worker may take over on its own, so wait until this page's own release ("dev")
     // controls it and nothing is installing; otherwise its registration could replace the next one mid-test.
     await page.waitForFunction(async () => {
@@ -227,8 +228,17 @@ test.describe("installed app", () => {
     });
     await expect(prompt).toHaveCount(0);
     // The release after that is offered again, and Reload applies it and reloads the page.
-    await page.evaluate(() => navigator.serviceWorker.register("/sw.js?v=e2e-third", { scope: "/" }));
-    await expect(prompt).toBeVisible();
+    // A page that hydrates late registers its own release after this one and replaces it, so the next release is
+    // registered again until it is the one waiting and nothing else is installing.
+    await expect(async () => {
+      await page.evaluate(() => navigator.serviceWorker.register("/sw.js?v=e2e-third", { scope: "/" }));
+      await expect(prompt).toBeVisible({ timeout: 3_000 });
+      const settled = await page.evaluate(async () => {
+        const r = await navigator.serviceWorker.getRegistration();
+        return !!r?.waiting?.scriptURL.includes("v=e2e-third") && !r.installing;
+      });
+      expect(settled).toBe(true);
+    }).toPass({ timeout: 30_000 });
     // The worker that takes control on Reload is noted before the page reloads; after it, this test page (release
     // "dev") installs its own worker again, which a real newer page would not.
     await page.evaluate(() =>

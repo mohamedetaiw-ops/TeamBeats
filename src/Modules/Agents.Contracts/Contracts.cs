@@ -452,3 +452,49 @@ public sealed record SearchSummary(string State, Guid? TurnId, string? Text, IRe
 
 /// <summary>A cited passage of a search summary: <paramref name="N"/> is its marker in the text and <paramref name="Link"/> opens the item at the passage.</summary>
 public sealed record SearchSummaryCitation(int N, string Title, string Link, string Kind);
+
+/// <summary>
+/// What every finished agent run tells production evaluation (spec 034 US7, FR-023): metadata only, enough to decide
+/// whether the run is sampled. The person is named so an opt-out can be honored; evaluation never stores who it was.
+/// </summary>
+public sealed record ProductionRunFacts(
+    Guid RunId,
+    Guid AgentId,
+    int AgentVersion,
+    Guid UserId,
+    Guid OrgUnitId,
+    string Status,
+    string? Outcome,
+    string? Reason,
+    string Language,
+    string Classification,
+    string? Model,
+    int InputTokens,
+    int OutputTokens,
+    int DurationMs,
+    int ToolCalls,
+    int Denials);
+
+/// <summary>
+/// The content of a sampled run, built only when the run is sampled and its classification allows content-based metrics:
+/// the person's question, the answer, the text the tools returned (the evidence), the ordered steps, and the sources
+/// read and cited.
+/// </summary>
+public sealed record ProductionRunContent(
+    string Question,
+    string? Answer,
+    string Evidence,
+    IReadOnlyList<EvalRunStep> Steps,
+    IReadOnlyList<EvalRunSource> Read,
+    IReadOnlyList<EvalRunSource> Cited,
+    string? Escalation);
+
+/// <summary>
+/// Continuous production evaluation (spec 034 US7): the agent runtime offers each finished run of a person; the
+/// evaluation module decides by tenant policy whether to sample it and asks for the content only then. Scoring happens
+/// later through the outbox, so the run is not held up. The default takes nothing.
+/// </summary>
+public interface IProductionSampler
+{
+    Task OfferAsync(ProductionRunFacts facts, Func<CancellationToken, Task<ProductionRunContent>> content, CancellationToken ct);
+}
