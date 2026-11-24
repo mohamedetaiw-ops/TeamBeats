@@ -499,7 +499,7 @@ public sealed class DirectorySyncService(
 
         foreach (var (link, user) in plan.Update)
         {
-            var update = await provisioning.UpdateUserAsync(link.UserId, Provisioned(user), ct);
+            var update = await provisioning.UpdateUserAsync(source, link.UserId, Provisioned(user), ct);
             if (update.EmailKept)
             {
                 counts.Skipped++;
@@ -512,14 +512,14 @@ public sealed class DirectorySyncService(
 
         foreach (var link in plan.Reenable)
         {
-            await provisioning.ReactivateUserAsync(link.UserId, ct);
+            await provisioning.ReactivateUserAsync(source, link.UserId, ct);
             await session.ExecAsync("update identity.directory_user_link set disabled_by_directory = false, updated_at = now() where user_id = @u", new { u = link.UserId }, ct);
             counts.Reenabled++;
         }
 
         foreach (var link in plan.Disable)
         {
-            if (!await provisioning.DeactivateUserAsync(link.UserId, "directory", ct))
+            if (!await provisioning.DeactivateUserAsync(source, link.UserId, ct))
             {
                 // The tenant must keep an administrator; the run log shows it as skipped.
                 logger.LogWarning("Kept the tenant's last administrator enabled although the directory disabled the account");

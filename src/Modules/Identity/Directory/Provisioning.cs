@@ -32,7 +32,7 @@ public sealed class Provisioning(
         if (existing is { } linked)
         {
             await session.ExecAsync("update identity.user_account set owner_fields = @f where id = @u", new { f = DirectorySyncService.OwnerFields, u = linked }, ct);
-            await audit.WriteAsync(new AuditEntry(AuditActions.UserSynced, "user", linked.ToString(), Changes: new { change = "linked", via = source.Via }), ct);
+            await audit.WriteAsync(new AuditEntry(AuditActions.UserSynced, "user", linked.ToString(), Changes: new { change = "linked", via = source.Via, connection = source.ConnectionId }), ct);
             return (ProvisionOutcome.Linked, linked);
         }
         if (user.Email is not { } email || await EmailTakenAsync(email, null, ct))
@@ -51,11 +51,11 @@ public sealed class Provisioning(
             new { t = tenantId, id = Ids.New(), idp = source.IdpConfigId, i = source.Issuer, s = user.ExternalId, u = id }, ct);
         await memberships.CreateAsync(id, MembershipTypes.Employee, ct);
         await outbox.EnqueueAsync(new UserProvisioned(id, source.Via), ct);
-        await audit.WriteAsync(new AuditEntry(AuditActions.UserSynced, "user", id.ToString(), Changes: new { change = "created", via = source.Via }), ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.UserSynced, "user", id.ToString(), Changes: new { change = "created", via = source.Via, connection = source.ConnectionId }), ct);
         return (ProvisionOutcome.Created, id);
     }
 
-    public async Task<ProvisionUpdate> UpdateUserAsync(Guid userId, ProvisionedUser user, CancellationToken ct)
+    public async Task<ProvisionUpdate> UpdateUserAsync(ProvisioningSource source, Guid userId, ProvisionedUser user, CancellationToken ct)
     {
         var current = await session.QuerySingleOrDefaultAsync("select display_name, email from identity.user_account where id = @u", new { u = userId },
             r => (Name: r.GetString(0), Email: r.GetString(1)), ct);
@@ -77,13 +77,13 @@ public sealed class Provisioning(
         {
             await session.ExecAsync("update identity.user_account set display_name = @n, email = @e, owner_fields = @f where id = @u",
                 new { n = user.DisplayName, e = email, f = DirectorySyncService.OwnerFields, u = userId }, ct);
-            await audit.WriteAsync(new AuditEntry(AuditActions.UserSynced, "user", userId.ToString(), Changes: new { change = "updated", fields = changed }), ct);
+            await audit.WriteAsync(new AuditEntry(AuditActions.UserSynced, "user", userId.ToString(), Changes: new { change = "updated", fields = changed, connection = source.ConnectionId }), ct);
             await outbox.EnqueueAsync(new UserProfileSynced(userId, changed), ct);
         }
         return new ProvisionUpdate(changed, kept);
     }
 
-    public async Task<bool> DeactivateUserAsync(Guid userId, string via, CancellationToken ct)
+    public async Task<bool> DeactivateUserAsync(ProvisioningSource source, Guid userId, CancellationToken ct)
     {
         await EnsureUserAsync(userId, ct);
         if (await authz.IsLastTenantAdministratorAsync(userId, ct))
@@ -92,18 +92,18 @@ public sealed class Provisioning(
             return false;
         }
         await memberships.SetStatusAsync(userId, MembershipStatus.Disabled, ct);
-        await sessions.RevokeUserSessionsAsync(userId, via + "_disabled", ct);
+        await sessions.RevokeUserSessionsAsync(userId, source.Via + "_disabled", ct);
         await outbox.EnqueueAsync(new TenantMembershipDisabled(userId), ct);
-        await outbox.EnqueueAsync(new UserDeprovisioned(userId, via), ct);
-        await audit.WriteAsync(new AuditEntry(AuditActions.DisabledByDirectory, "user", userId.ToString()), ct);
+        await outbox.EnqueueAsync(new UserDeprovisioned(userId, source.Via), ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.DisabledByDirectory, "user", userId.ToString(), Changes: new { via = source.Via, connection = source.ConnectionId }), ct);
         return true;
     }
 
-    public async Task ReactivateUserAsync(Guid userId, CancellationToken ct)
+    public async Task ReactivateUserAsync(ProvisioningSource source, Guid userId, CancellationToken ct)
     {
         await EnsureUserAsync(userId, ct);
         await memberships.SetStatusAsync(userId, MembershipStatus.Active, ct);
-        await audit.WriteAsync(new AuditEntry(AuditActions.ReenabledByDirectory, "user", userId.ToString()), ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.ReenabledByDirectory, "user", userId.ToString(), Changes: new { via = source.Via, connection = source.ConnectionId }), ct);
     }
 
     public Task<Guid> SetGroupMembersAsync(string groupKey, string displayName, IReadOnlyList<Guid> members, CancellationToken ct) =>

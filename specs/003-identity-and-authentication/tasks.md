@@ -54,4 +54,4 @@ Depends on 001 Phase 1 and ADR-0007. R0 tasks first, R1 tasks marked.
 - [x] T036 Security page note on providers that send no MFA claims (Google) and MFA mapping per provider kind
 
 ## Final phase
-- [ ] T019 Audit events for sign-in outcomes, config changes, directory connection changes and directory sync outcomes; OpenAPI; spec evidence
+- [x] T019 Audit events for sign-in outcomes, config changes, directory connection changes and directory sync outcomes (with the connection); OpenAPI; spec evidence in `evidence.md`
