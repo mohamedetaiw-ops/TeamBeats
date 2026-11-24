@@ -2818,5 +2818,8 @@
   "validation.theme.preview_source": "Show the draft or the current version",
   "validation.theme.title": "Enter a title of up to 60 characters, without line breaks",
   "validation.experience.share_unit": "Choose an organization of this tenant",
-  "validation.experience.share_own_line": "This organization already sees it, as it is on the owner's branch"
+  "validation.experience.share_own_line": "This organization already sees it, as it is on the owner's branch",
+  "validation.experience.delegation_area": "Choose pages, brand or navigation",
+  "validation.experience.delegation_user": "Choose an active person of this organization who is not a guest",
+  "validation.experience.delegation_self": "You cannot delegate to yourself"
 }

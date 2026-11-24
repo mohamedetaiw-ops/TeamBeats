@@ -429,6 +429,42 @@
         "summary": "Changes",
         "runSummary": "{create} created, {deactivate} deactivated, {added} memberships added, {ended} ended",
         "backToTree": "Back to the organization tree"
+      },
+      "delegates": {
+        "open": "Delegates",
+        "breadcrumb": "Delegates location",
+        "title": "Delegates",
+        "description": "Give a person the pages, brand or navigation of one organization and those below it.",
+        "formTitle": "Delegate an organization",
+        "intro": "The person can then do only this, only in the organization you choose and those below it. Values its parent organization locked stay locked. Clear every area to take the delegation back.",
+        "organization": "Organization",
+        "chooseOrganization": "Choose an organization",
+        "person": "Person",
+        "choosePerson": "Choose a person",
+        "areas": "Areas",
+        "areasHint": "You can delegate only what you can do yourself in that organization.",
+        "area": {
+          "pages": "Pages",
+          "brand": "Brand",
+          "navigation": "Navigation"
+        },
+        "areaHint": {
+          "pages": "Edit, submit and publish the organization's pages.",
+          "brand": "Apply a brand and change its values for the organization.",
+          "navigation": "Edit the organization's menu."
+        },
+        "save": "Save delegation",
+        "saved": "{person} now has the chosen areas in {organization}.",
+        "removed": "The delegation for {person} was taken back.",
+        "listTitle": "Current delegates",
+        "emptyTitle": "No delegates yet",
+        "emptyMessage": "People you delegate an organization to appear here.",
+        "delegatedAt": "Delegated",
+        "actions": "Actions",
+        "edit": "Edit",
+        "editFor": "Edit the delegation for {person}",
+        "separator": ", ",
+        "unknown": "Not available to you"
       }
     },
     "users": {
@@ -540,7 +576,9 @@
         "app_request_filer": "Request filer for apps",
         "process_operator": "Process operator",
         "process_analyst": "Process analyst",
-        "records_manager": "Records manager"
+        "records_manager": "Records manager",
+        "brand_publisher": "Brand publisher",
+        "navigation_editor": "Navigation editor"
       },
       "tabs": "Roles and access sections",
       "unknownUnit": "a unit outside your view",

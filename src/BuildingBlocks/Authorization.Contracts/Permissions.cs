@@ -302,6 +302,10 @@ public static class BuiltInRoles
     public const string AnalyticsViewer = "analytics_viewer";
     public const string DeviceAdministrator = "device_administrator";
     public const string KioskUser = "kiosk_user";
+    /// <summary>Spec 033 R2 T019: applies and overrides brands for the organizations it is given (delegated brand administration).</summary>
+    public const string BrandPublisher = "brand_publisher";
+    /// <summary>Spec 033 R2 T019: edits the navigation of the organizations it is given (delegated navigation administration).</summary>
+    public const string NavigationEditor = "navigation_editor";
 
     // Spec 029: the space roles, assigned only on a space by the Spaces module.
     public const string SpaceOwner = "space_owner";
@@ -319,5 +323,19 @@ public static class ResourceRoles
         "owner" => BuiltInRoles.SpaceOwner,
         "member" => BuiltInRoles.SpaceMember,
         _ => BuiltInRoles.SpaceViewer,
+    };
+}
+
+/// <summary>
+/// Spec 033 R2 T019: the built-in role each delegated area of one organization gives. Kept with the role keys so modules
+/// never name a role themselves.
+/// </summary>
+public static class DelegationRoles
+{
+    public static readonly IReadOnlyDictionary<string, string> ByArea = new Dictionary<string, string>
+    {
+        ["pages"] = BuiltInRoles.PagePublisher,
+        ["brand"] = BuiltInRoles.BrandPublisher,
+        ["navigation"] = BuiltInRoles.NavigationEditor,
     };
 }

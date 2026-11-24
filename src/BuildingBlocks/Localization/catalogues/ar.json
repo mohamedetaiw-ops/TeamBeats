@@ -2818,5 +2818,8 @@
   "validation.theme.preview_source": "اعرض المسودة أو الإصدار الحالي",
   "validation.theme.title": "أدخل عنوانًا من 60 حرفًا كحد أقصى دون فواصل أسطر",
   "validation.experience.share_unit": "اختر مؤسسة من هذا المستأجر",
-  "validation.experience.share_own_line": "هذه المؤسسة تراه بالفعل لأنها في فرع المالك"
+  "validation.experience.share_own_line": "هذه المؤسسة تراه بالفعل لأنها في فرع المالك",
+  "validation.experience.delegation_area": "اختر الصفحات أو الهوية أو التنقل",
+  "validation.experience.delegation_user": "اختر شخصًا نشطًا في هذه المؤسسة ليس ضيفًا",
+  "validation.experience.delegation_self": "لا يمكنك التفويض لنفسك"
 }

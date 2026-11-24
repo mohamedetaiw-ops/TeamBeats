@@ -55,6 +55,7 @@ public static class ExperienceModule
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<ThemeApprovals>());
         services.AddScoped<AppManifest>();
         services.AddScoped<Sharing.OrgSharing>();
+        services.AddScoped<Delegation.Delegations>();
         services.AddSingleton<Offline.OfflineKeySource>();
         services.AddScoped<Offline.OfflineBundles>();
         services.AddScoped<ShellService>();
@@ -384,7 +385,27 @@ public static class ExperienceModule
         MapHelpEndpoints(app);
         MapPersonalizationEndpoints(app);
         MapSharingEndpoints(app);
+        MapDelegationEndpoints(app);
         return app;
+    }
+
+    /// <summary>Delegated experience administration per organization (spec 033 R2 T019, FR-020).</summary>
+    private static void MapDelegationEndpoints(IEndpointRouteBuilder app)
+    {
+        var x = app.MapGroup("/api/v1/experience/delegations").RequireTenantUser().WithTags("Experience: delegation");
+        x.MapGet("", async (Delegation.Delegations delegations, IDbSession session, CancellationToken ct) =>
+        {
+            var list = await delegations.ListAsync(ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(list);
+        });
+        x.MapPut("/{unit:guid}/{user:guid}", async (Guid unit, Guid user, Delegation.DelegationRequest request, Delegation.Delegations delegations,
+            IDbSession session, CancellationToken ct) =>
+        {
+            var view = await delegations.SetAsync(unit, user, request, ct);
+            await session.CommitAsync(ct);
+            return view is null ? Results.NoContent() : Results.Ok(view);
+        });
     }
 
     /// <summary>

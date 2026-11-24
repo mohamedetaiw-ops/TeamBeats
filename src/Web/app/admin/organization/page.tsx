@@ -16,7 +16,11 @@ export default async function OrganizationPage() {
   if (!nav.ok || !nav.data.some((s) => s.key === "organization")) {
     notFound();
   }
-  const [units, types] = await Promise.all([apiGet<OrgUnitView[]>("/api/v1/org/units"), apiGet<UnitType[]>("/api/v1/org/unit-types")]);
+  const [units, types, delegations] = await Promise.all([
+    apiGet<OrgUnitView[]>("/api/v1/org/units"),
+    apiGet<UnitType[]>("/api/v1/org/unit-types"),
+    apiGet<unknown[]>("/api/v1/experience/delegations"),
+  ]);
   if (!units.ok) {
     notFound();
   }
@@ -27,9 +31,16 @@ export default async function OrganizationPage() {
         section="organization"
         description={t("org.description")}
         actions={
-          <ButtonLink href="/admin/organization/directory" variant="secondary" icon="link">
-            {t("org.directory.open")}
-          </ButtonLink>
+          <>
+            {delegations.ok ? (
+              <ButtonLink href="/admin/organization/delegates" variant="secondary" icon="people">
+                {t("org.delegates.open")}
+              </ButtonLink>
+            ) : null}
+            <ButtonLink href="/admin/organization/directory" variant="secondary" icon="link">
+              {t("org.directory.open")}
+            </ButtonLink>
+          </>
         }
       />
       <OrganizationAdmin initialUnits={units.data} types={types.ok ? types.data : []} />

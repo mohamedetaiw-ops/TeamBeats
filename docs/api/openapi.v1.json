@@ -7041,6 +7041,60 @@
         }
       }
     },
+    "/api/v1/experience/delegations": {
+      "get": {
+        "tags": [
+          "Experience: delegation"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/experience/delegations/{unit}/{user}": {
+      "put": {
+        "tags": [
+          "Experience: delegation"
+        ],
+        "parameters": [
+          {
+            "name": "unit",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "user",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DelegationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/me/notifications": {
       "get": {
         "tags": [
@@ -35617,32 +35671,18 @@
       },
       "DelegationRequest": {
         "required": [
-          "delegateId",
-          "startsOn",
-          "endsOn"
+          "areas"
         ],
         "type": "object",
         "properties": {
-          "delegateId": {
+          "areas": {
             "type": [
               "null",
-              "string"
+              "array"
             ],
-            "format": "uuid"
-          },
-          "startsOn": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date"
-          },
-          "endsOn": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date"
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -46983,6 +47023,9 @@
     },
     {
       "name": "Experience: sharing"
+    },
+    {
+      "name": "Experience: delegation"
     },
     {
       "name": "Notifications: my notifications"
