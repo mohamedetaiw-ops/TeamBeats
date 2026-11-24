@@ -35,6 +35,11 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByTestId("brand-status")).toHaveText(msg(locale, "brand.draftSaved"));
       await expect(lifecycle.getByTestId("theme-draft-state")).not.toHaveText(msg(locale, "brand.lifecycle.noDraft", { version: "1" }));
       await expect(lifecycle.getByRole("button", { name: msg(locale, "brand.lifecycle.publish") })).toBeVisible();
+      // Spec 036 DLS-023: the draft shows the design review checklist before it is published or sent for approval.
+      const review = lifecycle.getByTestId("theme-review");
+      await expect(review.getByRole("heading", { name: msg(locale, "brand.lifecycle.review.title") })).toBeVisible();
+      await expect(review.getByRole("listitem")).toHaveCount(7);
+      await expect(review).toContainText(msg(locale, "brand.lifecycle.review.items.contrast"));
       await expectAccessible(page, testInfo, `theme-lifecycle-${locale}`);
 
       await lifecycle.getByLabel(msg(locale, "brand.lifecycle.reason")).fill("Softer corners");

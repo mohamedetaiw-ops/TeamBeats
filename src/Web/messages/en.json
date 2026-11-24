@@ -2057,7 +2057,20 @@
       "impactOverridden": "{scope} keeps its own value for {token}, so this change does not reach it there.",
       "impactPreview": "Preview of {scope} with the draft",
       "impactPane": "Light, {direction}",
-      "tenant": "The whole organization"
+      "tenant": "The whole organization",
+      "review": {
+        "title": "Design review",
+        "intro": "Check these before you publish the draft or send it for approval. The approver checks them too.",
+        "items": {
+          "contrast": "The contrast table shows no failures in light, dark and high contrast.",
+          "modes": "The preview reads well in light, dark and high contrast.",
+          "directions": "The preview reads well in Arabic and English, right to left and left to right.",
+          "widths": "The preview fits phone, tablet and desktop widths without sideways scrolling.",
+          "designs": "Brand colours sit well on the design the organization uses (Beats, Atlas, Pulse or Studio).",
+          "assets": "Logos and images are the approved ones and have their alternative text.",
+          "scopes": "Organizations that override the brand still read well; check the impact before publishing."
+        }
+      }
     },
     "saveDraft": "Save draft",
     "draftSaved": "Draft saved. Employees still see the version in force.",

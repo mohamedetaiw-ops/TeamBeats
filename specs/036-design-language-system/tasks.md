@@ -42,7 +42,7 @@ Depends on 033 (theme engine, brand manager), 008 (shell), 032 (templates), 007.
 - [x] T028 Home widgets on catalogue blocks (Your day and Your tasks on `StatCards` with tones, My mail view switch on `SegmentedControl`, unread count and markers as `Badge`, agenda "starts in" as `Badge`); Studio finish for page cards, tiles, section tabs, icon boxes, stat cards, briefing, lead story and page headers in `designs.css`
 
 ## R2
-- [ ] T011 Design review checklist in the spec 033 theme draft and approval flow
+- [x] T011 Design review checklist in the spec 033 theme draft and approval flow (the publishing block shows it on every draft, while it waits for approval too; it guides, it does not gate)
 - [ ] T012 Firefox and WebKit in the design suite after the browser matrix decision
 - [ ] T013 Quarterly design audit report from the gallery and the spec 033 drift report
 

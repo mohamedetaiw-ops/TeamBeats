@@ -17,6 +17,9 @@ type Result = { ok: boolean; messages: string[] } | null;
 
 const hows = ["direct", "approved", "scheduled", "reverted"] as const;
 
+/** The design review checklist of docs/design-system/testing.md, as it applies to a brand (spec 036 DLS-023). */
+const reviewItems = ["contrast", "modes", "directions", "widths", "designs", "assets", "scopes"] as const;
+
 /**
  * Publishing a brand (spec 033 R2 T014, US2, FR-012): the draft kept beside the version in force, publishing it now, at a
  * tenant-local time or through approval, and every earlier version with how it went live, ready to bring back. Whether the
@@ -120,6 +123,18 @@ export function ThemeLifecycle({
         <Alert tone="warning" title={t("staleTitle")}>
           {t("stale", { version: String(draft.currentVersion) })}
         </Alert>
+      ) : null}
+
+      {draft.hasDraft ? (
+        <div className="brand-lifecycle-block" data-testid="theme-review">
+          <h3>{t("review.title")}</h3>
+          <p className="notice">{t("review.intro")}</p>
+          <ul className="brand-review">
+            {reviewItems.map((key) => (
+              <li key={key}>{t(`review.items.${key}`)}</li>
+            ))}
+          </ul>
+        </div>
       ) : null}
 
       {pending ? (
