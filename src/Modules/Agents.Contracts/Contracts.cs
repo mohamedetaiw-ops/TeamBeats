@@ -523,3 +523,17 @@ public interface IAgentArmAllocator
 {
     Task<AgentArm?> ArmAsync(Guid agentId, int championVersion, Guid userId, CancellationToken ct);
 }
+
+/// <summary>
+/// One agent's finished runs of people in a period, for business outcome scoring (spec 034 US9 scenario 1, FR-027): runs,
+/// the distinct people who ran it (for the minimum group size), runs completed with an answer, runs escalated (ended without
+/// an answer the person could use, as the Agent Hub counts them), and runs resolved without human help (answered, no human
+/// approval step and no "not helpful" rating). No person is named.
+/// </summary>
+public sealed record AgentOutcomeFigure(Guid AgentId, long Runs, long People, long Completed, long Escalated, long ResolvedWithoutHelp);
+
+/// <summary>Outcome figures of agents for evaluation. The caller decides who may see them; the current tenant only.</summary>
+public interface IAgentOutcomeFigures
+{
+    Task<IReadOnlyList<AgentOutcomeFigure>> ForAgentsAsync(IReadOnlyCollection<Guid> agentIds, DateTimeOffset from, DateTimeOffset to, CancellationToken ct = default);
+}
