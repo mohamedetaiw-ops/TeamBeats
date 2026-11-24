@@ -26,7 +26,16 @@ export type TokenSchema = {
   /** Allowed keywords of the choice tokens, such as `design.preset` and `layout.navigation`. */
   choices: Record<string, string[]>;
   designs: DesignOption[];
+  /** Shell settings that can be locked besides tokens, and the locks no scope may remove. */
+  shellSettings: string[];
+  permanentLocks: string[];
 };
+
+/** A scope's brand and its own token overrides (spec 033 FR-002). */
+export type BrandAssignment = { scope: string; brandId: string | null; overrides: Record<string, TokenValue>; findings: ContrastFinding[] };
+
+/** A lock in effect at a scope: set there, or inherited from a parent scope (FR-019). */
+export type ThemeLock = { setting: string; scope: string; inherited: boolean; permanent: boolean };
 
 /** One of the three TeamBeats designs with its resolved custom properties per mode (spec 036). */
 export type DesignOption = { key: string; navigation: string; preview: Record<string, Record<string, string>> };
