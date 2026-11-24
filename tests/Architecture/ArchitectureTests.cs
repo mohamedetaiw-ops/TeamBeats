@@ -255,6 +255,22 @@ public sealed partial class ArchitectureTests
     }
 
     [Fact]
+    public void Web_code_never_branches_on_a_package()
+    {
+        // CLAUDE.md rules 3 and 11 (spec 005 T015): the web app shows what the API returns and never compares package
+        // keys. "workplace" alone is also a connector group, so the web check bans the other keys and any comparison
+        // with a package key.
+        var violations = new[] { "app", "features", "components", "lib", "i18n" }
+            .SelectMany(d => SourceFiles($"src/Web/{d}", "*.ts*"))
+            .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}node_modules{Path.DirectorySeparatorChar}"))
+            .SelectMany(f => File.ReadLines(f).Select((l, i) => (File: f, Line: l, No: i + 1)))
+            .Where(x => WebPackageCheck().IsMatch(x.Line))
+            .Select(x => $"{Rel(x.File)}:{x.No}")
+            .ToList();
+        Assert.True(violations.Count == 0, string.Join("\n", violations));
+    }
+
+    [Fact]
     public void Permission_catalogue_matches_database_seed()
     {
         // Every authorization migration may add permissions to the catalogue; together they must equal the code catalogue.
@@ -402,8 +418,11 @@ public sealed partial class ArchitectureTests
     [GeneratedRegex("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}")]
     private static partial Regex EmailAddress();
 
-    [GeneratedRegex("\"(workplace|workplace_plus|enterprise_government)\"")]
+    [GeneratedRegex("\"(workplace|workplace_plus|enterprise_gov)\"")]
     private static partial Regex PackageLiteral();
+
+    [GeneratedRegex("[\"'](workplace_plus|enterprise_gov)[\"']|packageKey\\s*[!=]==?\\s*[\"'`]")]
+    private static partial Regex WebPackageCheck();
 
     [GeneratedRegex("\"((?:validation|conflict|warning|admin\\.nav|authz\\.denied)[a-z0-9_.]*[a-z0-9_])\"")]
     private static partial Regex ResourceKey();

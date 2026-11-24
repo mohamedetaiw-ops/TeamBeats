@@ -42,6 +42,10 @@ public sealed class EntitlementGrantsTests(TenantWorld world)
         Assert.Equal(1L, await world.Database.TenantScalarAsync<long>(t.Id, "select count(*) from audit.audit_event where action = @a", ("a", AuditActions.AddonChanged)));
         Assert.True(await world.Database.OwnerScalarAsync<long>("select count(*) from audit.platform_audit_event where action = @a and subject_tenant_id = @t",
             ("a", AuditActions.AddonChanged), ("t", t.Id)) == 1);
+        // Section 12: caches, the AI Gateway and gated modules hear of the change, for this tenant only.
+        const string changed = "select count(*) from messaging.outbox where tenant_id = @t and message_type like '%EntitlementsChanged%' and payload::text like @k";
+        Assert.Equal(1L, await world.Database.OwnerScalarAsync<long>(changed, ("t", t.Id), ("k", $"%{Capabilities.IntegrationSap}%")));
+        Assert.Equal(0L, await world.Database.OwnerScalarAsync<long>(changed, ("t", other.Id), ("k", $"%{Capabilities.IntegrationSap}%")));
 
         Assert.Equal(HttpStatusCode.NoContent, (await world.Platform.DeleteAsync($"{Grants(t, "addons")}/{Capabilities.IntegrationSap}")).StatusCode);
         Assert.False(Capability(await PlanAsync(t), Capabilities.IntegrationSap).GetProperty("enabled").GetBoolean());

@@ -146,5 +146,14 @@ public sealed class EntitlementQuotaTests(TenantWorld world)
         var errors = (await invalid.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("errors");
         Assert.Equal("validation.quota.not_a_limit", errors.GetProperty("capabilityKey")[0].GetProperty("key").GetString());
         Assert.Equal("validation.quota.mode_invalid", errors.GetProperty("mode")[0].GetProperty("key").GetString());
+
+        // A change of enforcement is audited to the tenant and the platform (T015); a refused one leaves no entry.
+        (await world.Platform.PutAsJsonAsync($"/api/v1/platform/tenants/{a.Id}/enforcement/{Key}", new { mode = "grace", gracePct = 10 })).EnsureSuccessStatusCode();
+        const string enforcementAudits = "select count(*) from audit.audit_event where action = @a and changes ? 'enforcement'";
+        Assert.Equal(1L, await world.Database.TenantScalarAsync<long>(a.Id, enforcementAudits, ("a", AuditActions.OverrideChanged)));
+        Assert.Equal(0L, await world.Database.TenantScalarAsync<long>(b.Id, enforcementAudits, ("a", AuditActions.OverrideChanged)));
+        Assert.Equal(1L, await world.Database.OwnerScalarAsync<long>(
+            "select count(*) from audit.platform_audit_event where action = @a and subject_tenant_id = @t and changes ? 'enforcement'",
+            ("a", AuditActions.OverrideChanged), ("t", a.Id)));
     }
 }
