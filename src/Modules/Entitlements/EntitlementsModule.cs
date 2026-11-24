@@ -24,6 +24,7 @@ public static class EntitlementsModule
         services.AddScoped<IEntitlementService>(sp => sp.GetRequiredService<EntitlementService>());
         services.AddScoped<ISubscriptionProvisioning>(sp => sp.GetRequiredService<EntitlementService>());
         services.AddScoped<PackageCatalogue>();
+        services.AddScoped<ContractGrants>();
         return services;
     }
 
@@ -58,6 +59,8 @@ public static class EntitlementsModule
             return Results.NoContent();
         });
 
+        platform.MapGrantEndpoints();
+
         app.MapGet("/api/v1/tenant/entitlements", async (IAuthorizationService authz, EntitlementService service, CancellationToken ct) =>
         {
             await authz.DemandAsync(Permissions.EntitlementsView, AuthzTarget.Tenant, ct);
@@ -76,16 +79,19 @@ public sealed record SubscriptionRequest(string PackageKey, int? Version);
 
 public sealed record PackageVersionView(string PackageKey, int Version, string Status, IReadOnlyDictionary<string, CapabilityValue> Capabilities);
 
-public sealed record TenantEntitlementsView(string PackageKey, int Version, DateTimeOffset StartsAt, IReadOnlyDictionary<string, CapabilityValue> Capabilities);
+/// <param name="Sources">Where each effective value comes from: <c>package</c>, <c>addon</c> or <c>override</c> (FR-004).</param>
+public sealed record TenantEntitlementsView(string PackageKey, int Version, DateTimeOffset StartsAt, IReadOnlyDictionary<string, CapabilityValue> Capabilities,
+    IReadOnlyDictionary<string, string>? Sources = null, IReadOnlyList<GrantView>? Addons = null, IReadOnlyList<GrantView>? Overrides = null);
 
 /// <summary>
-/// Resolves effective entitlements for the current tenant: active subscription, then its package version.
-/// Add-ons and overrides (R2) layer on top of the same resolution. Unknown keys fail closed (ENT-005).
+/// Resolves effective entitlements for the current tenant: the active subscription's package version, then active
+/// add-ons, then active contract overrides (FR-004). Unknown keys fail closed (ENT-005).
 /// </summary>
 public sealed class EntitlementService(IDbSession session, ITenantContext context, ILogger<EntitlementService> logger)
     : IEntitlementService, ISubscriptionProvisioning
 {
     private Dictionary<string, CapabilityValue>? _resolved;
+    private Dictionary<string, string>? _sources;
     private HashSet<string>? _catalogue;
 
     private async Task<Dictionary<string, CapabilityValue>> ResolveAsync(CancellationToken ct)
@@ -106,6 +112,16 @@ public sealed class EntitlementService(IDbSession session, ITenantContext contex
             """, null,
             r => (Key: r.GetString(0), Value: new CapabilityValue(r.GetBoolean(1), r.Get<long?>("limit_value"))), ct))
             .ToDictionary(x => x.Key, x => x.Value);
+        _sources = _resolved.Keys.ToDictionary(k => k, _ => ContractGrants.FromPackage);
+        // Add-ons, then overrides, each only inside its validity window, so an override reverts on its end date.
+        foreach (var kind in new[] { ContractGrants.Addon, ContractGrants.Override })
+        {
+            foreach (var grant in await ContractGrants.ActiveAsync(session, kind, ct))
+            {
+                _resolved[grant.CapabilityKey] = new CapabilityValue(grant.Enabled, grant.Limit);
+                _sources[grant.CapabilityKey] = kind;
+            }
+        }
         return _resolved;
     }
 
@@ -144,7 +160,8 @@ public sealed class EntitlementService(IDbSession session, ITenantContext contex
             where s.status = 'active'
             """, null, r => new { Key = r.GetString(0), Version = r.GetInt32(1), Starts = r.GetFieldValue<DateTimeOffset>(2) }, ct)
             ?? throw AppException.NotFound();
-        return new TenantEntitlementsView(sub.Key, sub.Version, sub.Starts, resolved);
+        return new TenantEntitlementsView(sub.Key, sub.Version, sub.Starts, resolved, _sources,
+            await ContractGrants.ListAsync(session, ContractGrants.Addon, ct), await ContractGrants.ListAsync(session, ContractGrants.Override, ct));
     }
 
     public async Task<bool> PublishedPackageExistsAsync(string packageKey, CancellationToken ct = default) =>
@@ -272,6 +289,7 @@ public sealed class PackageCatalogue(IDbSession session, ITenantContext context,
         await audit.WriteAsync(new AuditEntry(AuditActions.SubscriptionChanged, "subscription", context.TenantId.ToString(), Changes: changes), ct);
         await audit.WritePlatformAsync(new AuditEntry(AuditActions.SubscriptionChanged, "subscription", context.TenantId.ToString(), Changes: changes), context.TenantId, ct);
         await outbox.EnqueueAsync(new SubscriptionChanged(context.RequireTenant(), packageKey, target.Version), ct);
+        await outbox.EnqueueAsync(new EntitlementsChanged(context.RequireTenant(), []), ct);
     }
 }
 
