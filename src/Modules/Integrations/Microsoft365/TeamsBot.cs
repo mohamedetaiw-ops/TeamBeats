@@ -77,7 +77,9 @@ public sealed class BotFramework
         {
             return new TeamsBotCall(false, null);
         }
-        if (activity.ValueKind != JsonValueKind.Object || Text(activity, "serviceUrl") is not { } serviceUrl)
+        // Bot Framework service addresses are https; anything else is not a call we answer.
+        if (activity.ValueKind != JsonValueKind.Object || Text(activity, "serviceUrl") is not { } serviceUrl
+            || !Uri.TryCreate(serviceUrl, UriKind.Absolute, out var service) || service.Scheme != Uri.UriSchemeHttps)
         {
             return new TeamsBotCall(false, null);
         }
@@ -95,6 +97,16 @@ public sealed class BotFramework
         {
             return new TeamsBotCall(false, null);
         }
+        var conversationId = activity.TryGetProperty("conversation", out var conv) && conv.ValueKind == JsonValueKind.Object ? Text(conv, "id") : null;
+        if (Text(activity, "type") == "message")
+        {
+            var sender = activity.TryGetProperty("from", out var mf) && mf.ValueKind == JsonValueKind.Object ? Text(mf, "aadObjectId") : null;
+            var directory = TenantOf(activity);
+            var text = activity.TryGetProperty("text", out var tv) && tv.ValueKind == JsonValueKind.String ? tv.GetString()?.Trim() : null;
+            return sender is null || directory is null || conversationId is null || string.IsNullOrEmpty(text)
+                ? new TeamsBotCall(true, null)
+                : new TeamsBotCall(true, null, new TeamsBotMessage(directory, sender, text, Text(activity, "locale"), new TeamsConversation(serviceUrl, conversationId)));
+        }
         if (Text(activity, "type") != "invoke" || Text(activity, "name") != "adaptiveCard/action"
             || !activity.TryGetProperty("value", out var value) || value.ValueKind != JsonValueKind.Object
             || !value.TryGetProperty("action", out var action) || action.ValueKind != JsonValueKind.Object
@@ -104,9 +116,7 @@ public sealed class BotFramework
             return new TeamsBotCall(true, null);
         }
         var from = activity.TryGetProperty("from", out var f) && f.ValueKind == JsonValueKind.Object ? Text(f, "aadObjectId") : null;
-        var tenant = activity.TryGetProperty("channelData", out var channel) && channel.ValueKind == JsonValueKind.Object
-            && channel.TryGetProperty("tenant", out var t) && t.ValueKind == JsonValueKind.Object ? Text(t, "id") : null;
-        tenant ??= activity.TryGetProperty("conversation", out var conversation) && conversation.ValueKind == JsonValueKind.Object ? Text(conversation, "tenantId") : null;
+        var tenant = TenantOf(activity);
         if (from is null || tenant is null)
         {
             return new TeamsBotCall(true, null);
@@ -114,6 +124,12 @@ public sealed class BotFramework
         var reason = Text(data, "reason") is { } r && r.Trim().Length > 0 ? r.Trim() : null;
         return new TeamsBotCall(true, new TeamsBotAction(tenant, from, verb, tb, reason));
     }
+
+    /// <summary>The Entra directory of the activity: Teams names it in the channel data and in the conversation.</summary>
+    private static string? TenantOf(JsonElement activity) =>
+        (activity.TryGetProperty("channelData", out var channel) && channel.ValueKind == JsonValueKind.Object
+            && channel.TryGetProperty("tenant", out var t) && t.ValueKind == JsonValueKind.Object ? Text(t, "id") : null)
+        ?? (activity.TryGetProperty("conversation", out var conversation) && conversation.ValueKind == JsonValueKind.Object ? Text(conversation, "tenantId") : null);
 
     private static string? Text(JsonElement e, string name) =>
         e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String && v.GetString() is { Length: > 0 and <= 2000 } s ? s : null;
@@ -163,13 +179,7 @@ public sealed class BotFramework
                 return failed;
             }
             var conversation = (await created.Content.ReadFromJsonAsync<JsonElement>(ct)).GetProperty("id").GetString() ?? string.Empty;
-            using var send = new HttpRequestMessage(HttpMethod.Post, $"{ServiceUrl}v3/conversations/{Uri.EscapeDataString(conversation)}/activities")
-            {
-                Content = JsonContent.Create(new { type = "message", summary, attachments = new[] { new { contentType = CardType, content = card } } }),
-            };
-            send.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bearer);
-            using var sent = await client.SendAsync(send, ct);
-            return Outcome(sent.StatusCode) ?? TeamsSendOutcome.Sent;
+            return await PostAsync(client, bearer, ServiceUrl, conversation, card, summary, ct);
         }
         catch (HttpRequestException)
         {
@@ -180,6 +190,45 @@ public sealed class BotFramework
             return TeamsSendOutcome.Transient;
         }
         catch (Exception ex) when (ex is JsonException or KeyNotFoundException or InvalidOperationException)
+        {
+            return TeamsSendOutcome.Transient;
+        }
+    }
+
+    private static async Task<TeamsSendOutcome> PostAsync(HttpClient client, string bearer, string serviceUrl, string conversation, object card, string summary, CancellationToken ct)
+    {
+        var baseUrl = serviceUrl.EndsWith('/') ? serviceUrl : serviceUrl + "/";
+        using var send = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}v3/conversations/{Uri.EscapeDataString(conversation)}/activities")
+        {
+            Content = JsonContent.Create(new { type = "message", summary, attachments = new[] { new { contentType = CardType, content = card } } }),
+        };
+        send.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bearer);
+        using var sent = await client.SendAsync(send, ct);
+        return Outcome(sent.StatusCode) ?? TeamsSendOutcome.Sent;
+    }
+
+    /// <summary>
+    /// A card into a chat Bot Framework named in a checked call (its service address came with the token), as the answer
+    /// to a message there.
+    /// </summary>
+    public async Task<TeamsSendOutcome> ReplyAsync(TeamsConversation conversation, object card, string summary, CancellationToken ct)
+    {
+        if (!Enabled || !Uri.TryCreate(conversation.ServiceUrl, UriKind.Absolute, out var service) || service.Scheme != Uri.UriSchemeHttps)
+        {
+            return TeamsSendOutcome.Unavailable;
+        }
+        try
+        {
+            var bearer = await TokenAsync(ct);
+            using var client = httpClients.CreateClient(ClientName);
+            return await PostAsync(client, bearer, conversation.ServiceUrl, conversation.ConversationId, card, summary, ct);
+        }
+        catch (BotCredentialsRefusedException)
+        {
+            return TeamsSendOutcome.Unavailable;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or JsonException or InvalidOperationException
+            || (ex is TaskCanceledException && !ct.IsCancellationRequested))
         {
             return TeamsSendOutcome.Transient;
         }
@@ -235,7 +284,7 @@ public sealed class BotFramework
     private sealed class BotCredentialsRefusedException : Exception;
 
     /// <summary>The Adaptive Card of a message with quick actions (Universal Actions, so the answer replaces the card).</summary>
-    public static object Card(TeamsCard card, string link, bool rtl)
+    public static object Card(TeamsCard card, string link, bool rtl, IReadOnlyList<(string Label, string Url)>? links = null)
     {
         var body = new List<object>
         {
@@ -248,6 +297,10 @@ public sealed class BotFramework
         }
         var actions = card.Actions.Select(a => (object)new { type = "Action.Execute", title = a.Label, verb = a.Verb, data = new { tb = a.Token } }).ToList();
         actions.Add(new { type = "Action.OpenUrl", title = card.OpenLabel, url = link });
+        foreach (var (title, url) in links ?? [])
+        {
+            actions.Add(new { type = "Action.OpenUrl", title, url });
+        }
         return new Dictionary<string, object>
         {
             ["type"] = "AdaptiveCard",

@@ -2923,5 +2923,12 @@
   "notifications.teams.quick.reason_required": "Write a reason in the box, then press reject again.",
   "notifications.teams.quick.expired": "This button has expired or was already used. Open TeamBeats for the latest.",
   "services.quick.approve": "Approve",
-  "services.quick.reject": "Reject"
+  "services.quick.reject": "Reject",
+  "integrations.teams.chat.no_account": "TeamBeats could not find your account from this Teams account. Ask your administrator to connect Microsoft 365 to TeamBeats.",
+  "integrations.teams.chat.several": "Your Teams account is linked to more than one TeamBeats organization, so the assistant cannot tell which one to use. Use the assistant in TeamBeats instead.",
+  "integrations.teams.chat.unavailable": "The assistant in Teams is not part of your organization's plan.",
+  "agents.teams.continue": "Continue in TeamBeats",
+  "agents.teams.title": "TeamBeats assistant",
+  "agents.teams.no_answer": "I could not find an answer in content you can read. Try asking another way, or continue in TeamBeats.",
+  "agents.teams.more": "This needs a step in TeamBeats. Continue there to finish it."
 }

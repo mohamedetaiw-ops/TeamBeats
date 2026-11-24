@@ -2923,5 +2923,12 @@
   "notifications.teams.quick.reason_required": "اكتب السبب في المربع، ثم اضغط رفض مرة أخرى.",
   "notifications.teams.quick.expired": "انتهت صلاحية هذا الزر أو سبق استخدامه. افتح TeamBeats لرؤية آخر حالة.",
   "services.quick.approve": "موافقة",
-  "services.quick.reject": "رفض"
+  "services.quick.reject": "رفض",
+  "integrations.teams.chat.no_account": "تعذر على TeamBeats العثور على حسابك من حساب Teams هذا. اطلب من المسؤول ربط Microsoft 365 بـ TeamBeats.",
+  "integrations.teams.chat.several": "حساب Teams الخاص بك مرتبط بأكثر من مؤسسة في TeamBeats، لذلك لا يستطيع المساعد تحديد المؤسسة. استخدم المساعد داخل TeamBeats.",
+  "integrations.teams.chat.unavailable": "المساعد في Teams غير مشمول في خطة مؤسستك.",
+  "agents.teams.continue": "المتابعة في TeamBeats",
+  "agents.teams.title": "مساعد TeamBeats",
+  "agents.teams.no_answer": "لم أجد إجابة في المحتوى الذي يمكنك قراءته. جرب صياغة أخرى، أو تابع في TeamBeats.",
+  "agents.teams.more": "يتطلب هذا خطوة في TeamBeats. تابع هناك لإكماله."
 }

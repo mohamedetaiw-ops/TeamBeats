@@ -21,8 +21,10 @@ public sealed partial class FakeMicrosoftGraph
     private readonly RSA _botKey = RSA.Create(2048);
     private readonly string _botToken = "fake-bot-token-" + Guid.NewGuid().ToString("N");
 
-    /// <summary>A card the fake Bot Connector accepted: the directory, the person's object ID and the card as sent.</summary>
-    public sealed record BotMessage(string Directory, string UserId, JsonElement Card);
+    /// <summary>A card the fake Bot Connector accepted: the directory, the person's object ID, the card as sent and its order.</summary>
+    public sealed record BotMessage(string Directory, string UserId, JsonElement Card, long Seq = 0);
+
+    private long _botSeq;
 
     public ConcurrentBag<BotMessage> BotMessages { get; } = [];
 
@@ -56,6 +58,19 @@ public sealed partial class FakeMicrosoftGraph
             conversation = new { id = "a:fake", tenantId = directoryId.ToString("D") },
             channelData = new { tenant = new { id = directoryId.ToString("D") } },
             value = new { action = new { type = "Action.Execute", verb, data = reason is null ? (object)new { tb = token } : new { tb = token, reason } } },
+        });
+
+    /// <summary>A chat message a Teams user writes to the bot, in their personal chat with it.</summary>
+    public static string BotChat(Guid directoryId, string objectId, string text, string locale = "en-US", string serviceUrl = BotServiceUrl) =>
+        JsonSerializer.Serialize(new
+        {
+            type = "message",
+            serviceUrl,
+            locale,
+            text,
+            from = new { id = "29:fake", aadObjectId = objectId },
+            conversation = new { id = $"a:{directoryId:D}~{objectId}", tenantId = directoryId.ToString("D"), conversationType = "personal" },
+            channelData = new { tenant = new { id = directoryId.ToString("D") } },
         });
 
     private async Task<HttpResponseMessage?> BotAsync(HttpRequestMessage request, Uri uri, CancellationToken ct)
@@ -110,7 +125,7 @@ public sealed partial class FakeMicrosoftGraph
             return new HttpResponseMessage(HttpStatusCode.NotFound);
         }
         var card = body.GetProperty("attachments")[0].GetProperty("content").Clone();
-        BotMessages.Add(new BotMessage(dir, user, card));
+        BotMessages.Add(new BotMessage(dir, user, card, Interlocked.Increment(ref _botSeq)));
         return Json(new { id = "msg-" + Guid.NewGuid().ToString("N")[..8] });
     }
 }

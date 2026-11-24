@@ -35,6 +35,7 @@ public static class IntegrationsModule
         services.AddHttpClient(BotFramework.ClientName, c => c.Timeout = TimeSpan.FromSeconds(15));
         services.AddSingleton<BotFramework>();
         services.AddScoped<ITeamsBot, TeamsBot>();
+        services.AddScoped<TeamsChatRouter>();
         services.AddScoped<ConnectionService>();
         services.AddScoped<IConnectionFeatures, ConnectionFeatures>();
         services.AddScoped<IConnectedSystems, ConnectedSystems>();
@@ -157,6 +158,7 @@ public static class IntegrationsModule
 
     public static IEndpointRouteBuilder MapIntegrationsEndpoints(this IEndpointRouteBuilder app)
     {
+        app.MapTeamsBot();
         var api = app.MapGroup("/api/v1/integrations").RequireTenantUser().InAdminArea().WithTags("Integrations: connections");
 
         api.MapGet("/catalogue/microsoft365", async (IAuthorizationService authz, ConnectionService connections, CancellationToken ct) =>

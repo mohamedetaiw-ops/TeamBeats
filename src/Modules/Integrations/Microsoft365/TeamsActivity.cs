@@ -93,6 +93,22 @@ public sealed class TeamsActivity(IDbSession session, IEntitlementService entitl
         return await bot.SendAsync(external, objectId, BotFramework.Card(fitted, url, card.Rtl), fitted.Title, ct);
     }
 
+    public async Task<TeamsSendOutcome> ReplyAsync(Guid userId, TeamsConversation conversation, TeamsCard card, CancellationToken ct = default)
+    {
+        if (!bot.Enabled || await DirectoryAsync(ct) is null)
+        {
+            return TeamsSendOutcome.Unavailable;
+        }
+        var url = DeepLink(await links.AbsoluteAsync(card.Link, ct));
+        var extra = new List<(string, string)>();
+        foreach (var l in (card.Links ?? []).Take(5))
+        {
+            extra.Add((Fit(l.Label, 60), DeepLink(await links.AbsoluteAsync(l.Link, ct))));
+        }
+        var fitted = card with { Title = Fit(card.Title, 120), Text = Fit(card.Text, 4000) };
+        return await bot.ReplyAsync(conversation, BotFramework.Card(fitted, url, card.Rtl, extra), fitted.Title, ct);
+    }
+
     public async Task<bool> IsPersonAsync(Guid userId, string entraTenantId, string aadObjectId, CancellationToken ct = default) =>
         await DirectoryAsync(ct) is { } external && Guid.TryParse(external, out var mine) && Guid.TryParse(entraTenantId, out var caller) && mine == caller
         && await identities.ExternalIdAsync(userId, directory.IssuerFor(external), ct) is { } objectId

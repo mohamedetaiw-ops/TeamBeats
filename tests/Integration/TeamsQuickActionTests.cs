@@ -127,7 +127,7 @@ public sealed class TeamsQuickActionTests(TenantWorld world)
 
     private async Task<HttpResponseMessage> PressAsync(string body, string? bearer)
     {
-        using var message = new HttpRequestMessage(HttpMethod.Post, NotificationsModule.TeamsBotPath) { Content = new StringContent(body, Encoding.UTF8, "application/json") };
+        using var message = new HttpRequestMessage(HttpMethod.Post, TeamBeats.Modules.Integrations.Microsoft365.TeamsBotEndpoint.Path) { Content = new StringContent(body, Encoding.UTF8, "application/json") };
         if (bearer is not null)
         {
             message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bearer);
@@ -203,7 +203,7 @@ public sealed class TeamsQuickActionTests(TenantWorld world)
         Assert.Equal(HttpStatusCode.Unauthorized, (await PressAsync(body, world.Factory.Graph.IssueBotToken(lifetime: TimeSpan.FromMinutes(-10)))).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await PressAsync(body, world.Factory.Graph.IssueBotToken(serviceUrl: "https://evil.example/teams/"))).StatusCode);
         // The bot listens on the platform host only.
-        var onTenantHost = await world.Factory.TenantClient(s.T.Key).PostAsync(NotificationsModule.TeamsBotPath, new StringContent(body, Encoding.UTF8, "application/json"));
+        var onTenantHost = await world.Factory.TenantClient(s.T.Key).PostAsync(TeamBeats.Modules.Integrations.Microsoft365.TeamsBotEndpoint.Path, new StringContent(body, Encoding.UTF8, "application/json"));
         Assert.Equal(HttpStatusCode.NotFound, onTenantHost.StatusCode);
 
         // Someone else's Teams account, another directory, a made up token or a tenant that does not exist.

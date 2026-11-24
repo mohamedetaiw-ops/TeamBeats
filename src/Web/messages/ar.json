@@ -1012,7 +1012,8 @@
         "notifications_teams": "الإشعارات في Microsoft Teams",
         "notifications_sms": "رسائل SMS للإشعارات الإلزامية",
         "notifications_sms_monthly_messages": "رسائل SMS في الشهر",
-        "notifications_signage": "شاشات العرض في المواقع"
+        "notifications_signage": "شاشات العرض في المواقع",
+        "ai_assistant_teams": "المساعد في Microsoft Teams"
       },
       "searchLabel": "البحث في الإمكانات",
       "searchPlaceholder": "ابحث بالاسم",
@@ -3360,7 +3361,7 @@
   },
   "notifications": {
     "title": "الإشعارات",
-    "bell": "{count, plural, =0 {الإشعارات} one {الإشعارات، إشعار واحد غير مقروء} two {الإشعارات، إشعاران غير مقروءين} few {الإشعارات، # إشعارات غير مقروءة} many {الإشعارات، # إشعارًا غير مقروء} other {الإشعارات، # إشعار غير مقروء}}",
+    "bell": "{count, plural, =0 {الإشعارات} one {الإشعارات، # إشعار غير مقروء} two {الإشعارات، # إشعار غير مقروء} few {الإشعارات، # إشعارات غير مقروءة} many {الإشعارات، # إشعارًا غير مقروء} other {الإشعارات، # إشعار غير مقروء}}",
     "overflow": "+99",
     "unreadStatus": "{count, plural, =0 {لا توجد إشعارات غير مقروءة} one {إشعار واحد غير مقروء} two {إشعاران غير مقروءين} few {# إشعارات غير مقروءة} many {# إشعارًا غير مقروء} other {# إشعار غير مقروء}}",
     "readAll": "تعليم الكل كمقروء",
