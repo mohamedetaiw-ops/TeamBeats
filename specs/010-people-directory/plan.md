@@ -7,7 +7,7 @@
 A `People` module owns profiles, visibility policy and the reporting line. Directory sync in `Identity` reads the extra Graph attributes (`manager`, `jobTitle`, `department`, `businessPhones`, `mobilePhone`, `officeLocation`, `employeeHireDate`, `preferredLanguage`) and publishes them in its sync events; `People` consumes them. Other modules use `People.Contracts`: `IReportingLine` (manager of, chain, reports) and `IProfiles` (visible fields for a viewer).
 
 ## Data model (schema `people`)
-- `profile`: `tenant_id`, `user_id`, `fields jsonb` (value and source per field), `location`, `hire_date`, `photo_key`, `version`.
+- `profile`: `tenant_id`, `user_id`, `fields jsonb` (value and source per field), `location`, `hire_date`, `photo_key`, `version`. Photos: `photo_version`, `photo_source` (own or directory), `directory_photo_tag` and `directory_photo_checked_at` (T012).
 - `reporting_line`: `user_id`, `manager_user_id`, `from`, `to` (history).
 - `field_policy`: field key, source, visibility, names per locale for tenant fields.
 

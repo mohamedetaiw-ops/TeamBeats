@@ -155,6 +155,30 @@ public interface IDirectorySource
     Task<DirectoryChanges> ReadChangesAsync(Guid connectionId, string? usersCursor, string? groupsCursor, string? adminUnitsCursor = null, CancellationToken ct = default);
 }
 
+/// <summary>What a directory holds as a person's photo: none, the photo already known by its tag, or a new one.</summary>
+public enum DirectoryPhotoState
+{
+    None,
+    Unchanged,
+    Changed,
+}
+
+/// <summary>A directory photo read: its state, the directory's tag for it, and for a new one the image as the directory sent it.</summary>
+public sealed record DirectoryPhoto(DirectoryPhotoState State, string? Tag = null, string? ContentType = null, byte[]? Data = null);
+
+/// <summary>
+/// Photos of directory people (spec 010 US3 scenario 3), read only, from the tenant's Microsoft 365 directory
+/// connection with directory sync granted. The image is downloaded only when its tag differs from
+/// <c>knownTag</c>. Throws <see cref="DirectoryUnavailableException"/> when the directory cannot be read.
+/// </summary>
+public interface IDirectoryPhotos
+{
+    /// <summary>True when the connection's directory has photos this adapter can read.</summary>
+    Task<bool> SupportsAsync(Guid connectionId, CancellationToken ct = default);
+
+    Task<DirectoryPhoto> ReadAsync(Guid connectionId, string directoryId, string? knownTag, CancellationToken ct = default);
+}
+
 /// <summary>Directories read inline by a connector pack connection.</summary>
 public static class PackDirectorySources
 {

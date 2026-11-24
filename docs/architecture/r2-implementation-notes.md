@@ -2463,3 +2463,10 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - A unit dataset opens in the same dataset editor as an agent's, with a link back to the unit.
 - Comparisons can only be proposed for an agent with a version in force; a draft agent shows the list only.
 
+## Directory photos (spec 010 T012, US3 scenario 3)
+
+- After each directory sync, People reads the Entra ID photo of people who have not uploaded one through `IDirectoryPhotos` (Integrations, Microsoft Graph `/users/{id}/photo` with the directory sync app consent; User.Read.All covers photos). The metadata is read first and the image only when its media tag changed, so unchanged photos are not downloaded again. A directory photo is checked and resized exactly like an upload (signature, size, metadata removed, 96 and 256 pixel squares through the conversion service); only the resized files are kept.
+- Each person is checked at most once a day, at most 100 per sync, those never checked first, so a large directory fills in over a few syncs. An unreachable directory, a refused consent or a converter outage stops the run with nothing changed; the next sync tries again. An image we do not take (not PNG or JPEG, over 2 MB) is remembered by its tag and not read again.
+- `photo_source` says where the photo came from (People migration 0005). An own upload always wins. A directory photo the person, their manager or HR removed keeps its tag, so it does not come back until the directory has a new one; after a person removes their own upload, their directory photo shows again at the next sync. A photo the directory no longer has goes. Directory photo changes publish `ProfileUpdated` with `photo`, and are not audited, like the other directory-owned values.
+- Connector pack directories (Google Workspace) have no photo reader yet, so their people keep initials until they upload one.
+

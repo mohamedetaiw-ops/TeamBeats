@@ -197,6 +197,34 @@ public sealed partial class FakeMicrosoftGraph : HttpMessageHandler
 
         public long Version { get { lock (_gate) { return _version; } } }
 
+        private readonly ConcurrentDictionary<string, (byte[] Data, string ContentType, string Tag)> _photos = new(StringComparer.OrdinalIgnoreCase);
+        private int _photoDownloads;
+
+        /// <summary>Gives a user a profile photo; each change gets a new media tag.</summary>
+        public void SetPhoto(string oid, byte[] data, string contentType = "image/jpeg") =>
+            _photos[oid] = (data, contentType, $"W/\"{Guid.NewGuid():N}\"");
+
+        public void RemovePhoto(string oid) => _photos.TryRemove(oid, out _);
+
+        /// <summary>How many photo images were downloaded (not counting metadata reads).</summary>
+        public int PhotoDownloads => Volatile.Read(ref _photoDownloads);
+
+        internal HttpResponseMessage Photo(string oid, bool value)
+        {
+            if (!_photos.TryGetValue(oid, out var photo))
+            {
+                return new HttpResponseMessage(HttpStatusCode.NotFound) { Content = new StringContent("{\"error\":{\"code\":\"ImageNotFound\"}}") };
+            }
+            if (!value)
+            {
+                return Json(new Dictionary<string, object> { ["@odata.mediaEtag"] = photo.Tag, ["id"] = "648X648", ["height"] = 648, ["width"] = 648 });
+            }
+            Interlocked.Increment(ref _photoDownloads);
+            var content = new ByteArrayContent(photo.Data);
+            content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(photo.ContentType);
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = content };
+        }
+
         public void AddUser(string oid, string displayName, string? mail, bool enabled = true, string? jobTitle = null)
         {
             lock (_gate)
@@ -433,6 +461,17 @@ public sealed partial class FakeMicrosoftGraph : HttpMessageHandler
                 body["@odata.deltaLink"] = $"{basePath}?$deltatoken={DeltaToken(version)}";
             }
             return Json(body);
+        }
+        if (uri.Host == "graph.microsoft.com" && request.Method == HttpMethod.Get
+            && System.Text.RegularExpressions.Regex.Match(uri.AbsolutePath, "^/v1.0/users/([0-9a-fA-F-]{36})/photo(/\\$value)?$") is { Success: true } photoPath
+            && (request.Headers.Authorization?.Parameter ?? string.Empty).Contains(".sig-", StringComparison.Ordinal))
+        {
+            var directory = request.Headers.Authorization!.Parameter!.Split(".sig-").ElementAtOrDefault(1) ?? string.Empty;
+            if (!_directories.ContainsKey(directory))
+            {
+                return new HttpResponseMessage(HttpStatusCode.Forbidden);
+            }
+            return _data.GetOrAdd(directory, _ => new DirectoryData()).Photo(photoPath.Groups[1].Value, photoPath.Groups[2].Success);
         }
         if (uri.Host == "graph.microsoft.com" && request.Method == HttpMethod.Post && uri.AbsolutePath.EndsWith("/teamwork/sendActivityNotification", StringComparison.Ordinal))
         {
