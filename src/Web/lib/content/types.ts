@@ -281,3 +281,8 @@ export type CampaignDashboard = {
 };
 
 export const campaignHref = (id: string) => `/content/campaigns/${encodeURIComponent(id)}`;
+
+/** The delivery report of a critical announcement (spec 015 US8): counts by channel and status, never names. */
+export type ChannelReport = { channel: string; delivered: number; read: number | null; pending: number; failed: number; bounced: number | null; dropped: number };
+
+export type DeliveryReport = { recipients: number; notifications: number; channels: ChannelReport[] };

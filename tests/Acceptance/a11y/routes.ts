@@ -184,6 +184,7 @@ export const routes: readonly Route[] = [
   { path: "/content/items/[id]", tier: "detail" },
   { path: "/content/items/[id]/acknowledgements", tier: "detail" },
   { path: "/content/items/[id]/analytics", tier: "detail" },
+  { path: "/content/items/[id]/delivery", tier: "detail", reason: "needs a critical announcement whose deliveries the workers have sent; opened by the delivery report suite" },
   { path: "/content/items/[id]/history", tier: "detail" },
   { path: "/content/items/[id]/team", tier: "detail" },
   { path: "/content/items/new", tier: "other" },

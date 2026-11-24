@@ -42,6 +42,7 @@
   "conflict.content.draft_exists": "لهذا العنصر مسودة بالفعل. انشرها قبل استعادة نسخة سابقة.",
   "conflict.content.in_review": "هذا العنصر بانتظار المراجعة ولا يمكن تغييره الآن.",
   "conflict.content.no_acknowledgement": "هذا العنصر لا يطلب تأكيدًا.",
+  "conflict.content.not_critical": "هذا العنصر ليس إعلانًا مهمًا، لذا لا يوجد له تقرير تسليم.",
   "conflict.content.no_review": "لا توجد مراجعة مفتوحة لهذا العنصر.",
   "conflict.content.no_route": "لا يوجد مسار موافقة لهذا النوع من المحتوى في هذا الموقع. انشره مباشرة.",
   "conflict.content.not_dismissible": "لا يمكن إخفاء هذا الشريط.",

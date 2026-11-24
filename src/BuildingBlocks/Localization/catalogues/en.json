@@ -42,6 +42,7 @@
   "conflict.content.draft_exists": "This item already has a draft. Publish it before restoring an earlier version.",
   "conflict.content.in_review": "This item is waiting for review and cannot be changed now.",
   "conflict.content.no_acknowledgement": "This item does not ask for confirmation.",
+  "conflict.content.not_critical": "This item is not a critical announcement, so it has no delivery report.",
   "conflict.content.no_review": "There is no open review for this item.",
   "conflict.content.no_route": "This content type has no approval route in this site. Publish it directly.",
   "conflict.content.not_dismissible": "This banner cannot be dismissed.",

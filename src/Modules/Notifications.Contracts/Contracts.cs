@@ -46,7 +46,20 @@ public interface INotificationSender
 public interface INotificationReach
 {
     Task<IReadOnlyDictionary<string, IReadOnlyDictionary<string, int>>> DeliveredByChannelAsync(IReadOnlyCollection<string> links, CancellationToken ct = default);
+
+    /// <summary>
+    /// The delivery report of a send (spec 015 US8, FR-022): for the notifications with these links, how many people got
+    /// one, and per channel how many were delivered, read (in-app only), still pending, failed, bounced (email only) or
+    /// dropped. Counts only, never names; the owning module decides who may see it.
+    /// </summary>
+    Task<DeliveryReport> ReportAsync(IReadOnlyCollection<string> links, CancellationToken ct = default);
 }
+
+/// <param name="Read">In-app only: notifications opened or marked read. Null for other channels.</param>
+/// <param name="Bounced">Email only: refused by the recipient's mail server. Null for other channels.</param>
+public sealed record ChannelReport(string Channel, int Delivered, int? Read, int Pending, int Failed, int? Bounced, int Dropped);
+
+public sealed record DeliveryReport(int Recipients, int Notifications, IReadOnlyList<ChannelReport> Channels);
 
 /// <summary>
 /// One email to an address that is not a TeamBeats account (spec 022 FR-016: pre-boarding to the personal email HR

@@ -75,7 +75,8 @@ public sealed class CriticalAnnouncements(
     IClock clock,
     RequestLocale requestLocale,
     Items items,
-    Sites sites)
+    Sites sites,
+    TeamBeats.Modules.Notifications.Contracts.INotificationReach reach)
 {
     public const int MaxPending = 20;
     public static readonly IReadOnlySet<string> Channels = new HashSet<string>(StringComparer.Ordinal) { "web", "mobile" };
@@ -325,6 +326,29 @@ public sealed class CriticalAnnouncements(
             throw AppException.Conflict("conflict.content.no_acknowledgement");
         }
         return (item, site);
+    }
+
+    /// <summary>
+    /// The delivery report of a critical announcement (spec 015 US8): counts by channel and status for every notification
+    /// that opens it (the first send, reminders and the deadline notice), never names. Names of who has not confirmed are
+    /// the acknowledgement report's, for announcements that ask for confirmation.
+    /// </summary>
+    public async Task<TeamBeats.Modules.Notifications.Contracts.DeliveryReport> DeliveryReportAsync(Guid id, CancellationToken ct)
+    {
+        await entitlements.DemandAsync(Capabilities.ContentCore, ct);
+        context.RequireUser();
+        var item = await items.RowAsync(id, false, ct) ?? throw AppException.NotFound();
+        var site = await SiteAsync(item.SiteId, ct);
+        if (!(await authz.CheckAsync(Permissions.ContentPublishCritical, site.Target, ct)).Allowed
+            && !(await authz.CheckAsync(Permissions.ContentAdmin, AuthzTarget.Tenant, ct)).Allowed)
+        {
+            throw AppException.Denied();
+        }
+        if (item.Critical is null)
+        {
+            throw AppException.Conflict("conflict.content.not_critical");
+        }
+        return await reach.ReportAsync([ReadLink(item.Id)], ct);
     }
 
     /// <summary>Every active person the item targets now, with their confirmation of the counted version if any (edge case: the audience follows membership).</summary>

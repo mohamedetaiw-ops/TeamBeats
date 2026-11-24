@@ -18,4 +18,4 @@ Depends on 004, 005, 006, 007, 008. R1: US1 to US4. R2: US5 to US8.
 - [ ] T011 [US5] Teams channel sender and quick actions (activity notifications with email fallback done; quick actions open)
 - [x] T012 [US6] Push, Slack and SMS channel senders with one SMS per message
 - [x] T013 [US7] Signage screens and signed feed with revocation within 1 minute
-- [ ] T014 [US8] Delivery reports for audience sends
+- [x] T014 [US8] Delivery reports for audience sends

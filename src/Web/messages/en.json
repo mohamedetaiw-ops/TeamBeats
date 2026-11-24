@@ -5179,6 +5179,7 @@
       "openReader": "Open as a reader",
       "history": "History",
       "acknowledgements": "Acknowledgements",
+      "deliveryReport": "Delivery report",
       "text": "Text",
       "languages": "Languages",
       "primary": "primary",
@@ -5557,6 +5558,32 @@
     "signage": {
       "items": "News",
       "empty": "Nothing to show right now."
+    },
+    "delivery": {
+      "title": "Delivery report",
+      "heading": "Delivery of {title}",
+      "recipients": "People reached",
+      "notifications": "Notifications sent",
+      "intro": "Counts for the first send, the reminders and the deadline notice. Names are never shown here; for an announcement that asks for confirmation, the acknowledgement report lists who has not confirmed.",
+      "byChannel": "By channel",
+      "tableCaption": "Deliveries by channel and status",
+      "channel": "Channel",
+      "delivered": "Delivered",
+      "read": "Read",
+      "pending": "Waiting",
+      "failed": "Failed",
+      "bounced": "Bounced",
+      "dropped": "Not sent",
+      "emptyTitle": "Nothing sent yet",
+      "emptyMessage": "Counts appear once the announcement goes out.",
+      "channelName": {
+        "in_app": "In the app",
+        "email": "Email",
+        "push": "Mobile push",
+        "teams": "Microsoft Teams",
+        "slack": "Slack",
+        "sms": "SMS"
+      }
     }
   },
   "documents": {

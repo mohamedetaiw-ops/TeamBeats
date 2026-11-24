@@ -12635,6 +12635,29 @@
         }
       }
     },
+    "/api/v1/content/items/{id}/delivery-report": {
+      "get": {
+        "tags": [
+          "Content: items"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/content/items/{id}/acknowledgements/team": {
       "get": {
         "tags": [
