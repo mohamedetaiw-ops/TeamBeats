@@ -1,0 +1,36 @@
+# Quarterly design audit (spec 036 R2 T013, docs/design-system/audit.md). On the first day of each quarter it writes
+# the counted part of the audit from the code and attaches it to the run and its summary; the reviewer adds the live
+# screen pass and the drift report and commits the result to docs/design-system/audits. Read-only: no secrets, no
+# deploys, no writes to the repository.
+name: design-audit
+
+on:
+  schedule:
+    - cron: "0 6 1 1,4,7,10 *"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/design-audit.yml
+      - src/Web/scripts/design-audit.mjs
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Write the design audit report
+        working-directory: src/Web
+        run: |
+          node scripts/design-audit.mjs "$RUNNER_TEMP/design-audit.md"
+          cat "$RUNNER_TEMP/design-audit.md" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: design-audit
+          path: ${{ runner.temp }}/design-audit.md
+          retention-days: 120
