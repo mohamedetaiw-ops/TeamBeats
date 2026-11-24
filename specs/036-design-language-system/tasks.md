@@ -44,7 +44,7 @@ Depends on 033 (theme engine, brand manager), 008 (shell), 032 (templates), 007.
 ## R2
 - [x] T011 Design review checklist in the spec 033 theme draft and approval flow (the publishing block shows it on every draft, while it waits for approval too; it guides, it does not gate)
 - [ ] T012 Firefox and WebKit in the design suite after the browser matrix decision
-- [ ] T013 Quarterly design audit report from the gallery and the spec 033 drift report
+- [x] T013 Quarterly design audit report from the gallery and the spec 033 drift report (`scripts/design-audit.mjs`, the `design-audit` workflow each quarter, guide `docs/design-system/audit.md`, first report `docs/design-system/audits/2026-Q4.md`)
 
 ## Phase 8: UX audit of 13 November 2026 (DLS-078 to DLS-088 and the linked requirements)
 Findings TB-01 to TB-20 of the staging audit, in the audit's execution order.

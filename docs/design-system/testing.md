@@ -95,7 +95,7 @@ After the first frontend build of a feature, the designer and the developer revi
 ## Consistency checks
 
 - Automated gates on every pull request (see [consistency](technical/consistency.md)).
-- A quarterly audit of live screens against the gallery, to catch drift the gates cannot see (wording, patterns used in the wrong place).
+- A quarterly audit of live screens against the gallery, to catch drift the gates cannot see (wording, patterns used in the wrong place). How it runs: [audit](audit.md).
 - The spec 033 drift report (R2) lists tenant brand values that fail contrast or conflict.
 
 ## Release checklist (UI)
