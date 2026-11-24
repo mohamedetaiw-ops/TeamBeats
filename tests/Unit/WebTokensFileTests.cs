@@ -63,7 +63,9 @@ public sealed class WebTokensFileTests
         foreach (var token in TokenSchema.All)
         {
             var count = css.Split(token.CssName + ":").Length - 1;
-            Assert.True(count == 2, $"{token.CssName} appears {count} times");
+            // Line heights are set once more per mode for Urdu, whose Nastaliq script needs taller lines (spec 007 R2).
+            var expected = token.CssName is "--tb-font-line-height-body" or "--tb-font-line-height-heading" ? 4 : 2;
+            Assert.True(count == expected, $"{token.CssName} appears {count} times");
         }
 
         Assert.DoesNotContain("url(", css);

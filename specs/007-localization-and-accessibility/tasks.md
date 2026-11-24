@@ -35,3 +35,10 @@ Depends on 001 Phase 1 (T005 Next.js skeleton). Start early: every UI task in 00
 
 ## Final phase
 - [ ] T018 Native-speaker review checklist for ar and en before R1; Nastaliq performance test scheduled before R2
+
+## R2: French, Urdu and Hindi
+- [x] T019 Urdu and Hindi fonts, Urdu line height, placeholder gates for every locale (web and backend)
+- [ ] T020 French translations (web and backend); fr launch-complete
+- [ ] T021 Urdu translations (web and backend); ur launch-complete with RTL e2e and the Nastaliq performance check
+- [ ] T022 Hindi translations (web and backend); hi launch-complete
+- [ ] T023 Native-speaker review checklist per locale; spec 007 evidence

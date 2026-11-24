@@ -28,6 +28,12 @@ import "@fontsource/cairo/700.css";
 import "@fontsource/inter/400.css";
 import "@fontsource/inter/500.css";
 import "@fontsource/inter/600.css";
+// Urdu and Hindi (spec 007 R2): Nastaliq for Urdu, Noto Sans Devanagari for Hindi. Their families are used only under
+// lang="ur" and lang="hi" (tokens.css), so other locales never download these files.
+import "@fontsource/noto-nastaliq-urdu/400.css";
+import "@fontsource/noto-nastaliq-urdu/700.css";
+import "@fontsource/noto-sans-devanagari/400.css";
+import "@fontsource/noto-sans-devanagari/600.css";
 import "./tokens.css";
 import "./globals.css";
 import "@/components/ui/ui.css";

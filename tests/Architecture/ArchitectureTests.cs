@@ -323,6 +323,27 @@ public sealed partial class ArchitectureTests
         Assert.DoesNotContain(en, kv => string.IsNullOrWhiteSpace(kv.Value));
     }
 
+    [Theory]
+    [InlineData("ar")]
+    [InlineData("fr")]
+    [InlineData("ur")]
+    [InlineData("hi")]
+    public void Translations_keep_the_placeholders_of_english(string locale)
+    {
+        // Spec 007 R2: a translated message keeps every {name} of the English one and adds none, or a value goes missing
+        // from an email or a Problem Details message. Keys a pending locale has not translated yet fall back to English.
+        var en = Catalogue("en");
+        var broken = Catalogue(locale)
+            .Where(kv => !kv.Key.StartsWith('_') && en.ContainsKey(kv.Key))
+            .Where(kv => !Placeholder().Matches(en[kv.Key]).Select(m => m.Value).Order().SequenceEqual(Placeholder().Matches(kv.Value).Select(m => m.Value).Order()))
+            .Select(kv => kv.Key)
+            .ToList();
+        Assert.True(broken.Count == 0, $"{locale}: placeholders differ from en in " + string.Join(", ", broken));
+    }
+
+    [GeneratedRegex("\\{[A-Za-z_][A-Za-z0-9_]*\\}")]
+    private static partial Regex Placeholder();
+
     [Fact]
     public void Every_resource_key_used_in_code_exists_in_launch_catalogues()
     {

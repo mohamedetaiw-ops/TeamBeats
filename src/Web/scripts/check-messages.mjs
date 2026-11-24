@@ -27,6 +27,69 @@ for (const locale of launch) {
   }
 }
 
+// Placeholders (spec 007 R2): a translation keeps every argument of the English message, such as {count} or
+// {name, plural, ...}, and adds none, in every locale that has the key, launch-complete or not. A lost argument shows
+// a raw brace or drops a value; an invented one throws at render time.
+// A small ICU reader: argument names only, never the words inside plural or select branches.
+const argumentsOf = (text) => {
+  const names = new Set();
+  const source = String(text);
+  let i = 0;
+  const message = (stopAtBrace) => {
+    while (i < source.length) {
+      const c = source[i];
+      if (c === "}" && stopAtBrace) return i++;
+      if (c === "{") {
+        i++;
+        argument();
+      } else i++;
+    }
+  };
+  const argument = () => {
+    const name = /^\s*([^\s,{}]+)\s*/.exec(source.slice(i));
+    if (!name) return;
+    names.add(name[1]);
+    i += name[0].length;
+    if (source[i] === "}") return void i++;
+    if (source[i] !== ",") return;
+    const type = /^,\s*([a-z]+)\s*/.exec(source.slice(i));
+    i += type ? type[0].length : 1;
+    if (["plural", "select", "selectordinal"].includes(type?.[1]) && source[i] === ",") {
+      i++;
+      for (;;) {
+        const option = /^\s*([^\s{}]+)\s*\{/.exec(source.slice(i));
+        if (!option) break;
+        i += option[0].length;
+        message(true);
+      }
+      while (i < source.length && source[i] !== "}") i++;
+      i++;
+    } else {
+      let depth = 1;
+      while (i < source.length && depth > 0) {
+        const ch = source[i++];
+        depth += ch === "{" ? 1 : ch === "}" ? -1 : 0;
+      }
+    }
+  };
+  message(false);
+  return names;
+};
+const tagsOf = (text) => [...String(text).matchAll(/<\/?([A-Za-z][A-Za-z0-9]*)>/g)].map((m) => m[0]).sort().join(" ");
+const all = ["en", "ar", "fr", "ur", "hi"];
+for (const locale of all.filter((l) => l !== "en")) {
+  const cat = catalogues[locale] ?? new Map(flatten(JSON.parse(readFileSync(join(root, "messages", `${locale}.json`), "utf8"))));
+  for (const [key, value] of cat) {
+    if (key.startsWith("_") || !en.has(key)) continue;
+    const source = String(en.get(key));
+    const expected = argumentsOf(source);
+    const actual = argumentsOf(value);
+    for (const name of expected) if (!actual.has(name)) errors.push(`${locale}: ${key} lost the argument {${name}}`);
+    for (const name of actual) if (!expected.has(name)) errors.push(`${locale}: ${key} has an argument {${name}} that English does not`);
+    if (tagsOf(source) !== tagsOf(value)) errors.push(`${locale}: ${key} changed its rich text tags`);
+  }
+}
+
 // Keys used in code: t("ns.key") with getTranslations() / useTranslations() and namespace prefixes.
 const files = [];
 const walk = (dir) => {

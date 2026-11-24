@@ -29,3 +29,12 @@ Set up locale resolution, direction handling, resource catalogues for all five l
 - Lint rules fail on a planted literal string and a `margin-left`.
 - Missing `ar` key fails CI; missing `hi` key does not (until R2).
 - axe: zero critical violations on all R0 screens; keyboard-only walkthrough of org tree and role assignment.
+
+## R2: French, Urdu and Hindi launch-complete
+
+R2 makes `fr`, `ur` and `hi` launch-complete (spec section 17, decision 1). The framework, direction handling and pending catalogues exist since R0; R2 adds the fonts, the translation gates and the translations.
+
+- **Fonts and type (slice 1, T019).** `@fontsource/noto-nastaliq-urdu` (400, 700) and `@fontsource/noto-sans-devanagari` (400, 600), both OFL and self-hosted like the other brand fonts (ADR-0019). Their families are used only under `lang="ur"` and `lang="hi"` (tokens.css), so other locales never download them. Nastaliq needs taller lines: Urdu sets the body line height to 2 and headings to 1.7.
+- **Translation gates (slice 1, T019).** Every locale that has a key keeps the English arguments: the web check reads ICU messages (argument names only, never the words inside plural or select branches) and checks rich text tags; the backend architecture test checks `{name}` placeholders in `ar`, `fr`, `ur` and `hi`. A locale becomes launch-complete by joining `launchLocales` (web), the missing-key gates (web and backend) and the language list the tenant can enable.
+- **Translations (slices 2 to 4, T020 to T022).** One slice per locale: web messages and backend catalogue, then the locale joins the launch list and its e2e pass (sign-in, home and one admin screen with axe; RTL for `ur`). The Nastaliq performance check runs with slice 3: an Urdu page downloads at most two Nastaliq files and an English or Arabic page none.
+- **Review (T023).** Translations are drafted, then checked by the gates above. A native-speaker review per locale is listed as open in evidence.md until a reviewer signs it off.
