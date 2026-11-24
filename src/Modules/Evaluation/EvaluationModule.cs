@@ -48,6 +48,10 @@ public static class EvaluationModule
         services.AddScoped<DriftDetector>();
         services.AddScoped<DriftAlerts>();
         services.AddScoped<ReviewService>();
+        services.AddScoped<ComparisonService>();
+        services.AddScoped<ComparisonArmAllocator>();
+        services.RemoveAll<Agents.Contracts.IAgentArmAllocator>();
+        services.AddScoped<Agents.Contracts.IAgentArmAllocator>(sp => sp.GetRequiredService<ComparisonArmAllocator>());
         services.AddScoped<Workflow.Contracts.IPersonalTaskSource, ReviewTasks>();
         services.AddMessageHandler<Agents.Contracts.AgentRunFeedbackGiven, ReviewQueue>("evaluation.review_feedback");
         services.AddScoped<ProductionSampler>();
@@ -203,6 +207,30 @@ public static class EvaluationModule
         root.MapGet("/agents/{agentId:guid}/production", async (Guid agentId, ProductionResults results, CancellationToken ct) =>
             Results.Ok(await results.ForAgentAsync(agentId, ct)));
         root.MapGet("/agents/{agentId:guid}/drift", async (Guid agentId, DriftAlerts alerts, CancellationToken ct) => Results.Ok(await alerts.ForAgentAsync(agentId, ct)));
+
+        // Online comparisons (R2 T021, US9): proposed by a designer, approved by the AI Policy Administrator, stopped by either.
+        root.MapGet("/agents/{agentId:guid}/comparisons", async (Guid agentId, ComparisonService comparisons, CancellationToken ct) =>
+            Results.Ok(await comparisons.ListAsync(agentId, ct)));
+        root.MapGet("/comparisons/{id:guid}", async (Guid id, ComparisonService comparisons, CancellationToken ct) => Results.Ok(await comparisons.GetAsync(id, ct)));
+        root.MapPost("/comparisons", async (ComparisonRequest request, ComparisonService comparisons, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await comparisons.ProposeAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/evaluation/comparisons/{view.Id}", view);
+        });
+        root.MapPost("/comparisons/{id:guid}/decision", async (Guid id, ComparisonDecisionRequest request, ComparisonService comparisons, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var view = await comparisons.DecideAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+        root.MapPost("/comparisons/{id:guid}/stop", async (Guid id, ComparisonService comparisons, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await comparisons.StopAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
 
         // Human review queue (R2 T020, US8): flagged production samples for evaluation reviewers in scope.
         root.MapGet("/review", async (string? status, ReviewService reviews, CancellationToken ct) => Results.Ok(await reviews.ListAsync(status, ct)));

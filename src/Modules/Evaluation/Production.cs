@@ -255,16 +255,16 @@ public sealed class ProductionSampler(IDbSession session, IEntitlementService en
         await session.ExecAsync(
             """
             insert into evaluation.production_sample (tenant_id, id, agent_run_id, agent_id, agent_version, org_unit_id, language, classification, mode, status,
-              run_status, outcome, model, input_tokens, output_tokens, latency_ms, tool_calls, denials, content, sampled_at)
+              run_status, outcome, model, input_tokens, output_tokens, latency_ms, tool_calls, denials, content, comparison_id, arm, sampled_at)
             values (platform.current_tenant_id(), @id, @run, @agent, @version, @unit, @language, @classification, @mode, 'queued',
-              @status, @outcome, @model, @in, @out, @latency, @calls, @denials, @content, @now)
+              @status, @outcome, @model, @in, @out, @latency, @calls, @denials, @content, @comparison, @arm, @now)
             on conflict (tenant_id, agent_run_id) do nothing
             """, new
             {
                 id, run = facts.RunId, agent = facts.AgentId, version = facts.AgentVersion, unit = facts.OrgUnitId, language = facts.Language,
                 classification = facts.Classification, mode, status = facts.Status, outcome = facts.Outcome, model = facts.Model, @in = facts.InputTokens,
                 @out = facts.OutputTokens, latency = facts.DurationMs, calls = facts.ToolCalls, denials = facts.Denials,
-                content = kept is null ? null : Jsonb.From(kept), now,
+                content = kept is null ? null : Jsonb.From(kept), comparison = facts.ComparisonId, arm = facts.Arm, now,
             }, ct);
         await outbox.EnqueueAsync(new ProductionSampleCaptured(id), ct);
     }

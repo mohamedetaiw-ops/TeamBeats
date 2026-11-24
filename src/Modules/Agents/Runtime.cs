@@ -139,6 +139,14 @@ internal sealed class RunState
 
     /// <summary>The person the run serves, so production evaluation can honor their opt-out; never stored by evaluation.</summary>
     public Guid? UserId { get; set; }
+
+    /// <summary>The model a comparison's challenger arm or a model challenger's gate names (spec 034 US9); null follows the routes.</summary>
+    public string? Model { get; set; }
+
+    /// <summary>The online comparison and arm the run is part of (spec 034 US9), kept so a resumed run stays on its arm.</summary>
+    public Guid? ComparisonId { get; set; }
+
+    public string? Arm { get; set; }
 }
 
 /// <summary>What a streamed run sends as it goes (020 T021): its ID first, each step, and the answer text as it arrives.</summary>
@@ -146,7 +154,10 @@ public delegate Task RunEventSink(string name, object data);
 
 /// <summary>The definition, version and limits a run uses.</summary>
 /// <param name="RouteChangeId">Set by a release gate run of a proposed model route change: model calls follow the proposed routes.</param>
-internal sealed record RunAgent(Guid Id, int Version, Guid OrgUnitId, AgentDefinition Definition, string Mode, AgentPolicy Policy, Guid? RouteChangeId = null)
+/// <param name="Model">Set by a comparison's challenger arm or a model challenger's gate run (spec 034 US9): model calls name this model.</param>
+/// <param name="Arm">The comparison arm of a person's run (spec 034 US9), or null.</param>
+internal sealed record RunAgent(Guid Id, int Version, Guid OrgUnitId, AgentDefinition Definition, string Mode, AgentPolicy Policy, Guid? RouteChangeId = null,
+    string? Model = null, AgentArm? Arm = null)
 {
     public int MaxToolCalls => Math.Min(Definition.MaxToolCalls ?? Policy.MaxToolCalls, Policy.MaxToolCalls);
 
@@ -173,7 +184,7 @@ internal sealed record RunAgent(Guid Id, int Version, Guid OrgUnitId, AgentDefin
 public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntitlementService entitlements, IAuthorizationService authz,
     IOrganizationHierarchy org, IAuditWriter audit, IClock clock, IAiGateway gateway, ToolRegistry tools, UnitAgentPolicyService unitPolicies,
     ISearchRetrieval retrieval, AgentMemory memory, MemoryRememberTool remember, AgentApprovals approvals, INotificationSender notifications,
-    IProductionSampler sampler)
+    IProductionSampler sampler, IAgentArmAllocator arms)
 {
     public const int MaxMessage = 2000;
     public const string PromptVersion = "agent.v1";
@@ -268,7 +279,22 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
             throw AppException.Conflict(agent.Status == AgentStatuses.Suspended ? "conflict.agent.suspended" : "conflict.agent.unavailable");
         }
         await DemandNoKillSwitchAsync(ct);
-        return (new RunAgent(agentId, version, agent.Unit, definition, "run", await unitPolicies.ForUnitAsync(agent.Unit, ct)), user, message);
+        var policy = await unitPolicies.ForUnitAsync(agent.Unit, ct);
+        // An online comparison (spec 034 US9) may give the person its challenger: another version, or the same one on another model.
+        if (await arms.ArmAsync(agentId, version, user, ct) is { } arm)
+        {
+            if (arm.Version != version)
+            {
+                var challenger = await VersionAsync(agentId, arm.Version, ct);
+                if (!await InAudienceAsync(agentId, challenger.Audience, user, ct))
+                {
+                    return (new RunAgent(agentId, version, agent.Unit, definition, "run", policy), user, message);
+                }
+                definition = challenger;
+            }
+            return (new RunAgent(agentId, arm.Version, agent.Unit, definition, "run", policy, Model: arm.Model, Arm: arm), user, message);
+        }
+        return (new RunAgent(agentId, version, agent.Unit, definition, "run", policy), user, message);
     }
 
     /// <summary>
@@ -333,7 +359,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
     /// The audience is not checked, because a persona tests the agent whoever it will serve; the evaluation module
     /// checks who may start the run.
     /// </summary>
-    internal async Task<EvalRunRecord> EvaluateAsync(Guid agentId, int version, string message, string language, Guid? routeChangeId, CancellationToken ct)
+    internal async Task<EvalRunRecord> EvaluateAsync(Guid agentId, int version, string message, string language, Guid? routeChangeId, string? model, CancellationToken ct)
     {
         var user = context.RequireUser();
         var row = await AgentRowAsync(agentId, ct);
@@ -347,7 +373,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         }
         await DemandNoKillSwitchAsync(ct);
         var definition = await VersionAsync(agentId, version, ct);
-        var run = new RunAgent(agentId, version, agent.Unit, definition, "eval", await unitPolicies.ForUnitAsync(agent.Unit, ct), routeChangeId);
+        var run = new RunAgent(agentId, version, agent.Unit, definition, "eval", await unitPolicies.ForUnitAsync(agent.Unit, ct), routeChangeId, model);
         var watch = Stopwatch.StartNew();
         var view = await StartAsync(run, user, message.Length > MaxMessage ? message[..MaxMessage] : message, new RunRequest(message, language), null, ct);
         var duration = (int)Math.Min(int.MaxValue, watch.ElapsedMilliseconds);
@@ -417,14 +443,18 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         state.Messages.Add(new AiMessage(AiRoles.User, message));
         state.Question = message;
         state.UserId = user;
+        state.Model = agent.Model;
+        state.ComparisonId = agent.Arm?.ComparisonId;
+        state.Arm = agent.Arm?.Arm;
         await session.ExecAsync(
             """
             insert into agents.run (tenant_id, id, agent_id, agent_version, user_id, org_unit_id, mode, status, language, classification, route_id,
-              item_source, item_id, durable, created_at, updated_at)
+              item_source, item_id, durable, comparison_id, arm, requested_model, created_at, updated_at)
             values (platform.current_tenant_id(), @id, @agent, @version, @user, @unit, @mode, 'running', @language, @classification, @routeId, @source, @item,
-              @durable, @now, @now)
+              @durable, @comparison, @arm, @requestedModel, @now, @now)
             """, new { id, agent = agent.Id, version = agent.Version, user, unit = agent.OrgUnitId, mode = agent.Mode, language, classification = state.Classification,
-                routeId, source = request.ItemSource, item = request.ItemId, durable = state.Durable, now }, ct);
+                routeId, source = request.ItemSource, item = request.ItemId, durable = state.Durable, comparison = state.ComparisonId, arm = state.Arm,
+                requestedModel = state.Model, now }, ct);
         if (state.Durable)
         {
             await SaveCheckpointAsync(id, state, ct);
@@ -543,7 +573,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
             var watch = Stopwatch.StartNew();
             var level = AssistantPrompt.Highest([state.Classification], DataClassification.Internal);
             var ask = new AiRequest(AiUseCases.Agent, state.Messages, level, offered.Count > 0 ? offered : null, MaxTokens: 1500,
-                Temperature: 0.2, AgentId: agent.Id, AgentVersion: agent.Version, ActingUnitId: agent.OrgUnitId, RouteChangeId: agent.RouteChangeId);
+                Temperature: 0.2, AgentId: agent.Id, AgentVersion: agent.Version, ActingUnitId: agent.OrgUnitId, RouteChangeId: agent.RouteChangeId, Model: state.Model);
             var result = _events is { } events ? await StreamTurnAsync(ask, events, ct) : await gateway.ChatAsync(ask, ct);
             await StepAsync(runId, state, "model", null, result.IsOk ? ToolDecisions.Executed : ToolDecisions.Refused, result.Denial, null, null,
                 state.Classification, watch, ct);
@@ -1032,7 +1062,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         (string? Model, string? Provider, int In, int Out) usage, IReadOnlyList<RunCitation> cited, CancellationToken ct)
     {
         var facts = new ProductionRunFacts(runId, agent.Id, agent.Version, person, agent.OrgUnitId, status, outcome, reason, language, state.Classification,
-            usage.Model, usage.In, usage.Out, (int)Math.Min(int.MaxValue, state.ActiveSeconds * 1000), state.ToolCalls, state.Denials);
+            usage.Model, usage.In, usage.Out, (int)Math.Min(int.MaxValue, state.ActiveSeconds * 1000), state.ToolCalls, state.Denials, state.ComparisonId, state.Arm);
         return sampler.OfferAsync(facts, async token =>
         {
             var steps = await session.QueryAsync(
@@ -1418,6 +1448,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
 /// <summary>The runtime port evaluation uses (spec 034); see <see cref="IAgentEvaluationRuntime"/>.</summary>
 public sealed class AgentEvaluationRuntime(AgentRuns runs) : IAgentEvaluationRuntime
 {
-    public Task<EvalRunRecord> RunCaseAsync(Guid agentId, int version, string message, string language, Guid? routeChangeId = null, CancellationToken ct = default) =>
-        runs.EvaluateAsync(agentId, version, message, language, routeChangeId, ct);
+    public Task<EvalRunRecord> RunCaseAsync(Guid agentId, int version, string message, string language, Guid? routeChangeId = null, string? model = null,
+        CancellationToken ct = default) =>
+        runs.EvaluateAsync(agentId, version, message, language, routeChangeId, model, ct);
 }

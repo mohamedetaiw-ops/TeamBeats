@@ -27686,6 +27686,130 @@
         }
       }
     },
+    "/api/v1/evaluation/agents/{agentId}/comparisons": {
+      "get": {
+        "tags": [
+          "Evaluation"
+        ],
+        "parameters": [
+          {
+            "name": "agentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/evaluation/comparisons/{id}": {
+      "get": {
+        "tags": [
+          "Evaluation"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/evaluation/comparisons": {
+      "post": {
+        "tags": [
+          "Evaluation"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComparisonRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/evaluation/comparisons/{id}/decision": {
+      "post": {
+        "tags": [
+          "Evaluation"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComparisonDecisionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/evaluation/comparisons/{id}/stop": {
+      "post": {
+        "tags": [
+          "Evaluation"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/evaluation/review": {
       "get": {
         "tags": [
@@ -34967,6 +35091,76 @@
               "string"
             ],
             "format": "uuid"
+          }
+        }
+      },
+      "ComparisonDecisionRequest": {
+        "required": [
+          "approve",
+          "note"
+        ],
+        "type": "object",
+        "properties": {
+          "approve": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "ComparisonRequest": {
+        "required": [
+          "agentId",
+          "challengerVersion",
+          "challengerModel",
+          "sharePercent",
+          "purpose"
+        ],
+        "type": "object",
+        "properties": {
+          "agentId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "challengerVersion": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "challengerModel": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "sharePercent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?(?:[eE][\u002B-]?\\d\u002B)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "purpose": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

@@ -221,7 +221,9 @@ public static class EvalStepDecisions
 public interface IAgentEvaluationRuntime
 {
     /// <param name="routeChangeId">For a release gate run of a proposed model route change: the agent's model calls follow the proposed routes.</param>
-    Task<EvalRunRecord> RunCaseAsync(Guid agentId, int version, string message, string language, Guid? routeChangeId = null, CancellationToken ct = default);
+    /// <param name="model">For the gate of a model challenger (spec 034 US9): the agent's model calls name this model, which the tenant policy must allow.</param>
+    Task<EvalRunRecord> RunCaseAsync(Guid agentId, int version, string message, string language, Guid? routeChangeId = null, string? model = null,
+        CancellationToken ct = default);
 }
 
 /// <summary>A synthetic passage an assistant evaluation case gives the knowledge agent in place of retrieval (spec 034, spec 014 T008).</summary>
@@ -473,7 +475,9 @@ public sealed record ProductionRunFacts(
     int OutputTokens,
     int DurationMs,
     int ToolCalls,
-    int Denials);
+    int Denials,
+    Guid? ComparisonId = null,
+    string? Arm = null);
 
 /// <summary>
 /// The content of a sampled run, built only when the run is sampled and its classification allows content-based metrics:
@@ -504,3 +508,18 @@ public interface IProductionSampler
 /// US8 scenario 2. It names the run only, never the person, so evaluation can flag the run's sample if it has one.
 /// </summary>
 public sealed record AgentRunFeedbackGiven(Guid RunId, bool Helpful) : IIntegrationEvent;
+
+/// <summary>
+/// The arm of an online comparison a person's run takes (spec 034 US9 scenarios 2 and 3): the version, and for a model
+/// challenger the model, it runs with. <see cref="Arm"/> is <c>champion</c> or <c>challenger</c>.
+/// </summary>
+public sealed record AgentArm(Guid ComparisonId, string Arm, int Version, string? Model);
+
+/// <summary>
+/// Chooses the arm of a running comparison for a person's run of an agent, the same for that person every time. Null
+/// when no comparison of the version in force runs; the default never compares.
+/// </summary>
+public interface IAgentArmAllocator
+{
+    Task<AgentArm?> ArmAsync(Guid agentId, int championVersion, Guid userId, CancellationToken ct);
+}

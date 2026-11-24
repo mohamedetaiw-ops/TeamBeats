@@ -58,7 +58,7 @@ public sealed class ResultsService(IDbSession session, EvalAccess access, IAgent
         var rows = await session.QueryAsync(
             """
             select distinct on (agent_version) agent_version, id, verdict, finished_at, result::text from evaluation.run
-            where agent_id = @agentId and status = 'completed' and result is not null and trigger <> 'route'
+            where agent_id = @agentId and status = 'completed' and result is not null and trigger not in ('route', 'comparison')
             order by agent_version desc, finished_at desc
             """, new { agentId }, r => (Version: r.GetInt32(0), Id: r.GetGuid(1), Verdict: r.Get<string?>("verdict"), At: r.Get<DateTimeOffset?>("finished_at"),
                 Result: r.GetString(4)), ct);
