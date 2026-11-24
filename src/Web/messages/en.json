@@ -1015,7 +1015,32 @@
       "versionMeta": "Package version {version}",
       "emptyTitle": "No capabilities match",
       "emptyBody": "Try another name or show everything.",
-      "clear": "Show everything"
+      "clear": "Show everything",
+      "contract": {
+        "ends": "Contract ends",
+        "graceTitle": "Your contract has ended",
+        "graceBody": "The contract ended on {ended}. Everything keeps working until {readOnly}, then the workspace becomes read only. Contact your TeamBeats account team to renew.",
+        "readOnlyTitle": "This workspace is read only",
+        "readOnlyBody": "The contract ended on {ended} and the grace period is over. People can still sign in, read and export, but nothing can be changed. Contact your TeamBeats account team to renew."
+      },
+      "usage": {
+        "title": "Use this month",
+        "period": "Counted per calendar month in UTC",
+        "usedOf": "{used} of {limit}",
+        "usedOnly": "{used} used",
+        "hint": "When a quota runs out, admins get a notification and the screen that uses it says so."
+      },
+      "grants": {
+        "title": "Add-ons and contract terms",
+        "kinds": {
+          "addon": "Add-on",
+          "override": "Contract term"
+        },
+        "window": "From {from} to {to}",
+        "from": "From {from}, no end date",
+        "active": "In effect",
+        "inactive": "Not in effect"
+      }
     },
     "identity": {
       "description": "How people sign in with your Microsoft account, and how people and groups come in from your directory.",

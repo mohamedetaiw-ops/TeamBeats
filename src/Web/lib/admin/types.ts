@@ -107,7 +107,26 @@ export type Entitlements = {
   version: number;
   startsAt: string;
   capabilities: Record<string, { enabled: boolean; limit: number | null }>;
+  sources?: Record<string, string> | null;
+  addons?: PlanGrant[] | null;
+  overrides?: PlanGrant[] | null;
+  usage?: QuotaUsage[] | null;
+  contract?: { state: string; contractEndsAt: string | null; graceEndsAt: string | null } | null;
 };
+
+/** An add-on or contract override (spec 005 FR-004): when it is in effect and why. */
+export type PlanGrant = {
+  capabilityKey: string;
+  enabled: boolean;
+  limit: number | null;
+  validFrom: string;
+  validTo: string | null;
+  reason: string | null;
+  active: boolean;
+};
+
+/** This period's use of one metered quota (spec 005 FR-006). */
+export type QuotaUsage = { capabilityKey: string; period: string; used: number; limit: number | null; mode: string; gracePct: number; exhaustedAt: string | null };
 
 export type GroupRoleMapping = { groupId: string; roleKey: string; scopeType: string; scopeId: string | null };
 
