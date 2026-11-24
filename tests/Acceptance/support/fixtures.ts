@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { test as base, expect, type Page, type TestInfo } from "@playwright/test";
+import { test as base, expect, type Page, type Response, type TestInfo } from "@playwright/test";
 import { msg, type LaunchLocale } from "./messages";
 import { hostOrigin } from "./stack";
 
@@ -18,8 +18,26 @@ export async function expectAccessible(page: Page, testInfo: TestInfo, label: st
 export async function signInWithDevForm(page: Page, tenantKey: string, email: string, locale: LaunchLocale): Promise<void> {
   await page.goto(`${hostOrigin(tenantKey)}/signin`);
   await page.getByLabel(msg(locale, "signin.email")).fill(email);
+  const webkit = page.context().browser()?.browserType().name() === "webkit";
+  const signedIn = webkit ? page.waitForResponse((r) => r.url().endsWith("/dev/signin") && r.request().method() === "POST") : null;
   await page.getByRole("button", { name: msg(locale, "signin.submit") }).click();
+  if (signedIn) await keepSecureCookies(page, await signedIn);
   await page.waitForURL(`${hostOrigin(tenantKey)}/`);
+}
+
+/**
+ * The session cookie is always Secure. Chromium and Firefox keep a Secure cookie on http://*.localhost, which the
+ * suite uses, but WebKit on Linux drops it, so the nightly WebKit run (spec 036 T012) copies the cookies of the sign-in
+ * response into the browser context without the flag. Test support only; the product cookie is unchanged.
+ */
+async function keepSecureCookies(page: Page, response: Response): Promise<void> {
+  const url = new URL(response.url());
+  const cookies = (await response.headersArray())
+    .filter((h) => h.name.toLowerCase() === "set-cookie")
+    .map((h) => h.value.split(";")[0])
+    .map((pair) => ({ name: pair.slice(0, pair.indexOf("=")).trim(), value: pair.slice(pair.indexOf("=") + 1).trim() }))
+    .filter((c) => c.name.length > 0 && c.value.length > 0);
+  await page.context().addCookies(cookies.map((c) => ({ ...c, domain: url.hostname, path: "/", httpOnly: true, secure: false, sameSite: "Lax" as const })));
 }
 
 /**
