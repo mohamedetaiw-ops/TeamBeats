@@ -28,6 +28,12 @@ public sealed record FakeUser(string ObjectId, string Email, string Name)
 
     /// <summary>How long ago the user last authenticated at the provider; a request with <c>max_age=0</c> authenticates now.</summary>
     public TimeSpan? AuthTimeAgo { get; init; }
+
+    /// <summary>Google's <c>hd</c> claim; null takes the email's domain, an empty string leaves it out (a personal account).</summary>
+    public string? HostedDomain { get; init; }
+
+    /// <summary>AD FS sends <c>objectGUID</c> as base64 of its bytes by default; true sends the text form a claim rule makes.</summary>
+    public bool ObjectGuidAsText { get; init; }
 }
 
 /// <summary>
@@ -37,6 +43,12 @@ public sealed record FakeUser(string ObjectId, string Email, string Name)
 public sealed class FakeIdentityProvider : HttpMessageHandler
 {
     public const string Authority = "https://login.microsoftonline.com";
+
+    /// <summary>Google sign-in (spec 003 US4): one issuer for every account, with the token endpoint on another host.</summary>
+    public const string GoogleIssuer = "https://accounts.google.com";
+
+    /// <summary>An AD FS farm (spec 003 US5) answers on the customer's own host under <c>/adfs</c>.</summary>
+    public static string AdfsIssuerFor(string host) => $"https://{host}/adfs";
 
     // Shared by every instance: the production OIDC adapter caches discovery and keys per issuer for the whole process,
     // so two hosts in one process (tests run several) must sign with the same key for the same fake directory.
@@ -58,8 +70,14 @@ public sealed class FakeIdentityProvider : HttpMessageHandler
         var uri = new Uri(authorizeUrl);
         var query = ParseQuery(uri.Query);
         var directory = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries)[0];
+        var issuer = uri.Host switch
+        {
+            "accounts.google.com" => GoogleIssuer,
+            "login.microsoftonline.com" => $"{Authority}/{directory}/v2.0",
+            _ => AdfsIssuerFor(uri.Authority),
+        };
         var code = Base64UrlEncoder.Encode(RandomNumberGenerator.GetBytes(16));
-        _codes[code] = new IssuedCode(user, $"{Authority}/{directory}/v2.0", query["client_id"], clientSecret, query["redirect_uri"],
+        _codes[code] = new IssuedCode(user, issuer, query["client_id"], clientSecret, query["redirect_uri"],
             query["code_challenge"], query["nonce"], query.GetValueOrDefault("max_age") == "0");
         return code;
     }
@@ -71,6 +89,10 @@ public sealed class FakeIdentityProvider : HttpMessageHandler
             return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
         }
         var path = request.RequestUri!.AbsolutePath;
+        if (request.RequestUri.Host != "login.microsoftonline.com")
+        {
+            return await OtherProviderAsync(request, cancellationToken);
+        }
         var segments = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
         var directory = segments.Length > 0 ? segments[0] : string.Empty;
         var issuer = $"{Authority}/{directory}/v2.0";
@@ -108,6 +130,109 @@ public sealed class FakeIdentityProvider : HttpMessageHandler
             return Json(new { id_token = IdToken(issued), token_type = "Bearer" });
         }
         return new HttpResponseMessage(HttpStatusCode.NotFound);
+    }
+
+    /// <summary>Google (accounts.google.com, oauth2.googleapis.com, www.googleapis.com) or an AD FS farm on any other host.</summary>
+    private async Task<HttpResponseMessage> OtherProviderAsync(HttpRequestMessage request, CancellationToken ct)
+    {
+        var uri = request.RequestUri!;
+        var google = uri.Host is "accounts.google.com" or "oauth2.googleapis.com" or "www.googleapis.com";
+        var issuer = google ? GoogleIssuer : AdfsIssuerFor(uri.Authority);
+        var (authorize, token, keys) = google
+            ? ("https://accounts.google.com/o/oauth2/v2/auth", "https://oauth2.googleapis.com/token", "https://www.googleapis.com/oauth2/v3/certs")
+            : ($"{issuer}/oauth2/authorize", $"{issuer}/oauth2/token", $"{issuer}/discovery/keys");
+        var url = uri.GetLeftPart(UriPartial.Path);
+        if (url == issuer + "/.well-known/openid-configuration")
+        {
+            return Json(new Dictionary<string, object>
+            {
+                ["issuer"] = issuer,
+                ["authorization_endpoint"] = authorize,
+                ["token_endpoint"] = token,
+                ["jwks_uri"] = keys,
+                ["id_token_signing_alg_values_supported"] = new[] { "RS256" },
+                ["response_types_supported"] = new[] { "code" },
+                ["subject_types_supported"] = new[] { "public" },
+            });
+        }
+        if (url == keys)
+        {
+            var jwk = JsonWebKeyConverter.ConvertFromRSASecurityKey(_key);
+            return Json(new { keys = new[] { new { kty = "RSA", use = "sig", kid = jwk.Kid, n = jwk.N, e = jwk.E } } });
+        }
+        if (url == token)
+        {
+            Interlocked.Increment(ref TokenRequests);
+            var form = ParseQuery("?" + await request.Content!.ReadAsStringAsync(ct));
+            if (!_codes.TryRemove(form.GetValueOrDefault("code") ?? string.Empty, out var issued)
+                || issued.Issuer != issuer
+                || issued.ClientId != form.GetValueOrDefault("client_id")
+                || issued.ClientSecret != form.GetValueOrDefault("client_secret")
+                || issued.RedirectUri != form.GetValueOrDefault("redirect_uri")
+                || issued.CodeChallenge != Base64UrlEncoder.Encode(SHA256.HashData(Encoding.ASCII.GetBytes(form.GetValueOrDefault("code_verifier") ?? string.Empty))))
+            {
+                return new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new StringContent("{\"error\":\"invalid_grant\"}") };
+            }
+            return Json(new { id_token = google ? GoogleToken(issued) : AdfsToken(issued), token_type = "Bearer" });
+        }
+        return new HttpResponseMessage(HttpStatusCode.NotFound);
+    }
+
+    private string GoogleToken(IssuedCode issued)
+    {
+        var user = issued.User;
+        var claims = new Dictionary<string, object>
+        {
+            ["sub"] = user.ObjectId,
+            ["email"] = user.Email,
+            ["email_verified"] = true,
+            ["name"] = user.Name,
+        };
+        var hd = user.HostedDomain ?? user.Email.Split('@').Last();
+        if (hd.Length > 0)
+        {
+            claims["hd"] = hd;
+        }
+        return Sign(issued, claims);
+    }
+
+    private string AdfsToken(IssuedCode issued)
+    {
+        var user = issued.User;
+        var claims = new Dictionary<string, object>
+        {
+            ["sub"] = "adfs-" + user.ObjectId,
+            ["upn"] = user.Email,
+            ["unique_name"] = user.Name,
+            ["amr"] = user.Amr.ToArray(),
+        };
+        if (!user.OmitObjectId)
+        {
+            claims["objectGUID"] = user.ObjectGuidAsText ? user.ObjectId : Convert.ToBase64String(Guid.Parse(user.ObjectId).ToByteArray());
+        }
+        return Sign(issued, claims);
+    }
+
+    private string Sign(IssuedCode issued, Dictionary<string, object> claims)
+    {
+        var user = issued.User;
+        if (!user.OmitNonce)
+        {
+            claims["nonce"] = user.NonceOverride ?? issued.Nonce;
+        }
+        var authAgo = user.AuthTimeAgo ?? (issued.Fresh ? TimeSpan.Zero : TimeSpan.FromHours(2));
+        claims["auth_time"] = DateTimeOffset.UtcNow.Add(-authAgo).ToUnixTimeSeconds();
+        var now = DateTime.UtcNow - user.IssuedAgo;
+        return new JsonWebTokenHandler { SetDefaultTimesOnTokenCreation = false }.CreateToken(new SecurityTokenDescriptor
+        {
+            Issuer = user.IssuerOverride ?? issued.Issuer,
+            Audience = user.AudienceOverride ?? issued.ClientId,
+            IssuedAt = now,
+            NotBefore = now,
+            Expires = now + user.Lifetime,
+            Claims = claims,
+            SigningCredentials = new SigningCredentials(user.SignWithForeignKey ? _foreignKey : _key, SecurityAlgorithms.RsaSha256),
+        });
     }
 
     private string IdToken(IssuedCode issued)

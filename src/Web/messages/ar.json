@@ -95,7 +95,9 @@
     "testEmployee": "تسجيل الدخول كموظف اختبار",
     "testFailed": "تم رفض تسجيل الدخول التجريبي. حساب الاختبار غير مُعد في بيئة الاختبار.",
     "accessibility": "بيان إمكانية الوصول",
-    "titleAt": "تسجيل الدخول إلى {name}"
+    "titleAt": "تسجيل الدخول إلى {name}",
+    "ssoGoogle": "تسجيل الدخول عبر Google",
+    "ssoAdfs": "تسجيل الدخول بحساب مؤسستك"
   },
   "admin": {
     "title": "الإدارة",
@@ -1025,21 +1027,45 @@
         "org_unit": "وحدة واحدة فقط"
       },
       "sso": {
-        "title": "تسجيل الدخول الموحد عبر Microsoft Entra ID",
+        "title": "تسجيل الدخول الموحد",
         "on": "مفعّل",
         "off": "متوقف",
         "notSet": "غير مُعد",
-        "intro": "يسجّل الأشخاص الدخول بحساب Microsoft الخاص بالعمل. سجّل TeamBeats كتطبيق في Entra ID أولًا، ثم أدخل بياناته هنا.",
+        "intro": "يسجّل الأشخاص الدخول بحساب العمل لدى مزوّد الهوية الخاص بكم. اختر المزوّد وسجّل TeamBeats لديه، ثم أدخل بياناته هنا.",
+        "kind": "مزوّد الهوية",
+        "kinds": {
+          "entra": "Microsoft Entra ID",
+          "google": "Google Workspace",
+          "adfs": "AD FS (Active Directory المحلي)"
+        },
+        "kindHints": {
+          "entra": "حسابات Microsoft الخاصة بالعمل، ومنها Active Directory المتزامن مع Entra ID.",
+          "google": "حسابات نطاقات Google Workspace الخاصة بكم.",
+          "adfs": "حسابات النطاق عبر AD FS الخاص بكم، لـ Active Directory دون Entra ID."
+        },
         "displayName": "اسم الزر",
         "displayNameHint": "يظهر في صفحة تسجيل الدخول، مثل: تسجيل الدخول عبر Contoso",
         "issuer": "عنوان المُصدِر",
         "issuerHint": "https://login.microsoftonline.com/directory-id/v2.0. تُرفض العناوين المشتركة مثل common.",
+        "issuerHints": {
+          "google": "دائمًا https://accounts.google.com",
+          "adfs": "عنوان AD FS الخاص بكم، مثل https://adfs.contoso.com/adfs. يمكن أن يكون متاحًا داخل شبكتكم فقط."
+        },
         "clientId": "معرّف التطبيق (العميل)",
         "clientIdHint": "من صفحة نظرة عامة على التطبيق في Entra ID",
+        "clientIdHints": {
+          "google": "معرّف عميل OAuth من Google Cloud، وينتهي بـ .apps.googleusercontent.com",
+          "adfs": "معرّف العميل لمجموعة تطبيق TeamBeats في AD FS"
+        },
+        "hostedDomains": "نطاقات Google Workspace",
+        "hostedDomainsHint": "لا يدخل إلا أصحاب الحسابات في هذه النطاقات. نطاق في كل سطر، مثل contoso.com",
+        "adfsConnection": "اتصال Active Directory",
+        "adfsConnectionHint": "يسجّل AD FS دخول الأشخاص الذين يزامنهم هذا الاتصال، ويطابقهم بـ objectGUID. أضف في AD FS قاعدة مطالبة ترسل objectGUID.",
+        "adfsNoConnection": "أعدّ مزامنة الدليل من Active Directory المحلي أدناه أولًا.",
         "secretRef": "مرجع سر العميل",
         "secretRefHint": "احفظ السر في مدير الأسرار وأدخل مرجعه هنا، ويبدأ بـ {prefix}. لا يُكتب السر نفسه هنا ولا يُعرض.",
-        "enabled": "تسجيل الدخول عبر Microsoft مفعّل",
-        "enabledHint": "أوقفه لمنع تسجيلات دخول جديدة عبر Microsoft دون فقدان الإعدادات.",
+        "enabled": "تسجيل الدخول الموحد مفعّل",
+        "enabledHint": "أوقفه لمنع تسجيلات دخول جديدة عبر مزوّد الهوية دون فقدان الإعدادات.",
         "jitTitle": "الأشخاص الجدد",
         "jit": "السماح للأشخاص بالانضمام عند أول تسجيل دخول",
         "jitHint": "يحصل أي شخص من النطاقات أدناه على عضوية عند أول تسجيل دخول.",
@@ -1054,7 +1080,20 @@
         "removeMapping": "إزالة هذه المجموعة",
         "addMapping": "إضافة مجموعة",
         "save": "حفظ إعدادات تسجيل الدخول",
-        "saved": "تم حفظ إعدادات تسجيل الدخول."
+        "saved": "تم حفظ إعدادات تسجيل الدخول.",
+        "lastProblem": "رُفض آخر تسجيل دخول من مزوّد الهوية",
+        "lastProblemAt": "في {when}",
+        "problems": {
+          "object_guid_missing": "لم يتضمن رمز AD FS المطالبة objectGUID. أضف قاعدة مطالبة ترسل السمة objectGUID إلى TeamBeats.",
+          "hosted_domain_mismatch": "سجّل شخص الدخول بحساب Google من خارج نطاقات Workspace الخاصة بكم، أو بحساب شخصي.",
+          "subject_missing": "لم يتضمن الرمز معرّفًا للمستخدم.",
+          "wrong_issuer": "جاء الرمز من مُصدِر غير المُعد هنا.",
+          "wrong_audience": "كان الرمز موجهًا إلى معرّف عميل آخر.",
+          "expired": "انتهت صلاحية الرمز. تحقق من ساعات خوادم مزوّد الهوية.",
+          "bad_signature": "لم يطابق توقيع الرمز المفاتيح المنشورة لدى مزوّد الهوية.",
+          "code_rejected": "رفض مزوّد الهوية معرّف العميل أو سر العميل.",
+          "other": "أرسل مزوّد الهوية رمزًا لم يقبله TeamBeats ({reason})."
+        }
       },
       "directory": {
         "title": "مزامنة الدليل",

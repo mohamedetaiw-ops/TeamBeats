@@ -16,6 +16,12 @@ async function openSection(page: Page, tenantKey: string, locale: LaunchLocale, 
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, `admin.nav.${section}`));
 }
 
+/** A card choice is picked by its label, as a person does; the radio itself sits under the card text. */
+async function pickKind(page: Page, label: string) {
+  await page.locator("label").filter({ hasText: label }).first().click();
+  await expect(page.getByRole("radio", { name: label })).toBeChecked();
+}
+
 const saved = (page: Page, locale: LaunchLocale, key: string) => page.getByRole("status").filter({ hasText: msg(locale, key) });
 
 for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
@@ -180,6 +186,18 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.getByLabel(m("admin.identity.sso.secretRef")).fill("plain-secret");
       await page.getByRole("button", { name: m("admin.identity.sso.save") }).click();
       await expect(page.getByRole("alert").filter({ hasText: m("admin.common.notDone") })).toBeVisible();
+
+      // Google Workspace asks for its hosted domains and leaves out Entra groups; AD FS needs the on-premises directory first (spec 003 R2).
+      await pickKind(page, m("admin.identity.sso.kinds.google"));
+      await expect(page.getByLabel(m("admin.identity.sso.hostedDomains"))).toBeVisible();
+      await expect(page.getByText(m("admin.identity.sso.issuerHints.google"))).toBeVisible();
+      await expect(page.getByRole("group", { name: m("admin.identity.sso.groupsTitle") })).toHaveCount(0);
+      await pickKind(page, m("admin.identity.sso.kinds.adfs"));
+      await expect(page.getByText(m("admin.identity.sso.adfsNoConnection"))).toBeVisible();
+      await expect(page.getByLabel(m("admin.identity.sso.hostedDomains"))).toHaveCount(0);
+      await expectAccessible(page, testInfo, `admin-identity-adfs-${locale}`);
+      await pickKind(page, m("admin.identity.sso.kinds.entra"));
+      await expect(page.getByRole("group", { name: m("admin.identity.sso.groupsTitle") })).toBeVisible();
 
       await openSection(page, tenant.key, locale, "audit");
       const table = page.getByRole("table", { name: m("admin.audit.events") });

@@ -95,7 +95,9 @@
     "testEmployee": "Sign in as test employee",
     "testFailed": "Test sign-in was refused. The staging test account is not set up.",
     "accessibility": "Accessibility statement",
-    "titleAt": "Sign in to {name}"
+    "titleAt": "Sign in to {name}",
+    "ssoGoogle": "Sign in with Google",
+    "ssoAdfs": "Sign in with your organization account"
   },
   "admin": {
     "title": "Administration",
@@ -1025,21 +1027,45 @@
         "org_unit": "One unit only"
       },
       "sso": {
-        "title": "Single sign-on with Microsoft Entra ID",
+        "title": "Single sign-on",
         "on": "On",
         "off": "Off",
         "notSet": "Not set up",
-        "intro": "People sign in with their work Microsoft account. Register TeamBeats as an application in your Entra ID first, then enter its details here.",
+        "intro": "People sign in with their work account at your identity provider. Choose the provider, register TeamBeats there, then enter its details here.",
+        "kind": "Identity provider",
+        "kinds": {
+          "entra": "Microsoft Entra ID",
+          "google": "Google Workspace",
+          "adfs": "AD FS (on-premises Active Directory)"
+        },
+        "kindHints": {
+          "entra": "Work Microsoft accounts, including Active Directory synced to Entra ID.",
+          "google": "Accounts of your Google Workspace domains.",
+          "adfs": "Domain accounts through your own AD FS, for Active Directory without Entra ID."
+        },
         "displayName": "Button name",
         "displayNameHint": "Shown on the sign-in page, such as Sign in with Contoso",
         "issuer": "Issuer URL",
         "issuerHint": "https://login.microsoftonline.com/directory-id/v2.0. Shared endpoints such as common are refused.",
+        "issuerHints": {
+          "google": "Always https://accounts.google.com",
+          "adfs": "Your AD FS address, such as https://adfs.contoso.com/adfs. It may be reachable only inside your network."
+        },
         "clientId": "Application (client) ID",
         "clientIdHint": "From the application's overview page in Entra ID",
+        "clientIdHints": {
+          "google": "The OAuth client ID from Google Cloud, ending in .apps.googleusercontent.com",
+          "adfs": "The client identifier of the TeamBeats application group in AD FS"
+        },
+        "hostedDomains": "Google Workspace domains",
+        "hostedDomainsHint": "Only accounts of these domains get in. One per line, such as contoso.com",
+        "adfsConnection": "Active Directory connection",
+        "adfsConnectionHint": "AD FS signs in the people this connection syncs, matched on objectGUID. Add a claim rule in AD FS that sends objectGUID.",
+        "adfsNoConnection": "Set up directory sync from on-premises Active Directory below first.",
         "secretRef": "Client secret reference",
         "secretRefHint": "Store the secret in your secret manager and enter its reference here, starting with {prefix}. The secret itself is never typed or shown here.",
-        "enabled": "Sign-in with Microsoft is on",
-        "enabledHint": "Turn it off to stop new Microsoft sign-ins without losing the settings.",
+        "enabled": "Single sign-on is on",
+        "enabledHint": "Turn it off to stop new sign-ins through the provider without losing the settings.",
         "jitTitle": "New people",
         "jit": "Let people join on their first sign-in",
         "jitHint": "Anyone from the domains below gets a membership the first time they sign in.",
@@ -1054,7 +1080,20 @@
         "removeMapping": "Remove this group",
         "addMapping": "Add a group",
         "save": "Save sign-in settings",
-        "saved": "Sign-in settings saved."
+        "saved": "Sign-in settings saved.",
+        "lastProblem": "The provider's last sign-in was refused",
+        "lastProblemAt": "On {when}",
+        "problems": {
+          "object_guid_missing": "The AD FS token had no objectGUID claim. Add a claim rule that sends the objectGUID attribute to TeamBeats.",
+          "hosted_domain_mismatch": "Someone signed in with a Google account outside your Workspace domains, or a personal account.",
+          "subject_missing": "The token had no user identifier.",
+          "wrong_issuer": "The token came from a different issuer than the one set here.",
+          "wrong_audience": "The token was for a different client ID.",
+          "expired": "The token had expired. Check the clocks of the provider's servers.",
+          "bad_signature": "The token's signature did not match the provider's published keys.",
+          "code_rejected": "The provider refused the client ID or client secret.",
+          "other": "The provider sent a token TeamBeats could not accept ({reason})."
+        }
       },
       "directory": {
         "title": "Directory sync",

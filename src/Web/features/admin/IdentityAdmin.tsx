@@ -18,6 +18,10 @@ import { ResultAlert, useAdminAction, useWhen } from "./shared";
 
 const RETURN = "/admin/identity";
 const SOURCES = ["entra", "adds", "google"] as const;
+const KINDS = ["entra", "google", "adfs"] as const;
+type Kind = (typeof KINDS)[number];
+// Refusal reasons with their own explanation; any other reason is shown by its code.
+const PROBLEMS = ["object_guid_missing", "hosted_domain_mismatch", "subject_missing", "wrong_issuer", "wrong_audience", "expired", "bad_signature", "code_rejected"];
 
 const lines = (text: string) =>
   text
@@ -26,9 +30,10 @@ const lines = (text: string) =>
     .filter(Boolean);
 
 /**
- * Sign-in settings (spec 003 US2, US6): the workspace's Microsoft Entra ID sign-in, who may join on first sign-in, the
- * Entra groups that grant roles, and directory sync with its schedule, safety threshold and recent runs. Saving either
- * asks for a fresh sign-in, and the client secret is only ever a secret manager reference (spec 006 FR-012).
+ * Sign-in settings (spec 003 US2, US4, US5, US6): the workspace's single sign-on through Microsoft Entra ID, Google
+ * Workspace or AD FS, who may join on first sign-in, the Entra groups that grant roles, why the provider's last token
+ * was refused, and directory sync with its schedule, safety threshold and recent runs. Saving either asks for a fresh
+ * sign-in, and the client secret is only ever a secret manager reference (spec 006 FR-012).
  */
 export function IdentityAdmin({
   tenantId,
@@ -48,6 +53,8 @@ export function IdentityAdmin({
   const when = useWhen();
   const { busy, result, run } = useAdminAction(RETURN);
   const [provider, setProvider] = useState(initialProvider);
+  const [kind, setKind] = useState<Kind>(KINDS.includes(initialProvider?.kind as Kind) ? (initialProvider!.kind as Kind) : "entra");
+  const [hosted, setHosted] = useState((initialProvider?.hostedDomains ?? []).join("\n"));
   const [displayName, setDisplayName] = useState(initialProvider?.displayName ?? "");
   const [issuer, setIssuer] = useState(initialProvider?.issuer ?? "");
   const [clientId, setClientId] = useState(initialProvider?.clientId ?? "");
@@ -72,15 +79,18 @@ export function IdentityAdmin({
       "PUT",
       "/api/v1/tenant/identity-provider",
       {
-        kind: "entra",
+        kind,
         issuer: issuer.trim(),
         clientId: clientId.trim(),
         secretRef: secretRef.trim(),
         displayName: displayName.trim() || null,
         jitEnabled: jit,
         jitDomains: lines(domains),
-        groupRoleMap: mappings.map((m) => ({ ...m, groupId: m.groupId.trim(), scopeId: m.scopeType === "tenant" ? null : m.scopeId })),
+        groupRoleMap: kind === "entra" ? mappings.map((m) => ({ ...m, groupId: m.groupId.trim(), scopeId: m.scopeType === "tenant" ? null : m.scopeId })) : [],
         enabled,
+        hostedDomains: kind === "google" ? lines(hosted) : [],
+        // AD FS signs in the people of the on-premises Active Directory connection that directory sync reads.
+        directoryConnectionId: kind === "adfs" ? adConnection : null,
       },
       t("sso.saved"),
     );
@@ -112,6 +122,8 @@ export function IdentityAdmin({
 
   const setMapping = (i: number, change: Partial<GroupRoleMapping>) => setMappings(mappings.map((m, j) => (j === i ? { ...m, ...change } : m)));
   const source = settings?.source ?? "entra";
+  const adConnection = settings?.source === "adds" ? settings.connectionId : null;
+  const problem = provider?.lastProblem ?? null;
 
   return (
     <div className="admin-screen">
@@ -123,6 +135,12 @@ export function IdentityAdmin({
           {provider ? <Badge tone={provider.enabled ? "success" : "neutral"}>{t(provider.enabled ? "sso.on" : "sso.off")}</Badge> : <Badge>{t("sso.notSet")}</Badge>}
         </div>
         <p className="admin-meta">{t("sso.intro")}</p>
+        {problem ? (
+          <Alert tone="warning" title={t("sso.lastProblem")}>
+            <p>{PROBLEMS.includes(problem) ? t(`sso.problems.${problem}`) : t("sso.problems.other", { reason: problem })}</p>
+            {provider?.lastProblemAt ? <p className="admin-meta">{t("sso.lastProblemAt", { when: when(provider.lastProblemAt) })}</p> : null}
+          </Alert>
+        ) : null}
         <form
           className="admin-form"
           onSubmit={(e) => {
@@ -130,10 +148,18 @@ export function IdentityAdmin({
             void saveProvider();
           }}
         >
+          <RadioGroup
+            legend={t("sso.kind")}
+            name="kind"
+            value={kind}
+            cards
+            onChange={(e) => setKind(e.target.value as Kind)}
+            options={KINDS.map((k) => ({ value: k, label: t(`sso.kinds.${k}`), hint: t(`sso.kindHints.${k}`) }))}
+          />
           <FormField label={t("sso.displayName")} hint={t("sso.displayNameHint")} name="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
-          <FormField label={t("sso.issuer")} hint={t("sso.issuerHint")} name="issuer" dir="ltr" required value={issuer} onChange={(e) => setIssuer(e.target.value)} />
+          <FormField label={t("sso.issuer")} hint={kind === "entra" ? t("sso.issuerHint") : t(`sso.issuerHints.${kind}`)} name="issuer" dir="ltr" required value={issuer} onChange={(e) => setIssuer(e.target.value)} />
           {/* Long identifiers get the full row so they read in full (DLS-097). */}
-          <FormField label={t("sso.clientId")} hint={t("sso.clientIdHint")} name="clientId" dir="ltr" required value={clientId} onChange={(e) => setClientId(e.target.value)} />
+          <FormField label={t("sso.clientId")} hint={kind === "entra" ? t("sso.clientIdHint") : t(`sso.clientIdHints.${kind}`)} name="clientId" dir="ltr" required value={clientId} onChange={(e) => setClientId(e.target.value)} />
           <FormField
             label={t("sso.secretRef")}
             hint={t("sso.secretRefHint", { prefix: `secret://tenants/${tenantId}/` })}
@@ -143,6 +169,16 @@ export function IdentityAdmin({
             value={secretRef}
             onChange={(e) => setSecretRef(e.target.value)}
           />
+          {kind === "google" ? (
+            <TextAreaField label={t("sso.hostedDomains")} hint={t("sso.hostedDomainsHint")} name="hostedDomains" dir="ltr" rows={3} required value={hosted} onChange={(e) => setHosted(e.target.value)} />
+          ) : null}
+          {kind === "adfs" && adConnection ? (
+            <>
+              <FactList facts={[{ key: "adfsConnection", label: t("sso.adfsConnection"), value: t("directory.sources.adds") }]} />
+              <p className="admin-meta">{t("sso.adfsConnectionHint")}</p>
+            </>
+          ) : null}
+          {kind === "adfs" && !adConnection ? <Alert tone="info" title={t("sso.adfsNoConnection")} /> : null}
           <Checkbox name="enabled" label={t("sso.enabled")} hint={t("sso.enabledHint")} checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
 
           <fieldset className="admin-fieldset">
@@ -151,32 +187,34 @@ export function IdentityAdmin({
             {jit ? <TextAreaField label={t("sso.domains")} hint={t("sso.domainsHint")} name="domains" dir="ltr" rows={3} value={domains} onChange={(e) => setDomains(e.target.value)} /> : null}
           </fieldset>
 
-          <fieldset className="admin-fieldset">
-            <legend>{t("sso.groupsTitle")}</legend>
-            <p className="admin-meta">{t("sso.groupsHint")}</p>
-            {mappings.map((m, i) => (
-              <div key={i} className="admin-mapping">
-                <FormField label={t("sso.groupId")} name={`group-${i}`} dir="ltr" value={m.groupId} onChange={(e) => setMapping(i, { groupId: e.target.value })} />
-                <SelectField label={t("sso.role")} name={`role-${i}`} value={m.roleKey} onChange={(e) => setMapping(i, { roleKey: e.target.value })} options={roles.map((r) => ({ value: r.key, label: r.name }))} />
-                <SelectField
-                  label={t("sso.scope")}
-                  name={`scope-${i}`}
-                  value={m.scopeType}
-                  onChange={(e) => setMapping(i, { scopeType: e.target.value, scopeId: e.target.value === "tenant" ? null : (m.scopeId ?? activeUnits[0]?.id ?? null) })}
-                  options={["tenant", "org_subtree", "org_unit"].map((s) => ({ value: s, label: t(`scopes.${s}`) }))}
-                />
-                {m.scopeType !== "tenant" ? (
-                  <SelectField label={t("sso.unit")} name={`unit-${i}`} value={m.scopeId ?? ""} onChange={(e) => setMapping(i, { scopeId: e.target.value })} options={activeUnits.map((u) => ({ value: u.id, label: unitLabel(u, locale) }))} />
-                ) : null}
-                <IconButton icon="trash" label={t("sso.removeMapping")} onClick={() => setMappings(mappings.filter((_, j) => j !== i))} />
+          {kind === "entra" ? (
+            <fieldset className="admin-fieldset">
+              <legend>{t("sso.groupsTitle")}</legend>
+              <p className="admin-meta">{t("sso.groupsHint")}</p>
+              {mappings.map((m, i) => (
+                <div key={i} className="admin-mapping">
+                  <FormField label={t("sso.groupId")} name={`group-${i}`} dir="ltr" value={m.groupId} onChange={(e) => setMapping(i, { groupId: e.target.value })} />
+                  <SelectField label={t("sso.role")} name={`role-${i}`} value={m.roleKey} onChange={(e) => setMapping(i, { roleKey: e.target.value })} options={roles.map((r) => ({ value: r.key, label: r.name }))} />
+                  <SelectField
+                    label={t("sso.scope")}
+                    name={`scope-${i}`}
+                    value={m.scopeType}
+                    onChange={(e) => setMapping(i, { scopeType: e.target.value, scopeId: e.target.value === "tenant" ? null : (m.scopeId ?? activeUnits[0]?.id ?? null) })}
+                    options={["tenant", "org_subtree", "org_unit"].map((s) => ({ value: s, label: t(`scopes.${s}`) }))}
+                  />
+                  {m.scopeType !== "tenant" ? (
+                    <SelectField label={t("sso.unit")} name={`unit-${i}`} value={m.scopeId ?? ""} onChange={(e) => setMapping(i, { scopeId: e.target.value })} options={activeUnits.map((u) => ({ value: u.id, label: unitLabel(u, locale) }))} />
+                  ) : null}
+                  <IconButton icon="trash" label={t("sso.removeMapping")} onClick={() => setMappings(mappings.filter((_, j) => j !== i))} />
+                </div>
+              ))}
+              <div className="ui-control-row">
+                <Button size="sm" icon="plus" onClick={() => setMappings([...mappings, { groupId: "", roleKey: roles[0]?.key ?? "employee", scopeType: "tenant", scopeId: null }])}>
+                  {t("sso.addMapping")}
+                </Button>
               </div>
-            ))}
-            <div className="ui-control-row">
-              <Button size="sm" icon="plus" onClick={() => setMappings([...mappings, { groupId: "", roleKey: roles[0]?.key ?? "employee", scopeType: "tenant", scopeId: null }])}>
-                {t("sso.addMapping")}
-              </Button>
-            </div>
-          </fieldset>
+            </fieldset>
+          ) : null}
           <div className="ui-control-row">
             <Button type="submit" variant="primary" busy={busy === "provider"} busyLabel={t("saving")}>
               {t("sso.save")}

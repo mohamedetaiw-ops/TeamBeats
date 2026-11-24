@@ -38982,6 +38982,22 @@
               "null",
               "boolean"
             ]
+          },
+          "hostedDomains": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "directoryConnectionId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
           }
         }
       },

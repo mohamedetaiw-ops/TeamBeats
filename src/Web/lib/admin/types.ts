@@ -122,6 +122,10 @@ export type IdentityProvider = {
   jitDomains: string[];
   groupRoleMap: GroupRoleMapping[];
   enabled: boolean;
+  hostedDomains: string[] | null;
+  directoryConnectionId: string | null;
+  lastProblem: string | null;
+  lastProblemAt: string | null;
 };
 
 export type DirectorySettings = {
