@@ -28,6 +28,7 @@ public static class EvaluationModule
         services.AddScoped<EvalSettingsService>();
         services.AddScoped<SuiteService>();
         services.AddScoped<DatasetService>();
+        services.AddScoped<UnitEvalSettings>();
         services.AddScoped<SearchJudgedSets>();
         services.AddScoped<PersonaService>();
         services.AddScoped<RunService>();
@@ -78,6 +79,15 @@ public static class EvaluationModule
         root.MapPut("/settings", async (SettingsRequest request, EvalSettingsService settings, IDbSession session, CancellationToken ct) =>
         {
             var view = await settings.SaveAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        // Organization level (R2 T023, US10): a unit's stricter thresholds and business datasets for it and below.
+        root.MapGet("/units/{unitId:guid}/settings", async (Guid unitId, UnitEvalSettings units, CancellationToken ct) => Results.Ok(await units.GetAsync(unitId, ct)));
+        root.MapPut("/units/{unitId:guid}/settings", async (Guid unitId, UnitSettingsRequest request, UnitEvalSettings units, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await units.SaveAsync(unitId, request, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });

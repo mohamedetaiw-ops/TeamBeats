@@ -1,13 +1,16 @@
 using System.Text;
 using System.Text.Json;
 using TeamBeats.Audit.Contracts;
+using TeamBeats.Entitlements.Contracts;
+using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
 using TeamBeats.TenantContext;
 
 namespace TeamBeats.Modules.Evaluation;
 
-public sealed record DatasetCreateRequest(Guid? AgentId, Dictionary<string, string>? Names);
+/// <summary>A new dataset of an agent, or with <paramref name="OrgUnitId"/> a business dataset of an organization unit (US10).</summary>
+public sealed record DatasetCreateRequest(Guid? AgentId, Dictionary<string, string>? Names, Guid? OrgUnitId = null);
 
 public sealed record DatasetCasesRequest(int? Version, List<CaseInput>? Cases);
 
@@ -23,14 +26,15 @@ public sealed record CaseView(int N, string Input, string Locale, Guid? PersonaI
 
 public sealed record DatasetVersionView(int Number, int CaseCount, string Classification, IReadOnlyList<string> Locales, string Source, Guid CreatedBy, DateTimeOffset CreatedAt);
 
-public sealed record DatasetView(Guid Id, Guid AgentId, Dictionary<string, string> Names, int Version, IReadOnlyList<DatasetVersionView> Versions, IReadOnlyList<CaseView> Cases, bool CanEdit);
+public sealed record DatasetView(Guid Id, Guid? AgentId, Dictionary<string, string> Names, int Version, IReadOnlyList<DatasetVersionView> Versions, IReadOnlyList<CaseView> Cases, bool CanEdit, Guid? OrgUnitId = null);
 
 /// <summary>
 /// Golden datasets (US2, FR-005). A dataset belongs to an agent and its unit. Versions never change: every edit or
 /// confirmed import makes the next version, so a version used as evidence stays as it was. A dataset takes the highest
 /// classification of its cases.
 /// </summary>
-public sealed class DatasetService(IDbSession session, ITenantContext context, EvalAccess access, IAuditWriter audit, IClock clock)
+public sealed class DatasetService(IDbSession session, ITenantContext context, EvalAccess access, IOrganizationHierarchy org, IEntitlementService entitlements,
+    IAuditWriter audit, IClock clock)
 {
     public const int MaxImportBytes = 2 * 1024 * 1024;
 
@@ -45,6 +49,18 @@ public sealed class DatasetService(IDbSession session, ITenantContext context, E
             r => new DatasetSummary(r.GetGuid(0), JsonSerializer.Deserialize<Dictionary<string, string>>(r.GetString(1))!, r.GetInt32(2), r.GetInt32(3), r.GetString(4),
                 r.GetFieldValue<string[]>(5), r.GetFieldValue<DateTimeOffset>(6)), ct);
 
+    /// <summary>The business datasets of an organization unit (US10).</summary>
+    internal static async Task<IReadOnlyList<DatasetSummary>> OrgSummariesAsync(IDbSession session, Guid unitId, CancellationToken ct) =>
+        await session.QueryAsync(
+            """
+            select d.id, d.names::text, d.current_version, coalesce(v.case_count, 0), coalesce(v.classification, 'internal'), coalesce(v.locales, '{}'), d.updated_at
+            from evaluation.dataset d
+            left join evaluation.dataset_version v on v.dataset_id = d.id and v.number = d.current_version
+            where d.kind = 'org' and d.org_unit_id = @unit order by d.created_at, d.id
+            """, new { unit = unitId },
+            r => new DatasetSummary(r.GetGuid(0), JsonSerializer.Deserialize<Dictionary<string, string>>(r.GetString(1))!, r.GetInt32(2), r.GetInt32(3), r.GetString(4),
+                r.GetFieldValue<string[]>(5), r.GetFieldValue<DateTimeOffset>(6)), ct);
+
     public async Task<IReadOnlyList<DatasetSummary>> ListAsync(Guid agentId, CancellationToken ct)
     {
         _ = await access.ReadableAgentAsync(agentId, ct);
@@ -54,15 +70,30 @@ public sealed class DatasetService(IDbSession session, ITenantContext context, E
     public async Task<DatasetView> CreateAsync(DatasetCreateRequest request, CancellationToken ct)
     {
         var errors = new ValidationErrors();
-        if (request.AgentId is null)
+        if ((request.AgentId is null) == (request.OrgUnitId is null))
         {
             errors.Add("agentId", "validation.eval.dataset_agent");
         }
         var names = Names(request.Names, errors);
         errors.ThrowIfAny();
-        var agent = await access.DesignableAgentAsync(request.AgentId!.Value, ct);
         var id = Ids.New();
         var now = clock.UtcNow;
+        if (request.OrgUnitId is { } unit)
+        {
+            // A business dataset of an organization unit (US10): its agents and those of the units below are tested on it.
+            if (!await org.UnitExistsAsync(unit, ct) || !await access.CanDesignUnitAsync(unit, ct))
+            {
+                throw AppException.NotFound();
+            }
+            await entitlements.DemandAsync(Capabilities.AiEvalsAdvanced, ct);
+            await session.ExecAsync(
+                """
+                insert into evaluation.dataset (tenant_id, id, agent_id, org_unit_id, names, current_version, created_by, created_at, updated_at, kind)
+                values (platform.current_tenant_id(), @id, null, @unit, @names, 0, @user, @now, @now, 'org')
+                """, new { id, unit, names = Jsonb.From(names), user = context.RequireUser(), now }, ct);
+            return await GetAsync(id, null, ct);
+        }
+        var agent = await access.DesignableAgentAsync(request.AgentId!.Value, ct);
         await session.ExecAsync(
             """
             insert into evaluation.dataset (tenant_id, id, agent_id, org_unit_id, names, current_version, created_by, created_at, updated_at)
@@ -81,17 +112,39 @@ public sealed class DatasetService(IDbSession session, ITenantContext context, E
         return clean;
     }
 
-    private async Task<(Guid Agent, Guid Unit, int Version, Dictionary<string, string> Names)> LoadAsync(Guid id, CancellationToken ct)
+    private async Task<(Guid? Agent, Guid Unit, int Version, Dictionary<string, string> Names)> LoadAsync(Guid id, CancellationToken ct)
     {
-        var rows = await session.QueryAsync("select agent_id, org_unit_id, current_version, names::text from evaluation.dataset where id = @id and kind = 'agent'", new { id },
-            r => (r.GetGuid(0), r.GetGuid(1), r.GetInt32(2), JsonSerializer.Deserialize<Dictionary<string, string>>(r.GetString(3))!), ct);
+        var rows = await session.QueryAsync("select agent_id, org_unit_id, current_version, names::text from evaluation.dataset where id = @id and kind in ('agent', 'org')",
+            new { id }, r => (r.Get<Guid?>("agent_id"), r.GetGuid(1), r.GetInt32(2), JsonSerializer.Deserialize<Dictionary<string, string>>(r.GetString(3))!), ct);
         return rows.Count == 0 ? throw AppException.NotFound() : rows[0];
+    }
+
+    /// <summary>Whether the person may read the dataset (an agent's: as its evaluation; a unit's: in scope of the unit), and edit it.</summary>
+    private async Task<bool> ReadableAsync((Guid? Agent, Guid Unit, int Version, Dictionary<string, string> Names) d, CancellationToken ct)
+    {
+        if (d.Agent is { } agentId)
+        {
+            return await access.CanDesignAsync(await access.ReadableAgentAsync(agentId, ct), ct);
+        }
+        if (!await access.CanReadUnitAsync(d.Unit, ct))
+        {
+            throw AppException.NotFound();
+        }
+        return await access.CanDesignUnitAsync(d.Unit, ct);
+    }
+
+    private async Task DemandDesignAsync((Guid? Agent, Guid Unit, int Version, Dictionary<string, string> Names) d, CancellationToken ct)
+    {
+        if (!await ReadableAsync(d, ct))
+        {
+            throw AppException.Denied();
+        }
     }
 
     public async Task<DatasetView> GetAsync(Guid id, int? version, CancellationToken ct)
     {
         var d = await LoadAsync(id, ct);
-        var agent = await access.ReadableAgentAsync(d.Agent, ct);
+        var canEdit = await ReadableAsync(d, ct);
         var number = version ?? d.Version;
         var versions = await session.QueryAsync(
             "select number, case_count, classification, locales, source, created_by, created_at from evaluation.dataset_version where dataset_id = @id order by number desc",
@@ -101,7 +154,7 @@ public sealed class DatasetService(IDbSession session, ITenantContext context, E
         {
             throw AppException.NotFound();
         }
-        return new DatasetView(id, d.Agent, d.Names, number, versions, await CasesAsync(id, number, ct), await access.CanDesignAsync(agent, ct));
+        return new DatasetView(id, d.Agent, d.Names, number, versions, await CasesAsync(id, number, ct), canEdit, d.Unit);
     }
 
     internal async Task<IReadOnlyList<CaseView>> CasesAsync(Guid id, int version, CancellationToken ct) =>
@@ -115,7 +168,7 @@ public sealed class DatasetService(IDbSession session, ITenantContext context, E
     public async Task<DatasetView> SaveCasesAsync(Guid id, DatasetCasesRequest request, CancellationToken ct)
     {
         var d = await LoadAsync(id, ct);
-        _ = await access.DesignableAgentAsync(d.Agent, ct);
+        await DemandDesignAsync(d, ct);
         if (request.Version != d.Version)
         {
             throw AppException.Conflict("conflict.eval.dataset_version");
@@ -182,7 +235,7 @@ public sealed class DatasetService(IDbSession session, ITenantContext context, E
         }
     }
 
-    private async Task<int> WriteVersionAsync(Guid id, (Guid Agent, Guid Unit, int Version, Dictionary<string, string> Names) d, IReadOnlyList<CaseInput> cases, string source,
+    private async Task<int> WriteVersionAsync(Guid id, (Guid? Agent, Guid Unit, int Version, Dictionary<string, string> Names) d, IReadOnlyList<CaseInput> cases, string source,
         CancellationToken ct)
     {
         var number = d.Version + 1;
@@ -221,7 +274,7 @@ public sealed class DatasetService(IDbSession session, ITenantContext context, E
     public async Task<ImportPreview> ImportAsync(Guid id, ImportRequest request, CancellationToken ct)
     {
         var d = await LoadAsync(id, ct);
-        _ = await access.DesignableAgentAsync(d.Agent, ct);
+        await DemandDesignAsync(d, ct);
         if (request.Content is null || Encoding.UTF8.GetByteCount(request.Content) > MaxImportBytes)
         {
             throw AppException.Validation("content", "validation.eval.import_size");
@@ -278,7 +331,7 @@ public sealed class DatasetService(IDbSession session, ITenantContext context, E
     public async Task<DatasetView> ConfirmImportAsync(Guid id, Guid importId, CancellationToken ct)
     {
         var d = await LoadAsync(id, ct);
-        _ = await access.DesignableAgentAsync(d.Agent, ct);
+        await DemandDesignAsync(d, ct);
         var rows = await session.QueryAsync(
             "select base_version, cases::text, created_by from evaluation.import where id = @importId and dataset_id = @id and confirmed_at is null",
             new { importId, id }, r => (Base: r.GetInt32(0), Cases: r.GetString(1), By: r.GetGuid(2)), ct);

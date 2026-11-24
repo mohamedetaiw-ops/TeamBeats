@@ -49,7 +49,7 @@ public sealed record CaseResultView(int N, string Suite, Guid? DatasetId, int? D
 /// <c>eval.view</c> across the tenant reads it.
 /// </summary>
 public sealed class RunService(IDbSession session, ITenantContext context, EvalAccess access, SuiteService suites, DatasetService datasets,
-    EvalSettingsService settings, PersonaService personas, RouteGates routes, RetrievalGates retrievals, CalibrationService calibration, IOrganizationHierarchy organization,
+    EvalSettingsService settings, UnitEvalSettings units, PersonaService personas, RouteGates routes, RetrievalGates retrievals, CalibrationService calibration, IOrganizationHierarchy organization,
     ITenantSettingsReader tenantSettings, IOutbox outbox, IClock clock, ILogger<RunService> logger)
 {
     public const int MaxCases = 5000;
@@ -315,6 +315,9 @@ public sealed class RunService(IDbSession session, ITenantContext context, EvalA
     {
         var languages = agent.Languages.Count > 0 ? agent.Languages : ["en"];
         var tenant = await settings.TenantRulesAsync(ct);
+        // The units' stricter rules apply to every suite of the agent, the strictest of all levels in force (US10, FR-020).
+        var path = await units.PathAsync(agent.OrgUnitId, ct);
+        var orgRules = UnitEvalSettings.Rules(path).ToList();
         var demoted = withCases ? await calibration.DemotedAsync(ct) : new HashSet<string>();
         var list = new List<RunSuite>();
         var cases = new List<PlannedCase>();
@@ -340,13 +343,28 @@ public sealed class RunService(IDbSession session, ITenantContext context, EvalA
                 }
                 list.Add(new RunSuite(AgentSuiteKey, "agent", mine.Version, mine.Metrics, [], uses));
             }
+            foreach (var level in path.Where(l => l.Metrics.Count > 0))
+            {
+                var uses = new List<DatasetUse>();
+                foreach (var datasetId in level.Datasets)
+                {
+                    if (await OrgDatasetVersionAsync(datasetId, level.UnitId, ct) is > 0 and var v)
+                    {
+                        uses.Add(new DatasetUse(datasetId, v));
+                    }
+                }
+                if (uses.Count > 0)
+                {
+                    list.Add(new RunSuite(UnitEvalSettings.SuiteKey(level.UnitId), EvalLevels.Organization, level.Version, level.Metrics, [], uses));
+                }
+            }
             return (list, cases);
         }
 
         foreach (var suite in PlatformSuites.For(agent.TemplateId))
         {
             var rules = ThresholdRules.Effective(suite.Metrics.Select(m => m.Key),
-                [(EvalLevels.Platform, ThresholdRules.PlatformRules), (EvalLevels.Platform, ThresholdRules.Rules(suite.Metrics)), (EvalLevels.Tenant, tenant)]);
+                [(EvalLevels.Platform, ThresholdRules.PlatformRules), (EvalLevels.Platform, ThresholdRules.Rules(suite.Metrics)), (EvalLevels.Tenant, tenant), .. orgRules]);
             list.Add(new RunSuite(suite.Key, "platform", suite.Version, suite.Metrics, CalibrationService.Demote(rules, demoted), []));
             for (var i = 0; i < suite.Cases.Count; i++)
             {
@@ -362,7 +380,7 @@ public sealed class RunService(IDbSession session, ITenantContext context, EvalA
         if (own.Id is not null && own.Metrics.Count > 0)
         {
             var rules = ThresholdRules.Effective(own.Metrics.Select(m => m.Key),
-                [(EvalLevels.Platform, ThresholdRules.PlatformRules), (EvalLevels.Tenant, tenant), (EvalLevels.Agent, ThresholdRules.Rules(own.Metrics))]);
+                [(EvalLevels.Platform, ThresholdRules.PlatformRules), (EvalLevels.Tenant, tenant), .. orgRules, (EvalLevels.Agent, ThresholdRules.Rules(own.Metrics))]);
             var uses = new List<DatasetUse>();
             foreach (var datasetId in own.Datasets)
             {
@@ -384,8 +402,41 @@ public sealed class RunService(IDbSession session, ITenantContext context, EvalA
             }
             list.Add(new RunSuite(AgentSuiteKey, "agent", own.Version, own.Metrics, CalibrationService.Demote(rules, demoted), uses));
         }
+
+        // The business datasets of the agent's unit and the units above, each unit's as an inherited suite (US10).
+        foreach (var level in path.Where(l => l.Metrics.Count > 0))
+        {
+            var rules = ThresholdRules.Effective(level.Metrics.Select(m => m.Key),
+                [(EvalLevels.Platform, ThresholdRules.PlatformRules), (EvalLevels.Tenant, tenant), .. orgRules]);
+            var uses = new List<DatasetUse>();
+            foreach (var datasetId in level.Datasets)
+            {
+                if (await OrgDatasetVersionAsync(datasetId, level.UnitId, ct) is not { } version || version < 1)
+                {
+                    continue;
+                }
+                uses.Add(new DatasetUse(datasetId, version));
+                foreach (var c in await datasets.CasesAsync(datasetId, version, ct))
+                {
+                    if (languages.Contains(c.Locale))
+                    {
+                        cases.Add(new PlannedCase(UnitEvalSettings.SuiteKey(level.UnitId), datasetId, version, c.N, c.Locale, c.Input, c.Expect, await PersonaAsync(c.PersonaId),
+                            c.Severity, c.Classification));
+                    }
+                }
+            }
+            if (uses.Count > 0)
+            {
+                list.Add(new RunSuite(UnitEvalSettings.SuiteKey(level.UnitId), EvalLevels.Organization, level.Version, level.Metrics, CalibrationService.Demote(rules, demoted),
+                    uses));
+            }
+        }
         return (list, cases);
     }
+
+    private async Task<int?> OrgDatasetVersionAsync(Guid datasetId, Guid unitId, CancellationToken ct) =>
+        await session.ScalarAsync<int?>("select current_version from evaluation.dataset where id = @datasetId and kind = 'org' and org_unit_id = @unitId",
+            new { datasetId, unitId }, ct);
 
     /// <summary>The key of an agent's own suite in a run.</summary>
     public const string AgentSuiteKey = "agent";
