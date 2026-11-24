@@ -14,8 +14,8 @@ Depends on 004, 005, 006, 007, 008. R1: US1 to US4. R2: US5 to US8.
 - [x] T009 Wire existing "notify" points (critical announcements, approvals, security alerts) once their modules exist; burst performance test; OpenAPI; spec evidence
 
 ## R2
-- [ ] T010 [P] [US5] Tests: Teams delivery, quick actions with the same checks and step-up, fallback when disabled
-- [ ] T011 [US5] Teams channel sender and quick actions (activity notifications with email fallback done; quick actions open)
+- [x] T010 [P] [US5] Tests: Teams delivery, quick actions with the same checks and step-up, fallback when disabled
+- [x] T011 [US5] Teams channel sender and quick actions
 - [x] T012 [US6] Push, Slack and SMS channel senders with one SMS per message
 - [x] T013 [US7] Signage screens and signed feed with revocation within 1 minute
 - [x] T014 [US8] Delivery reports for audience sends

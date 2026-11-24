@@ -32,6 +32,9 @@ public static class IntegrationsModule
     {
         services.AddHttpClient(HttpMicrosoftGraph.ClientName, c => c.Timeout = TimeSpan.FromSeconds(15));
         services.AddSingleton<IMicrosoftGraph, HttpMicrosoftGraph>();
+        services.AddHttpClient(BotFramework.ClientName, c => c.Timeout = TimeSpan.FromSeconds(15));
+        services.AddSingleton<BotFramework>();
+        services.AddScoped<ITeamsBot, TeamsBot>();
         services.AddScoped<ConnectionService>();
         services.AddScoped<IConnectionFeatures, ConnectionFeatures>();
         services.AddScoped<IConnectedSystems, ConnectedSystems>();

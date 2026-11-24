@@ -2913,5 +2913,15 @@
   "conflict.theme.extension_exists": "This scope already has an extension with that key",
   "conflict.theme.extension_approved": "An approved extension cannot be changed. Remove it and propose a new one.",
   "conflict.theme.extension_reviewed": "This extension was already reviewed",
-  "authz.denied.extension_own_proposal": "Someone other than the person who proposed it must review this extension"
+  "authz.denied.extension_own_proposal": "Someone other than the person who proposed it must review this extension",
+  "notifications.teams.open": "Open in TeamBeats",
+  "notifications.teams.reason": "Reason (needed to reject)",
+  "notifications.teams.quick.done": "Your answer is recorded in TeamBeats.",
+  "notifications.teams.quick.closed": "This is no longer waiting for you. Someone else may have answered it, or it was withdrawn.",
+  "notifications.teams.quick.denied": "You can no longer answer this. Open it in TeamBeats to see why.",
+  "notifications.teams.quick.step_up": "Your organization asks you to finish this in TeamBeats. Open it there to confirm.",
+  "notifications.teams.quick.reason_required": "Write a reason in the box, then press reject again.",
+  "notifications.teams.quick.expired": "This button has expired or was already used. Open TeamBeats for the latest.",
+  "services.quick.approve": "Approve",
+  "services.quick.reject": "Reject"
 }

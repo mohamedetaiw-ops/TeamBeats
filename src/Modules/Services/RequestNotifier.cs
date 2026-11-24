@@ -105,7 +105,7 @@ public sealed class RequestNotifier(IDbSession session, Requests requests, IRepo
         }
         await notifications.SendAsync(new NotificationRequest(list, NotificationCategories.ApprovalWaiting, Waiting, TaskLink(row.Id, message.TaskId),
             new Dictionary<string, string> { ["number"] = row.Number },
-            DedupeKey: "task:" + message.TaskId.ToString("N")), ct);
+            DedupeKey: "task:" + message.TaskId.ToString("N"), Actions: TaskQuickActions.For(message.TaskId)), ct);
     }
 
     /// <summary>A step of a step graph route is overdue: the people it waits for are reminded once (US5 scenario 2).</summary>
@@ -181,8 +181,10 @@ public sealed class RequestNotifier(IDbSession session, Requests requests, IRepo
         var list = await CandidatesAsync(row, graph, elementId, ct);
         if (list.Length > 0)
         {
+            // An approval step can be answered from Teams; a task step needs its page.
+            var actions = graph.Step(RouteGraph.StepIdOf(elementId)) is { Type: StepTypes.Approval } ? TaskQuickActions.For(taskId) : null;
             await notifications.SendAsync(new NotificationRequest(list, NotificationCategories.ApprovalWaiting, template, TaskLink(row.Id, taskId),
-                new Dictionary<string, string> { ["number"] = row.Number }, DedupeKey: dedupe), ct);
+                new Dictionary<string, string> { ["number"] = row.Number }, DedupeKey: dedupe, Actions: actions), ct);
         }
     }
 

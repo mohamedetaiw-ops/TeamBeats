@@ -125,6 +125,8 @@ public static class FakeSystemsSetup
         services.AddSingleton(systems);
         services.AddHttpClient(HttpOidcProvider.ClientName).ConfigurePrimaryHttpMessageHandler(() => systems.Entra);
         services.AddHttpClient(HttpMicrosoftGraph.ClientName).ConfigurePrimaryHttpMessageHandler(() => systems.Graph);
+        // The Teams bot (spec 015 FR-018) talks to the fake Bot Framework of the same fake.
+        services.AddHttpClient(TeamBeats.Modules.Integrations.Microsoft365.BotFramework.ClientName).ConfigurePrimaryHttpMessageHandler(() => systems.Graph);
         services.AddHttpClient(OpenRouterClient).ConfigurePrimaryHttpMessageHandler(() => systems.OpenRouter);
         services.AddHttpClient(PrivateModelsClient).ConfigurePrimaryHttpMessageHandler(FakeOpenRouter.Private);
         services.AddHttpClient(TeamBeats.Modules.Integrations.Weather.OpenMeteoWeather.ClientName).ConfigurePrimaryHttpMessageHandler(() => systems.Weather);

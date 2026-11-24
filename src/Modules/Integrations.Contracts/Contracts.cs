@@ -811,6 +811,50 @@ public interface ITeamsMessaging
     Task<bool> AvailableAsync(CancellationToken ct = default);
 
     Task<TeamsSendOutcome> SendActivityAsync(Guid userId, string title, string text, string link, CancellationToken ct = default);
+
+    /// <summary>
+    /// A bot message with quick actions (spec 015 US5 scenario 2): an Adaptive Card in the person's chat with the
+    /// TeamBeats bot. <see cref="TeamsSendOutcome.NotInstalled"/> when the bot is not installed for the person, and
+    /// <see cref="TeamsSendOutcome.Unavailable"/> when this installation has no bot; the caller then sends the activity
+    /// notification instead.
+    /// </summary>
+    Task<TeamsSendOutcome> SendCardAsync(Guid userId, TeamsCard card, CancellationToken ct = default);
+
+    /// <summary>
+    /// True when the Teams caller is this person of the current tenant: the call came from the directory of the tenant's
+    /// Microsoft 365 connection with Teams granted, and the person is linked under that Entra object ID.
+    /// </summary>
+    Task<bool> IsPersonAsync(Guid userId, string entraTenantId, string aadObjectId, CancellationToken ct = default);
+}
+
+/// <summary>A button of a Teams card: its verb, its label in the person's language and the opaque token it sends back.</summary>
+public sealed record TeamsCardAction(string Verb, string Label, string Token, bool NeedsReason);
+
+/// <summary>
+/// A Teams bot card: title, text and the TeamBeats link, the quick actions, and the label of the reason field shown
+/// when an action needs one. Texts are already in the person's language.
+/// </summary>
+public sealed record TeamsCard(string Title, string Text, string Link, string OpenLabel, IReadOnlyList<TeamsCardAction> Actions, string? ReasonLabel, bool Rtl = false);
+
+/// <summary>What the card shows after a quick action: the outcome in the person's language, and a TeamBeats link when there is one.</summary>
+public sealed record TeamsCardReply(string Text, string? Link, string? OpenLabel, bool Rtl = false);
+
+/// <summary>A quick action pressed in Teams, as the bot received it after the Bot Framework token was checked.</summary>
+public sealed record TeamsBotAction(string EntraTenantId, string AadObjectId, string Verb, string Token, string? Reason);
+
+/// <summary>A call to the bot endpoint: whether Bot Framework signed it, and the quick action it carries, if any.</summary>
+public sealed record TeamsBotCall(bool Authentic, TeamsBotAction? Action);
+
+/// <summary>
+/// The TeamBeats Teams bot (spec 015 FR-018): reads what Teams posts to the bot endpoint and answers it. A call counts
+/// only when its Bot Framework token is valid for this bot and names the same service address as the activity.
+/// </summary>
+public interface ITeamsBot
+{
+    Task<TeamsBotCall> ReadAsync(string? authorization, string body, CancellationToken ct = default);
+
+    /// <summary>The answer to a quick action: the card that replaces the one the person pressed. Links are paths on the tenant host.</summary>
+    Task<object> ReplyAsync(TeamsCardReply reply, CancellationToken ct = default);
 }
 
 /// <summary>What happened to an SMS.</summary>

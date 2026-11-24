@@ -14,7 +14,7 @@ namespace TeamBeats.Modules.Integrations.Microsoft365;
 /// platform has a Teams app ID (<c>Integrations:Microsoft365:TeamsAppId</c>), otherwise in the browser.
 /// </summary>
 public sealed class TeamsActivity(IDbSession session, IEntitlementService entitlements, IMicrosoftGraph graph, IProvisioningTarget identities,
-    IDirectorySource directory, TenantLinks links, IConfiguration configuration) : ITeamsMessaging
+    IDirectorySource directory, TenantLinks links, IConfiguration configuration, BotFramework bot) : ITeamsMessaging
 {
     /// <summary>Teams shows at most 150 characters of preview text.</summary>
     public const int MaxPreview = 150;
@@ -77,6 +77,26 @@ public sealed class TeamsActivity(IDbSession session, IEntitlementService entitl
             return TeamsSendOutcome.NotInstalled;
         }
     }
+
+    public async Task<TeamsSendOutcome> SendCardAsync(Guid userId, TeamsCard card, CancellationToken ct = default)
+    {
+        if (!bot.Enabled || await DirectoryAsync(ct) is not { } external)
+        {
+            return TeamsSendOutcome.Unavailable;
+        }
+        if (await identities.ExternalIdAsync(userId, directory.IssuerFor(external), ct) is not { } objectId || !Guid.TryParse(objectId, out _))
+        {
+            return TeamsSendOutcome.NotLinked;
+        }
+        var url = DeepLink(await links.AbsoluteAsync(card.Link, ct));
+        var fitted = card with { Title = Fit(card.Title, 120), Text = Fit(card.Text, 400) };
+        return await bot.SendAsync(external, objectId, BotFramework.Card(fitted, url, card.Rtl), fitted.Title, ct);
+    }
+
+    public async Task<bool> IsPersonAsync(Guid userId, string entraTenantId, string aadObjectId, CancellationToken ct = default) =>
+        await DirectoryAsync(ct) is { } external && Guid.TryParse(external, out var mine) && Guid.TryParse(entraTenantId, out var caller) && mine == caller
+        && await identities.ExternalIdAsync(userId, directory.IssuerFor(external), ct) is { } objectId
+        && Guid.TryParse(objectId, out var linked) && Guid.TryParse(aadObjectId, out var presented) && linked == presented;
 
     /// <summary>A Teams deep link to the TeamBeats app showing the page, or the page itself when no Teams app is registered.</summary>
     private string DeepLink(string url) =>

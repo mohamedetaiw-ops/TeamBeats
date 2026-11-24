@@ -49,6 +49,9 @@ public sealed class CrossTenantSuite(TenantWorld world, ITestOutputHelper output
         // Spec 015 US7: a location signage screen reads its feed with its own signed token, not a session;
         // SignageScreenTests covers unknown, replaced and revoked tokens and the tenant boundary.
         "GET /api/v1/screens/{token}",
+        // Spec 015 FR-018: Bot Framework posts Teams quick actions with its own signed token, on the platform host only; each
+        // action carries a one-use token bound to one person. TeamsQuickActionTests covers forged, foreign and expired presses.
+        "POST /api/v1/notifications/teams/bot",
         // Spec 028 US7: package content is opened with its launch token, not a session; a CORS preflight carries neither.
         // Every other content route refuses an unknown token, which this suite checks.
         "OPTIONS /api/v1/learning/content/{token}/{**path}",

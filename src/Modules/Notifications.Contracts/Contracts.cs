@@ -19,7 +19,50 @@ public sealed record NotificationRequest(
     IReadOnlyDictionary<string, string>? Parameters = null,
     bool Urgent = false,
     string? DedupeKey = null,
-    string? GroupKey = null);
+    string? GroupKey = null,
+    NotificationActions? Actions = null);
+
+/// <summary>
+/// Quick actions a Teams message offers for a notification (spec 015 US5 scenario 2, FR-018): the owning module's
+/// <see cref="INotificationActionHandler"/> named <paramref name="Handler"/> runs them on <paramref name="Target"/>,
+/// as the person who pressed them and with the same checks as the module's own endpoint.
+/// </summary>
+public sealed record NotificationActions(string Handler, string Target, IReadOnlyList<string> Actions);
+
+/// <summary>What a quick action did.</summary>
+public enum QuickActionOutcome
+{
+    Done,
+
+    /// <summary>The action needs a fresh sign-in, so the person finishes it in TeamBeats.</summary>
+    StepUpRequired,
+
+    /// <summary>The thing is no longer waiting for this person: done by someone else, withdrawn or ended.</summary>
+    Closed,
+    Denied,
+
+    /// <summary>The action needs a reason and none was given.</summary>
+    ReasonRequired,
+}
+
+/// <summary>
+/// Runs quick actions of one owning module (spec 015 FR-018). It is called with the tenant and the person in context,
+/// exactly as the module's own endpoint is, and must apply the same authorization and checks.
+/// </summary>
+public interface INotificationActionHandler
+{
+    string Handler { get; }
+
+    /// <summary>The resource key of the action's button label, or null when the module does not offer it.</summary>
+    string? LabelKey(string action);
+
+    bool NeedsReason(string action);
+
+    /// <summary>True when the action is one the module protects with step-up, so it is never run from outside TeamBeats.</summary>
+    bool RequiresStepUp(string action);
+
+    Task<QuickActionOutcome> RunAsync(string target, string action, string? reason, CancellationToken ct = default);
+}
 
 /// <summary>What happened to a send: created per recipient, folded into an existing group, dropped as a repeat, or skipped.</summary>
 public sealed record SendResult(int Created, int Grouped, int Duplicates, int Skipped);

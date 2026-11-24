@@ -23,6 +23,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="SSH.NET" />
+    <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" />
     <PackageReference Include="PDFsharp" />
     <PackageReference Include="System.Security.Cryptography.Pkcs" />
   </ItemGroup>

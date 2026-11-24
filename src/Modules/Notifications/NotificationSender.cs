@@ -27,6 +27,7 @@ public sealed class NotificationSender(
     ITeamsMessaging teams,
     ISmsMessaging sms,
     IDirectoryReader directory,
+    IEnumerable<INotificationActionHandler> actionHandlers,
     ILogger<NotificationSender> logger) : INotificationSender
 {
     public static readonly TimeSpan DedupeWindow = TimeSpan.FromHours(1);
@@ -41,6 +42,7 @@ public sealed class NotificationSender(
         var mandatory = tenantSettings.IsMandatory(request.Category);
         var now = clock.UtcNow;
         var parameters = new Jsonb(JsonSerializer.Serialize(request.Parameters ?? new Dictionary<string, string>(), JsonDefaults.Options));
+        var actions = request.Actions is { } offered ? JsonSerializer.Serialize(offered, JsonDefaults.Options) : null;
 
         int created = 0, grouped = 0, duplicates = 0, skipped = 0;
         var recipients = request.Recipients.Distinct().ToList();
@@ -99,14 +101,15 @@ public sealed class NotificationSender(
             await session.ExecAsync(
                 """
                 insert into notifications.notification
-                  (tenant_id, id, user_id, category, mandatory, urgent, template_key, parameters, link, dedupe_key, group_key, created_at, updated_at)
-                select platform.current_tenant_id(), r.id, r.user_id, @category, @mandatory, @urgent, @template, @parameters, @link, @dedupe, @group, @now, @now
+                  (tenant_id, id, user_id, category, mandatory, urgent, template_key, parameters, link, dedupe_key, group_key, actions, created_at, updated_at)
+                select platform.current_tenant_id(), r.id, r.user_id, @category, @mandatory, @urgent, @template, @parameters, @link, @dedupe, @group,
+                  @actions::text::jsonb, @now, @now
                 from unnest(@ids, @userIds) as r(id, user_id)
                 """,
                 new
                 {
                     ids = rows.Select(r => r.Id).ToArray(), userIds = rows.Select(r => r.UserId).ToArray(), category = request.Category, mandatory,
-                    urgent = request.Urgent, template = request.TemplateKey, parameters, link = request.Link, dedupe = request.DedupeKey, group = request.GroupKey, now,
+                    urgent = request.Urgent, template = request.TemplateKey, parameters, link = request.Link, dedupe = request.DedupeKey, group = request.GroupKey, actions, now,
                 }, ct);
             created = rows.Count;
             await QueueEmailAsync(rows, accounts, request, mandatory, now, ct);
@@ -214,8 +217,15 @@ public sealed class NotificationSender(
             }, ct);
     }
 
-    private static void Validate(NotificationRequest request)
+    private void Validate(NotificationRequest request)
     {
+        // Quick actions are offered by a module for its own handler; an unknown handler or action is a programming error.
+        if (request.Actions is { } offered
+            && (actionHandlers.FirstOrDefault(h => h.Handler == offered.Handler) is not { } handler || offered.Actions.Count == 0
+                || offered.Actions.Any(a => handler.LabelKey(a) is null) || string.IsNullOrWhiteSpace(offered.Target)))
+        {
+            throw new ArgumentException($"Unknown quick action handler or action for {offered.Handler}.", nameof(request));
+        }
         var errors = new ValidationErrors();
         if (NotificationCategories.Find(request.Category) is null)
         {

@@ -189,6 +189,9 @@ public static class AuditActions
     public const string NotificationSignageScreenRotated = "notifications.signage_screen_rotated";
     public const string NotificationSignageScreenRevoked = "notifications.signage_screen_revoked";
 
+    /// <summary>Spec 015 FR-018: a quick action was pressed in Teams (done, handed to TeamBeats, closed or refused).</summary>
+    public const string NotificationQuickActionUsed = "notifications.quick_action_used";
+
     // 022
     public const string HrCalendarChanged = "hr.calendar_changed";
     public const string HrLeaveSubmitted = "hr.leave_submitted";
@@ -685,7 +688,7 @@ public static class AuditActions
         PageCreated, PagePublished, PageRolledBack, PageTemplateChanged, PageSubmitted, PageApproved, PageReturned, PageRouteChanged, PageScheduled, PageScheduleCancelled, PageScheduleFailed, PageExpired, FragmentChanged, FragmentArchived, ComponentEnabled, ComponentDisabled, ComponentUpgraded, ComponentRolledBack,
         TemplateReleased, TemplateDistributed, TemplateDeprecated, TemplateImported, TemplateExported, FeatureControlChanged, RegionLockChanged,
         ThemePublished, ThemeDrafted, ThemeSubmitted, ThemeApproved, ThemeReturned, ThemeScheduled, ThemeRolledBack, ThemeTokensImported, ThemeExtensionProposed, ThemeExtensionApproved, ThemeExtensionRejected, ThemeExtensionRemoved, BrandAssigned, BrandUnassigned, ExperienceLockChanged,
-        NotificationSettingsChanged, NotificationRelayTested, NotificationTemplateOverridden, NotificationSignageScreenRegistered, NotificationSignageScreenRotated, NotificationSignageScreenRevoked,
+        NotificationSettingsChanged, NotificationRelayTested, NotificationTemplateOverridden, NotificationSignageScreenRegistered, NotificationSignageScreenRotated, NotificationSignageScreenRevoked, NotificationQuickActionUsed,
         HrCalendarChanged, HrSettingsChanged, HrMatchLinked, HrMatchUnlinked, HrSyncHeld, HrSyncConfirmed, HrChangeApplied, HrOrgCodeMapped, DisabledByHr, ReenabledByHr,
         HrPayslipViewed, HrPayslipDownloaded,
         HrLeaveSubmitted, HrLeaveApproved, HrLeaveRejected, HrLeaveCancelled, HrLeaveShortened, HrLeaveOnBehalf, HrBalanceAdjusted, HrLeaveTypeChanged, HrLeavePolicyChanged,
