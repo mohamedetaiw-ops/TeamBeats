@@ -1032,16 +1032,26 @@
         "off": "Off",
         "notSet": "Not set up",
         "intro": "People sign in with their work account at your identity provider. Choose the provider, register TeamBeats there, then enter its details here.",
+        "protocol": "Protocol",
+        "protocols": {
+          "oidc": "OpenID Connect",
+          "saml": "SAML 2.0"
+        },
         "kind": "Identity provider",
         "kinds": {
           "entra": "Microsoft Entra ID",
           "google": "Google Workspace",
-          "adfs": "AD FS (on-premises Active Directory)"
+          "adfs": "AD FS (on-premises Active Directory)",
+          "generic": "Any SAML 2.0 provider"
         },
         "kindHints": {
           "entra": "Work Microsoft accounts, including Active Directory synced to Entra ID.",
           "google": "Accounts of your Google Workspace domains.",
           "adfs": "Domain accounts through your own AD FS, for Active Directory without Entra ID."
+        },
+        "samlKindHints": {
+          "generic": "Any SAML 2.0 identity provider, such as Okta, PingFederate or Shibboleth.",
+          "adfs": "Domain accounts through your own AD FS relying party trust, for Active Directory without Entra ID."
         },
         "displayName": "Button name",
         "displayNameHint": "Shown on the sign-in page, such as Sign in with Contoso",
@@ -1059,6 +1069,22 @@
         },
         "hostedDomains": "Google Workspace domains",
         "hostedDomainsHint": "Only accounts of these domains get in. One per line, such as contoso.com",
+        "spEntityId": "TeamBeats identifier (entity ID)",
+        "spAcs": "Reply address (assertion consumer service)",
+        "spMetadata": "Open TeamBeats metadata",
+        "spMetadataHint": "Enter these in your identity provider, or give it the TeamBeats metadata address.",
+        "entityId": "Identity provider entity ID",
+        "entityIdHints": {
+          "generic": "The issuer your provider names in its metadata, such as https://idp.contoso.com/saml",
+          "adfs": "Usually http://adfs.contoso.com/adfs/services/trust"
+        },
+        "ssoUrl": "Single sign-on address",
+        "ssoUrlHints": {
+          "generic": "Where TeamBeats sends people to sign in, with the HTTP-Redirect binding",
+          "adfs": "Usually https://adfs.contoso.com/adfs/ls/"
+        },
+        "certificates": "Signing certificates",
+        "certificatesHint": "The provider's token signing certificates, as PEM or base64. Add the next one before it rolls over; up to three.",
         "adfsConnection": "Active Directory connection",
         "adfsConnectionHint": "AD FS signs in the people this connection syncs, matched on objectGUID. Add a claim rule in AD FS that sends objectGUID.",
         "adfsNoConnection": "Set up directory sync from on-premises Active Directory below first.",
@@ -1092,6 +1118,11 @@
           "expired": "The token had expired. Check the clocks of the provider's servers.",
           "bad_signature": "The token's signature did not match the provider's published keys.",
           "code_rejected": "The provider refused the client ID or client secret.",
+          "name_id_not_persistent": "The SAML answer named the person with a temporary or email identifier. Send a persistent NameID.",
+          "encrypted_assertion_unsupported": "The SAML answer was encrypted. Turn off assertion encryption for TeamBeats; the signature protects it.",
+          "wrong_destination": "The SAML answer was meant for another reply address. Check the reply address entered at the provider.",
+          "assertion_count": "The SAML answer did not carry exactly one assertion.",
+          "idp_error": "The provider answered with an error instead of signing the person in.",
           "other": "The provider sent a token TeamBeats could not accept ({reason})."
         }
       },

@@ -27,7 +27,6 @@ public sealed class GoogleAndAdfsSignInTests(TenantWorld world)
     private const string AdfsClient = "0d8c4b1e-1d2f-4a3b-8c9d-0e1f2a3b4c5d";
     private const string Secret = "fictional-test-client-secret";
     private const string Provider = "/api/v1/tenant/identity-provider";
-    private const string Packs = "/api/v1/integrations/pack-connections";
 
     private FakeIdentityProvider Idp => world.Factory.Idp;
 
@@ -126,75 +125,17 @@ public sealed class GoogleAndAdfsSignInTests(TenantWorld world)
         Assert.Contains(key, errors.GetProperty(field).EnumerateArray().Select(e => e.GetProperty("key").GetString()));
     }
 
-    // AD FS: the tenant's AD DS connection read by its sync agent (as in OnPremDirectorySyncTests), then AD FS on top.
+    // AD FS: the tenant's AD DS connection read by its sync agent, then AD FS on top.
 
-    private sealed record AdSetup(TestTenant Tenant, Guid Connection, Guid AgentId, ECDsa Key)
-    {
-        public string Host => $"adfs.{Tenant.Key}.example";
-    }
+    private static string AdfsHost(OnPremAd s) => $"adfs.{s.Tenant.Key}.example";
 
-    private async Task<AdSetup> AdTenantAsync()
-    {
-        var t = await world.CreateTenantAsync("fs-" + Guid.NewGuid().ToString("N")[..8], "workplace_plus");
-        var admin = t["admin"].Client;
-        var created = await admin.PostAsJsonAsync(Packs, new { kind = "onprem_ad", displayName = "Head office AD", settings = new { host = "dc01.corp.example", baseDn = "DC=corp,DC=example" } });
-        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
-        var connection = (await created.ReadAsync<JsonElement>()).GetProperty("id").GetGuid();
-        Assert.Equal(HttpStatusCode.OK, (await admin.PostAsync($"{Packs}/{connection}:enable", null)).StatusCode);
-        var code = (await (await admin.PostAsync($"{Packs}/{connection}/agents/enrolment-code", null)).ReadAsync<JsonElement>()).GetProperty("code").GetString();
-        var key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
-        var enrolled = await world.Factory.TenantClient(t.Key).PostAsJsonAsync("/api/v1/agent/enrol",
-            new { code, name = "AGENT-01", publicKey = Convert.ToBase64String(key.ExportSubjectPublicKeyInfo()) });
-        var agentId = (await enrolled.ReadAsync<JsonElement>()).GetProperty("agentId").GetGuid();
-        Assert.Equal(HttpStatusCode.OK, (await admin.PutAsJsonAsync("/api/v1/tenant/directory",
-            new { connectionId = connection, userScope = new { mode = "all", groups = Array.Empty<string>() }, deletionThresholdPct = 100 })).StatusCode);
-        return new AdSetup(t, connection, agentId, key);
-    }
+    private Task<OnPremAd> AdTenantAsync() => OnPremAd.SetupAsync(world, "workplace_plus");
 
-    private Task<HttpResponseMessage> AgentAsync(AdSetup s, string path, object? payload = null)
-    {
-        var body = payload is null ? "" : JsonSerializer.Serialize(payload, JsonDefaults.Options);
-        var ts = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        var request = new HttpRequestMessage(HttpMethod.Post, path) { Content = new StringContent(body, Encoding.UTF8, "application/json") };
-        request.Headers.TryAddWithoutValidation(AgentProtocol.AgentHeader, s.AgentId.ToString());
-        request.Headers.TryAddWithoutValidation(AgentProtocol.TimestampHeader, ts.ToString(CultureInfo.InvariantCulture));
-        request.Headers.TryAddWithoutValidation(AgentProtocol.SignatureHeader, AgentProtocol.Sign(s.Key, "POST", path, ts, Encoding.UTF8.GetBytes(body)));
-        return world.Factory.TenantClient(s.Tenant.Key).SendAsync(request);
-    }
+    private Task SyncAsync(OnPremAd s, params (string Guid, string Name)[] users) => s.SyncAsync(world, users);
 
-    /// <summary>One directory sync run: the agent reads these users and Identity applies them.</summary>
-    private async Task SyncAsync(AdSetup s, params (string Guid, string Name)[] users)
+    private Task<HttpResponseMessage> SaveAdfsAsync(OnPremAd s, Guid? connection = null) => SaveAsync(s.Tenant, new
     {
-        await world.Factory.InScopeAsync(s.Tenant.Id, async sp =>
-        {
-            var run = await sp.GetRequiredService<DirectorySyncService>().RunAsync(s.Connection, CancellationToken.None);
-            await sp.GetRequiredService<IDbSession>().CommitAsync();
-            return run;
-        });
-        var job = await (await AgentAsync(s, "/api/v1/agent/jobs:pull")).ReadAsync<JsonElement>();
-        var jobId = job.GetProperty("id").GetGuid();
-        var batch = new
-        {
-            users = users.Select(u => new
-            {
-                externalId = u.Guid, removed = false, accountEnabled = true, displayName = u.Name,
-                email = $"{u.Name.ToLowerInvariant()}@{s.Tenant.Key}.example", userPrincipalName = $"{u.Name.ToLowerInvariant()}@{s.Tenant.Key}.example",
-            }).ToArray(),
-        };
-        Assert.Equal(HttpStatusCode.OK, (await AgentAsync(s, $"/api/v1/agent/jobs/{jobId}/records", batch)).StatusCode);
-        Assert.Equal(HttpStatusCode.NoContent, (await AgentAsync(s, $"/api/v1/agent/jobs/{jobId}:complete", new { ok = true, usersCursor = "usn-1", groupsCursor = "usn-2" })).StatusCode);
-        var applied = await world.Factory.InScopeAsync(s.Tenant.Id, async sp =>
-        {
-            var run = await sp.GetRequiredService<DirectorySyncService>().ApplyAgentReadAsync(new AgentJobFinished(jobId, s.Connection, "directory_sync", true, null, 0, 0), CancellationToken.None);
-            await sp.GetRequiredService<IDbSession>().CommitAsync();
-            return run;
-        });
-        Assert.Equal("succeeded", applied!.Outcome);
-    }
-
-    private Task<HttpResponseMessage> SaveAdfsAsync(AdSetup s, Guid? connection = null) => SaveAsync(s.Tenant, new
-    {
-        kind = "adfs", issuer = FakeIdentityProvider.AdfsIssuerFor(s.Host), clientId = AdfsClient, secretRef = SecretRef(s.Tenant),
+        kind = "adfs", issuer = FakeIdentityProvider.AdfsIssuerFor(AdfsHost(s)), clientId = AdfsClient, secretRef = SecretRef(s.Tenant),
         directoryConnectionId = connection ?? s.Connection,
     });
 
@@ -207,7 +148,7 @@ public sealed class GoogleAndAdfsSignInTests(TenantWorld world)
         Assert.Equal(HttpStatusCode.OK, (await SaveAdfsAsync(s)).StatusCode);
         var users = await world.Database.TenantScalarAsync<long>(s.Tenant.Id, "select count(*) from identity.user_account");
 
-        Assert.StartsWith($"https://{s.Host}/adfs/oauth2/authorize?", (await world.Factory.TenantClient(s.Tenant.Key).GetAsync("/api/v1/auth/signin/sso")).Headers.Location!.ToString(),
+        Assert.StartsWith($"https://{AdfsHost(s)}/adfs/oauth2/authorize?", (await world.Factory.TenantClient(s.Tenant.Key).GetAsync("/api/v1/auth/signin/sso")).Headers.Location!.ToString(),
             StringComparison.Ordinal);
         // Base64 of the bytes (the AD FS default) and the text form a claim rule may make both link to the synced user.
         Assert.Equal("/", await SignInAsync(s.Tenant, new FakeUser(alice, $"alice@{s.Tenant.Key}.example", "Alice")));
@@ -246,9 +187,9 @@ public sealed class GoogleAndAdfsSignInTests(TenantWorld world)
         var b = await AdTenantAsync();
         // Tenant B's connection is not visible to tenant A, so it cannot tie A's AD FS to B's synced users.
         await AssertInvalidAsync(await SaveAdfsAsync(a, b.Connection), "directoryConnectionId", "validation.idp.directory_connection_invalid");
-        await AssertInvalidAsync(await SaveAsync(a.Tenant, new { kind = "adfs", issuer = FakeIdentityProvider.AdfsIssuerFor(a.Host), clientId = AdfsClient, secretRef = SecretRef(a.Tenant) }),
+        await AssertInvalidAsync(await SaveAsync(a.Tenant, new { kind = "adfs", issuer = FakeIdentityProvider.AdfsIssuerFor(AdfsHost(a)), clientId = AdfsClient, secretRef = SecretRef(a.Tenant) }),
             "directoryConnectionId", "validation.idp.directory_connection_required");
-        await AssertInvalidAsync(await SaveAsync(a.Tenant, new { kind = "adfs", issuer = $"http://{a.Host}/adfs", clientId = AdfsClient, secretRef = SecretRef(a.Tenant), directoryConnectionId = a.Connection }),
+        await AssertInvalidAsync(await SaveAsync(a.Tenant, new { kind = "adfs", issuer = $"http://{AdfsHost(a)}/adfs", clientId = AdfsClient, secretRef = SecretRef(a.Tenant), directoryConnectionId = a.Connection }),
             "issuer", "validation.idp.issuer_invalid");
         Assert.Equal(HttpStatusCode.OK, (await SaveAdfsAsync(a)).StatusCode);
         Assert.Equal(a.Connection, (await ProviderAsync(a.Tenant)).GetProperty("directoryConnectionId").GetGuid());

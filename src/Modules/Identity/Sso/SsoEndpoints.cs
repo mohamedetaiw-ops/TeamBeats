@@ -26,7 +26,8 @@ public static class SsoEndpoints
             var tenant = RequireTenantHost(context);
             accessor.SetTenant(tenant.Id);
             var config = tenant.Status == TenantLifecycleStatus.Active ? await providers.GetEnabledAsync(ct) : null;
-            var sso = config is not null && await entitlements.IsEnabledAsync(Capabilities.IdentityOidc, ct);
+            var sso = config is not null && await entitlements.IsEnabledAsync(
+                config.Protocol == SamlService.Protocol ? Capabilities.IdentitySaml : Capabilities.IdentityOidc, ct);
             return Results.Ok(new SignInOptions(sso, sso ? config!.Kind : null, sso ? config!.DisplayName : null));
         });
 
@@ -38,9 +39,12 @@ public static class SsoEndpoints
             await session.CommitAsync(ct);
             if (step.BindingCookie is { } binding)
             {
-                response.Cookies.Append(BindingCookie, binding, new CookieOptions
+                // The SAML IdP answers with a cross-site POST, which carries only a SameSite=None cookie; it is scoped to
+                // the consumer path and bound to a single-use request, so it cannot start or finish a sign-in on its own.
+                response.Cookies.Append(step.Saml ? SamlEndpoints.BindingCookie : BindingCookie, binding, new CookieOptions
                 {
-                    HttpOnly = true, Secure = true, SameSite = SameSiteMode.Lax, Path = StartPath, MaxAge = SsoService.StateLifetime,
+                    HttpOnly = true, Secure = true, SameSite = step.Saml ? SameSiteMode.None : SameSiteMode.Lax,
+                    Path = step.Saml ? SamlEndpoints.AcsPath : StartPath, MaxAge = SsoService.StateLifetime,
                 });
             }
             return Results.Redirect(step.Location);
@@ -73,7 +77,7 @@ public static class SsoEndpoints
             IdentityProviderStore providers, IDbSession session, CancellationToken ct) =>
         {
             await authz.DemandAsync(Permissions.IdentityConfigManage, AuthzTarget.Tenant, ct);
-            await entitlements.DemandAsync(Capabilities.IdentityOidc, ct);
+            await entitlements.DemandAsync(request.Protocol == SamlService.Protocol ? Capabilities.IdentitySaml : Capabilities.IdentityOidc, ct);
             var saved = await providers.SaveAsync(request, ct);
             await session.CommitAsync(ct);
             return Results.Ok(saved);
