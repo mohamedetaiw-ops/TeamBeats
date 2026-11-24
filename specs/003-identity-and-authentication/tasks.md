@@ -50,7 +50,7 @@ Depends on 001 Phase 1 and ADR-0007. R0 tasks first, R1 tasks marked.
 - [x] T028 [US6] On-premises AD DS sync over LDAPS through the connector framework and outbound sync agent; plain LDAP refused (spec 017 T015, PR #154)
 - [x] T033 [US4] [US5] Google and AD FS sign-in over OIDC: provider kinds, hosted domains and `hd` check for Google, `objectGUID` linked under the AD DS connection for AD FS, last refused reason kept for the admin, admin page kind choice, sign-in button by kind; tests
 - [x] T034 [US4] [US5] SAML 2.0 sign-in (SP-initiated, HTTP-POST, signed response or assertion, audience, recipient, `InResponseTo`, replay) for generic (Google Workspace included as a custom SAML app) and AD FS relying parties; SP metadata; admin page; tests including signature wrapping
-- [ ] T035 SCIM 2.0 provisioning extension point: `IProvisioningTarget` contract (create, update, deactivate user, group membership) behind the directory sync use cases, `identity.scim` capability, no endpoint (FR-008)
+- [x] T035 SCIM 2.0 provisioning extension point: `IProvisioningTarget` contract (find, create, update, deactivate and reactivate user, group membership) behind the directory sync use cases, `identity.scim` capability for the later endpoint, no endpoint (FR-008); tests including the tenant boundary
 - [ ] T036 Security page note on providers that send no MFA claims (Google) and MFA mapping per provider kind
 
 ## Final phase

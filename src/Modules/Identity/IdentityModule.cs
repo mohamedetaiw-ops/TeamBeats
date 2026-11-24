@@ -39,6 +39,7 @@ public static class IdentityModule
         services.AddScoped<ITestIdentities, TestIdentities>();
         services.AddScoped<RequestLocale>();
         services.AddMessageHandler<TenantSuspended, RevokeSessionsOnSuspension>("identity.revoke_on_suspend");
+        services.AddScoped<IProvisioningTarget, Directory.Provisioning>();
         services.AddScoped<Directory.DirectorySyncService>();
         services.AddScoped<IDirectoryReader, Directory.DirectoryReader>();
         services.AddScoped<TeamBeats.Authorization.Contracts.IUserAttributeProvider, Directory.DirectoryUserAttributes>();

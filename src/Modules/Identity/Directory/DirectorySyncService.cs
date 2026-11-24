@@ -77,13 +77,12 @@ public sealed class DirectorySyncService(
     IAgentDirectory agentDirectory,
     IPackDirectory packDirectory,
     IEntitlementService entitlements,
-    ITenantMemberships memberships,
     IAuthorizationProvisioning authz,
-    ISessionRevocation sessions,
     Sso.IdentityProviderStore providers,
     IAuditWriter audit,
     IOutbox outbox,
     IClock clock,
+    IProvisioningTarget provisioning,
     ILogger<DirectorySyncService> logger)
 {
     public const int AlertAfterFailures = 3;
@@ -484,10 +483,11 @@ public sealed class DirectorySyncService(
         var tenantId = context.RequireTenant();
         // Entra ID accounts are linked to the tenant's Entra ID sign-in; AD accounts get theirs with AD FS (spec 003 US5).
         var idp = entra ? await providers.GetEnabledAsync(ct) : null;
+        var source = new ProvisioningSource(connectionId, issuer, "directory", idp?.Id);
 
         foreach (var user in plan.Create)
         {
-            if (await CreateOrLinkAsync(tenantId, connectionId, issuer, idp?.Id, user, ct))
+            if (await CreateOrLinkAsync(tenantId, source, user, ct))
             {
                 counts.Created++;
             }
@@ -499,103 +499,61 @@ public sealed class DirectorySyncService(
 
         foreach (var (link, user) in plan.Update)
         {
-            var name = DisplayName(user);
-            var email = Email(user) ?? link.Email;
-            var emailTaken = email != link.Email && await session.ScalarAsync<bool>(
-                "select exists (select 1 from identity.user_account where lower(email) = @e and id <> @u)", new { e = email, u = link.UserId }, ct);
-            if (emailTaken)
+            var update = await provisioning.UpdateUserAsync(link.UserId, Provisioned(user), ct);
+            if (update.EmailKept)
             {
-                email = link.Email;
                 counts.Skipped++;
             }
-            var changed = new List<string>();
-            if (name != link.DisplayName) changed.Add("display_name");
-            if (email != link.Email) changed.Add("email");
-            if (changed.Count == 0)
+            if (update.Changed.Count > 0)
             {
-                continue;
+                counts.Updated++;
             }
-            await session.ExecAsync("update identity.user_account set display_name = @n, email = @e, owner_fields = @f where id = @u",
-                new { n = name, e = email, f = OwnerFields, u = link.UserId }, ct);
-            await audit.WriteAsync(new AuditEntry(AuditActions.UserSynced, "user", link.UserId.ToString(), Changes: new { change = "updated", fields = changed }), ct);
-            await outbox.EnqueueAsync(new UserProfileSynced(link.UserId, changed), ct);
-            counts.Updated++;
         }
 
         foreach (var link in plan.Reenable)
         {
-            await memberships.SetStatusAsync(link.UserId, MembershipStatus.Active, ct);
+            await provisioning.ReactivateUserAsync(link.UserId, ct);
             await session.ExecAsync("update identity.directory_user_link set disabled_by_directory = false, updated_at = now() where user_id = @u", new { u = link.UserId }, ct);
-            await audit.WriteAsync(new AuditEntry(AuditActions.ReenabledByDirectory, "user", link.UserId.ToString()), ct);
             counts.Reenabled++;
         }
 
         foreach (var link in plan.Disable)
         {
-            if (await authz.IsLastTenantAdministratorAsync(link.UserId, ct))
+            if (!await provisioning.DeactivateUserAsync(link.UserId, "directory", ct))
             {
                 // The tenant must keep an administrator; the run log shows it as skipped.
                 logger.LogWarning("Kept the tenant's last administrator enabled although the directory disabled the account");
                 counts.Skipped++;
                 continue;
             }
-            await memberships.SetStatusAsync(link.UserId, MembershipStatus.Disabled, ct);
             await session.ExecAsync("update identity.directory_user_link set disabled_by_directory = true, updated_at = now() where user_id = @u", new { u = link.UserId }, ct);
-            await sessions.RevokeUserSessionsAsync(link.UserId, "directory_disabled", ct);
-            await outbox.EnqueueAsync(new TenantMembershipDisabled(link.UserId), ct);
-            await outbox.EnqueueAsync(new UserDeprovisioned(link.UserId, "directory"), ct);
-            await audit.WriteAsync(new AuditEntry(AuditActions.DisabledByDirectory, "user", link.UserId.ToString()), ct);
             counts.Disabled++;
         }
         return counts;
     }
 
+    private static ProvisionedUser Provisioned(MirrorUser user) => new(user.Id, DisplayName(user), Email(user));
+
     /// <summary>
     /// Creates the user for a directory account, or links an existing user that already signed in with the same issuer
-    /// and immutable ID. Never links by email: an account that already uses the email is skipped (FR-003).
+    /// and immutable ID, through the provisioning extension point. An account another directory connection already
+    /// holds is skipped, and so is one whose email another account uses (FR-003).
     /// </summary>
-    private async Task<bool> CreateOrLinkAsync(Guid tenantId, Guid connectionId, string issuer, Guid? idpConfigId, MirrorUser user, CancellationToken ct)
+    private async Task<bool> CreateOrLinkAsync(Guid tenantId, ProvisioningSource source, MirrorUser user, CancellationToken ct)
     {
-        var existing = await session.ScalarAsync<Guid?>(
-            "select user_id from identity.external_identity where issuer = @i and subject = @s", new { i = issuer, s = user.Id }, ct);
-        var email = Email(user);
-        if (existing is null)
+        if (await provisioning.FindUserAsync(source.Issuer, user.Id, ct) is { } existing
+            && await session.ScalarAsync<bool>("select exists (select 1 from identity.directory_user_link where user_id = @u)", new { u = existing }, ct))
         {
-            if (email is null)
-            {
-                return false;
-            }
-            var emailTaken = await session.ScalarAsync<bool>("select exists (select 1 from identity.user_account where lower(email) = @e)", new { e = email }, ct);
-            if (emailTaken)
-            {
-                return false;
-            }
-            existing = Ids.New();
-            await session.ExecAsync(
-                """
-                insert into identity.user_account (tenant_id, id, display_name, email, status, created_via, owner_fields)
-                values (@t, @id, @name, @email, 'active', 'directory', @f)
-                """, new { t = tenantId, id = existing, name = DisplayName(user), email, f = OwnerFields }, ct);
-            await session.ExecAsync(
-                "insert into identity.external_identity (tenant_id, id, idp_config_id, issuer, subject, user_id) values (@t, @id, @idp, @i, @s, @u)",
-                new { t = tenantId, id = Ids.New(), idp = idpConfigId, i = issuer, s = user.Id, u = existing }, ct);
-            await memberships.CreateAsync(existing.Value, MembershipTypes.Employee, ct);
-            await outbox.EnqueueAsync(new UserProvisioned(existing.Value, "directory"), ct);
-            await audit.WriteAsync(new AuditEntry(AuditActions.UserSynced, "user", existing.ToString(), Changes: new { change = "created" }), ct);
+            return false;
         }
-        else
+        var (outcome, userId) = await provisioning.CreateOrLinkUserAsync(source, Provisioned(user), ct);
+        if (outcome == ProvisionOutcome.Skipped)
         {
-            if (await session.ScalarAsync<bool>("select exists (select 1 from identity.directory_user_link where user_id = @u)", new { u = existing }, ct))
-            {
-                return false;
-            }
-            await session.ExecAsync("update identity.user_account set owner_fields = @f where id = @u", new { f = OwnerFields, u = existing }, ct);
-            await audit.WriteAsync(new AuditEntry(AuditActions.UserSynced, "user", existing.ToString(), Changes: new { change = "linked" }), ct);
+            return false;
         }
-
         await session.ExecAsync(
             "insert into identity.directory_user_link (tenant_id, connection_id, directory_id, user_id) values (@t, @c, @d, @u)",
-            new { t = tenantId, c = connectionId, d = user.Id, u = existing }, ct);
+            new { t = tenantId, c = source.ConnectionId, d = user.Id, u = userId }, ct);
         return true;
     }
 
@@ -621,7 +579,7 @@ public sealed class DirectorySyncService(
                 continue;
             }
             var members = group.Members.Where(userIds.ContainsKey).Select(m => userIds[m]).ToList();
-            var groupId = await authz.SyncDirectoryGroupAsync(GroupKey(gid, source), group.DisplayName ?? gid, members, ct);
+            var groupId = await provisioning.SetGroupMembersAsync(GroupKey(gid, source), group.DisplayName ?? gid, members, ct);
             await session.ExecAsync(
                 """
                 insert into identity.directory_group_link (tenant_id, connection_id, directory_id, group_id) values (@t, @c, @d, @g)
@@ -637,7 +595,7 @@ public sealed class DirectorySyncService(
         foreach (var gid in known.Where(g => !selected.Contains(g) || !mirror.Groups.ContainsKey(g)))
         {
             var name = mirror.Groups.TryGetValue(gid, out var group) ? group.DisplayName ?? gid : gid;
-            await authz.SyncDirectoryGroupAsync(GroupKey(gid, source), name, [], ct);
+            await provisioning.SetGroupMembersAsync(GroupKey(gid, source), name, [], ct);
             await session.ExecAsync("delete from identity.directory_group_link where connection_id = @c and directory_id = @d", new { c = connectionId, d = gid }, ct);
         }
         return synced;
