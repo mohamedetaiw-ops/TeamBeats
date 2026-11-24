@@ -167,6 +167,9 @@ public interface IProvisioningTarget
     /// <summary>The user linked to this immutable ID under the issuer, or null.</summary>
     Task<Guid?> FindUserAsync(string issuer, string externalId, CancellationToken ct);
 
+    /// <summary>The immutable ID the user is linked under for the issuer, such as an Entra object ID, or null.</summary>
+    Task<string?> ExternalIdAsync(Guid userId, string issuer, CancellationToken ct);
+
     /// <summary>Creates the user with a sign-in identity and an employee membership, or links the user that already signed in with that ID.</summary>
     Task<(ProvisionOutcome Outcome, Guid? UserId)> CreateOrLinkUserAsync(ProvisioningSource source, ProvisionedUser user, CancellationToken ct);
 

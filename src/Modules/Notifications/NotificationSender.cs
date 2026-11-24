@@ -24,6 +24,7 @@ public sealed class NotificationSender(
     NotificationSettingsService settings,
     PreferenceService preferences,
     ISlackMessaging slack,
+    ITeamsMessaging teams,
     ILogger<NotificationSender> logger) : INotificationSender
 {
     public static readonly TimeSpan DedupeWindow = TimeSpan.FromHours(1);
@@ -146,6 +147,7 @@ public sealed class NotificationSender(
     {
         var deliveries = new List<(Guid NotificationId, Guid UserId, string Channel, string Status, string? Address, DateTimeOffset NotBefore)>();
         var slackAvailable = true;
+        bool? teamsAvailable = null;
         // One read for the batch: who has a device with push. The channel itself checks the package at delivery.
         var pushUsers = (await session.QueryAsync(
             "select distinct user_id from notifications.push_subscription where user_id = any(@userIds)",
@@ -172,6 +174,11 @@ public sealed class NotificationSender(
             if (choice.Push && pushUsers.Contains(userId))
             {
                 deliveries.Add((notificationId, userId, NotificationChannels.Push, "pending", null, await ReleaseAsync()));
+            }
+            // Teams activity notifications (US5) while the tenant's Microsoft 365 connection has Teams on; never in the digest.
+            if (choice.Teams && (teamsAvailable ??= await teams.AvailableAsync(ct)))
+            {
+                deliveries.Add((notificationId, userId, NotificationChannels.Teams, "pending", null, await ReleaseAsync()));
             }
         }
         if (deliveries.Count == 0)

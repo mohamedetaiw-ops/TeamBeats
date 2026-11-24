@@ -430,11 +430,51 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
             }
             return Json(body);
         }
+        if (uri.Host == "graph.microsoft.com" && request.Method == HttpMethod.Post && uri.AbsolutePath.EndsWith("/teamwork/sendActivityNotification", StringComparison.Ordinal))
+        {
+            return await TeamsActivityAsync(request, uri, cancellationToken);
+        }
         if (uri.Host == "graph.microsoft.com")
         {
             return await DelegatedAsync(request, uri, cancellationToken);
         }
         return new HttpResponseMessage(HttpStatusCode.NotFound);
+    }
+
+    /// <summary>A Teams activity notification the fake accepted: who got it, and what it said and linked to.</summary>
+    public sealed record TeamsActivity(string Directory, string UserId, string Topic, string WebUrl, string Preview);
+
+    public ConcurrentBag<TeamsActivity> TeamsActivities { get; } = [];
+
+    /// <summary>People in a directory who have the TeamBeats Teams app; everyone else gets the 403 Teams answers with.</summary>
+    private readonly ConcurrentDictionary<string, bool> _teamsInstalls = new();
+
+    public void InstallTeamsApp(Guid directoryId, string userId) => _teamsInstalls[$"{directoryId:D}/{userId}"] = true;
+
+    public void UninstallTeamsApp(Guid directoryId, string userId) => _teamsInstalls.TryRemove($"{directoryId:D}/{userId}", out _);
+
+    private async Task<HttpResponseMessage> TeamsActivityAsync(HttpRequestMessage request, Uri uri, CancellationToken ct)
+    {
+        var bearer = request.Headers.Authorization?.Parameter ?? string.Empty;
+        var directory = bearer.Split(".sig-").ElementAtOrDefault(1) ?? string.Empty;
+        if (directory.Contains('~') || !_directories.TryGetValue(directory, out var d))
+        {
+            return new HttpResponseMessage(HttpStatusCode.Unauthorized);
+        }
+        if (!d.Roles.Contains("TeamsActivity.Send"))
+        {
+            return new HttpResponseMessage(HttpStatusCode.Forbidden);
+        }
+        var userId = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries).ElementAtOrDefault(2) ?? string.Empty;
+        if (!_teamsInstalls.ContainsKey($"{directory}/{userId}"))
+        {
+            return new HttpResponseMessage(HttpStatusCode.Forbidden) { Content = new StringContent("{\"error\":{\"code\":\"Forbidden\"}}") };
+        }
+        var body = JsonDocument.Parse(await request.Content!.ReadAsStringAsync(ct)).RootElement;
+        var topic = body.GetProperty("topic");
+        TeamsActivities.Add(new TeamsActivity(directory, userId, topic.GetProperty("value").GetString() ?? "", topic.GetProperty("webUrl").GetString() ?? "",
+            body.GetProperty("previewText").GetProperty("content").GetString() ?? ""));
+        return new HttpResponseMessage(HttpStatusCode.NoContent);
     }
 
     private HttpResponseMessage RedeemDelegated(string directory, Dictionary<string, string> form)

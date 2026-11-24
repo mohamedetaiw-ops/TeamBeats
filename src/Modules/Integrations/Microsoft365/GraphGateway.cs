@@ -82,6 +82,14 @@ public interface IMicrosoftGraph
     /// <see cref="GraphConsentMissingException"/> on 401 or 403 and <see cref="GraphUnavailableException"/> otherwise.
     /// </summary>
     Task<Stream?> AppDownloadAsync(AppToken token, string pathAndQuery, CancellationToken ct);
+
+    /// <summary>
+    /// A Graph write with the application token, such as a Teams activity notification. Throws
+    /// <see cref="GraphConsentMissingException"/> on 401 and <see cref="GraphCallException"/> with <c>not_found</c> on
+    /// 404, <c>forbidden</c> on 403 (Teams answers so when the app is not installed for the person) and
+    /// <see cref="GraphUnavailableException"/> on 429, 5xx or no answer.
+    /// </summary>
+    Task AppPostAsync(AppToken token, string pathAndQuery, object body, CancellationToken ct);
 }
 
 /// <summary>
@@ -258,6 +266,42 @@ public sealed class HttpMicrosoftGraph(IHttpClientFactory httpClients, IConfigur
                 throw new GraphUnavailableException($"Graph returned {(int)response.StatusCode}.");
             }
             return await response.Content.ReadFromJsonAsync<JsonElement>(ct);
+        }
+    }
+
+    public async Task AppPostAsync(AppToken token, string pathAndQuery, object body, CancellationToken ct)
+    {
+        using var client = httpClients.CreateClient(ClientName);
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"{GraphBase}/{pathAndQuery.TrimStart('/')}") { Content = JsonContent.Create(body) };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken);
+        HttpResponseMessage response;
+        try
+        {
+            response = await client.SendAsync(request, ct);
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new GraphUnavailableException("Graph unreachable.", ex);
+        }
+        using (response)
+        {
+            var status = (int)response.StatusCode;
+            if (response.IsSuccessStatusCode)
+            {
+                return;
+            }
+            if (status == 429)
+            {
+                GraphTelemetry.MarkThrottled();
+            }
+            throw status switch
+            {
+                401 => new GraphConsentMissingException(),
+                403 => new GraphCallException("forbidden"),
+                404 => new GraphCallException("not_found"),
+                _ when status is 429 or >= 500 => new GraphUnavailableException($"Graph returned {status}."),
+                _ => new GraphCallException("rejected"),
+            };
         }
     }
 

@@ -437,6 +437,11 @@ public sealed class ConnectionService(
         }
         try
         {
+            if (definition.Key == Microsoft365Features.Teams)
+            {
+                // TeamsActivity.Send only writes to activity feeds; nothing can be read to check it beyond the granted role.
+                return new FeatureTestResult(definition.Key, true, broader.Count > 0 ? "integrations.test.ok_broader" : "integrations.test.ok", null, null, [], broader);
+            }
             if (definition.Key == Microsoft365Features.SharePointDocuments)
             {
                 // Every allowed site must still be granted to the application (spec 011 US9 scenario 1).

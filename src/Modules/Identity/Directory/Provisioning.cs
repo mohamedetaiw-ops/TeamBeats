@@ -26,6 +26,10 @@ public sealed class Provisioning(
     public Task<Guid?> FindUserAsync(string issuer, string externalId, CancellationToken ct) =>
         session.ScalarAsync<Guid?>("select user_id from identity.external_identity where issuer = @i and subject = @s", new { i = issuer, s = externalId }, ct);
 
+    public Task<string?> ExternalIdAsync(Guid userId, string issuer, CancellationToken ct) =>
+        session.ScalarAsync<string?>("select subject from identity.external_identity where user_id = @u and issuer = @i order by created_at limit 1",
+            new { u = userId, i = issuer }, ct);
+
     public async Task<(ProvisionOutcome Outcome, Guid? UserId)> CreateOrLinkUserAsync(ProvisioningSource source, ProvisionedUser user, CancellationToken ct)
     {
         var existing = await FindUserAsync(source.Issuer, user.ExternalId, ct);

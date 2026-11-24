@@ -70,7 +70,9 @@ public static class IntegrationsModule
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Ticketing.JiraServiceManagementPack>());
         services.AddScoped<Slack.SlackPack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Slack.SlackPack>());
+        services.AddScoped<Runtime.TenantLinks>();
         services.AddScoped<Slack.SlackMessaging>();
+        services.AddScoped<ITeamsMessaging, Microsoft365.TeamsActivity>();
         services.AddScoped<ISlackMessaging>(sp => sp.GetRequiredService<Slack.SlackMessaging>());
         services.AddScoped<IConnectionDependents>(sp => sp.GetRequiredService<Slack.SlackMessaging>());
         services.AddScoped<ClockData.IClockFileSource, ClockData.SshNetClockFileSource>();

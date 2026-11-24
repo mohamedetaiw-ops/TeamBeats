@@ -1006,7 +1006,8 @@
         "ai_agents_department": "Department agent templates",
         "ai_agents_marketplace": "Agent marketplace",
         "ai_agents_advanced": "Advanced agent templates",
-        "ai_governance_security_center": "Agent Security Center"
+        "ai_governance_security_center": "Agent Security Center",
+        "notifications_teams": "Notifications in Microsoft Teams"
       },
       "searchLabel": "Search capabilities",
       "searchPlaceholder": "Search by name",
@@ -3435,7 +3436,9 @@
       "pushTurnedOff": "This device will no longer get push notifications.",
       "pushDenied": "The browser did not allow notifications. You can allow them in the browser's site settings.",
       "pushUnsupported": "This device cannot show push notifications. On iPhone and iPad, add TeamBeats to the home screen first. Email keeps you informed in the meantime.",
-      "pushBlocked": "Notifications are blocked for TeamBeats in this browser. Allow them in the browser's site settings to turn push on."
+      "pushBlocked": "Notifications are blocked for TeamBeats in this browser. Allow them in the browser's site settings to turn push on.",
+      "teams": "Teams",
+      "teamsFor": "Teams for {category}"
     },
     "settings": {
       "title": "Notifications",
@@ -10471,7 +10474,8 @@
         "free_busy": "Free and busy times",
         "office_editing": "Office editing in the browser",
         "sharepoint_documents": "SharePoint documents",
-        "sharepoint_upload": "SharePoint uploads"
+        "sharepoint_upload": "SharePoint uploads",
+        "teams": "Teams notifications"
       },
       "featureOn": "On",
       "featureOff": "Off",
@@ -10491,7 +10495,8 @@
         "files_read_write": "Read and change the employee's own OneDrive files, only for the copy they edit in the browser",
         "sites_selected": "Read only the SharePoint sites you allow, to keep connected libraries and search in step",
         "files_read_all": "Let each employee browse, preview and download SharePoint files they can already open in SharePoint",
-        "files_read_write_all": "Let each employee upload files and rename items in connected SharePoint libraries where SharePoint lets them"
+        "files_read_write_all": "Let each employee upload files and rename items in connected SharePoint libraries where SharePoint lets them",
+        "teams_activity_send": "Send notifications to each person's Teams activity feed, without reading chats or channels"
       },
       "application": "application",
       "delegated": "on behalf of the employee",

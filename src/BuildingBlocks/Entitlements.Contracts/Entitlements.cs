@@ -138,6 +138,9 @@ public static class Capabilities
     public const string ExperienceBehavioralPersonalization = "experience.behavioral_personalization";
     public const string NotificationsCore = "notifications.core";
     public const string NotificationsTenantSmtp = "notifications.tenant_smtp";
+
+    /// <summary>Microsoft Teams activity notifications (spec 015 US5, R2).</summary>
+    public const string NotificationsTeams = "notifications.teams";
     public const string PeopleDirectory = "people.directory";
     public const string PeopleCustomFields = "people.custom_fields";
     public const string SecurityIpRules = "security.ip_rules";

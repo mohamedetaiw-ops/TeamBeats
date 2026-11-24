@@ -65,6 +65,11 @@ public static class FeatureCatalogue
         [
             new("Files.ReadWrite.All", PermissionType.Delegated, "integrations.permission.files_read_write_all"),
         ]),
+        // Teams notifications (spec 015 US5): the application posts to a person's activity feed only; it reads no chats.
+        new(Microsoft365Features.Teams, Capabilities.NotificationsTeams,
+        [
+            new("TeamsActivity.Send", PermissionType.Application, "integrations.permission.teams_activity_send"),
+        ]),
     ];
 
     /// <summary>The permissions an employee's own token carries for a feature.</summary>
