@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using TeamBeats.Audit.Contracts;
 using TeamBeats.Testing;
 using Xunit;
 
@@ -57,6 +58,14 @@ public sealed class EntitlementExpiryTests(TenantWorld world)
         Assert.Equal("grace", (await StateAsync(t)).GetProperty("state").GetString());
         (await world.Platform.PutAsJsonAsync($"/api/v1/platform/tenants/{t.Id}/subscription", new { packageKey = "workplace_plus" })).EnsureSuccessStatusCode();
         Assert.Equal("grace", (await StateAsync(t)).GetProperty("state").GetString());
+
+        // Every contract change is audited to the tenant and the platform, with the new end and grace (T015).
+        const string contractAudits = "select count(*) from audit.audit_event where action = @a and changes ? 'contractEndsAt'";
+        Assert.Equal(4L, await world.Database.TenantScalarAsync<long>(t.Id, contractAudits, ("a", AuditActions.SubscriptionChanged)));
+        Assert.Equal(0L, await world.Database.TenantScalarAsync<long>(other.Id, contractAudits, ("a", AuditActions.SubscriptionChanged)));
+        Assert.Equal(4L, await world.Database.OwnerScalarAsync<long>(
+            "select count(*) from audit.platform_audit_event where action = @a and subject_tenant_id = @t and changes ? 'contractEndsAt'",
+            ("a", AuditActions.SubscriptionChanged), ("t", t.Id)));
 
         Assert.Equal(HttpStatusCode.NoContent, (await world.Factory.TenantClient(t.Key, t["admin"].Token).PostAsync("/api/v1/auth/signout", null)).StatusCode);
     }

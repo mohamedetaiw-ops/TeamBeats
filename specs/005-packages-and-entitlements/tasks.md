@@ -25,4 +25,4 @@ Depends on 001 Phase 1. R0 tasks first; R2 tasks in the last phase.
 - [x] T014 Plan and usage admin page (R2: add-ons and contract terms with dates, usage bar per quota, contract end with grace or read-only state)
 
 ## Final phase
-- [ ] T015 Architecture test banning package keys in feature code; audit assertions; OpenAPI; spec evidence
+- [x] T015 Architecture test banning package keys in feature code; audit assertions; OpenAPI; spec evidence
