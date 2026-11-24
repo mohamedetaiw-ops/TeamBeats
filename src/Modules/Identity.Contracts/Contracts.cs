@@ -132,3 +132,50 @@ public sealed record DirectorySynced(Guid ConnectionId) : IIntegrationEvent;
 public sealed record DeviceEnrolled(Guid DeviceId, Guid OrgUnitId) : IIntegrationEvent;
 
 public sealed record DeviceRevoked(Guid DeviceId, Guid OrgUnitId) : IIntegrationEvent;
+
+/// <summary>
+/// Who is provisioning: the source's connection and the issuer its immutable IDs live under, the sign-in provider
+/// those identities belong to (if any), and <see cref="Via"/> for the user's origin and events (<c>directory</c>;
+/// <c>scim</c> once a SCIM endpoint exists).
+/// </summary>
+public sealed record ProvisioningSource(Guid ConnectionId, string Issuer, string Via, Guid? IdpConfigId = null);
+
+/// <summary>A person as the provisioning source holds them: its immutable ID and the fields it owns.</summary>
+public sealed record ProvisionedUser(string ExternalId, string DisplayName, string? Email);
+
+public enum ProvisionOutcome
+{
+    Created,
+    Linked,
+    /// <summary>No email, or the email belongs to another account: never linked by email (spec 003 FR-003).</summary>
+    Skipped,
+}
+
+/// <param name="Changed">The fields that changed: <c>display_name</c>, <c>email</c>.</param>
+/// <param name="EmailKept">The new email belongs to another account, so the old one was kept.</param>
+public sealed record ProvisionUpdate(IReadOnlyList<string> Changed, bool EmailKept);
+
+/// <summary>
+/// The provisioning extension point (spec 003 FR-008, IAM-010), shaped after SCIM 2.0: find, create, update and
+/// deactivate a user, and set a group's members. Directory sync (US6) runs on it today; a SCIM endpoint can be added
+/// later on the same operations behind the <c>identity.scim</c> capability without new user rules. Tenant comes
+/// from context. Deactivation keeps the tenant's last administrator and revokes the user's sessions at once.
+/// </summary>
+public interface IProvisioningTarget
+{
+    /// <summary>The user linked to this immutable ID under the issuer, or null.</summary>
+    Task<Guid?> FindUserAsync(string issuer, string externalId, CancellationToken ct);
+
+    /// <summary>Creates the user with a sign-in identity and an employee membership, or links the user that already signed in with that ID.</summary>
+    Task<(ProvisionOutcome Outcome, Guid? UserId)> CreateOrLinkUserAsync(ProvisioningSource source, ProvisionedUser user, CancellationToken ct);
+
+    Task<ProvisionUpdate> UpdateUserAsync(Guid userId, ProvisionedUser user, CancellationToken ct);
+
+    /// <summary>False when the user is the tenant's last administrator and stays active.</summary>
+    Task<bool> DeactivateUserAsync(Guid userId, string via, CancellationToken ct);
+
+    Task ReactivateUserAsync(Guid userId, CancellationToken ct);
+
+    /// <summary>Sets the members of the source-owned group with this key, creating it when needed; returns the group's ID.</summary>
+    Task<Guid> SetGroupMembersAsync(string groupKey, string displayName, IReadOnlyList<Guid> members, CancellationToken ct);
+}
