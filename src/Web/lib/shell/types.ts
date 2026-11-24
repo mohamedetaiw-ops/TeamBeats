@@ -57,6 +57,8 @@ export type Shell = {
   mobileNav?: NavLink[] | null;
   /** True for a guest of the tenant: the API sends the reduced guest shell and the home lists their spaces (spec 026 section 10). */
   guest?: boolean;
+  /** The viewer's brand title, logo and lockup in their language (spec 033 R2 T018); absent values fall back to the tenant. */
+  brand?: { title: string | null; logoUrl: string | null; lockupUrl: string | null } | null;
 };
 
 export type Crumb = { label: string; href: string };

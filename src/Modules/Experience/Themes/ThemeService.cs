@@ -74,8 +74,6 @@ public sealed partial class ThemeService(
     private static readonly Meter Meter = new("TeamBeats.Experience");
     private static readonly Counter<long> InvalidTokens = Meter.CreateCounter<long>("theme.invalid_token");
 
-    private static readonly IReadOnlyList<string> AssetSlots = ["logo", "lockup", "favicon", "default_image", "sign_in_image"];
-
     private sealed record BrandRow(Guid Id, string Name, int Version, bool Seeded, bool Strict, Dictionary<string, TokenValue> Tokens,
         Dictionary<string, string> Assets);
 
@@ -513,28 +511,45 @@ public sealed partial class ThemeService(
             errors.Add("name", "validation.theme.brand_name");
         }
         TokenSchema.Validate(request.Tokens, errors);
-        foreach (var (slot, reference) in request.Assets ?? new Dictionary<string, string>())
+        var assets = new Dictionary<string, string>();
+        foreach (var (slot, value) in request.Assets ?? new Dictionary<string, string>())
         {
-            if (!AssetSlots.Contains(slot))
+            if (BrandSlots.IsTitle(slot))
+            {
+                // The title per language (R2 T018) is text, kept with the images so it is versioned and released with them.
+                if (!BrandSlots.IsValidTitle(value))
+                {
+                    errors.Add("assets." + slot, "validation.theme.title");
+                }
+                else
+                {
+                    assets[slot] = value.Trim();
+                }
+            }
+            else if (!BrandSlots.IsImage(slot))
             {
                 errors.Add("assets." + slot, "validation.theme.asset_slot_unknown");
             }
-            else if (!AssetReference().IsMatch(reference ?? ""))
+            else if (!AssetReference().IsMatch(value ?? ""))
             {
                 errors.Add("assets." + slot, "validation.theme.asset_reference_invalid");
             }
-            else if (reference!.StartsWith("asset:", StringComparison.Ordinal)
+            else if (value!.StartsWith("asset:", StringComparison.Ordinal)
                 && await session.ScalarAsync<long>("select count(*) from experience.brand_asset where id = @id",
-                    new { id = Guid.Parse(reference["asset:".Length..]) }, ct) == 0)
+                    new { id = Guid.Parse(value["asset:".Length..]) }, ct) == 0)
             {
                 // Uploaded assets only, and only this tenant's: row-level security hides the rest.
                 errors.Add("assets." + slot, "validation.theme.asset_reference_invalid");
+            }
+            else
+            {
+                assets[slot] = value;
             }
         }
         errors.ThrowIfAny();
         var tokens = new Dictionary<string, TokenValue>(request.Tokens ?? new Dictionary<string, TokenValue>());
         ThrowIfCycles(tokens);
-        return (tokens, new Dictionary<string, string>(request.Assets ?? new Dictionary<string, string>()));
+        return (tokens, assets);
     }
 
     private static IReadOnlyList<ContrastFinding> BrandFindings(Dictionary<string, TokenValue> tokens, bool strict)
@@ -688,13 +703,13 @@ public sealed partial class ThemeService(
 
     private static BrandView View(BrandRow brand, IReadOnlyList<ContrastFinding> findings) =>
         new(brand.Id, brand.Name, brand.Version, brand.Seeded, brand.Strict, brand.Tokens, brand.Assets,
-            brand.Assets.ToDictionary(a => a.Key, a => AssetUrlOf(a.Value)), findings);
+            brand.Assets.Where(a => !BrandSlots.IsTitle(a.Key)).ToDictionary(a => a.Key, a => AssetUrlOf(a.Value)), findings);
 
     /// <summary>Where the browser loads an asset reference: the spec 001 logo, or an uploaded brand asset.</summary>
     public static string AssetUrlOf(string reference) =>
         reference == "tenant:logo" ? "/api/v1/tenant/branding/logo" : AssetUrl(Guid.Parse(reference["asset:".Length..]));
 
-    public static IReadOnlyList<string> Slots => AssetSlots;
+    public static IReadOnlyList<string> Slots => BrandSlots.Images;
 
     public static string Hash(string css) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(css)))[..16];
 

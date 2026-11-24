@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { createTranslator } from "next-intl";
 import { getTranslations } from "next-intl/server";
-import { apiGet, type NavigationSection } from "@/lib/api";
+import { apiGet, type Me, type NavigationSection } from "@/lib/api";
 import { checkBrand, getBrand, getBrandApproval, getBrandDraft, getBrandReleases, getBrandSchedule, getTokenSchema, listBrands } from "@/lib/brand/client";
 import { BrandManager, type PreviewSample } from "@/features/brand/BrandManager";
 import { ThemeLifecycle } from "@/features/brand/ThemeLifecycle";
@@ -28,7 +28,7 @@ export default async function BrandingPage({ searchParams }: { searchParams: Pro
   if (!nav.ok || !nav.data.some((s) => s.key === "branding")) {
     notFound();
   }
-  const [schema, brands] = await Promise.all([getTokenSchema(), listBrands()]);
+  const [schema, brands, me] = await Promise.all([getTokenSchema(), listBrands(), apiGet<Me>("/api/v1/me")]);
   if (!schema.ok || !brands.ok || brands.data.length === 0) {
     notFound();
   }
@@ -66,6 +66,7 @@ export default async function BrandingPage({ searchParams }: { searchParams: Pro
         draft={draft.ok ? draft.data : null}
         initialPreview={check.ok ? check.data.preview : null}
         samples={{ ltr: await sample("en"), rtl: await sample("ar") }}
+        locales={me.ok ? me.data.tenant.enabledLocales : []}
       />
       {draft.ok && releases.ok ? (
         <ThemeLifecycle

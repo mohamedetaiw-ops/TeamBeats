@@ -1527,7 +1527,14 @@
         "favicon": "Browser icon",
         "default_image": "Default image",
         "sign_in_image": "Sign-in image"
-      }
+      },
+      "saved": "Saved image",
+      "titleAll": "Title in every language",
+      "titleFallback": "The organization name",
+      "byLanguage": "Title and logo by language",
+      "byLanguageRules": "A language without its own title, logo or lockup uses the one for every language. People see the version of their language when they switch.",
+      "titleIn": "Title in {language}",
+      "slotIn": "{slot} in {language}"
     },
     "preview": {
       "title": "Live preview",

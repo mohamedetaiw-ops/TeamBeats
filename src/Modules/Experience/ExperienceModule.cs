@@ -512,6 +512,10 @@ public static class ExperienceModule
             tokens = TokenSchema.All.Select(t => new TokenSchemaEntry(t.Name, t.Name.Split('.')[0], t.Type, t.CssName, t.Light, t.Dark, t.Compact, t.Script,
                 [.. (t.AllowsDark ? new[] { ThemeModes.Dark } : []), .. (t.AllowsHighContrast ? new[] { ThemeModes.HighContrast } : []), .. (t.AllowsCompact ? new[] { ThemeModes.Compact } : [])])),
             assetSlots = ThemeService.Slots,
+            // Slots that may differ per language (R2 T018), given as slot.locale, and the title, which is text.
+            languageSlots = BrandSlots.PerLanguage,
+            titleSlot = BrandSlots.Title,
+            titleLength = BrandSlots.TitleLength,
             fonts = TokenSchema.ApprovedFonts,
             easings = TokenSchema.Easings.Keys,
             choices = TokenSchema.All.Where(t => t.Choices is not null).ToDictionary(t => t.Name, t => t.Choices!),
@@ -638,10 +642,16 @@ public static class ExperienceModule
     {
         var x = app.MapGroup("/api/v1/experience").RequireTenantUser().WithTags("Experience: shell and navigation");
 
-        x.MapGet("/shell", async (ShellService shell, RequestLocale locale, IDbSession session, IAdministrationEntry administration, CancellationToken ct) =>
+        x.MapGet("/shell", async (ShellService shell, AppManifest brand, RequestLocale locale, IDbSession session, IAdministrationEntry administration,
+            CancellationToken ct) =>
         {
-            // The Administration entry (FR-062) appears only when the administration module says a section would open.
-            var view = await shell.GetShellAsync(locale.Locale, ct) with { Administration = await administration.CanOpenAsync(ct) };
+            // The Administration entry (FR-062) appears only when the administration module says a section would open. The
+            // brand title and logo follow the viewer's organization and language (spec 033 R2 T018).
+            var view = await shell.GetShellAsync(locale.Locale, ct) with
+            {
+                Administration = await administration.CanOpenAsync(ct),
+                Brand = await brand.PresentationAsync(ct),
+            };
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });

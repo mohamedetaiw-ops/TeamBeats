@@ -61,7 +61,7 @@ public sealed record OrganizationIndicator(Guid Id, string Name, bool Primary);
 public sealed record ShellView(int Version, ShellDefinition Layout, IReadOnlyList<NavLink> GlobalMenu,
     IReadOnlyList<OrganizationMenu> OrganizationMenus, IReadOnlyList<OrganizationIndicator> Organizations, bool CanSwitchOrganization,
     string? Home = null, bool Assistant = false, FooterView? Footer = null, IReadOnlyList<HomeViewLink>? HomeViews = null, bool Administration = false,
-    IReadOnlyList<NavLink>? MobileNav = null, bool Guest = false);
+    IReadOnlyList<NavLink>? MobileNav = null, bool Guest = false, Themes.BrandPresentation? Brand = null);
 
 public sealed record OrganizationMenu(Guid OrgUnitId, string Name, IReadOnlyList<NavLink> Items);
 
