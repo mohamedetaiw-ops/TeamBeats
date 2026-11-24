@@ -607,15 +607,6 @@
   border-radius: var(--tb-radius-md);
 }
 
-.content-site-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(16rem, 100%), 1fr));
-  gap: var(--tb-space-md);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
 /* Mentions, topics and follows (spec 009 US9, FR-017). */
 .content-mention {
   font-weight: var(--tb-font-weight-bold);
@@ -663,8 +654,7 @@
   list-style: none;
 }
 
-.content-signage-title {
-  margin: 0;
+.content-signage .ui-tile-title {
   font-size: var(--tb-font-size-xl);
 }
 

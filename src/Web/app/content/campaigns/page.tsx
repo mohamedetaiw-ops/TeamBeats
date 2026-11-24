@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
@@ -7,6 +6,7 @@ import { Header } from "@/components/shell/Header";
 import { Badge } from "@/components/ui/Badge";
 import { StateView } from "@/components/ui/StateView";
 import { CampaignCreateForm } from "@/features/content/Campaigns";
+import { TileCard } from "@/components/ui/TileCard";
 import "@/features/content/content.css";
 
 const tones = { draft: "neutral", scheduled: "info", completed: "success", cancelled: "neutral" } as const;
@@ -37,18 +37,20 @@ export default async function CampaignsPage() {
               {campaigns.data.length === 0 ? (
                 <p className="field-hint">{t("empty")}</p>
               ) : (
-                <ul className="content-site-list">
+                <ul className="ui-tiles">
                   {campaigns.data.map((c) => (
-                    <li key={c.id} className="content-card" data-testid="campaign">
-                      <h3>
-                        <Link href={campaignHref(c.id)}>
-                          <bdi>{c.name}</bdi>
-                        </Link>
-                      </h3>
-                      <p className="content-meta">
-                        <Badge tone={tones[c.status]}>{t(`status.${c.status}`)}</Badge>
-                        <span>{t("stepCount", { count: c.steps.length })}</span>
-                      </p>
+                    <li key={c.id} data-testid="campaign">
+                      <TileCard
+                        title={c.name}
+                        href={campaignHref(c.id)}
+                        icon="megaphone"
+                        meta={
+                          <>
+                            <Badge tone={tones[c.status]}>{t(`status.${c.status}`)}</Badge>
+                            <span>{t("stepCount", { count: c.steps.length })}</span>
+                          </>
+                        }
+                      />
                     </li>
                   ))}
                 </ul>

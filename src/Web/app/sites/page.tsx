@@ -6,6 +6,7 @@ import { pickName, type FollowView, type SiteLink } from "@/lib/content/types";
 import { Header } from "@/components/shell/Header";
 import { StateView } from "@/components/ui/StateView";
 import { FollowButton } from "@/features/content/FollowButton";
+import { TileCard } from "@/components/ui/TileCard";
 import "@/features/content/content.css";
 
 /**
@@ -30,22 +31,27 @@ export default async function SitesPage() {
         {!sites.ok || sites.data.length === 0 ? (
           <StateView kind="empty" title={t("mineEmpty")} message="" />
         ) : (
-          <ul className="content-site-list">
+          <ul className="ui-tiles">
             {sites.data.map((s) => {
               const name = pickName(s.names, locale);
               return (
-                <li key={s.id} className="content-card" data-testid="site-link">
-                  <h2>
-                    <bdi>{name}</bdi>
-                  </h2>
-                  {s.homeSlug ? (
-                    <Link href={`/p/${s.homeSlug}`} aria-label={t("open", { name })}>
-                      {t("home")}
-                    </Link>
-                  ) : (
-                    <p className="content-meta">{t("notPublished")}</p>
-                  )}
-                  <FollowButton kind="site" followKey={s.id} label={name} following={followed.has(s.id)} />
+                <li key={s.id} data-testid="site-link">
+                  <TileCard
+                    title={name}
+                    icon="globe"
+                    headingLevel={2}
+                    meta={s.homeSlug ? undefined : t("notPublished")}
+                    footer={
+                      <>
+                        {s.homeSlug ? (
+                          <Link href={`/p/${s.homeSlug}`} aria-label={t("open", { name })}>
+                            {t("home")}
+                          </Link>
+                        ) : null}
+                        <FollowButton kind="site" followKey={s.id} label={name} following={followed.has(s.id)} />
+                      </>
+                    }
+                  />
                 </li>
               );
             })}

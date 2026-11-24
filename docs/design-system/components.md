@@ -23,7 +23,7 @@ Every TeamBeats screen is built from these components. They live in `src/Web/com
 | Messages | `Messages.tsx` | Toast-style messages with priority and Undo | Polite or assertive live region by priority |
 | Page header | `PageHeader.tsx` | Top of every module page: icon tile, h1, one line description, page actions, section tabs | One h1; the icon is decorative |
 | Section tabs | `SectionNav.tsx` | Pill tabs between the pages of one area (My policies, Register, Campaigns) | A labelled `nav`; the current page has `aria-current="page"` |
-| Tile card | `TileCard.tsx` | A service, knowledge space or library: icon tile, title, meta, footer | The title link covers the card; one target, one name |
+| Tile card | `TileCard.tsx` | A service, knowledge space, library, site or content item: icon tile, title, meta, footer | The title link covers the card; one target, one name. Without a link the title is text and the footer holds the actions |
 | Button sizes and icons | `Button.tsx` (`Button`, `ButtonLink`) | Sizes medium (44 px, page actions), small (36 px) and compact (28 px, only in toolbars, tables and dense panels); a leading or trailing icon; a link that looks like a button | The icon is decorative; a link stays a link |
 | Icon button | `IconButton.tsx` (`IconButton`, `CloseButton`) | An action shown as an icon only: edit, more, close | The label is required and becomes the accessible name |
 | Button group | `ButtonGroup.tsx` | Two to five related actions joined in one row | A named group; toggles use `aria-pressed` |

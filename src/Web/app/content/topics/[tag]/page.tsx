@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
@@ -6,6 +5,7 @@ import type { FeedPage, FollowView } from "@/lib/content/types";
 import { Header } from "@/components/shell/Header";
 import { StateView } from "@/components/ui/StateView";
 import { FollowButton } from "@/features/content/FollowButton";
+import { TileCard } from "@/components/ui/TileCard";
 import "@/features/content/content.css";
 
 /**
@@ -44,15 +44,10 @@ export default async function TopicPage({ params }: { params: Promise<{ tag: str
         {page.data.items.length === 0 ? (
           <StateView kind="empty" title={t("empty")} message="" />
         ) : (
-          <ul className="content-site-list">
+          <ul className="ui-tiles">
             {page.data.items.map((i) => (
-              <li key={i.id} className="content-card" data-testid="topic-item">
-                <h2>
-                  <Link href={`/content/read/${encodeURIComponent(i.id)}`}>
-                    <bdi>{i.title}</bdi>
-                  </Link>
-                </h2>
-                <p className="content-meta">{date(i.publishedAt)}</p>
+              <li key={i.id} data-testid="topic-item">
+                <TileCard title={i.title} href={`/content/read/${encodeURIComponent(i.id)}`} icon="megaphone" meta={date(i.publishedAt)} headingLevel={2} />
               </li>
             ))}
           </ul>
