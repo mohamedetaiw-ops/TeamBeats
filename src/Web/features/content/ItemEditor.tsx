@@ -233,6 +233,7 @@ export function ItemEditor({ initial, site, units, locales }: { initial: ItemVie
         {item.publishedVersion ? <Link href={readHref(item.id)}>{t("openReader")}</Link> : null}
         <Link href={`/content/items/${encodeURIComponent(item.id)}/history`}>{t("history")}</Link>
         {item.critical ? <Link href={`/content/items/${encodeURIComponent(item.id)}/acknowledgements`}>{t("acknowledgements")}</Link> : null}
+        {item.critical && item.publishedVersion ? <Link href={`/content/items/${encodeURIComponent(item.id)}/delivery`}>{t("deliveryReport")}</Link> : null}
         {item.publishedVersion ? (
           <Link href={`/content/items/${encodeURIComponent(item.id)}/analytics`} data-testid="item-analytics-link">
             {t("analytics")}

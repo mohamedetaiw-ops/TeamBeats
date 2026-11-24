@@ -419,6 +419,9 @@ public static class ContentModule
         items.MapGet("/{id:guid}/acknowledgements", async (Guid id, CriticalAnnouncements service, CancellationToken ct) =>
             Results.Ok(await service.SummaryAsync(id, ct)));
 
+        items.MapGet("/{id:guid}/delivery-report", async (Guid id, CriticalAnnouncements service, CancellationToken ct) =>
+            Results.Ok(await service.DeliveryReportAsync(id, ct)));
+
         items.MapGet("/{id:guid}/acknowledgements/team", async (Guid id, CriticalAnnouncements service, CancellationToken ct) =>
             Results.Ok(await service.TeamAsync(id, ct)));
 
