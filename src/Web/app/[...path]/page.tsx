@@ -63,7 +63,7 @@ export default async function AddressPage({ params }: { params: Promise<{ path: 
       />
       <SectionMenu label={t("sectionNav")} links={resolved.data.sectionMenu} />
       <main id="main">
-        <PageRenderer page={page.data} tabsLabel={te("panels")} tabLabel={(n) => te("panel", { number: n })} />
+        <PageRenderer page={page.data} tabsLabel={te("panels")} tabLabel={(n) => te("panel", { number: n })} sharedLabel={(owner) => te("sharedBy", { owner })} />
       </main>
     </>
   );

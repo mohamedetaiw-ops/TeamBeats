@@ -1458,7 +1458,8 @@
       "counter": "Clicked {count} times",
       "restricted": "Restricted block",
       "old": "Older block"
-    }
+    },
+    "sharedBy": "Shared by {owner}"
   },
   "brand": {
     "title": "Brand",
@@ -2134,7 +2135,8 @@
       "startTour": "Tour, {count, plural, one {# step} other {# steps}}",
       "showHint": "Show this hint again",
       "shownHint": "Shown on this page"
-    }
+    },
+    "organizationNavShared": "{name}, shared with you"
   },
   "shell_settings": {
     "title": "Shell and footer",
@@ -2804,6 +2806,19 @@
       "cancel": "Cancel",
       "restored": "Revision {revision} is the draft again.",
       "failed": "The revision could not be restored. Reload the page and try again."
+    },
+    "sharing": {
+      "title": "Sharing with other organizations",
+      "intro": "This page reaches its own organization, the organizations below it and those above it. Share it to add another organization and those below it. People there see who owns it and keep their own permissions.",
+      "none": "Not shared with any other organization.",
+      "organization": "Organization",
+      "choose": "Choose an organization",
+      "share": "Share",
+      "remove": "Stop sharing",
+      "removeFor": "Stop sharing with {organization}",
+      "shared": "Shared with {organization}.",
+      "unshared": "No longer shared with {organization}.",
+      "failed": "Sharing could not be changed. Try again."
     }
   },
   "templates": {

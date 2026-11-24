@@ -156,6 +156,8 @@ public static class AuditActions
     public const string BrandUnassigned = "brand.unassigned";
     public const string ExperienceLockChanged = "experience.lock_changed";
     public const string BrandAssetUploaded = "brand.asset_uploaded";
+    public const string ExperienceShareChanged = "experience.share_changed";
+    public const string ExperienceDelegationChanged = "experience.delegation_changed";
 
     // 008
     public const string ShellPublished = "shell.published";

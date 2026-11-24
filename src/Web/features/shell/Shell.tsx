@@ -138,7 +138,7 @@ export async function Shell({ me, breadcrumbs = [], favorite }: { me: Me; breadc
         </div>
       ) : null}
       {orgMenus.map((menu) => (
-        <GlobalMenu key={menu.orgUnitId} id={`organization-${menu.orgUnitId}`} label={t("organizationNav", { name: menu.name })} links={menu.items} />
+        <GlobalMenu key={menu.orgUnitId} id={`organization-${menu.orgUnitId}`} label={t(menu.shared ? "organizationNavShared" : "organizationNav", { name: menu.name })} links={menu.items} />
       ))}
       <div className="shell-below">{layout.below.map(render)}</div>
       {/* Help hints and the open tour (spec 008 FR-020) sit here, in the page flow, never over the page. */}

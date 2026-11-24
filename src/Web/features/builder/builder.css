@@ -518,6 +518,18 @@
   gap: var(--tb-space-xs);
 }
 
+/* Sharing an organization's page with another branch (spec 033 R2 T019). */
+.builder-sharing {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin-block-start: var(--tb-space-lg);
+}
+
+.builder-sharing-list {
+  padding-inline-start: 0;
+  list-style: none;
+}
+
 .builder-revisions {
   display: grid;
   gap: var(--tb-space-sm);

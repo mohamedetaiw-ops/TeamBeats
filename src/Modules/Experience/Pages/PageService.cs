@@ -75,9 +75,10 @@ public sealed record Provenance(string Template, string Layout, int Release, Gui
 
 /// <param name="ThemeScope">The scope whose effective theme the page uses (spec 033): <c>tenant</c> or the owning org unit.</param>
 /// <param name="Dropped">Placements left out because an earlier one already shows their data source and view (FR-072).</param>
+/// <param name="SharedBy">The owning organization's name when the viewer reaches the page through a share (spec 033 FR-022).</param>
 public sealed record RenderedPage(Guid PageId, int Release, string Template, string Layout, string Variant, string Fallback,
     IReadOnlyList<RenderedRegion> Regions, Provenance? Provenance, string ThemeScope, IReadOnlyList<Personalization.SkippedOperation>? Skipped = null,
-    IReadOnlyList<DroppedPlacement>? Dropped = null);
+    IReadOnlyList<DroppedPlacement>? Dropped = null, string? SharedBy = null);
 
 /// <summary>A placement the renderer left out, with the placement that already shows the same data (spec 032 FR-072).</summary>
 public sealed record DroppedPlacement(string Id, string ComponentRef, string Region, string KeptPlacement, string ReasonKey);
@@ -122,7 +123,8 @@ public sealed partial class PageService(
     PageRoutes routes,
     Fragments fragments,
     Components.FeatureControls controls,
-    Components.ComponentDeployments deployments)
+    Components.ComponentDeployments deployments,
+    Sharing.OrgSharing sharing)
 {
     private sealed record PageRow(Guid Id, Guid? OrgUnitId, string Slug, string TemplateId, string TemplateVersion, int? CurrentRelease);
 
@@ -659,6 +661,11 @@ public sealed partial class PageService(
             throw AppException.NotFound();
         }
         await authz.DemandVisibleAsync(Permissions.PageView, Target(page.OrgUnitId), ct);
+        // An organization's page reaches its own line and the organizations it is shared with (spec 033 R2 T019).
+        if (!await sharing.SeesAsync(Sharing.OrgSharing.Page, page.Id, page.OrgUnitId, ct))
+        {
+            throw AppException.NotFound();
+        }
         var snapshot = await ReleaseAsync(page.Id, current, ct);
         // A fragment shows its current version on every page that places it (R2 T027); the release keeps only the reference.
         // A deployed component major (R2 T031) shows on the release through its migration hook, without a republish.
@@ -731,15 +738,22 @@ public sealed partial class PageService(
         var provenance = (await authz.CheckAsync(Permissions.ConfigHistoryView, Target(page.OrgUnitId), ct)).Allowed
             ? new Provenance($"{template.Id}@{template.Version}", $"{layout.Id}@{layout.Version}", current, snapshot.PublishedBy, snapshot.PublishedAt)
             : null;
+        // A page reached through a share names its owner (FR-022); it keeps its owner's brand through the theme scope.
+        var owner = await sharing.IsSharedToViewerAsync(Sharing.OrgSharing.Page, page.Id, page.OrgUnitId, ct)
+            ? (await hierarchy.GetNamesAsync([page.OrgUnitId!.Value], ct)).GetValueOrDefault(page.OrgUnitId.Value) is { } names
+                ? names.GetValueOrDefault(locale) ?? names.GetValueOrDefault(Primitives.Locales.Fallback) ?? names.Values.FirstOrDefault()
+                : null
+            : null;
         return new RenderedPage(page.Id, current, template.Id, layout.Id, snapshot.Definition.Variant, layout.Fallback, regions, provenance,
-            page.OrgUnitId?.ToString() ?? "tenant", personal.Skipped, dropped);
+            page.OrgUnitId?.ToString() ?? "tenant", personal.Skipped, dropped, owner);
     }
 
     /// <summary>The latest release of a page the caller may view; anything else is not found (spec 008 personal layouts).</summary>
     public async Task<PageContext> PublishedForViewerAsync(Guid id, CancellationToken ct)
     {
         var page = await session.QuerySingleOrDefaultAsync(PageSelect + " where id = @id", new { id }, MapPage, ct);
-        if (page?.CurrentRelease is not { } current || !(await authz.CheckAsync(Permissions.PageView, Target(page.OrgUnitId), ct)).Allowed)
+        if (page?.CurrentRelease is not { } current || !(await authz.CheckAsync(Permissions.PageView, Target(page.OrgUnitId), ct)).Allowed
+            || !await sharing.SeesAsync(Sharing.OrgSharing.Page, page.Id, page.OrgUnitId, ct))
         {
             throw AppException.NotFound();
         }

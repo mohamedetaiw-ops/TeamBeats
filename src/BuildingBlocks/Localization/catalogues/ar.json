@@ -2816,5 +2816,7 @@
   "notifications.template.experience.theme_schedule_failed.body": "لم يُنشر {brand} في موعده بسبب مشكلات في التباين، ويبقى الإصدار الحالي.",
   "validation.theme.preview_scope": "اختر نطاقًا يستخدم هذه الهوية",
   "validation.theme.preview_source": "اعرض المسودة أو الإصدار الحالي",
-  "validation.theme.title": "أدخل عنوانًا من 60 حرفًا كحد أقصى دون فواصل أسطر"
+  "validation.theme.title": "أدخل عنوانًا من 60 حرفًا كحد أقصى دون فواصل أسطر",
+  "validation.experience.share_unit": "اختر مؤسسة من هذا المستأجر",
+  "validation.experience.share_own_line": "هذه المؤسسة تراه بالفعل لأنها في فرع المالك"
 }
