@@ -59,3 +59,30 @@ PDF, images, video and text render in the browser from the file itself. Office f
 - Entitlements: controlled types refused without `docs.controlled`; storage limit error shape.
 - Files: allowlist and size refusal, dedupe, quarantine, no preview before clean.
 - Acceptance (e2e): create a library and type, upload, filter, check out and in, release a controlled version and confirm reading, write a knowledge article, in English and Arabic with axe.
+
+## R3 plan
+
+R3 adds records declaration with disposition certificates, and customer-managed keys per library. The spec names both in the release line and says nothing more, so the defaults below are the smallest that meet records practice and spec 026 FR-007.
+
+R3 slices, in order:
+1. **Records and disposition certificates:** declaring documents as records, what a record refuses, and certificates for disposed records.
+2. **Customer-managed keys per library:** files of a chosen library encrypted with the tenant data key of spec 026 US8.
+
+### Records declaration
+- **Who:** records managers (`records.manage`, capability `records.retention`) declare and undeclare. A retention label can also declare: a label with "declare as record" makes every document it labels a record once the document has a published version and is checked in (on labelling and on the maintenance run).
+- **What a record refuses**, in the API: check-out, working copies, check-in, restore of an older version, editing in the browser, metadata changes and deletion to the recycle bin, each with `conflict.documents.record`. Reading, downloading, permissions and labels are unchanged. Retention and disposition still apply: disposition is the only way a record is deleted, and legal holds stop it as for any document.
+- **Undeclaring** needs a reason (kept in the audit entry), and is refused while the document carries a label that declares records. Declaring and undeclaring are audited (`records.declared`, `records.undeclared`).
+- **The flag on a label** cannot be turned off once a label has declared a document, so a label change never unlocks records in bulk.
+- **Page:** the document page shows that a document is a record, and records managers get declare and undeclare there; the records page lists records and the label form has "declare as record".
+
+### Disposition certificates
+- A records manager issues a certificate for a date range of dispositions (at most 366 days, ending no later than now, and at most 10,000 disposition records; otherwise narrow the range). The certificate keeps the list of disposition records it covers, so it never changes after it is issued, even if more dispositions later fall in the same range (they are on the next certificate). An empty range is refused.
+- Each certificate has an ID of twelve characters (the learning certificate alphabet), the range, the count, the issuer and time, and a SHA-256 digest over the listed disposition records (ID, document ID, number, versions, mode, approver, time) in a fixed order. Verify by ID inside the tenant recomputes the digest from the stored disposition records and says whether it still matches.
+- The PDF is printed when downloaded (Gotenberg HTML route, as for letters and learning certificates), in the issuer's language, Arabic right to left. It lists number, label, versions, how it was disposed, the approver's name and the date for each record, and never names or content (FR-014 already keeps none).
+- Kept as long as the disposition records (10 years by default). Audited `records.certificate_issued`.
+
+### Tests (R3 slice 1)
+- Declaring by hand and by a declaring label; every refused write path answers `conflict.documents.record`; reading and download still work; undeclare needs a reason and is refused while a declaring label applies; the label flag cannot be turned off once used.
+- A record goes through disposition review and disposal; a held record cannot be disposed.
+- Certificates: issued for a range with its disposition records, empty and too long ranges refused, later dispositions not added, verify matches and detects a changed list, PDF printed; cross-tenant certificate and document not found; not records managers and packages without retention refused.
+- e2e: declare a record and see the refusal, issue a certificate, in English and Arabic with axe.

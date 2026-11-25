@@ -32,6 +32,7 @@ public static class DocumentsModule
         services.AddScoped<OfficeEditing>();
         services.AddScoped<DocumentText>();
         services.AddScoped<Records>();
+        services.AddScoped<DispositionCertificates>();
         services.AddScoped<GuestShares>();
         services.AddScoped<Assets>();
         services.AddScoped<DocumentImports>();
@@ -703,6 +704,43 @@ public static class DocumentsModule
         });
 
         records.MapGet("/dispositions", async (Records service, CancellationToken ct) => Results.Ok(await service.DispositionRecordsAsync(ct)));
+
+        // Spec 011 R3: records declaration and disposition certificates.
+        records.MapGet("/records", async (Records service, CancellationToken ct) => Results.Ok(await service.RecordsAsync(ct)));
+
+        records.MapPost("/documents/{id:guid}/declare", async (Guid id, Records service, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await service.DeclareAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        records.MapPost("/documents/{id:guid}/undeclare", async (Guid id, UndeclareRequest request, Records service, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await service.UndeclareAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        records.MapGet("/certificates", async (DispositionCertificates service, CancellationToken ct) => Results.Ok(await service.ListAsync(ct)));
+
+        records.MapPost("/certificates", async (CertificateRequest request, DispositionCertificates service, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await service.IssueAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/records/certificates/{view.Certificate.Id}", view);
+        });
+
+        records.MapGet("/certificates/verify", async (string? code, DispositionCertificates service, CancellationToken ct) => Results.Ok(await service.VerifyAsync(code, ct)));
+
+        records.MapGet("/certificates/{id:guid}", async (Guid id, DispositionCertificates service, CancellationToken ct) => Results.Ok(await service.GetAsync(id, ct)));
+
+        records.MapGet("/certificates/{id:guid}/pdf", async (Guid id, DispositionCertificates service, HttpResponse response, CancellationToken ct) =>
+        {
+            var (content, name) = await service.PdfAsync(id, ct);
+            response.Headers.CacheControl = "no-store";
+            return Results.File(content, "application/pdf", name);
+        });
 
         records.MapGet("/holds", async (Records service, CancellationToken ct) => Results.Ok(await service.HoldsAsync(ct)));
 

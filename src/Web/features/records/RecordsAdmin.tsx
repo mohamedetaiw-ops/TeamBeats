@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
+import { Button, ButtonLink } from "@/components/ui/Button";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { ConfirmAction } from "@/components/ui/ConfirmAction";
 import { FormField, SelectField, TextAreaField } from "@/components/ui/FormField";
@@ -15,11 +15,14 @@ import { documentHref, nameIn } from "@/lib/documents/types";
 import {
   actions,
   triggers,
+  type DispositionCertificateDetail,
+  type DispositionCertificateView,
   type DispositionItem,
   type DispositionRecordView,
   type HoldDetail,
   type HoldView,
   type LabelView,
+  type RecordItem,
   type RecordsLibraryView,
   type RetentionAction,
   type RetentionTrigger,
@@ -66,9 +69,19 @@ function useSend() {
   return { busy, messages, send };
 }
 
-type LabelDraft = { en: string; ar: string; months: string; trigger: RetentionTrigger; field: string; action: RetentionAction; status: "active" | "retired"; reapply: boolean };
+type LabelDraft = {
+  en: string;
+  ar: string;
+  months: string;
+  trigger: RetentionTrigger;
+  field: string;
+  action: RetentionAction;
+  status: "active" | "retired";
+  reapply: boolean;
+  declares: boolean;
+};
 
-const emptyDraft: LabelDraft = { en: "", ar: "", months: "12", trigger: "created", field: "", action: "review", status: "active", reapply: false };
+const emptyDraft: LabelDraft = { en: "", ar: "", months: "12", trigger: "created", field: "", action: "review", status: "active", reapply: false, declares: false };
 
 /**
  * Retention labels (spec 011 FR-013): a period, the event that starts it and what happens when it ends. Editing a label
@@ -94,6 +107,7 @@ export function LabelsPanel({ labels }: { labels: LabelView[] }) {
       action: label.action,
       status: label.status,
       reapply: false,
+      declares: label.declaresRecord,
     });
   }
 
@@ -111,6 +125,7 @@ export function LabelsPanel({ labels }: { labels: LabelView[] }) {
       status: editing ? draft.status : null,
       version: editing?.version ?? null,
       reapply: draft.reapply,
+      declaresRecord: draft.declares,
     };
     const done = editing ? await send(`/api/v1/records/labels/${encodeURIComponent(editing.id)}`, "PUT", body) : await send("/api/v1/records/labels", "POST", body);
     if (done) {
@@ -135,6 +150,7 @@ export function LabelsPanel({ labels }: { labels: LabelView[] }) {
               </span>
               <span className="records-meta">{t("labels.summary", { months: l.periodMonths, trigger: t(`labels.trigger.${l.trigger}`), action: t(`labels.action.${l.action}`) })}</span>
               <span className="records-meta">{t("labels.documents", { count: l.documents })}</span>
+              {l.declaresRecord ? <Badge tone="info">{t("labels.declares")}</Badge> : null}
               {l.status === "retired" ? <Badge tone="neutral">{t("labels.retired")}</Badge> : null}
               <Button variant="quiet" onClick={() => edit(l)}>
                 {t("labels.edit", { name: nameIn(l.names, locale) })}
@@ -187,6 +203,12 @@ export function LabelsPanel({ labels }: { labels: LabelView[] }) {
           value={draft.action}
           onChange={(e) => setDraft({ ...draft, action: e.target.value as RetentionAction })}
           options={actions.map((v) => ({ value: v, label: t(`labels.action.${v}`) }))}
+        />
+        <Checkbox
+          label={t("labels.declaresLabel")}
+          hint={t("labels.declaresHint")}
+          checked={draft.declares}
+          onChange={(e) => setDraft({ ...draft, declares: e.target.checked })}
         />
         {editing ? (
           <>
@@ -338,6 +360,134 @@ export function DispositionPanel({ queue, records }: { queue: DispositionItem[];
           ))}
         </ul>
       )}
+    </section>
+  );
+}
+
+/** Documents declared records (spec 011 R3): read-only until disposition. Undeclaring is on the document page, with a reason. */
+export function RecordsPanel({ records }: { records: RecordItem[] }) {
+  const t = useTranslations("records");
+  const format = useFormatter();
+  return (
+    <section className="records-card" aria-labelledby="records-records">
+      <h2 id="records-records">{t("records.title")}</h2>
+      <p className="field-hint">{t("records.intro")}</p>
+      {records.length === 0 ? (
+        <p className="field-hint">{t("records.empty")}</p>
+      ) : (
+        <ul className="records-list">
+          {records.map((r) => (
+            <li key={r.documentId} data-testid="record-item">
+              <Link href={documentHref(r.documentId)} className="records-name">
+                <bdi>{r.number ? `${r.number} ${r.name}` : r.name}</bdi>
+              </Link>
+              <span className="records-meta">{t(`records.source.${r.source}`)}</span>
+              <span className="records-meta">{t("records.since", { date: format.dateTime(new Date(r.recordAt), { dateStyle: "medium" }) })}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+/** The first day of the month and today, as date input values, for a new certificate's range. */
+function monthToDate() {
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const day = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  return { from: day(new Date(now.getFullYear(), now.getMonth(), 1)), to: day(now) };
+}
+
+/**
+ * Disposition certificates (spec 011 R3): one covers the dispositions of a range of days, keeps that list and a digest
+ * over it, and downloads as PDF. Verify finds a certificate by its ID and says whether its records still match.
+ */
+export function CertificatesPanel({ certificates }: { certificates: DispositionCertificateView[] }) {
+  const t = useTranslations("records");
+  const format = useFormatter();
+  const [range, setRange] = useState(monthToDate);
+  const [code, setCode] = useState("");
+  const [verified, setVerified] = useState<DispositionCertificateDetail | null>(null);
+  const [missing, setMissing] = useState(false);
+  const issue = useSend();
+  const day = (iso: string) => format.dateTime(new Date(iso), { dateStyle: "medium" });
+
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    // The range covers whole days in the viewer's time zone; the last day ends now when it is today.
+    const from = new Date(`${range.from}T00:00:00`);
+    const end = new Date(`${range.to}T00:00:00`);
+    end.setDate(end.getDate() + 1);
+    const to = end.getTime() > Date.now() ? new Date() : end;
+    await issue.send("/api/v1/records/certificates", "POST", { from: from.toISOString(), to: to.toISOString() });
+  }
+
+  async function verify(event: React.FormEvent) {
+    event.preventDefault();
+    setVerified(null);
+    setMissing(false);
+    try {
+      const response = await fetch(`/api/v1/records/certificates/verify?code=${encodeURIComponent(code)}`, { cache: "no-store" });
+      if (response.ok) setVerified((await response.json()) as DispositionCertificateDetail);
+      else setMissing(true);
+    } catch {
+      setMissing(true);
+    }
+  }
+
+  return (
+    <section className="records-card" aria-labelledby="records-certificates">
+      <h2 id="records-certificates">{t("certificates.title")}</h2>
+      <p className="field-hint">{t("certificates.intro")}</p>
+      <Problems messages={issue.messages} />
+      <form className="records-form" onSubmit={(e) => void submit(e)}>
+        <FormField label={t("certificates.from")} name="certificate-from" type="date" value={range.from} onChange={(e) => setRange({ ...range, from: e.target.value })} required />
+        <FormField label={t("certificates.to")} name="certificate-to" type="date" value={range.to} onChange={(e) => setRange({ ...range, to: e.target.value })} required />
+        <p className="records-actions">
+          <Button type="submit" variant="primary" busy={issue.busy} busyLabel={t("certificates.issuing")}>
+            {t("certificates.issue")}
+          </Button>
+        </p>
+      </form>
+      {certificates.length === 0 ? (
+        <p className="field-hint">{t("certificates.empty")}</p>
+      ) : (
+        <ul className="records-list">
+          {certificates.map((c) => (
+            <li key={c.id} data-testid="disposition-certificate">
+              <span className="records-name">
+                <bdi dir="ltr">{c.code}</bdi>
+              </span>
+              <span className="records-meta">{t("certificates.range", { from: day(c.from), to: day(new Date(new Date(c.to).getTime() - 1).toISOString()) })}</span>
+              <span className="records-meta">{t("certificates.count", { count: c.records })}</span>
+              <span className="records-meta">{t("certificates.issued", { name: c.issuerName, date: day(c.issuedAt) })}</span>
+              <ButtonLink variant="secondary" size="sm" icon="download" href={`/api/v1/records/certificates/${encodeURIComponent(c.id)}/pdf`} download>
+                {t("certificates.download", { code: c.code })}
+              </ButtonLink>
+            </li>
+          ))}
+        </ul>
+      )}
+      <h3>{t("certificates.verifyTitle")}</h3>
+      <form className="records-form" onSubmit={(e) => void verify(e)}>
+        <FormField label={t("certificates.code")} name="certificate-code" dir="ltr" value={code} onChange={(e) => setCode(e.target.value)} required maxLength={20} />
+        <p className="records-actions">
+          <Button type="submit">{t("certificates.verify")}</Button>
+        </p>
+      </form>
+      {missing ? (
+        <p className="notice notice-error" role="alert">
+          {t("certificates.notFound")}
+        </p>
+      ) : null}
+      {verified ? (
+        <p className={verified.intact ? "notice notice-success" : "notice notice-error"} role="status" data-testid="certificate-verified">
+          {verified.intact
+            ? t("certificates.intact", { code: verified.certificate.code, count: verified.certificate.records })
+            : t("certificates.changed", { code: verified.certificate.code })}
+        </p>
+      ) : null}
     </section>
   );
 }

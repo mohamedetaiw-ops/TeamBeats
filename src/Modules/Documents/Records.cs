@@ -40,10 +40,11 @@ public sealed record LabelRequest(
     string? Action,
     string? Status = null,
     int? Version = null,
-    bool Reapply = false);
+    bool Reapply = false,
+    bool DeclaresRecord = false);
 
 public sealed record LabelView(Guid Id, IReadOnlyDictionary<string, string> Names, int PeriodMonths, string Trigger, string? TriggerField, string Action, string Status,
-    int Documents, int Version);
+    int Documents, int Version, bool DeclaresRecord = false);
 
 public sealed record LabelChoice(Guid? LabelId);
 
@@ -51,7 +52,13 @@ public sealed record RecordsTypeView(Guid Id, IReadOnlyDictionary<string, string
 
 public sealed record RecordsLibraryView(Guid Id, IReadOnlyDictionary<string, string> Names, string Scope, Guid? LabelId, IReadOnlyList<RecordsTypeView> Types);
 
-public sealed record DocumentRetentionView(Guid DocumentId, Guid? LabelId, string? Source, DateTimeOffset? EndsAt, string? Disposition, bool Held);
+public sealed record DocumentRetentionView(Guid DocumentId, Guid? LabelId, string? Source, DateTimeOffset? EndsAt, string? Disposition, bool Held,
+    DateTimeOffset? RecordAt = null, string? RecordSource = null);
+
+/// <summary>Why a records manager undeclares a record (spec 011 R3); kept in the audit entry.</summary>
+public sealed record UndeclareRequest(string? Reason);
+
+public sealed record RecordItem(Guid DocumentId, Guid LibraryId, string Name, string? Number, DateTimeOffset RecordAt, string Source, Guid? LabelId);
 
 public sealed record DispositionItem(Guid DocumentId, Guid LibraryId, string Name, string? Number, Guid LabelId, IReadOnlyDictionary<string, string> LabelNames,
     DateTimeOffset? EndedAt, DateTimeOffset DueAt, bool Held);
@@ -109,10 +116,10 @@ public sealed partial class Records(
 
     // Labels (FR-013)
 
-    private const string LabelColumns = "l.id, l.names::text, l.period_months, l.trigger, l.trigger_field, l.action, l.status, l.row_version";
+    private const string LabelColumns = "l.id, l.names::text, l.period_months, l.trigger, l.trigger_field, l.action, l.status, l.row_version, l.declares_record";
 
     private static LabelView ReadLabel(Npgsql.NpgsqlDataReader r) => new(r.GetGuid(0), DocJson.Read<Dictionary<string, string>>(r.GetString(1)), r.GetInt32(2),
-        r.GetString(3), r.Get<string>("trigger_field"), r.GetString(5), r.GetString(6), r.GetInt32(8), r.GetInt32(7));
+        r.GetString(3), r.Get<string>("trigger_field"), r.GetString(5), r.GetString(6), r.GetInt32(9), r.GetInt32(7), r.GetBoolean(8));
 
     public async Task<IReadOnlyList<LabelView>> LabelsAsync(CancellationToken ct)
     {
@@ -169,15 +176,19 @@ public sealed partial class Records(
         var now = clock.UtcNow;
         await session.ExecAsync(
             """
-            insert into documents.retention_label (tenant_id, id, names, period_months, trigger, trigger_field, action, created_at, created_by, updated_at)
-            values (platform.current_tenant_id(), @id, @names, @months, @trigger, @field, @action, @now, @by, @now)
+            insert into documents.retention_label (tenant_id, id, names, period_months, trigger, trigger_field, action, declares_record, created_at, created_by, updated_at)
+            values (platform.current_tenant_id(), @id, @names, @months, @trigger, @field, @action, @declares, @now, @by, @now)
             """, new
             {
                 id, names = new Jsonb(DocJson.Write(Libraries.Trimmed(request.Names!))), months = request.PeriodMonths, trigger = request.Trigger, field = request.TriggerField,
-                action = request.Action, now, by = context.ActorId,
+                action = request.Action, declares = request.DeclaresRecord, now, by = context.ActorId,
             }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.RecordsLabelCreated, "retention_label", id.ToString(),
-            Changes: new { names = request.Names, periodMonths = request.PeriodMonths, trigger = request.Trigger, triggerField = request.TriggerField, action = request.Action }), ct);
+            Changes: new
+            {
+                names = request.Names, periodMonths = request.PeriodMonths, trigger = request.Trigger, triggerField = request.TriggerField, action = request.Action,
+                declaresRecord = request.DeclaresRecord,
+            }), ct);
         return await LabelAsync(id, ct);
     }
 
@@ -198,16 +209,22 @@ public sealed partial class Records(
         {
             throw AppException.Conflict("conflict.records.stale");
         }
+        // A label that has declared records keeps declaring, so a label change never unlocks records in bulk (R3).
+        if (before.DeclaresRecord && !request.DeclaresRecord
+            && await session.ScalarAsync<bool>("select exists (select 1 from documents.document where retention_label_id = @id and record_source = 'label')", new { id }, ct))
+        {
+            throw AppException.Conflict("conflict.records.label_declared");
+        }
         var now = clock.UtcNow;
         await session.ExecAsync(
             """
             update documents.retention_label set names = @names, period_months = @months, trigger = @trigger, trigger_field = @field, action = @action,
-              status = coalesce(@status, status), updated_at = @now, row_version = row_version + 1
+              declares_record = @declares, status = coalesce(@status, status), updated_at = @now, row_version = row_version + 1
             where id = @id
             """, new
             {
                 id, names = new Jsonb(DocJson.Write(Libraries.Trimmed(request.Names!))), months = request.PeriodMonths, trigger = request.Trigger, field = request.TriggerField,
-                action = request.Action, status = request.Status, now,
+                action = request.Action, declares = request.DeclaresRecord, status = request.Status, now,
             }, ct);
         var reaches = request.Reapply
             ? await session.ExecAsync(
@@ -221,8 +238,10 @@ public sealed partial class Records(
             {
                 before = new { before.Names, before.PeriodMonths, before.Trigger, before.TriggerField, before.Action, before.Status },
                 after = new { request.Names, request.PeriodMonths, request.Trigger, request.TriggerField, request.Action, status = request.Status ?? before.Status },
+                declaresRecord = new { before = before.DeclaresRecord, after = request.DeclaresRecord },
                 reapplied = request.Reapply, documents = reaches,
             }), ct);
+        await DeclareByLabelAsync(now, ct, label: id);
         return await LabelAsync(id, ct);
     }
 
@@ -266,6 +285,7 @@ public sealed partial class Records(
             throw AppException.NotFound();
         }
         await RecordsSql.InheritAsync(session, clock.UtcNow, ct, library: libraryId);
+        await DeclareByLabelAsync(clock.UtcNow, ct, library: libraryId);
         await audit.WriteAsync(new AuditEntry(AuditActions.RecordsLabelApplied, Securables.Library, libraryId.ToString(),
             Changes: new { label, by = "library", count = await CountAsync(label, "library_id", libraryId, ct) }), ct);
     }
@@ -279,6 +299,7 @@ public sealed partial class Records(
             throw AppException.NotFound();
         }
         await RecordsSql.InheritAsync(session, clock.UtcNow, ct, type: typeId);
+        await DeclareByLabelAsync(clock.UtcNow, ct, type: typeId);
         await audit.WriteAsync(new AuditEntry(AuditActions.RecordsLabelApplied, "doc_type", typeId.ToString(),
             Changes: new { label, by = "type", count = await CountAsync(label, "type_id", typeId, ct) }), ct);
     }
@@ -313,6 +334,7 @@ public sealed partial class Records(
         }
         await audit.WriteAsync(new AuditEntry(AuditActions.RecordsLabelApplied, Securables.Document, documentId.ToString(),
             Changes: new { label, by = "manual", count = 1 }), ct);
+        await DeclareByLabelAsync(now, ct, ids: [documentId]);
         return await RetentionOfAsync(documentId, ct);
     }
 
@@ -326,12 +348,114 @@ public sealed partial class Records(
     private async Task<DocumentRetentionView> RetentionOfAsync(Guid documentId, CancellationToken ct) =>
         await session.QuerySingleOrDefaultAsync(
             $"""
-            select d.id, d.retention_label_id, d.retention_source, {RecordsSql.EndsAt("d")} as ends_at, d.disposition, {RecordsSql.Held("d")} as held
+            select d.id, d.retention_label_id, d.retention_source, {RecordsSql.EndsAt("d")} as ends_at, d.disposition, {RecordsSql.Held("d")} as held, d.record_at, d.record_source
             from documents.document d where d.id = @documentId and d.deleted_at is null
             """, new { documentId },
             r => new DocumentRetentionView(r.GetGuid(0), r.Get<Guid?>("retention_label_id"), r.Get<string>("retention_source"), r.Get<DateTimeOffset?>("ends_at"),
-                r.Get<string>("disposition"), r.GetBoolean(5)), ct)
+                r.Get<string>("disposition"), r.GetBoolean(5), r.Get<DateTimeOffset?>("record_at"), r.Get<string>("record_source")), ct)
         ?? throw AppException.NotFound();
+
+    // Records declaration (R3)
+
+    /// <summary>
+    /// Makes documents labelled with a label that declares records into records, once they are published and checked in.
+    /// Narrowed to one label, library, type or some documents, or every document on the maintenance run.
+    /// </summary>
+    private async Task<int> DeclareByLabelAsync(DateTimeOffset now, CancellationToken ct, Guid? label = null, Guid? library = null, Guid? type = null, Guid[]? ids = null)
+    {
+        var declared = await session.QueryAsync(
+            """
+            update documents.document d set record_at = @now, record_by = null, record_source = 'label'
+            from documents.retention_label l
+            where l.id = d.retention_label_id and l.declares_record and d.record_at is null and d.deleted_at is null and d.checked_in
+              and d.checked_out_by is null and d.effective_version_id is not null and d.disposition is null
+              and (@label::uuid is null or d.retention_label_id = @label) and (@library::uuid is null or d.library_id = @library)
+              and (@type::uuid is null or d.type_id = @type) and (@ids::uuid[] is null or d.id = any(@ids))
+            returning d.id, d.library_id, d.retention_label_id
+            """, new { now, label, library, type, ids }, r => (Id: r.GetGuid(0), Library: r.GetGuid(1), Label: r.GetGuid(2)), ct);
+        foreach (var (id, lib, by) in declared)
+        {
+            await audit.WriteAsync(new AuditEntry(AuditActions.RecordsDeclared, Securables.Document, id.ToString(),
+                Changes: new { library = lib, by = "label", label = by }), ct);
+        }
+        return declared.Count;
+    }
+
+    /// <summary>Declares one document a record by hand. It must be checked in and not checked out; a record already declared stays as it is.</summary>
+    public async Task<DocumentRetentionView> DeclareAsync(Guid documentId, CancellationToken ct)
+    {
+        await RequireAsync(Capabilities.RecordsRetention, ct);
+        var row = await session.QuerySingleOrDefaultAsync(
+            "select library_id, checked_in and checked_out_by is null, record_at from documents.document where id = @documentId and deleted_at is null for update",
+            new { documentId }, r => (Library: r.GetGuid(0), CheckedIn: r.GetBoolean(1), RecordAt: r.Get<DateTimeOffset?>("record_at")), ct);
+        if (row == default)
+        {
+            throw AppException.NotFound();
+        }
+        if (row.RecordAt is null)
+        {
+            // Nobody's working copy is dropped: a document being worked on is checked in first.
+            if (!row.CheckedIn)
+            {
+                throw AppException.Conflict("conflict.records.checked_out");
+            }
+            await session.ExecAsync(
+                "update documents.document set record_at = @now, record_by = @by, record_source = 'manual' where id = @documentId",
+                new { documentId, now = clock.UtcNow, by = context.ActorId }, ct);
+            await audit.WriteAsync(new AuditEntry(AuditActions.RecordsDeclared, Securables.Document, documentId.ToString(),
+                Changes: new { library = row.Library, by = "manual" }), ct);
+        }
+        return await RetentionOfAsync(documentId, ct);
+    }
+
+    /// <summary>
+    /// Undeclares a record, with a reason that goes to the audit entry only. Refused while the document's label declares
+    /// records: the label would declare it again, so the label has to change first.
+    /// </summary>
+    public async Task<DocumentRetentionView> UndeclareAsync(Guid documentId, UndeclareRequest request, CancellationToken ct)
+    {
+        await RequireAsync(Capabilities.RecordsRetention, ct);
+        var reason = request.Reason?.Trim();
+        if (string.IsNullOrEmpty(reason) || reason.Length > MaxReasonLength)
+        {
+            throw AppException.Validation("reason", "validation.records.undeclare_reason");
+        }
+        var row = await session.QuerySingleOrDefaultAsync(
+            """
+            select d.library_id, d.record_at, coalesce(l.declares_record, false)
+            from documents.document d left join documents.retention_label l on l.id = d.retention_label_id
+            where d.id = @documentId and d.deleted_at is null for update of d
+            """, new { documentId }, r => (Library: r.GetGuid(0), RecordAt: r.Get<DateTimeOffset?>("record_at"), ByLabel: r.GetBoolean(2)), ct);
+        if (row == default)
+        {
+            throw AppException.NotFound();
+        }
+        if (row.RecordAt is null)
+        {
+            throw AppException.Conflict("conflict.records.not_record");
+        }
+        if (row.ByLabel)
+        {
+            throw AppException.Conflict("conflict.records.declared_by_label");
+        }
+        await session.ExecAsync("update documents.document set record_at = null, record_by = null, record_source = null where id = @documentId", new { documentId }, ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.RecordsUndeclared, Securables.Document, documentId.ToString(),
+            Changes: new { library = row.Library, reason, declaredAt = row.RecordAt }), ct);
+        return await RetentionOfAsync(documentId, ct);
+    }
+
+    /// <summary>The latest records of the tenant, newest first.</summary>
+    public async Task<IReadOnlyList<RecordItem>> RecordsAsync(CancellationToken ct)
+    {
+        await RequireAsync(Capabilities.RecordsRetention, ct);
+        return await session.QueryAsync(
+            $"""
+            select id, library_id, name, number, record_at, record_source, retention_label_id from documents.document
+            where record_at is not null and deleted_at is null order by record_at desc, id limit {MaxRecords}
+            """, null,
+            r => new RecordItem(r.GetGuid(0), r.GetGuid(1), r.GetString(2), r.Get<string>("number"), r.GetFieldValue<DateTimeOffset>(4), r.GetString(5),
+                r.Get<Guid?>("retention_label_id")), ct);
+    }
 
     // Disposition (US6 scenarios 1 to 3, FR-014)
 
@@ -566,6 +690,7 @@ public sealed partial class Records(
         {
             return 0;
         }
+        var declared = await DeclareByLabelAsync(now, ct);
         var waiting = "d.deleted_at is null and d.checked_in and d.disposition is null and d.release_instance_id is null";
         var blocked = await session.QueryAsync(
             $"""
@@ -603,6 +728,6 @@ public sealed partial class Records(
                 await session.ExecAsync("update documents.document set disposition = 'review', disposition_due_at = @now where id = @id", new { id, now }, ct);
             }
         }
-        return blocked.Count + due.Count;
+        return declared + blocked.Count + due.Count;
     }
 }
