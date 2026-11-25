@@ -30,6 +30,9 @@ public static class RunStatuses
 public static class RunOutcomes
 {
     public const string Answered = "answered";
+
+    /// <summary>Another agent took over the work through a declared handoff (spec 020 US10); its run carries the answer.</summary>
+    public const string HandedOff = "handed_off";
     public const string LimitReached = "limit_reached";
     public const string PolicyBlocked = "policy_blocked";
     public const string Unavailable = "unavailable";
@@ -93,7 +96,11 @@ public sealed record RunView(
     IReadOnlyList<RunCitation> Citations,
     ConfirmationCard? Confirmation,
     bool Generated,
-    bool LinksAsText = false);
+    bool LinksAsText = false,
+    RunHandoff? HandedOffFrom = null);
+
+/// <summary>The agent and run that handed this run the work (spec 020 US10), so the person sees who took over.</summary>
+public sealed record RunHandoff(Guid AgentId, Guid RunId, IReadOnlyDictionary<string, string>? AgentNames);
 
 public sealed record RunSummary(Guid Id, Guid AgentId, int AgentVersion, Guid UserId, string Mode, string Status, string? Outcome, string? Reason, int Steps,
     int ToolCalls, int Denials, string? Model, int InputTokens, int OutputTokens, DateTimeOffset CreatedAt, DateTimeOffset? FinishedAt);
@@ -148,6 +155,12 @@ internal sealed class RunState
     public Guid? ComparisonId { get; set; }
 
     public string? Arm { get; set; }
+
+    /// <summary>Where the run sits in a chain of handoffs (spec 020 FR-016): 1 for the first agent, at most 3.</summary>
+    public int Depth { get; set; } = 1;
+
+    /// <summary>A handoff was refused at the depth limit, so the answer ends with the agent's human contact.</summary>
+    public bool HandoffLimit { get; set; }
 }
 
 /// <summary>What a streamed run sends as it goes (020 T021): its ID first, each step, and the answer text as it arrives.</summary>
@@ -471,7 +484,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
     }
 
     private async Task<RunView> StartAsync(RunAgent agent, Guid user, string message, RunRequest request, Guid? routeId, CancellationToken ct,
-        bool limitChecked = false)
+        bool limitChecked = false, int depth = 1, Guid? parentRun = null)
     {
         var languages = agent.Definition.Languages ?? ["en"];
         var language = request.Language ?? AssistantPrompt.Language(message);
@@ -510,15 +523,16 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         state.Model = agent.Model;
         state.ComparisonId = agent.Arm?.ComparisonId;
         state.Arm = agent.Arm?.Arm;
+        state.Depth = depth;
         await session.ExecAsync(
             """
             insert into agents.run (tenant_id, id, agent_id, agent_version, user_id, org_unit_id, mode, status, language, classification, route_id,
-              item_source, item_id, durable, comparison_id, arm, requested_model, created_at, updated_at)
+              item_source, item_id, durable, comparison_id, arm, requested_model, created_at, updated_at, parent_run_id, depth)
             values (platform.current_tenant_id(), @id, @agent, @version, @user, @unit, @mode, 'running', @language, @classification, @routeId, @source, @item,
-              @durable, @comparison, @arm, @requestedModel, @now, @now)
+              @durable, @comparison, @arm, @requestedModel, @now, @now, @parentRun, @depth)
             """, new { id, agent = agent.Id, version = agent.Version, user, unit = agent.OrgUnitId, mode = agent.Mode, language, classification = state.Classification,
                 routeId, source = request.ItemSource, item = request.ItemId, durable = state.Durable, comparison = state.ComparisonId, arm = state.Arm,
-                requestedModel = state.Model, now }, ct);
+                requestedModel = state.Model, now, parentRun, depth }, ct);
         if (state.Durable)
         {
             await SaveCheckpointAsync(id, state, ct);
@@ -620,6 +634,10 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         {
             offered.Add(new AiTool(RunAgent.ModelName(MemoryRememberTool.Name), remember.Definition.Description, remember.Definition.Parameters));
         }
+        if (agent.Mode is "run" or "test" && agent.Definition.Handoffs is { Count: > 0 } declared)
+        {
+            offered.Add(new AiTool(RunAgent.ModelName(HandoffTool), HandoffDescription(declared, language), HandoffSchema(declared)));
+        }
         var maxSteps = agent.Policy.MaxSteps;
         string? model = null, provider = null;
         int input = 0, output = 0;
@@ -678,6 +696,33 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
                     // One action waits at a time: later calls in the same turn are answered without running.
                     state.Messages.Add(ToolMessage(call.Id, call.Name, ToolResult.Failed("tool.one_action_at_a_time")));
                     continue;
+                }
+                if (call.Name == RunAgent.ModelName(HandoffTool) && agent.Definition.Handoffs is { Count: > 0 })
+                {
+                    var handoff = await HandoffGateAsync(agent, state, user, call.Arguments, ct);
+                    if (handoff.Refusal is { } refused)
+                    {
+                        state.Denials++;
+                        state.HandoffLimit |= refused == "tool.handoff_depth";
+                        await StepAsync(runId, state, "tool", HandoffTool, refused == "tool.test_mode" ? ToolDecisions.WouldCall : ToolDecisions.Refused, refused, null, null,
+                            state.Classification, watch, ct);
+                        if (refused != "tool.test_mode")
+                        {
+                            await audit.WriteAsync(new AuditEntry(AuditActions.AgentToolDenied, "agent_run", runId.ToString(), AuditOutcome.Denied, agent.OrgUnitId,
+                                new { agent = agent.Id, version = agent.Version, tool = HandoffTool, reason = refused }), ct);
+                        }
+                        state.Messages.Add(ToolMessage(call.Id, call.Name, ToolResult.Failed(refused)));
+                        continue;
+                    }
+                    // The handoff ends this agent's turn; the target runs as the same person with its own definition, tools and limits.
+                    state.ToolCalls++;
+                    await StepAsync(runId, state, "tool", HandoffTool, ToolDecisions.Executed, null, null, null, state.Classification, watch, ct);
+                    await audit.WriteAsync(new AuditEntry(AuditActions.AgentHandoff, "agent_run", runId.ToString(), AuditOutcome.Success, agent.OrgUnitId,
+                        new { agent = agent.Id, version = agent.Version, to = handoff.Target!.Id, depth = state.Depth + 1 }), ct);
+                    await FinishAsync(runId, agent, state, RunStatuses.Completed, RunOutcomes.HandedOff, null, null, language, (model, provider, input, output), ct);
+                    var child = await StartAsync(handoff.Target, user, handoff.Request!, new RunRequest(handoff.Request, language), null, ct, limitChecked: true,
+                        depth: state.Depth + 1, parentRun: runId);
+                    return child with { HandedOffFrom = new RunHandoff(agent.Id, runId, agent.Definition.Name) };
                 }
                 var gate = await CheckAsync(agent, state, call.Name, call.Arguments, ct);
                 if (gate.Stop is { } stop)
@@ -1120,9 +1165,112 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
             pending.Hash, pending.ExpiresAt, pending.FromContent, pending.Approval);
     }
 
+    // ---- Handoffs (spec 020 US10, FR-016) ----
+
+    public const string HandoffTool = "agent.handoff";
+    public const int MaxHandoffDepth = 3;
+    private const int MaxHandoffRequest = 1000;
+
+    private sealed record HandoffGate(RunAgent? Target, string? Request, string? Refusal);
+
+    private static string HandoffDescription(IReadOnlyList<AgentHandoff> declared, string language) =>
+        "Hand a part of the work to another agent. Use it only for these topics: "
+        + string.Join("; ", declared.Select(h => $"{h.Key} ({h.Topic?.GetValueOrDefault(language) ?? h.Topic?.Values.FirstOrDefault() ?? h.Key})"))
+        + ". Write in request what the other agent should do.";
+
+    private static JsonElement HandoffSchema(IReadOnlyList<AgentHandoff> declared) => JsonSerializer.SerializeToElement(new Dictionary<string, object>
+    {
+        ["type"] = "object",
+        ["additionalProperties"] = false,
+        ["required"] = new[] { "to", "request" },
+        ["properties"] = new Dictionary<string, object>
+        {
+            ["to"] = new Dictionary<string, object> { ["type"] = "string", ["enum"] = declared.Select(h => h.Key).ToArray() },
+            ["request"] = new Dictionary<string, object> { ["type"] = "string", ["minLength"] = 1, ["maxLength"] = MaxHandoffRequest },
+        },
+    });
+
+    /// <summary>
+    /// The checks of a handoff, in order: the package, a declared target, the package scope for handoffs a tenant added,
+    /// the depth, then the target: published, not stopped, and an agent the person may use. The target runs with its own
+    /// definition and the policy of its unit, so permissions never add up across agents (spec 027).
+    /// </summary>
+    private async Task<HandoffGate> HandoffGateAsync(RunAgent agent, RunState state, Guid user, string argumentsText, CancellationToken ct)
+    {
+        if (!await entitlements.IsEnabledAsync(Capabilities.AiAgentsOrchestration, ct))
+        {
+            return new HandoffGate(null, null, "tool.not_in_package");
+        }
+        JsonElement arguments;
+        try
+        {
+            using var doc = JsonDocument.Parse(string.IsNullOrWhiteSpace(argumentsText) ? "{}" : argumentsText);
+            arguments = doc.RootElement.Clone();
+        }
+        catch (JsonException)
+        {
+            return new HandoffGate(null, null, "tool.invalid_arguments");
+        }
+        var declared = agent.Definition.Handoffs ?? [];
+        var to = arguments.ValueKind == JsonValueKind.Object && arguments.TryGetProperty("to", out var t) && t.ValueKind == JsonValueKind.String ? t.GetString() : null;
+        var request = arguments.ValueKind == JsonValueKind.Object && arguments.TryGetProperty("request", out var r) && r.ValueKind == JsonValueKind.String ? r.GetString()?.Trim() : null;
+        if (declared.FirstOrDefault(h => h.Key == to) is not { } handoff)
+        {
+            return new HandoffGate(null, null, "tool.handoff_not_declared");
+        }
+        if (request is not { Length: > 0 and <= MaxHandoffRequest })
+        {
+            return new HandoffGate(null, null, "tool.invalid_arguments");
+        }
+        // Workplace Plus allows the handoffs a platform template declares; a tenant's own ones need the custom scope.
+        var template = await session.ScalarAsync<string?>("select template_id from agents.agent where id = @id", new { id = agent.Id }, ct);
+        var fromTemplate = handoff.Template is not null && template is not null
+            && AgentTemplates.Find(template)?.Definition.Handoffs?.Any(h => h.Template == handoff.Template) == true;
+        if (!fromTemplate && !await entitlements.IsEnabledAsync(Capabilities.AiAgentsOrchestrationCustom, ct))
+        {
+            return new HandoffGate(null, null, "tool.not_in_package");
+        }
+        if (state.Depth >= MaxHandoffDepth)
+        {
+            return new HandoffGate(null, null, "tool.handoff_depth");
+        }
+        if (agent.DryRun)
+        {
+            return new HandoffGate(null, null, "tool.test_mode");
+        }
+        var targetId = handoff.Agent ?? await session.ScalarAsync<Guid?>(
+            "select id from agents.agent where template_id = @template and status = @published and id <> @self order by created_at desc limit 1",
+            new { template = handoff.Template, published = AgentStatuses.Published, self = agent.Id }, ct);
+        if (targetId is not { } target || target == agent.Id || await AgentRowAsync(target, ct) is not { } row || row.Status != AgentStatuses.Published
+            || row.Current is not { } version || await KillSwitchOnAsync(ct))
+        {
+            return new HandoffGate(null, null, "tool.handoff_unavailable");
+        }
+        var definition = await VersionAsync(target, version, ct);
+        if (!await InAudienceAsync(target, definition.Audience, user, ct))
+        {
+            return new HandoffGate(null, null, "tool.handoff_unavailable");
+        }
+        var next = new RunAgent(target, version, row.Unit, definition, agent.Mode, await unitPolicies.ForUnitAsync(row.Unit, ct));
+        try
+        {
+            await DemandDailyLimitAsync(next, ct);
+        }
+        catch (AppException)
+        {
+            return new HandoffGate(null, null, "tool.handoff_unavailable");
+        }
+        return new HandoffGate(next, request, null);
+    }
+
     private async Task<RunView> FinishAsync(Guid runId, RunAgent agent, RunState state, string status, string outcome, string? reason, string? answer, string language,
         (string?, string?, int, int) usage, CancellationToken ct, IReadOnlyList<RunCitation>? cited = null)
     {
+        if (state.HandoffLimit && answer is not null && agent.Definition.Escalation?.GetValueOrDefault(language) is { Length: > 0 } contact && !answer.Contains(contact, StringComparison.Ordinal))
+        {
+            // At the end of a chain of handoffs the person is offered a human contact (spec 020 US10 scenario 3).
+            answer = answer + "\n\n" + contact;
+        }
         await session.ExecAsync("delete from agents.run_checkpoint where run_id = @runId", new { runId }, ct);
         await UpdateRunAsync(runId, state, status, outcome, reason, usage, true, ct, answer, cited);
         if (agent.Mode != "eval")

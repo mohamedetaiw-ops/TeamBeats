@@ -1002,6 +1002,8 @@
         "workflow_bpmn_advanced": "Process compensation, instance migration and BPMN import",
         "ai_agents_mcp": "Agent tools from external MCP servers",
         "ai_agents_autonomous": "Agents running on their own inside approved processes (L4)",
+        "ai_agents_orchestration": "Handoffs between agents declared by templates",
+        "ai_agents_orchestration_custom": "Handoffs between agents you build",
         "workflow_max_active_instances": "Active process instances",
         "workflow_connector_fulfilment": "Connector and webhook steps in services",
         "ai_budgets": "AI budget",
@@ -8311,7 +8313,10 @@
         "rule_changed": "The approval rule changed",
         "connector_disabled": "The connection is turned off",
         "mcp_not_approved": "Tool not approved",
-        "not_in_process": "Not a step of the process"
+        "not_in_process": "Not a step of the process",
+        "handoff_not_declared": "Not a declared handoff",
+        "handoff_depth": "Too many handoffs in a row",
+        "handoff_unavailable": "The other agent is not available"
       }
     },
     "studio": {

@@ -1002,6 +1002,8 @@
         "workflow_bpmn_advanced": "تعويض العمليات وترحيل النسخ الجارية واستيراد BPMN",
         "ai_agents_mcp": "أدوات الوكلاء من خوادم MCP خارجية",
         "ai_agents_autonomous": "وكلاء يعملون بأنفسهم داخل عمليات معتمدة (المستوى L4)",
+        "ai_agents_orchestration": "تسليم العمل بين الوكلاء كما تحدده القوالب",
+        "ai_agents_orchestration_custom": "تسليم العمل بين الوكلاء الذين تنشئهم",
         "workflow_max_active_instances": "مثيلات العمليات النشطة",
         "workflow_connector_fulfilment": "خطوات الموصلات وخطافات الويب في الخدمات",
         "ai_budgets": "ميزانية الذكاء الاصطناعي",
@@ -8311,7 +8313,10 @@
         "rule_changed": "تغيّرت قاعدة الموافقة",
         "connector_disabled": "الاتصال متوقف",
         "mcp_not_approved": "الأداة غير موافق عليها",
-        "not_in_process": "ليست خطوة في العملية"
+        "not_in_process": "ليست خطوة في العملية",
+        "handoff_not_declared": "ليس تسليما معلنا",
+        "handoff_depth": "عدد كبير جدا من التسليمات المتتالية",
+        "handoff_unavailable": "الوكيل الآخر غير متاح"
       }
     },
     "studio": {
