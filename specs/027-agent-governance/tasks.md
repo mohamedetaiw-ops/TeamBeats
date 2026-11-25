@@ -42,5 +42,5 @@ Depends on 004, 005, 006, 013 (AI Gateway), 016 (inbox), 020 (definitions and ru
 - [x] T021 [FR-016, spec 026 US4] SIEM export of agent events: `agent.run_finished` for every run that is not an evaluation run, the agent event catalogue in `docs/security/siem-schema.md`; tests
 - [x] T022 [FR-006, edge case] MCP servers as tool sources behind `ai.agents.mcp`: `mcp_server` connections, tool discovery, approval per tool, schema changes back to pending, calls through the connector runtime; tests including cross-tenant and entitlement
 - [x] T023 [US1 scenario 5, FR-015, FR-024] L4 bounded autonomy behind `ai.agents.autonomous`: agent tasks in published processes, dual approval of the process version, limits that stop the run and raise an incident; tests
-- [ ] T024 Pages (MCP tools on the connection page, autonomous step approval), OpenAPI, R3 implementation notes, spec evidence
+- [x] T024 Pages (MCP tools on the connection page, autonomous step approval), OpenAPI, R3 implementation notes, spec evidence
 

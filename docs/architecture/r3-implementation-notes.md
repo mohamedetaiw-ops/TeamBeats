@@ -132,3 +132,4 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - The approval panel sits on the process model page; the modeler edits agent tasks (`tb:agent`).
 - Gap: an L4 run keeps its record in one transaction with its answer, so a restart in the middle of a run starts it again from the beginning when the request is redelivered; tools it already called may be called again. Write tools that change other systems should stay idempotent.
 - Gap: no service identity for processes started without a person (FR-003 allows one granted by the AI Policy Administrator); such steps raise `agent_no_person`.
+- With T024 (pages, `agent-autonomy.spec.ts`) spec 027 R3 is built.
