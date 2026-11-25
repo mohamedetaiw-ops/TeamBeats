@@ -31,6 +31,7 @@ public static class PublicApiModule
         services.AddScoped<ClientRegistrations>();
         services.AddScoped<PlatformBlocks>();
         services.AddScoped<Apps>();
+        services.AddScoped<DpopProofs>();
         services.AddScoped<ApiSettings>();
         services.AddScoped<Consents>();
         services.AddScoped<IAppPrincipalDirectory, AppPrincipalDirectory>();

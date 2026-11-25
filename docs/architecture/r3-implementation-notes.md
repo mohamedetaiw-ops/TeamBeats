@@ -46,3 +46,10 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - Format: 8 byte magic, data key id, 8 byte nonce prefix, then 64 KiB chunks with AES-256-GCM; the nonce carries the chunk index and a last chunk flag, and the header is the associated data. No new library.
 - `LibraryEncryption.RunAsync` runs in the document maintenance worker (50 versions per tenant per minute) and stops at the first key that does not answer.
 - Gaps: extracted text (`document_version.text_extract`), the search index and the AI index stay under platform encryption at rest; the tenant key protects files only. Background jobs of a revoked tenant that open a library file fail and retry later.
+
+## Spec 035 R3 slice 1: sender-constrained tokens with DPoP (T021)
+
+- Defaults are in the spec 035 R3 plan. Migration 0009 of PublicApi adds `require_dpop` to apps and `publicapi.dpop_proof`, the used proof IDs (hashed with the key thumbprint), cleared by the hourly maintenance run.
+- `DpopProofs` checks a proof with the same key rules as private key JWT (`ClientKeys`) and the identity model library already used; no new library. The token endpoint checks it in `TokenRequestCheck`; `/api/public` and `/mcp` check it in `BearerTokens`, recording the proof ID in a scope of its own so it is spent even when the call fails.
+- OpenIddict keeps the `cnf` claim for its own certificate binding, so `cnf.jkt` is added to the access token principal after OpenIddict prepares it, and the refresh token keeps the thumbprint in the private claim `tb_jkt`. The token response type is set to `DPoP` when a proof was given.
+- Gaps: no `DPoP-Nonce` from the server and no `dpop_jkt` binding of the authorization code at the authorization endpoint (the code is bound when it is redeemed); mutual TLS is not offered.

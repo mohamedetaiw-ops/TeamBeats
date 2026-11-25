@@ -33,3 +33,13 @@ Depends on 003, 004, 005, 006, 014, 015, 016, 017 (outbound webhook runtime), 02
 
 ## Final phase
 - [x] T020 Admin and employee pages in Arabic and English with axe; e2e journeys; performance tests for section 15; SIEM stream fields; R2 implementation notes; spec evidence
+
+## R3 Phase 7: sender-constrained tokens, prompts and admin APIs
+- [x] T021 DPoP proof validation at the token endpoint and on `/api/public` and `/mcp`; bound refresh tokens; app setting "require DPoP"; tests for each refusal
+- [ ] T022 MCP prompts catalogue, localized, filtered like tools; tests
+- [ ] T023 Admin APIs beside SCIM for application apps, with admin scopes behind admin consent; tests for scope narrowing, org boundary and cross-tenant
+
+## R3 Phase 8: sandbox, gallery and client confirmation
+- [ ] T024 Developer sandbox tenant with demo data, limits and expiry
+- [ ] T025 Public app gallery: platform-published apps added with admin consent
+- [ ] T026 Confirmation inside verified AI clients through MCP elicitation, opt-in per tenant

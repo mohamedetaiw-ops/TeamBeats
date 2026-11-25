@@ -15926,6 +15926,8 @@
       "registrationTitle": "Registration",
       "allowGuests": "Guests may connect this app",
       "allowGuestsHint": "Off by default. Guests are people from outside your organization.",
+      "requireDpop": "Require proof of the client's key (DPoP)",
+      "requireDpopHint": "Tokens are given only to a client that proves it holds its key, and work only with a fresh proof, so a stolen token cannot be used. The client must support DPoP.",
       "save": "Save",
       "saved": "The app is saved.",
       "credentialsTitle": "Credentials",

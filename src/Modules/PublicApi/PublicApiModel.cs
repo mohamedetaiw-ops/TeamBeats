@@ -10,12 +10,12 @@ namespace TeamBeats.Modules.PublicApi;
 /// <param name="IpRanges">Addresses the app may call from, as CIDR ranges (FR-027); empty means any address the tenant allows.</param>
 /// <param name="CallsPerMinute">The app's own call limit, at most the platform default for its kind (FR-017); 0 returns to that default.</param>
 public sealed record AppRequest(string? Name, string? Kind, string? Description, string? Publisher, IReadOnlyList<string>? Scopes,
-    IReadOnlyList<string>? RedirectUris, bool? AllowGuests, int? Version, IReadOnlyList<string>? IpRanges = null, int? CallsPerMinute = null);
+    IReadOnlyList<string>? RedirectUris, bool? AllowGuests, int? Version, IReadOnlyList<string>? IpRanges = null, int? CallsPerMinute = null, bool? RequireDpop = null);
 
 /// <param name="CallsPerMinute">The limit that applies: per app for an application app, per app and person for a delegated one.</param>
 public sealed record AppView(Guid Id, string ClientId, string Kind, string Name, string? Description, string? Publisher, IReadOnlyList<string> Scopes,
     IReadOnlyList<string> RedirectUris, bool AllowGuests, string Status, DateTimeOffset CreatedAt, DateTimeOffset? LastUsedAt, int Version,
-    IReadOnlyList<string> IpRanges, int CallsPerMinute, bool CallsPerMinuteLowered, bool Verified = false, bool SelfRegistered = false);
+    IReadOnlyList<string> IpRanges, int CallsPerMinute, bool CallsPerMinuteLowered, bool Verified = false, bool SelfRegistered = false, bool RequireDpop = false);
 
 public sealed record CredentialView(Guid Id, string Kind, string? Hint, DateTimeOffset ExpiresAt, DateTimeOffset CreatedAt, DateTimeOffset? LastUsedAt,
     DateTimeOffset? RevokedAt);

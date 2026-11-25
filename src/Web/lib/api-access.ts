@@ -25,6 +25,8 @@ export type ApiApp = {
   verified?: boolean;
   /** Registered itself through dynamic client registration; waits as pending until approved (spec 035 FR-023). */
   selfRegistered?: boolean;
+  /** Tokens are given only with a DPoP proof and work only with one (spec 035 R3, RFC 9449). */
+  requireDpop?: boolean;
 };
 
 export type ApiCredential = {

@@ -216,7 +216,7 @@ public static class BearerTokens
     };
 
     /// <summary>Runs work in a scope of its own for the tenant, as the system, and commits it at once.</summary>
-    private static async Task<T> InOwnScopeAsync<T>(IServiceProvider services, Guid tenant, Func<IServiceProvider, Task<T>> work)
+    internal static async Task<T> InOwnScopeAsync<T>(IServiceProvider services, Guid tenant, Func<IServiceProvider, Task<T>> work)
     {
         await using var scope = services.GetRequiredService<IServiceScopeFactory>().CreateAsyncScope();
         var own = scope.ServiceProvider.GetRequiredService<TenantContextAccessor>();
@@ -301,12 +301,14 @@ public static class BearerTokens
         {
             return "api_closed";
         }
+        // A bound token comes with the DPoP scheme and a proof (RFC 9449 section 7); any other with Bearer (RFC 6750).
         var header = http.Request.Headers.Authorization.ToString();
-        if (!header.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase) || header.Length < 8)
+        var dpop = header.StartsWith(DpopProofs.TokenType + " ", StringComparison.OrdinalIgnoreCase);
+        if ((!dpop && !header.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)) || header.Length < 8)
         {
             return "missing";
         }
-        var token = header[7..].Trim();
+        var token = header[(header.IndexOf(' ') + 1)..].Trim();
         var keys = services.GetRequiredService<TenantKeys>();
         var origin = OAuthServer.Origin(http.Request);
         var issuer = origin + "/oauth";
@@ -341,6 +343,14 @@ public static class BearerTokens
         {
             await AuditRefusalAsync(services, appId, "app_disabled", ct);
             return "revoked";
+        }
+        if (await DpopRefusalAsync(http, claims, app, dpop, token, tenant) is { } dpopRefusal)
+        {
+            if (dpopRefusal == "dpop")
+            {
+                await AuditRefusalAsync(services, appId, "dpop", ct);
+            }
+            return dpopRefusal;
         }
         var scopes = (Text(claims, "scope") ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries).ToHashSet(StringComparer.Ordinal);
         if (mcp && (kind != OAuthServer.Delegated || app.Kind != AppKinds.McpClient))
@@ -377,6 +387,34 @@ public static class BearerTokens
         http.Features.Set(new PublicCaller(appId, kind, user, scopes, family));
         http.Features.Set(app);
         return null;
+    }
+
+    /// <summary>
+    /// The DPoP checks of a resource call (T021): a token bound to a key needs the DPoP scheme and a fresh proof of that
+    /// key for this method, URL and token; an unbound token cannot use the DPoP scheme, and an app that requires DPoP
+    /// gets no call with an unbound token. The proof's ID is kept in a scope of its own, so it is spent even when the call fails.
+    /// </summary>
+    private static async Task<string?> DpopRefusalAsync(HttpContext http, IDictionary<string, object> claims, AppRecord app, bool scheme, string token, Guid tenant)
+    {
+        var bound = claims.TryGetValue("cnf", out var cnf) ? cnf switch
+        {
+            JsonElement { ValueKind: JsonValueKind.Object } e when e.TryGetProperty("jkt", out var j) && j.ValueKind == JsonValueKind.String => j.GetString(),
+            IDictionary<string, object> d when d.TryGetValue("jkt", out var j) => j?.ToString(),
+            _ => "",
+        } : null;
+        if (bound is null)
+        {
+            return scheme ? "invalid" : app.RequireDpop ? "dpop" : null;
+        }
+        if (!scheme || bound.Length == 0)
+        {
+            return "dpop";
+        }
+        var proof = DpopProofs.HeaderOf(http.Request);
+        var target = DpopProofs.TargetOf(http.Request);
+        var thumbprint = await InOwnScopeAsync(http.RequestServices, tenant, sp =>
+            sp.GetRequiredService<DpopProofs>().VerifyAsync(proof, http.Request.Method, target, token, CancellationToken.None));
+        return thumbprint == bound ? null : "dpop";
     }
 
     /// <summary>Reads a token of this tenant's issuer, an access token or an encrypted refresh token, without checking it is still live.</summary>
@@ -423,7 +461,12 @@ public static class BearerTokens
         {
             // The MCP server names its protected resource metadata, so a client finds the authorization server (RFC 9728).
             var parameters = new List<string>();
-            if (reason != "missing")
+            if (reason == "dpop")
+            {
+                parameters.Add($"error=\"{DpopProofs.InvalidProof}\"");
+                parameters.Add($"algs=\"{string.Join(' ', ClientKeys.Algorithms)}\"");
+            }
+            else if (reason != "missing")
             {
                 parameters.Add("error=\"invalid_token\"");
             }
@@ -431,7 +474,8 @@ public static class BearerTokens
             {
                 parameters.Add($"resource_metadata=\"{OAuthServer.Origin(http.Request)}{McpEndpoint.MetadataPath}\"");
             }
-            http.Response.Headers.WWWAuthenticate = parameters.Count == 0 ? "Bearer" : "Bearer " + string.Join(", ", parameters);
+            var challenge = reason == "dpop" ? DpopProofs.TokenType : "Bearer";
+            http.Response.Headers.WWWAuthenticate = parameters.Count == 0 ? challenge : challenge + " " + string.Join(", ", parameters);
         }
         await WriteProblemAsync(http, http.Response.StatusCode, code, null);
     }
