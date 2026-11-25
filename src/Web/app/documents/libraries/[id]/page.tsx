@@ -8,12 +8,14 @@ import {
   nameIn,
   type FolderView,
   type GuestShare,
+  type LibraryEncryptionView,
   type LibraryView,
   type SavedView,
 } from "@/lib/documents/types";
 import { Header } from "@/components/shell/Header";
 import { LibraryBrowser } from "@/features/documents/LibraryBrowser";
 import { LibrarySharing } from "@/features/documents/LibrarySharing";
+import { LibraryKey } from "@/features/documents/LibraryKey";
 import { ConnectedLibraryBrowser, type TrailStep } from "@/features/documents/ConnectedLibraryBrowser";
 
 /** The folder path of a connected library from the address; anything that is not a short list of steps is ignored. */
@@ -64,6 +66,9 @@ export default async function LibraryPage({
           ),
         ])
       : null;
+  // The customer-managed key (spec 011 R3) is for the managers of TeamBeats libraries; the API answers them only.
+  const encryption =
+    library.data.rights.manage && !connected ? await apiGet<LibraryEncryptionView>(`${base}/encryption`) : null;
   const t = await getTranslations("documents.libraries");
   const locale = await getLocale();
   const name = nameIn(library.data.names, locale);
@@ -108,6 +113,7 @@ export default async function LibraryPage({
             }
           />
         ) : null}
+        {encryption?.ok ? <LibraryKey libraryId={id} initial={encryption.data} /> : null}
       </main>
     </>
   );

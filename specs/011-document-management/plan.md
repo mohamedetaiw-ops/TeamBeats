@@ -86,3 +86,16 @@ R3 slices, in order:
 - A record goes through disposition review and disposal; a held record cannot be disposed.
 - Certificates: issued for a range with its disposition records, empty and too long ranges refused, later dispositions not added, verify matches and detects a changed list, PDF printed; cross-tenant certificate and document not found; not records managers and packages without retention refused.
 - e2e: declare a record and see the refusal, issue a certificate, in English and Arabic with axe.
+
+### Customer-managed keys per library
+- **Who and when:** a library's managers turn a TeamBeats library onto the tenant data key of spec 026 US8, when the plan has `security.customer_keys` and the tenant's key answers. Connected libraries keep their content in Microsoft 365 and cannot use it. It cannot be turned off; going back to platform keys is an operations request, as for the tenant key.
+- **What is encrypted:** every file stored for the library from then on (versions, working copies, previews, controlled copies), with AES-256-GCM in chunks of 64 KiB under the tenant data key, in `DocumentStorage`. Hashes, sizes and duplicate checks are of the plain file, as before. Files stored before are moved by the document maintenance run, 50 versions a minute per tenant; until then they open as stored.
+- **Revocation:** while the key is revoked the tenant is unavailable (spec 026); a library file that is opened anyway (a background job) fails with `tenant.key_unavailable` and nothing is lost. Restoring the key opens the files again.
+- **Out of reach for this slice:** extracted text in the database and search index, and guest share copies, stay under the platform's encryption at rest; listed in the R3 notes.
+
+### Tests (R3 slice 2)
+- Turning a library on needs a connected key, the plan and the library manage right; it cannot be turned off; another tenant does not find it.
+- New files are stored encrypted (checked in object storage) and download as uploaded; older files open before the pass and are encrypted after it; a library that does not use the key stays plain.
+- A revoked key closes the files and restoring it opens them.
+- Unit: the format round-trips at chunk boundaries; a changed, cut or wrongly keyed file does not open.
+- e2e: the library page tells its manager that no key is connected, in English and Arabic with axe.

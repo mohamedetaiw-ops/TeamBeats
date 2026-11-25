@@ -6182,6 +6182,21 @@
       "failed": "The library could not be connected. Try again.",
       "noLibraries": "No SharePoint sites are allowed yet. An integration administrator adds them in Connections.",
       "unavailable": "SharePoint cannot be reached right now. Try again in a few minutes."
+    },
+    "libraryKey": {
+      "title": "Encryption key",
+      "intro": "Encrypt this library's files, previews and controlled copies with your organization's own key. This cannot be undone.",
+      "turnOn": "Use the customer-managed key",
+      "question": "Encrypt this library's files with your organization's key? This cannot be undone, and the files cannot be opened while the key is revoked.",
+      "confirm": "Use the key",
+      "cancel": "Cancel",
+      "on": "Customer-managed key",
+      "since": "Since {date}.",
+      "pending": "{count, plural, one {# stored version is} other {# stored versions are}} still moving onto the key.",
+      "done": "Every stored file uses the key.",
+      "unavailable": "Your organization has no customer-managed key connected. An administrator connects one in Security, Encryption key.",
+      "refused": "The change was not made",
+      "failed": "Something went wrong. Try again."
     }
   },
   "policies": {

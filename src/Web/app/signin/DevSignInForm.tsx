@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useSyncExternalStore, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { FormField } from "@/components/ui/FormField";
@@ -22,6 +22,9 @@ export function DevSignInForm({ mode, testAccount = "admin", returnTo = null }: 
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // True once the form's own submit handler is attached. Before that, a click submits the form natively and only
+  // reloads this page, so the acceptance suite waits for this mark before it signs in.
+  const hydrated = useSyncExternalStore(noSubscription, () => true, () => false);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -54,7 +57,7 @@ export function DevSignInForm({ mode, testAccount = "admin", returnTo = null }: 
   }
 
   return (
-    <form onSubmit={submit} noValidate>
+    <form onSubmit={submit} noValidate data-hydrated={hydrated}>
       <p className="notice">{mode === "testaccount" ? t("testNotice") : t("devNotice")}</p>
       {mode === "testaccount" ? (
         error ? (
@@ -78,3 +81,5 @@ export function DevSignInForm({ mode, testAccount = "admin", returnTo = null }: 
     </form>
   );
 }
+
+const noSubscription = () => () => {};

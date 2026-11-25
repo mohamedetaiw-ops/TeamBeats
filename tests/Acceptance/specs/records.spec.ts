@@ -10,7 +10,7 @@ import { hostOrigin } from "../support/stack";
  * Spec 011 R2 US6 and US7 in the browser: a records manager creates a retention label, applies it to a library and
  * places a legal hold on that library, then sees the hold and the document it covers. Spec 011 R3: a records manager
  * declares a document a record on its page, finds it on the records page, and is told why an empty range gives no
- * disposition certificate. In English and Arabic, with axe.
+ * disposition certificate; the library page tells its manager that no customer-managed key is connected. In English and Arabic, with axe.
  */
 function apiText(locale: LaunchLocale, key: string): string {
   const file = fileURLToPath(new URL(`../../../src/BuildingBlocks/Localization/catalogues/${locale}.json`, import.meta.url));
@@ -85,6 +85,10 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       const documentId = ((await file.json()) as { id: string }).id;
 
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      // The library's managers see whether its files can use a customer-managed key; none is connected here.
+      await page.goto(`${hostOrigin(tenant.key)}/documents/libraries/${libraryId}`);
+      await expect(page.getByTestId("library-key-status")).toHaveText(m("documents.libraryKey.unavailable"));
+      await expectAccessible(page, testInfo, `library-key-${locale}`);
       await page.goto(`${hostOrigin(tenant.key)}/documents/${documentId}`);
       await expect(page.getByText(m("records.document.notRecord"))).toBeVisible();
       await page.getByRole("button", { name: m("records.document.declare") }).click();

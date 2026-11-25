@@ -32,7 +32,7 @@ public sealed class DocumentVersions(
     DocumentFiles files,
     Libraries libraries,
     IAuthorizationProvisioning acl,
-    TenantObjectStorage storage,
+    DocumentStorage storage,
     INotificationSender notifications,
     IAuditWriter audit,
     IOutbox outbox,

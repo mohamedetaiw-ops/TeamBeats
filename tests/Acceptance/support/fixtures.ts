@@ -17,6 +17,8 @@ export async function expectAccessible(page: Page, testInfo: TestInfo, label: st
 /** Signs in through the development sign-in form (spec 003 US1, ADR-0004) on the tenant's own host. */
 export async function signInWithDevForm(page: Page, tenantKey: string, email: string, locale: LaunchLocale): Promise<void> {
   await page.goto(`${hostOrigin(tenantKey)}/signin`);
+  // A click before the form is hydrated submits it natively and stays on the sign-in page.
+  await page.locator('form[data-hydrated="true"]').waitFor();
   await page.getByLabel(msg(locale, "signin.email")).fill(email);
   const webkit = page.context().browser()?.browserType().name() === "webkit";
   const signedIn = webkit ? page.waitForResponse((r) => r.url().endsWith("/dev/signin") && r.request().method() === "POST") : null;
