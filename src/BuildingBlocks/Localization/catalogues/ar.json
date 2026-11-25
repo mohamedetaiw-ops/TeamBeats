@@ -1233,6 +1233,8 @@
   "conflict.integrations.allowlist_full": "تحتوي قائمة السماح على 200 مضيف. احذف واحدًا قبل إضافة آخر.",
   "conflict.integrations.action_limit": "يمكن أن يحتوي الاتصال على 100 إجراء كحد أقصى.",
   "conflict.integrations.connection_limit": "لا تسمح باقتك بمزيد من الاتصالات. احذف اتصالًا أو قم بترقية الباقة.",
+  "validation.integrations.pack_reason": "أدخل سبب إيقاف الحزمة، في حدود 500 حرف.",
+  "conflict.integrations.pack_unavailable": "هذا الموصل غير متاح حاليًا. حاول لاحقًا أو تواصل مع الدعم.",
   "integrations.test.credential_found": "تم العثور على بيانات الاعتماد في مدير الأسرار",
   "integrations.test.credential_missing": "بيانات الاعتماد غير موجودة في مدير الأسرار",
   "integrations.test.host_allowed": "المضيف موجود في قائمة السماح",

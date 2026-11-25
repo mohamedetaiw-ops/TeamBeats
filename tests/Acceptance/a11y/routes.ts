@@ -49,6 +49,7 @@ export const routes: readonly Route[] = [
   { path: "/admin/calendars", tier: "other" },
   { path: "/admin/connections", tier: "other" },
   { path: "/admin/connections/[id]", tier: "detail", reason: "needs a connector pack and a fake external system; opened by the connections suites" },
+  { path: "/admin/connections/marketplace", tier: "other" },
   { path: "/admin/connections/microsoft365/[id]", tier: "detail", reason: "needs a Microsoft 365 connection to the fake tenant; opened by the connected libraries suite" },
   { path: "/admin/connections/new", tier: "other" },
   { path: "/admin/data-changes", tier: "other" },

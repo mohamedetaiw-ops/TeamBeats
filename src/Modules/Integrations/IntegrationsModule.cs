@@ -81,6 +81,7 @@ public static class IntegrationsModule
         services.AddScoped<Slack.SlackPack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Slack.SlackPack>());
         services.AddScoped<Runtime.TenantLinks>();
+        services.AddScoped<Runtime.PlatformPacks>();
         services.AddScoped<Slack.SlackMessaging>();
         services.AddScoped<ITeamsMessaging, Microsoft365.TeamsActivity>();
         services.AddScoped<Sms.SmsPack>();

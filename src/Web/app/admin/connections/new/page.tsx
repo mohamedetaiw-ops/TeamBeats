@@ -36,7 +36,7 @@ export default async function NewConnectionPage({ searchParams }: { searchParams
     const types: TypeChoice[] = CONNECTION_TYPES.flatMap((k): TypeChoice[] => {
       if (k === "microsoft365") return catalogue.ok ? [{ kind: k, inPackage: features.some((f) => f.inPackage) }] : [];
       const pack = packs.data.find((p) => p.kind === k);
-      return pack ? [{ kind: k, inPackage: pack.inPackage }] : [];
+      return pack ? [{ kind: k, inPackage: pack.inPackage && pack.available }] : [];
     });
     if (step === "choose" || !kind) {
       content = <ChooseType types={types} />;

@@ -133,6 +133,7 @@ public static class ConnectorErrorClasses
     public const string ConnectionDisabled = "connection_disabled";
     public const string ConnectionMissing = "connection_missing";
     public const string NotInPackage = "not_in_package";
+    public const string PackUnavailable = "pack_unavailable";
     public const string UnknownAction = "unknown_action";
     public const string OutcomeUnknown = "outcome_unknown";
     public const string Unexpected = "unexpected";

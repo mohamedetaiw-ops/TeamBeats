@@ -3835,6 +3835,50 @@
         }
       }
     },
+    "/api/v1/platform/connector-packs": {
+      "get": {
+        "tags": [
+          "Platform: connector packs"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/platform/connector-packs/{kind}": {
+      "put": {
+        "tags": [
+          "Platform: connector packs"
+        ],
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlatformPackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/integrations/pack-connections/{id}/tools": {
       "get": {
         "tags": [
@@ -43873,6 +43917,24 @@
           }
         }
       },
+      "PlatformPackRequest": {
+        "required": [
+          "available",
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "PlatformRouteRequest": {
         "required": [
           "models"
@@ -50306,6 +50368,9 @@
     },
     {
       "name": "Integrations: runs"
+    },
+    {
+      "name": "Platform: connector packs"
     },
     {
       "name": "HR integration"

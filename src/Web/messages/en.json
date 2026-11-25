@@ -10699,6 +10699,7 @@
       "connection_disabled": "The connection is off",
       "connection_missing": "The connection no longer exists",
       "not_in_package": "Not included in your package",
+      "pack_unavailable": "The platform does not offer this connector at the moment",
       "unknown_action": "The action does not exist",
       "outcome_unknown": "It is not known whether the system acted",
       "unexpected": "Unexpected error",
@@ -11548,6 +11549,25 @@
         "accountsHint": "The G/L account each line is posted to, digits only. Lines of other categories go to the default account.",
         "statusesHint": "SAP reports whether an invoice is parked or posted, not whether it is paid. Posted counts as approved unless you map its value differently."
       }
+    },
+    "marketplace": {
+      "open": "Marketplace",
+      "title": "Connector marketplace",
+      "intro": "Every connector TeamBeats offers, with what your package includes and how many connections you have of each. Add one to set it up.",
+      "back": "Back to connections",
+      "search": "Search connectors",
+      "type": "Connector",
+      "state": "Availability",
+      "inPackage": "In your package",
+      "notInPackage": "Needs another package",
+      "unavailable": "Not offered at the moment",
+      "actions": "Actions",
+      "noActions": "No actions",
+      "actionCount": "{count, plural, one {# action} other {# actions}}: {reads} read, {writes} write",
+      "version": "Version",
+      "connections": "Your connections",
+      "add": "Add",
+      "addNamed": "Add {name}"
     }
   },
   "components_gallery": {

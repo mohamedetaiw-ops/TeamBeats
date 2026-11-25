@@ -40,7 +40,17 @@ export type McpRefreshResult = { listed: number; new: number; changed: number; g
 export const MCP_TOOL_STATUSES = ["pending", "approved", "rejected", "unsupported"] as const;
 export const TOOL_RULES = ["execute", "confirm"] as const;
 
-export type Pack = { kind: string; version: number; inPackage: boolean; actions: PackAction[] };
+/** A pack as the marketplace shows it (spec 017 R3): package state, whether the platform offers it now, and the tenant's connections of it. */
+export type Pack = {
+  kind: string;
+  version: number;
+  inPackage: boolean;
+  actions: PackAction[];
+  capabilityKey: string;
+  available: boolean;
+  unavailableReason: string | null;
+  connections: number;
+};
 
 export type PackCheck = { name: string; ok: boolean; resultKey: string; errorClass?: string | null };
 

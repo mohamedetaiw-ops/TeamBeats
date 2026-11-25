@@ -346,3 +346,15 @@
 .connections-group + .connections-group {
   margin-block-start: var(--tb-space-md);
 }
+
+/* Marketplace rows (spec 017 R3): the connector's mark beside its name and description. */
+.connections-type-cell {
+  display: inline-flex;
+  gap: var(--tb-space-sm);
+  align-items: flex-start;
+}
+
+.connections-type-cell > span {
+  display: grid;
+  gap: var(--tb-space-xs);
+}

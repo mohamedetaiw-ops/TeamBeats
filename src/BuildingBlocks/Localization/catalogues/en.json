@@ -1233,6 +1233,8 @@
   "conflict.integrations.allowlist_full": "The allowlist holds 200 hosts. Remove one before adding another.",
   "conflict.integrations.action_limit": "A connection can have at most 100 actions.",
   "conflict.integrations.connection_limit": "Your package does not allow more connections. Remove one or upgrade the package.",
+  "validation.integrations.pack_reason": "Enter why the pack is turned off, in up to 500 characters.",
+  "conflict.integrations.pack_unavailable": "This connector is not offered at the moment. Try again later or contact support.",
   "integrations.test.credential_found": "The credential was found in the secret manager",
   "integrations.test.credential_missing": "The credential is not in the secret manager",
   "integrations.test.host_allowed": "The host is on the allowlist",

@@ -21,6 +21,16 @@ public static class PackEndpoints
     {
         var api = app.MapGroup("/api/v1/integrations").RequireTenantUser().InAdminArea().WithTags("Integrations: connector packs");
 
+        // The platform operator turns a pack off for all tenants, with a reason, and on again (spec 017 R3, section 3).
+        var platform = app.MapGroup("/api/v1/platform/connector-packs").RequirePlatformOperator().WithTags("Platform: connector packs");
+        platform.MapGet("", async (PlatformPacks packs, CancellationToken ct) => Results.Ok(new { items = await packs.ListAsync(ct) }));
+        platform.MapPut("/{kind}", async (string kind, PlatformPackRequest body, PlatformPacks packs, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await packs.SetAsync(kind, body, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
         api.MapGet("/packs", async (IAuthorizationService authz, PackConnections packs, CancellationToken ct) =>
         {
             await Demand(authz, ct);

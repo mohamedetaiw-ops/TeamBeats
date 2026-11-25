@@ -43,3 +43,5 @@ The spec stays Approved, not Implemented. The R2 runtime, connection lifecycle, 
 | INT-006 SAP pack on supported APIs | Met | `ErpFinancePackTests.SAP_S4HANA_gets_a_supplier_invoice_with_a_CSRF_token_and_posted_reads_as_approved` |
 | ERP packs: settings, package and tenant boundary | Met | `ErpFinancePackTests.Settings_are_checked_and_the_package_and_tenant_boundary_hold` |
 | MCP server registration for agents | Met | Spec 027 R3 T022 (`McpToolTests`) |
+| Connector marketplace with package state and connection counts | Met | `ConnectorMarketplaceTests.The_marketplace_lists_each_pack_with_its_capability_package_state_and_the_tenants_connections`, `connector-marketplace.spec.ts` (en, ar, axe) |
+| Platform operator turns a pack off for all tenants | Met | `ConnectorMarketplaceTests.A_pack_the_platform_turns_off_cannot_be_added_and_its_connections_make_no_calls` |
