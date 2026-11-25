@@ -25,6 +25,27 @@ destination is reachable.
 | `correlationId` | string or null | The request ID, the same as in the TeamBeats logs. |
 | `changes` | object or null | A summary of what changed, with before and after values where they apply. It never contains secrets, tokens or the content people read. |
 
+## Agent events (spec 027)
+
+Every action of a TeamBeats agent, and of an external AI client calling TeamBeats tools (spec 035), is in the stream
+under actions that start with `agent.`, so a SOC can select them by that prefix. The target is usually the run
+(`target.type` `agent_run`, `target.id` the run ID), the agent or the external AI client, and `target.orgUnit` is the agent's unit.
+`changes` holds IDs, names, hashes and counts, never the question, the answer, retrieved content or tool parameters.
+
+| Action | Outcome | `changes` |
+|---|---|---|
+| `agent.tool_called` | `success` | `agent`, `version`, `tool`, `hash` of the exact parameters |
+| `agent.tool_denied` | `denied` | `agent`, `version`, `tool`, `reason` (the gateway check that refused), `hash` |
+| `agent.injection_detected` | `success` (the text was kept as data) | `agent`, `version`, `mode`, `tool`, `rule`, `source` and `itemId` of the item with instruction-like text |
+| `agent.action_confirmed`, `agent.action_rejected`, `agent.action_approved`, `agent.action_expired` | `success` | the agent, the tool and the parameter hash the person or approver acted on |
+| `agent.external_call_refused` | `denied` | target `api_app` (the external AI client), `tool`, `reason` |
+| `agent.run_finished` | `success`, `failure` or `denied` (stopped by a limit, a policy or a suspension) | `agent`, `version`, `mode`, `status`, `outcome`, `reason`, `autonomy`, `steps`, `toolCalls`, `denials`, `durationMs`, `classification`, `model` |
+| `agent.suspended`, `agent.resumed`, `agent.kill_switch`, `agent.tokens_revoked`, `agent.rolled_back` | `success` | who acted and why |
+| `agent.alert_raised`, `agent.incident_opened`, `agent.incident_updated`, `agent.incident_closed` | `success` | the Security Center rule, severity and linked runs |
+| `agent.version_published`, `agent.policy_changed` | `success` | the version or the policy settings before and after |
+
+Evaluation runs (spec 034) are not in the stream.
+
 ## HTTPS JSON
 
 `POST` to the destination URL with a JSON body `{"batch": "<batch id>", "events": [ ... ]}`, up to 500 events, in order.

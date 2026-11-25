@@ -1055,6 +1055,22 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
     {
         await session.ExecAsync("delete from agents.run_checkpoint where run_id = @runId", new { runId }, ct);
         await UpdateRunAsync(runId, state, status, outcome, reason, usage, true, ct, answer, cited);
+        if (agent.Mode != "eval")
+        {
+            var result = status switch
+            {
+                RunStatuses.Completed => AuditOutcome.Success,
+                RunStatuses.Failed => AuditOutcome.Failure,
+                _ when outcome is RunOutcomes.PolicyBlocked or RunOutcomes.Suspended or RunOutcomes.LimitReached => AuditOutcome.Denied,
+                _ => AuditOutcome.Success,
+            };
+            await audit.WriteAsync(new AuditEntry(AuditActions.AgentRunFinished, "agent_run", runId.ToString(), result, agent.OrgUnitId, Changes: new
+            {
+                agent = agent.Id, version = agent.Version, mode = agent.Mode, status, outcome, reason, autonomy = agent.Definition.Autonomy, steps = state.Steps,
+                toolCalls = state.ToolCalls, denials = state.Denials, durationMs = (long)(state.ActiveSeconds * 1000), classification = state.Classification,
+                model = usage.Item1,
+            }), ct);
+        }
         if (agent.Mode == "run" && state.UserId is { } person)
         {
             await OfferAsync(runId, agent, person, state, status, outcome, reason, answer, language, usage, cited ?? [], ct);

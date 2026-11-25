@@ -577,6 +577,9 @@ public static class AuditActions
     public const string AgentPolicyChanged = "agent.policy_changed";
     public const string AgentToolCalled = "agent.tool_called";
 
+    /// <summary>A run ended (spec 027 R3 SIEM export): how, why, its counts and usage; never the question or answer.</summary>
+    public const string AgentRunFinished = "agent.run_finished";
+
     /// <summary>Spec 035 US3 scenarios 2 and 8: an external AI client was refused by policy, the kill switch or external access off.</summary>
     public const string AgentExternalCallRefused = "agent.external_call_refused";
     public const string AgentToolDenied = "agent.tool_denied";

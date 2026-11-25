@@ -107,6 +107,16 @@ public sealed class AgentRunLimitTests(TenantWorld world)
         Assert.Equal(RunStatuses.Stopped, stopped.GetProperty("status").GetString());
         Assert.Equal(RunOutcomes.LimitReached, stopped.GetProperty("outcome").GetString());
         Assert.Equal("duration", stopped.GetProperty("reason").GetString());
+
+        // Both ends are in the audit stream, and so in the SIEM stream (spec 027 R3): outcome, reason and counts, no text.
+        var ends = await world.Database.TenantScalarAsync<string>(t.Id,
+            """
+            select string_agg(outcome || ':' || (changes->>'outcome') || ':' || coalesce(changes->>'reason', '-') || ':' || (changes->>'toolCalls'), ',' order by occurred_at)
+            from audit.audit_event where action = 'agent.run_finished' and target_id in (@a, @b)
+            """, ("a", id.ToString()), ("b", secondId.ToString()));
+        Assert.Equal("success:answered:-:1,denied:limit_reached:duration:1", ends);
+        Assert.Equal(0L, await world.Database.TenantScalarAsync<long>(t.Id,
+            "select count(*) from audit.audit_event where action = 'agent.run_finished' and changes::text like '%Call HR%'"));
     }
 
     [Fact]

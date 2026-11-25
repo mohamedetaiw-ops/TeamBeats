@@ -113,3 +113,9 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - Workflow migration 0021 adds `workflow.external_task`. `ExternalTasks` reaches Camunda only through `IConnectorRuntime` and finds connections through `IConnectorActions`; people come from the user directory contract. `ExternalTaskWorker` is hosted by the worker, and in the development host with `Workflow:ExternalTasks:InProcess`.
 - New keys: `validation.process.external_task_outcome`, `validation.process.external_task_comment`, `conflict.process.external_task_not_open`; audit action `process.external_task_completed`.
 - Gaps: no candidate group tasks; no rendering of Camunda forms; the sync reads up to 2,000 open tasks per connection a minute; Camunda SaaS sign-in that needs an `audience` parameter is not supported by the shared OAuth sign-in yet.
+
+## Spec 027 R3 slice 1: SIEM export of agent events (T021)
+
+- Agent events already were audit events, so they reach SIEM destinations through the spec 026 stream. `AgentRuns.FinishAsync` now writes `agent.run_finished` for every run except evaluation runs; outcome `denied` for limit, policy and suspension stops.
+- Default: no agent-only destination filter; receivers select by the `agent.` prefix (documented in `docs/security/siem-schema.md`).
+

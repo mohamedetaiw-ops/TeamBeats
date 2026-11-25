@@ -28,3 +28,10 @@ The spec stays Approved, not Implemented. R1 still lacks the worker that resumes
 | SC-001 safety suites on every build and no tool call from an injection document | Met | `EvaluationGateTests.The_platform_suites_of_each_launch_template_run_without_a_critical_failure` and `AgentInjectionTests` run in CI on every build |
 | SC-002 and SC-003 timed drills | Not measured | The records and the kill switch exist; the timed drills belong with the R2 Security Center |
 | Pages | Met | `agents.spec.ts` (en and ar, axe) |
+
+## R3
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| SIEM export of agent events (FR-016 with spec 026 US4) | Met | `AgentRunLimitTests.A_run_stops_when_its_working_time_passes_the_limit_and_waiting_for_a_confirmation_does_not_count` (`agent.run_finished` with outcome and counts, no text); the stream itself in `SecuritySiemTests`; catalogue in `docs/security/siem-schema.md` |
+
