@@ -925,6 +925,32 @@
   }
 }
 
+/* Reading article (spec 036 T037a): the surface of a long read. */
+.ui-reading {
+  display: grid;
+  align-content: start;
+  gap: var(--tb-space-md);
+  min-inline-size: 0;
+  padding: var(--tb-space-xl) var(--tb-space-xxl);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-lg);
+  background: var(--tb-color-surface-raised);
+  box-shadow: var(--tb-shadow-sm);
+  color: var(--tb-color-text-primary);
+}
+
+.ui-reading h1 {
+  margin: 0;
+  font-size: var(--tb-font-size-xxl);
+  font-weight: var(--tb-font-weight-semibold);
+}
+
+@media (width <= 40rem) {
+  .ui-reading {
+    padding: var(--tb-space-lg);
+  }
+}
+
 /* Form panel (spec 036 T037a): the raised surface for a form, a fieldset or a set of record actions. */
 .ui-form-panel {
   display: grid;

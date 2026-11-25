@@ -11,6 +11,7 @@ import {
 } from "@/lib/documents/types";
 import { Header } from "@/components/shell/Header";
 import { Icon } from "@/components/ui/Icon";
+import { ReadingArticle } from "@/components/ui/Card";
 import { StateView } from "@/components/ui/StateView";
 import { dateLong, joinMeta } from "@/lib/format";
 import { ArticleFeedback } from "@/features/documents/ArticleFeedback";
@@ -60,7 +61,7 @@ export default async function ArticlePage({
       />
       <main id="main" className="page">
         <div className="kb-layout">
-          <article lang={a.locale} className="documents-article kb-article">
+          <ReadingArticle lang={a.locale}>
             <header className="kb-article-head">
               <p className="kb-article-meta">
                 {a.template ? (
@@ -113,7 +114,7 @@ export default async function ArticlePage({
               })
             )}
             <ArticleFeedback articleId={a.id} initial={a.myFeedback} />
-          </article>
+          </ReadingArticle>
 
           <aside className="kb-aside">
             {a.sections.length > 1 ? (

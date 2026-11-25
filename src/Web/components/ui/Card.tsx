@@ -45,3 +45,16 @@ export function Card({
     </article>
   );
 }
+
+/**
+ * Reading article (docs/design-system/components.md, Reading article; spec 036 T037a): the one surface a long read sits
+ * on, a news item, a page or a knowledge article. Wide padding, the page title as its h1 and the body in reading size;
+ * the feature puts its own header, body and tags inside.
+ */
+export function ReadingArticle({ lang, children }: { lang?: string; children: ReactNode }) {
+  return (
+    <article className="ui-reading" lang={lang}>
+      {children}
+    </article>
+  );
+}
