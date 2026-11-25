@@ -10,7 +10,7 @@ import { MonthView, WeekView, type CalendarEvent } from "@/components/ui/Calenda
 import { DataGrid } from "@/components/ui/DataGrid";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { FilterToolbar, ToolbarSearch, ToolbarSelect } from "@/components/ui/FilterToolbar";
-import { FormField, FormPanel, SelectField } from "@/components/ui/FormField";
+import { FormField, SelectField } from "@/components/ui/FormField";
 import { SearchField } from "@/components/ui/Inputs";
 import { Pagination } from "@/components/ui/Pagination";
 import { SelectionBar } from "@/components/ui/SelectionBar";
@@ -204,10 +204,6 @@ export function DataGallery() {
                 {t("panels.openSettings")}
               </Button>
             </div>
-            <FormPanel as="fieldset">
-              <legend>{t("panels.formPanel")}</legend>
-              <Switch label={t("panels.formPanelHint")} defaultChecked />
-            </FormPanel>
           </div>
         </div>
         <SettingsDialog

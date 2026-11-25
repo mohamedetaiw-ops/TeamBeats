@@ -11559,9 +11559,7 @@
     },
     "panels": {
       "title": "Panels and cards",
-      "intro": "The notification panel, the settings dialog, the sign-in card and the form panel.",
-      "formPanel": "Audience",
-      "formPanelHint": "Who sees this item",
+      "intro": "The notification panel, the settings dialog and the sign-in card.",
       "notifications": "Notifications",
       "seeAll": "See all notifications",
       "noticeApproved": "Your leave was approved",
