@@ -53,3 +53,9 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - `DpopProofs` checks a proof with the same key rules as private key JWT (`ClientKeys`) and the identity model library already used; no new library. The token endpoint checks it in `TokenRequestCheck`; `/api/public` and `/mcp` check it in `BearerTokens`, recording the proof ID in a scope of its own so it is spent even when the call fails.
 - OpenIddict keeps the `cnf` claim for its own certificate binding, so `cnf.jkt` is added to the access token principal after OpenIddict prepares it, and the refresh token keeps the thumbprint in the private claim `tb_jkt`. The token response type is set to `DPoP` when a proof was given.
 - Gaps: no `DPoP-Nonce` from the server and no `dpop_jkt` binding of the authorization code at the authorization endpoint (the code is bound when it is redeemed); mutual TLS is not offered.
+
+## Spec 035 R3 slice 2: MCP prompts (T022)
+
+- `McpPrompts` holds the catalogue and the `prompts/list` and `prompts/get` handlers of the MCP server; texts are API catalogue keys `mcp.prompt.<name>.*` in English and Arabic.
+- A prompt is offered when the tool gateway offers every tool it names to the caller, the same call the tool list makes, so nothing new decides what a client sees.
+- Gap: the catalogue is fixed in code; tenant-defined prompts would be versioned configuration (constitution XXIX) and are not in R3.
