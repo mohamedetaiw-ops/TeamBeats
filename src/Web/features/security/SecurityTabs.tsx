@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
 /** The security pages (spec 026 T016, and SIEM streaming in R2). The API authorizes each page's data on its own. */
-export async function SecurityTabs({ current, openAlerts }: { current: "policy" | "alerts" | "posture" | "siem" | "reviews" | "detection"; openAlerts?: number | null }) {
+export async function SecurityTabs({ current, openAlerts }: { current: "policy" | "alerts" | "posture" | "siem" | "reviews" | "detection" | "changes"; openAlerts?: number | null }) {
   const t = await getTranslations("security");
   const tabs = [
     { key: "policy", href: "/admin/security" },
@@ -11,6 +11,7 @@ export async function SecurityTabs({ current, openAlerts }: { current: "policy" 
     { key: "siem", href: "/admin/security/siem" },
     { key: "reviews", href: "/admin/security/reviews" },
     { key: "detection", href: "/admin/security/detection" },
+    { key: "changes", href: "/admin/security/changes" },
   ] as const;
   return (
     <nav aria-label={t("tabsLabel")} className="security-tabs">

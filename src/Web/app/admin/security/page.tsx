@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { apiGet } from "@/lib/api";
@@ -18,6 +19,11 @@ export default async function SecurityPolicyPage() {
     <>
       <AdminHeader section="security" nav={<SecurityTabs current="policy" openAlerts={section.badge} />} />
       <p className="notice">{t("policy.intro")}</p>
+      {policy.data.pendingChange ? (
+        <p className="notice" data-testid="policy-pending-change">
+          {t("changes.policyWaiting")} <Link href="/admin/security/changes">{t("changes.open")}</Link>
+        </p>
+      ) : null}
       <PolicyEditor initial={policy.data} etag={`"v${policy.data.version}"`} />
     </>
   );

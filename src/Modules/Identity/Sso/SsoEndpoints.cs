@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Entitlements.Contracts;
+using TeamBeats.Modules.Security.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
 using TeamBeats.TenantContext;
@@ -74,13 +75,13 @@ public static class SsoEndpoints
         });
 
         admin.MapPut("/", async (IdentityProviderRequest request, IAuthorizationService authz, IEntitlementService entitlements,
-            IdentityProviderStore providers, IDbSession session, CancellationToken ct) =>
+            IdentityProviderStore providers, IFourEyes fourEyes, IDbSession session, CancellationToken ct) =>
         {
             await authz.DemandAsync(Permissions.IdentityConfigManage, AuthzTarget.Tenant, ct);
             await entitlements.DemandAsync(request.Protocol == SamlService.Protocol ? Capabilities.IdentitySaml : Capabilities.IdentityOidc, ct);
-            var saved = await providers.SaveAsync(request, ct);
+            var (saved, held) = await providers.SaveOrHoldAsync(request, fourEyes, ct);
             await session.CommitAsync(ct);
-            return Results.Ok(saved);
+            return held is not null ? Results.Accepted(null, new { pendingChange = held }) : Results.Ok(saved);
         }).RequireStepUp();
 
         return app;
@@ -94,3 +95,19 @@ public static class SsoEndpoints
 }
 
 public sealed record SignInOptions(bool Sso, string? Kind, string? DisplayName);
+
+/// <summary>Applies an approved change of the sign-in configuration (spec 026 FR-016) through the direct path, as the approver.</summary>
+public sealed class IdentityProviderApplier(IdentityProviderStore providers, IAuthorizationService authz) : IFourEyesApplier
+{
+    private static readonly System.Text.Json.JsonSerializerOptions Json = new(System.Text.Json.JsonSerializerDefaults.Web);
+
+    public string Kind => FourEyesKinds.IdentityProvider;
+
+    public string Permission => Permissions.IdentityConfigManage;
+
+    public async Task ApplyAsync(System.Text.Json.JsonElement request, CancellationToken ct)
+    {
+        await authz.DemandAsync(Permissions.IdentityConfigManage, AuthzTarget.Tenant, ct);
+        await providers.SaveAsync(System.Text.Json.JsonSerializer.Deserialize<IdentityProviderRequest>(request, Json)!, ct);
+    }
+}

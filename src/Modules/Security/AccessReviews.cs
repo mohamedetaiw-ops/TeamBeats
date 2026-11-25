@@ -327,6 +327,8 @@ public sealed class AccessReviewWorker(IServiceScopeFactory scopes, ILogger<Acce
                 context.SetTenant(tenant.Id);
                 context.SetActor(ActorType.System, null);
                 await scope.ServiceProvider.GetRequiredService<AccessReviews>().RunAsync(scope.ServiceProvider.GetRequiredService<IClock>().UtcNow, ct);
+                // Four-eyes changes older than 72 hours expire (spec 026 FR-016).
+                await scope.ServiceProvider.GetRequiredService<FourEyesService>().ExpireAsync(scope.ServiceProvider.GetRequiredService<IClock>().UtcNow, ct);
                 await scope.ServiceProvider.GetRequiredService<IDbSession>().CommitAsync(ct);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)

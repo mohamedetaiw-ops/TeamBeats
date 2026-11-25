@@ -100,6 +100,7 @@ export const routes: readonly Route[] = [
   { path: "/admin/search", tier: "other" },
   { path: "/admin/security", tier: "other" },
   { path: "/admin/security/alerts", tier: "other" },
+  { path: "/admin/security/changes", tier: "other" },
   { path: "/admin/security/detection", tier: "other" },
   { path: "/admin/security/posture", tier: "other" },
   { path: "/admin/security/reviews", tier: "other" },

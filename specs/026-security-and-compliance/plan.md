@@ -128,3 +128,31 @@ R2 slices, in order:
 - Detection: each built-in pattern with valid and invalid samples; warn and confirm; block on guest and everyone locations; tenant pattern test; no matched value in logs or audit.
 - Compliance: project from a framework, evidence with export hash, readiness counts, guest auditor read-only, org scope, package.
 - e2e: SIEM page, guest shell, detection warning, compliance project, in English and Arabic with axe.
+
+## R3 plan
+
+R3 adds FR-016 (four-eyes approval for critical tenant settings) and User Story 8 with FR-007 (customer-managed keys), then the on-prem hardening pack. National certifications are a company program; the product side is the evidence the compliance projects already hold.
+
+R3 slices, in order:
+1. **Four-eyes approval (FR-016):** the tenant switch, pending changes held for a second administrator, approval with step-up, expiry, notifications, audit, the changes page.
+2. **Customer-managed keys (US8, FR-007):** a key connection per tenant through a key management adapter, wrapping of the tenant data keys, key status, revocation within 15 minutes, rotation without downtime. Key changes are a four-eyes kind.
+3. **On-prem hardening pack:** hardening guide and shared responsibility matrix in `docs/security/`, and a self check on the posture page for customer-hosted installs.
+
+### Four-eyes approval
+The spec names the critical settings (identity configuration, security policy, retention minimums, key changes) and says nothing about who approves, how long a change waits or how the switch itself is guarded. Defaults:
+- **Switch:** a tenant setting of its own (`security.four_eyes`, `GET` and `PUT /security/four-eyes`), off by default. Turning it on applies at once (it only adds a check). Turning it off while it is on is itself a held change (kind `security.four_eyes`).
+- **Kinds:** `security.policy` (Security, `security.manage`), `identity.provider` (Identity sign-in configuration, `identity.manage`), `audit.retention` (Audit, `audit.retention_manage`); `security.keys` joins with slice 2. Each owning module registers an `IFourEyesApplier` (Security.Contracts) that names its kind and permission and applies a held request through the same code path as a direct change.
+- **Holding:** with the switch on, the owning endpoint checks the request as usual (validation, ETag, permission, step-up) and then asks `IFourEyes.HoldAsync`. The change is stored in `security.pending_change` with the request, the names of the fields it changes and the requester, and the endpoint answers 202 with the pending change. Nothing changes until approval. One pending change per kind; a second is `conflict.four_eyes.pending`.
+- **Approval:** another person who holds the kind's permission over the tenant approves or rejects, with step-up. The requester cannot decide their own change, and the requester may withdraw it. On approval the applier runs as the approver; the owning module writes its usual audit entry, and Security writes `security.change_approved` with requester and approver. Rejected, withdrawn and expired changes are audited too.
+- **Expiry:** 72 hours; a sweep closes older pending changes as expired.
+- **Notifications:** the other holders of the permission are told a change waits (security notice); the requester is told the decision.
+- **A tenant with one administrator:** the switch cannot be turned on unless at least two active people hold `security.manage`, so a tenant cannot lock itself out. Break-glass (spec 001) is not held.
+- **Page:** `/admin/security/changes` lists pending and recent changes with what they change; the owning settings page shows a notice while a change of its kind waits.
+
+### Tests (R3 slice 1)
+- With the switch off, changes apply at once as before.
+- With it on, each kind is held with 202, applies only after another holder approves with step-up, and the requester cannot approve; reject, withdraw and expiry leave the setting as it was; one pending change per kind.
+- The switch needs two holders; turning it off is held.
+- Audit entries for request, approval, rejection, withdrawal and expiry; notifications to the other holders and to the requester.
+- Cross-tenant: a pending change of another tenant is not found; a person without the permission cannot list or decide.
+- e2e: a held security policy change approved by a second administrator, in English and Arabic with axe.

@@ -22,6 +22,8 @@ export type SecurityPolicy = {
   scopedRulesAvailable: boolean;
   yourAddress: string | null;
   version: number;
+  /** A change of the policy waiting for a second administrator (spec 026 FR-016). */
+  pendingChange?: PendingChange | null;
 };
 
 export type LockoutPreview = { peopleOutside: number; yourAddress: string | null; youWouldBeRefused: boolean };
@@ -147,3 +149,21 @@ export type DetectionSettings = {
   canManage: boolean;
   canEditPatterns: boolean;
 };
+
+/** A critical setting change held for a second administrator (spec 026 FR-016). The API decides who may act on it. */
+export type PendingChange = {
+  id: string;
+  kind: "security.policy" | "security.four_eyes" | "identity.provider" | "audit.retention" | string;
+  status: "pending" | "approved" | "rejected" | "withdrawn" | "expired";
+  fields: string[];
+  requestedBy: string;
+  requestedAt: string;
+  expiresAt: string;
+  decidedBy: string | null;
+  decidedAt: string | null;
+  reason: string | null;
+  canDecide: boolean;
+  canWithdraw: boolean;
+};
+
+export type FourEyesSetting = { enabled: boolean; holders: number; pending: PendingChange | null };

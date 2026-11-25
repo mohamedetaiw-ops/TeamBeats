@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
+using TeamBeats.Modules.Security.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
 using TeamBeats.TenantContext;
@@ -98,7 +99,20 @@ public sealed partial class IdentityProviderStore(IDbSession session, ITenantCon
         session.ExecAsync("update identity.idp_config set last_problem = null, last_problem_at = null where id = @id and last_problem is not null",
             new { id }, ct);
 
-    public async Task<IdentityProviderConfig> SaveAsync(IdentityProviderRequest request, CancellationToken ct)
+    /// <summary>
+    /// Checks the request, then holds it for a second administrator when four-eyes is on (spec 026 FR-016), or saves it.
+    /// </summary>
+    public async Task<(IdentityProviderConfig? Saved, PendingChangeView? Held)> SaveOrHoldAsync(IdentityProviderRequest request, IFourEyes fourEyes, CancellationToken ct)
+    {
+        await CheckAsync(request, ct);
+        if (await fourEyes.HoldAsync(FourEyesKinds.IdentityProvider, request, ["identityProvider"], ct) is { } held)
+        {
+            return (null, held);
+        }
+        return (await SaveAsync(request, ct), null);
+    }
+
+    private async Task<IdentityProviderConfig> CheckAsync(IdentityProviderRequest request, CancellationToken ct)
     {
         var tenantId = context.RequireTenant();
         var builtIn = new HashSet<string>(StringComparer.Ordinal);
@@ -116,6 +130,13 @@ public sealed partial class IdentityProviderStore(IDbSession session, ITenantCon
             // AD FS signs in the users of one AD DS connection of this tenant; RLS keeps other tenants' connections out of sight.
             throw AppException.Validation("directoryConnectionId", "validation.idp.directory_connection_invalid");
         }
+        return config;
+    }
+
+    public async Task<IdentityProviderConfig> SaveAsync(IdentityProviderRequest request, CancellationToken ct)
+    {
+        var tenantId = context.RequireTenant();
+        var config = await CheckAsync(request, ct);
         var current = await GetCurrentAsync(ct);
         var id = current?.Id ?? Ids.New();
         var map = JsonSerializer.Serialize(config.GroupRoleMap, JsonDefaults.Options);

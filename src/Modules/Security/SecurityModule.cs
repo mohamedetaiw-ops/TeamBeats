@@ -20,6 +20,10 @@ public static class SecurityModule
         services.AddScoped<PolicyStore>();
         services.AddScoped<ISecurityPolicy>(sp => sp.GetRequiredService<PolicyStore>());
         services.AddScoped<PolicyService>();
+        services.AddScoped<FourEyesService>();
+        services.AddScoped<IFourEyes>(sp => sp.GetRequiredService<FourEyesService>());
+        services.AddScoped<IFourEyesApplier, SecurityPolicyApplier>();
+        services.AddScoped<IFourEyesApplier, FourEyesSwitchApplier>();
         services.AddScoped<AlertService>();
         services.AddScoped<PostureService>();
         services.AddScoped<ISecurityTrendFigures, SecurityTrendFigures>();
@@ -86,13 +90,53 @@ public static class SecurityModule
             return Results.Ok(view);
         });
 
-        security.MapPut("/policy", async (SecurityPolicyRequest request, HttpRequest http, PolicyService policies, IDbSession session, CancellationToken ct) =>
+        security.MapPut("/policy", async (SecurityPolicyRequest request, HttpRequest http, PolicyService policies, IDbSession session, TeamBeats.Primitives.IClock clock, CancellationToken ct) =>
         {
+            var started = clock.UtcNow;
             var view = await policies.UpdateAsync(IfMatch(http), request, ct);
             await session.CommitAsync(ct);
             http.HttpContext.Response.Headers.ETag = view.ETag;
-            return Results.Ok(view);
+            return view.PendingChange is { Status: "pending" } && view.PendingChange.RequestedAt >= started ? Results.Accepted(null, view) : Results.Ok(view);
         }).RequireStepUp();
+
+        // Four-eyes approval of critical settings (spec 026 FR-016).
+        security.MapGet("/four-eyes", async (FourEyesService fourEyes, CancellationToken ct) => Results.Ok(await fourEyes.SettingAsync(ct)));
+
+        security.MapPut("/four-eyes", async (FourEyesRequest request, FourEyesService fourEyes, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await fourEyes.SetAsync(request, ct);
+            await session.CommitAsync(ct);
+            return view.Pending is { } pending && request.Enabled == false ? Results.Accepted(null, view) : Results.Ok(view);
+        }).RequireStepUp();
+
+        security.MapGet("/changes", async (FourEyesService fourEyes, IDbSession session, CancellationToken ct) =>
+        {
+            // Listing closes changes past their 72 hours first, so the list and the audit agree.
+            var items = await fourEyes.ListAsync(ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(new { items });
+        });
+
+        security.MapPost("/changes/{id:guid}:approve", async (Guid id, FourEyesService fourEyes, IDbSession session, CancellationToken ct) =>
+        {
+            var change = await fourEyes.ApproveAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(change);
+        }).RequireStepUp();
+
+        security.MapPost("/changes/{id:guid}:reject", async (Guid id, RejectChangeRequest request, FourEyesService fourEyes, IDbSession session, CancellationToken ct) =>
+        {
+            var change = await fourEyes.RejectAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(change);
+        });
+
+        security.MapPost("/changes/{id:guid}:withdraw", async (Guid id, FourEyesService fourEyes, IDbSession session, CancellationToken ct) =>
+        {
+            var change = await fourEyes.WithdrawAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(change);
+        });
 
         security.MapGet("/policy/preview", async (string? ipAllow, string? ipBlock, PolicyService policies, CancellationToken ct) =>
             Results.Ok(await policies.PreviewAsync(ipAllow, ipBlock, ct)));

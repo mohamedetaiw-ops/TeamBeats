@@ -104,7 +104,7 @@ export function PolicyEditor({ initial, etag }: { initial: SecurityPolicy; etag:
         setVersion(response.headers.get("etag") ?? version);
         setNeedsConfirmation(false);
         setConfirmation("");
-        setResult({ ok: true, messages: [t("saved")] });
+        setResult({ ok: true, messages: [response.status === 202 ? t("held") : t("saved")] });
       } else {
         const problem = (await response.clone().json().catch(() => null)) as { errors?: Record<string, unknown> } | null;
         if (problem?.errors && "confirmation" in problem.errors) setNeedsConfirmation(true);

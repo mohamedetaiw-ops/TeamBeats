@@ -212,5 +212,32 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.getByRole("button", { name: msg(locale, "security.sensitive.confirm") }).click();
       await expect(page.getByTestId("item-status")).toContainText(msg(locale, "content.items.status.published"));
     });
+
+    test("a held policy change waits for a second administrator, who approves it (FR-016)", async ({ page }, testInfo) => {
+      // Its own tenant with two administrators, so four-eyes reaches no other test.
+      const held = await createTenant(`fe-${locale}`, locale, "workplace_plus", ["rana"]);
+      await signInWithDevForm(page, held.key, held.adminEmail, locale);
+      await page.goto(`${hostOrigin(held.key)}/admin/security/changes`);
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, "security.changes.title"));
+      await page.getByRole("button", { name: msg(locale, "security.changes.turnOn") }).click();
+      await expect(page.getByTestId("four-eyes-setting").getByText(msg(locale, "security.changes.on"))).toBeVisible();
+      await expectAccessible(page, testInfo, `security-changes-${locale}`);
+
+      await page.goto(`${hostOrigin(held.key)}/admin/security`);
+      await page.getByLabel(msg(locale, "security.policy.sessions.idle")).fill("45");
+      await page.getByRole("button", { name: msg(locale, "security.policy.save") }).click();
+      await expect(page.getByRole("status").filter({ hasText: msg(locale, "security.policy.held") })).toBeVisible();
+
+      await page.context().clearCookies();
+      await signInWithDevForm(page, held.key, `rana@${held.key}.example`, locale);
+      await page.goto(`${hostOrigin(held.key)}/admin/security/changes`);
+      const kind = msg(locale, "security.changes.kinds.security_policy");
+      await page.getByRole("button", { name: msg(locale, "security.changes.approve", { kind }) }).click();
+      await expect(page.getByRole("status").filter({ hasText: msg(locale, "security.changes.approved") })).toBeVisible();
+      await expect(page.getByTestId("four-eyes-changes").getByText(msg(locale, "security.changes.statuses.approved"))).toBeVisible();
+      await expectAccessible(page, testInfo, `security-changes-approved-${locale}`);
+      await page.goto(`${hostOrigin(held.key)}/admin/security`);
+      await expect(page.getByLabel(msg(locale, "security.policy.sessions.idle"))).toHaveValue("45");
+    });
   });
 }
