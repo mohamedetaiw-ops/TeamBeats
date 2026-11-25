@@ -1,5 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
+import { expectDetailConformant } from "../support/a11y";
 import { msg, type LaunchLocale } from "../support/messages";
 import { createTenant, type TestTenant } from "../support/platform";
 import { hostOrigin } from "../support/stack";
@@ -88,6 +89,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
       await expect(page.getByText(msg(locale, "connections.status.healthy"), { exact: true })).toBeVisible();
       await expectAccessible(page, testInfo, `connection-${locale}`);
+      await expectDetailConformant(page, testInfo, tenant, "/admin/connections/[id]");
 
       // The overview lists it with its status and quick actions.
       await page.getByRole("link", { name: msg(locale, "connections.back") }).click();

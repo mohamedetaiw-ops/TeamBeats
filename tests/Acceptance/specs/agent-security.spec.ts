@@ -1,4 +1,5 @@
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
+import { expectDetailConformant } from "../support/a11y";
 import { msg, type LaunchLocale } from "../support/messages";
 import { tenantApi } from "../support/pages";
 import { createTenant, type TestTenant } from "../support/platform";
@@ -75,6 +76,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.locator(".agents-timeline li")).toHaveCount(1);
       await expect(page.getByRole("link", { name: m("agents.security.incident.evidence") })).toHaveAttribute("href", `/api/v1/agents/security/incidents/${incident}/evidence`);
       await expectAccessible(page, testInfo, `agents-incident-${locale}`);
+      await expectDetailConformant(page, testInfo, tenant, "/admin/agents/security/incidents/[id]");
 
       await page.getByLabel(m("agents.security.incident.closureNote")).fill(locale === "ar" ? "لم يُعثر على مشكلة." : "No issue found after review.");
       await page.getByRole("button", { name: m("agents.security.incident.close"), exact: true }).click();

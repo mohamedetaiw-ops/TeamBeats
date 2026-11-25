@@ -1,4 +1,5 @@
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
+import { expectDetailConformant } from "../support/a11y";
 import { msg, type LaunchLocale } from "../support/messages";
 import { tenantApi } from "../support/pages";
 import { createTenant, type TestTenant } from "../support/platform";
@@ -127,6 +128,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByText(m("agents.use.linksAsText"))).toBeVisible();
       await expect(page.getByTestId("agent-answer").locator("a, img")).toHaveCount(0);
       await expectAccessible(page, testInfo, `agents-conversation-${locale}`);
+      await expectDetailConformant(page, testInfo, tenant, "/agents/[id]");
 
       // The contextual action on a news item passes the item to the agent the person picks.
       await page.goto(`${hostOrigin(tenant.key)}/content/read/${news}`);
@@ -147,6 +149,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("agents.timeline.title"));
       await expect(page.getByTestId("agents-run-steps").locator("li").first()).toBeVisible();
       await expectAccessible(page, testInfo, `agents-run-${locale}`);
+      await expectDetailConformant(page, testInfo, tenant, "/admin/agents/runs/[id]");
 
       // The agent page shows its usage: the two real runs, not the test run (020 FR-018).
       await page.goto(agentPage);

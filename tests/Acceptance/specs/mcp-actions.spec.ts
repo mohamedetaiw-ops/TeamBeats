@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
+import { expectDetailConformant } from "../support/a11y";
 import { msg, type LaunchLocale } from "../support/messages";
 import { tenantApi } from "../support/pages";
 import { createTenant, type TestTenant } from "../support/platform";
@@ -115,6 +116,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(card.getByRole("definition").filter({ hasText: title })).toBeVisible();
       await expect(page.locator("html")).toHaveAttribute("dir", locale === "ar" ? "rtl" : "ltr");
       await expectAccessible(page, testInfo, `ai-action-${locale}`);
+      await expectDetailConformant(page, testInfo, tenant, "/ai-actions/[id]");
       await card.getByRole("button", { name: m("aiActions.confirm") }).click();
       await expect(card.getByText(m("aiActions.status.confirmed"))).toBeVisible();
     });

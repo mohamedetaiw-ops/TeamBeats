@@ -1,4 +1,5 @@
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
+import { expectDetailConformant } from "../support/a11y";
 import { msg, type LaunchLocale } from "../support/messages";
 import { tenantApi } from "../support/pages";
 import { createTenant, type TestTenant } from "../support/platform";
@@ -89,6 +90,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.getByTestId("eval-import-confirm").click();
       await expect(page.getByRole("status").filter({ hasText: m("evaluation.dataset.imported", { version: "2" }) })).toBeVisible();
       await expect(page.getByTestId("eval-dataset-cases").getByRole("row")).toHaveCount(3);
+      await expectDetailConformant(page, testInfo, tenant, "/admin/evaluation/datasets/[id]");
 
       // The dataset joins the agent's suite.
       await page.getByRole("link", { name: m("evaluation.dataset.back") }).click();
@@ -105,12 +107,14 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await waitForCompleted(page);
       await expect(page.getByTestId("eval-run-cases").getByRole("row")).not.toHaveCount(1);
       await expectAccessible(page, testInfo, `evaluation-run-${locale}`);
+      await expectDetailConformant(page, testInfo, tenant, "/admin/evaluation/runs/[id]");
 
       await page.getByTestId("eval-run-cases").getByRole("link", { name: m("evaluation.run.caseNumber", { n: "1" }), exact: true }).click();
       await page.waitForURL(/\/cases\/1$/);
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("evaluation.case.title", { n: "1" }));
       await expect(page.getByTestId("eval-case-result")).not.toHaveText(m("evaluation.none"));
       await expectAccessible(page, testInfo, `evaluation-case-${locale}`);
+      await expectDetailConformant(page, testInfo, tenant, "/admin/evaluation/runs/[id]/cases/[n]");
 
       await page.goto(`${hostOrigin(tenant.key)}/admin/evaluation/agents/${agent}`);
       await page.getByTestId("eval-start").click();
