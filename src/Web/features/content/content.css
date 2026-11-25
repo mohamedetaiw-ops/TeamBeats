@@ -5,7 +5,6 @@
   max-inline-size: 48rem;
 }
 
-.content-social,
 .content-card {
   display: grid;
   gap: var(--tb-space-sm);
@@ -16,7 +15,6 @@
   color: var(--tb-color-text-primary);
 }
 
-.content-social h2,
 .content-card h2,
 .content-card h3 {
   margin: 0;
@@ -167,10 +165,6 @@
 .content-ai > p {
   margin: 0;
   font-size: var(--tb-font-size-sm);
-}
-
-.content-social h2 {
-  font-size: var(--tb-font-size-lg);
 }
 
 .content-list-item {
