@@ -100,7 +100,8 @@ public sealed record RunView(
     RunHandoff? HandedOffFrom = null);
 
 /// <summary>The agent and run that handed this run the work (spec 020 US10), so the person sees who took over.</summary>
-public sealed record RunHandoff(Guid AgentId, Guid RunId, IReadOnlyDictionary<string, string>? AgentNames);
+/// <summary>Who handed the work over (the agent the person asked) and the agent that answered, at the end of the chain.</summary>
+public sealed record RunHandoff(Guid AgentId, Guid RunId, IReadOnlyDictionary<string, string>? AgentNames, IReadOnlyDictionary<string, string>? ToNames = null);
 
 public sealed record RunSummary(Guid Id, Guid AgentId, int AgentVersion, Guid UserId, string Mode, string Status, string? Outcome, string? Reason, int Steps,
     int ToolCalls, int Denials, string? Model, int InputTokens, int OutputTokens, DateTimeOffset CreatedAt, DateTimeOffset? FinishedAt);
@@ -722,7 +723,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
                     await FinishAsync(runId, agent, state, RunStatuses.Completed, RunOutcomes.HandedOff, null, null, language, (model, provider, input, output), ct);
                     var child = await StartAsync(handoff.Target, user, handoff.Request!, new RunRequest(handoff.Request, language), null, ct, limitChecked: true,
                         depth: state.Depth + 1, parentRun: runId);
-                    return child with { HandedOffFrom = new RunHandoff(agent.Id, runId, agent.Definition.Name) };
+                    return child with { HandedOffFrom = new RunHandoff(agent.Id, runId, agent.Definition.Name, child.HandedOffFrom?.ToNames ?? handoff.Target.Definition.Name) };
                 }
                 var gate = await CheckAsync(agent, state, call.Name, call.Arguments, ct);
                 if (gate.Stop is { } stop)

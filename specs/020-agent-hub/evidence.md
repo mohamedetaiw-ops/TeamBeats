@@ -32,3 +32,6 @@ The spec stays Approved, not Implemented, until its R3 part is built: handoffs b
 | SC-001 six templates adapted and published in one working day | Not measured | Needs a timed walkthrough with a tenant |
 | Cross-tenant cases | Met | `AgentRegistryTests`, `AgentRunResumeTests`, `AgentAnalyticsTests`, `AgentMarketplaceTests`, `AgentMemoryTests`, `AgentLifecycleTests.Lifecycle_actions_never_reach_another_tenants_agent_or_one_outside_the_publishers_scope`, `AgentRuntimeTests`, `AgentInjectionTests` |
 | Pages (T014) | Met | `agents.spec.ts` (en and ar, axe) |
+| US10 handoffs (FR-016, R3 T024) | Met | `AgentHandoffTests` (declared handoff as the same person with its own tools, undeclared refused, depth 3 with the human contact, Workplace Plus scope, cross-tenant, validation) |
+| Advanced templates 13 to 15 (R3 T025) | Met | `AgentDefinitionTests.Advanced_templates_thirteen_to_fifteen_need_the_advanced_capability`, `AgentRegistryTests.Advanced_templates_need_the_advanced_package_and_process_automation_needs_autonomy`, `EvaluationRulesTests` (suites in every locale) |
+| Handoff pages (R3 T026) | Met | `agent-handoffs.spec.ts` (advanced templates in the library, declared handoff in the editor, en and ar, axe); the handed over notice renders from `handedOffFrom` checked in `AgentHandoffTests` |

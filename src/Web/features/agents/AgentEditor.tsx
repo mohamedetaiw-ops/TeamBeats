@@ -12,12 +12,14 @@ import type { OrgUnit } from "@/lib/experience/builder-types";
 import {
   AUDIENCE_OUTSIDE,
   MEMORY_MODES,
+  MAX_HANDOFFS,
   AUTONOMY_BUILT,
   OUTPUT_FORMATS,
   pickText,
   TONES,
   type AgentDefinition,
   type AgentDetail,
+  type AgentSummary,
   type Localized,
   type RunView,
   type StudioOffer,
@@ -79,10 +81,13 @@ export function AgentEditor({
   tools,
   units,
   studio = null,
+  agents = [],
 }: {
   initial: AgentDetail;
   tools: ToolView[];
   units: OrgUnit[];
+  /** Published agents of the tenant the person may see, offered as handoff targets (spec 020 US10). */
+  agents?: AgentSummary[];
   /** The Studio offer, or null when the API does not offer Studio to this person. */
   studio?: StudioOffer | null;
 }) {
@@ -107,6 +112,7 @@ export function AgentEditor({
   const [copyAudience, setCopyAudience] = useState(false);
   const [copyTools, setCopyTools] = useState(false);
   const [copyMemory, setCopyMemory] = useState(false);
+  const [handoffTarget, setHandoffTarget] = useState("");
 
   const status = detail.agent.status;
   const locked = detail.latest.state === "in_review";
@@ -114,6 +120,12 @@ export function AgentEditor({
   const set = (patch: Partial<AgentDefinition>) => setDefinition({ ...definition, ...patch });
   const ownersEditable = detail.canEdit && status !== "retired";
   const audienceUnits = definition.audience?.orgUnits ?? [];
+  const handoffs = definition.handoffs ?? [];
+  const targets = agents.filter((a) => a.id !== detail.agent.id && a.status === "published" && !handoffs.some((h) => h.agent === a.id));
+  const targetName = (h: { template?: string | null; agent?: string | null }) => {
+    const found = agents.find((a) => (h.agent ? a.id === h.agent : a.templateId === h.template));
+    return found ? pickText(found.name, locale) : (h.agent ?? h.template ?? "");
+  };
   const earlier = detail.versions.filter((v) => v.publishedAt !== null && v.number !== detail.agent.currentVersion);
   const toolLabel = (name: string) => (ts.has(`toolNames.${name}`) ? ts(`toolNames.${name}`) : (tenantToolTitle(tools, name, locale) ?? name));
 
@@ -313,6 +325,56 @@ export function AgentEditor({
           ))}
         </fieldset>
         <Bilingual label={t("escalation")} value={definition.escalation} onChange={(escalation) => set({ escalation })} disabled={!editable} />
+      </section>
+
+      <section className="agents-section" aria-labelledby={`${ids}-handoffs`} data-testid="agent-handoffs">
+        <h2 id={`${ids}-handoffs`}>{t("handoffs.title")}</h2>
+        <p>{t("handoffs.intro")}</p>
+        {handoffs.length === 0 ? <p className="field-hint">{t("handoffs.none")}</p> : null}
+        <ul className="agents-handoffs">
+          {handoffs.map((h, i) => (
+            <li key={h.agent ?? h.template ?? i}>
+              <p>
+                <strong>{t("handoffs.target")}</strong> <bdi>{targetName(h)}</bdi>
+              </p>
+              <Bilingual
+                label={t("handoffs.topic")}
+                value={h.topic}
+                onChange={(topic) => set({ handoffs: handoffs.map((x, j) => (j === i ? { ...x, topic } : x)) })}
+                disabled={!editable}
+              />
+              {editable ? (
+                <div className="agents-row">
+                  <Button onClick={() => set({ handoffs: handoffs.filter((_, j) => j !== i) })}>{t("handoffs.remove", { name: targetName(h) })}</Button>
+                </div>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+        {editable && handoffs.length < MAX_HANDOFFS && targets.length > 0 ? (
+          <div className="agents-row">
+            <div className="field">
+              <label htmlFor={`${ids}-handoff-target`}>{t("handoffs.choose")}</label>
+              <select id={`${ids}-handoff-target`} value={handoffTarget} onChange={(e) => setHandoffTarget(e.target.value)}>
+                <option value="">{t("handoffs.pick")}</option>
+                {targets.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {pickText(a.name, locale)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <Button
+              disabled={handoffTarget === ""}
+              onClick={() => {
+                set({ handoffs: [...handoffs, { agent: handoffTarget, topic: {} }] });
+                setHandoffTarget("");
+              }}
+            >
+              {t("handoffs.add")}
+            </Button>
+          </div>
+        ) : null}
       </section>
 
       <section className="agents-section" aria-labelledby={`${ids}-owners`} data-testid="agent-owners">

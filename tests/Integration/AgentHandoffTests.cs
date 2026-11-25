@@ -108,6 +108,7 @@ public sealed class AgentHandoffTests(TenantWorld world)
         Assert.Equal("completed", run.GetProperty("status").GetString());
         var from = run.GetProperty("handedOffFrom");
         Assert.Equal(front, from.GetProperty("agentId").GetGuid());
+        Assert.False(string.IsNullOrEmpty(from.GetProperty("toNames").GetProperty("ar").GetString()));
         var parent = from.GetProperty("runId").GetGuid();
         var child = run.GetProperty("id").GetGuid();
 
@@ -154,6 +155,8 @@ public sealed class AgentHandoffTests(TenantWorld world)
 
         var run = await RunAsync(t, first, HandTo(second, HandTo(third, HandTo(fourth, "Find the leave policy"))));
         Assert.Equal(third, run.GetProperty("agentId").GetGuid());
+        // The person sees the agent they asked and the agent that answered.
+        Assert.Equal(first, run.GetProperty("handedOffFrom").GetProperty("agentId").GetGuid());
         Assert.Contains(("tool", "agent.handoff", "refused", "tool.handoff_depth"), await StepsAsync(t, run.GetProperty("id").GetGuid()));
         Assert.Contains(Escalation, run.GetProperty("answer").GetString());
         Assert.Equal(3, await world.Database.TenantScalarAsync<int>(t.Id, "select depth from agents.run where id = @id", ("id", run.GetProperty("id").GetGuid())));

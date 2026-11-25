@@ -133,3 +133,11 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - Gap: an L4 run keeps its record in one transaction with its answer, so a restart in the middle of a run starts it again from the beginning when the request is redelivered; tools it already called may be called again. Write tools that change other systems should stay idempotent.
 - Gap: no service identity for processes started without a person (FR-003 allows one granted by the AI Policy Administrator); such steps raise `agent_no_person`.
 - With T024 (pages, `agent-autonomy.spec.ts`) spec 027 R3 is built.
+
+## Spec 020 R3: handoffs and advanced templates (T024 to T026)
+
+- Defaults are in the spec 020 R3 plan. `ai.agents.orchestration` (Workplace Plus and Enterprise and Government) and `ai.agents.orchestration_custom` (Enterprise and Government) are new capabilities (Entitlements migration 0049). Agents migration 0027 adds `run.parent_run_id` and `run.depth`.
+- `agent.handoff` is offered only in modes run and test, and only to an agent that declares handoffs. A handoff ends the first run with outcome `handed_off` and starts the target run in the same request, as the same person, with the target's definition, tools and unit policy. The answer carries `handedOffFrom` with the agent asked and the agent that answered at the end of the chain. In the test panel a handoff is recorded as `would_call` and nothing starts.
+- Templates 13 to 15 are in `Templates/advanced.json` under `ai.agents.advanced`, with platform suites in the five suite locales. No analytics tool exists yet, so Executive Intelligence uses search, news and pages. Process Automation is not ready without `ai.agents.autonomous`, whatever the agent policy says.
+- The editor offers the tenant's published agents as handoff targets (by agent ID); a template target shows the name of the agent installed from it.
+- Gaps: the target gets only the request the first agent wrote, not the conversation; handoffs are not offered in L4 process tasks, briefings or evaluation runs; there is no picker for template targets in the editor, since platform templates declare those themselves.
