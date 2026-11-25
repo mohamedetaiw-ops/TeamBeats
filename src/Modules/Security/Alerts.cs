@@ -37,11 +37,17 @@ public static class AlertKinds
     /// <summary>A platform operator opened a break-glass session on the tenant (spec 026 FR-020).</summary>
     public const string PlatformAccess = "platform_access";
 
+    /// <summary>The key service refused the tenant's customer-managed key (spec 026 US8): the tenant is unavailable.</summary>
+    public const string KeyRevoked = "key_revoked";
+
+    /// <summary>The key service did not answer the key check; the tenant stays available for up to 24 hours.</summary>
+    public const string KeyUnreachable = "key_unreachable";
+
     /// <summary>The kinds about an app, which API administrators are told about too.</summary>
     public static readonly IReadOnlyList<string> AboutApps = [ApiTokenReuse, ApiDeniedBurst, ApiVolumeSpike];
 
     public static readonly IReadOnlyList<string> All =
-        [DownloadVolume, PrivilegeGrantOutOfHours, NetworkBlocked, ApiTokenReuse, SiemFailing, GuestConfidentialAccess, ApiDeniedBurst, ApiVolumeSpike, PlatformAccess];
+        [DownloadVolume, PrivilegeGrantOutOfHours, NetworkBlocked, ApiTokenReuse, SiemFailing, GuestConfidentialAccess, ApiDeniedBurst, ApiVolumeSpike, PlatformAccess, KeyRevoked, KeyUnreachable];
 }
 
 /// <summary>Who is told when a guest opens a Confidential item (spec 026 US5 scenario 3).</summary>

@@ -24,6 +24,10 @@ public static class SecurityModule
         services.AddScoped<IFourEyes>(sp => sp.GetRequiredService<FourEyesService>());
         services.AddScoped<IFourEyesApplier, SecurityPolicyApplier>();
         services.AddScoped<IFourEyesApplier, FourEyesSwitchApplier>();
+        services.AddScoped<TenantKeyStore>();
+        services.AddScoped<TenantKeyService>();
+        services.AddScoped<ITenantDataKeys>(sp => sp.GetRequiredService<TenantKeyService>());
+        services.AddScoped<IFourEyesApplier, TenantKeyApplier>();
         services.AddScoped<AlertService>();
         services.AddScoped<PostureService>();
         services.AddScoped<ISecurityTrendFigures, SecurityTrendFigures>();
@@ -108,6 +112,39 @@ public static class SecurityModule
             await session.CommitAsync(ct);
             return view.Pending is { } pending && request.Enabled == false ? Results.Accepted(null, view) : Results.Ok(view);
         }).RequireStepUp();
+
+        // Customer-managed keys (spec 026 US8, FR-007).
+        security.MapGet("/keys", async (TenantKeyService keys, CancellationToken ct) => Results.Ok(await keys.GetAsync(ct)));
+
+        security.MapPut("/keys", async (TenantKeyRequest request, TenantKeyService keys, IDbSession session, TeamBeats.Primitives.IClock clock, CancellationToken ct) =>
+        {
+            var started = clock.UtcNow;
+            var view = await keys.SaveAsync(request, ct);
+            await session.CommitAsync(ct);
+            return view.PendingChange is { Status: "pending" } && view.PendingChange.RequestedAt >= started ? Results.Accepted(null, view) : Results.Ok(view);
+        }).RequireStepUp();
+
+        // Checks the key now instead of waiting for the next 5 minute check.
+        security.MapPost("/keys:check", async (TenantKeyService keys, TeamBeats.Authorization.Contracts.IAuthorizationService authz, IDbSession session, CancellationToken ct) =>
+        {
+            await keys.GetAsync(ct);
+            await authz.DemandAsync(TeamBeats.Authorization.Contracts.Permissions.SecurityManage, TeamBeats.Authorization.Contracts.AuthzTarget.Tenant, ct);
+            await keys.CheckAsync(ct);
+            var view = await keys.GetAsync(ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        // Before sign-in too, and while the tenant is unavailable: whether this tenant answers, for the sign-in page's notice.
+        app.MapGet(TenantKeyGate.AvailabilityPath, async (ITenantContext context, TenantKeyStore store, CancellationToken ct) =>
+        {
+            if (context.Host.Kind != HostScopeKind.Tenant || context.Host.Tenant is not { } tenant)
+            {
+                throw TeamBeats.Primitives.AppException.NotFound();
+            }
+            var revoked = await store.StatusAsync(tenant.Id, ct) == KeyStatuses.Revoked;
+            return Results.Ok(new SiteAvailability(!revoked, revoked ? "key_unavailable" : null));
+        }).WithTags("Site");
 
         security.MapGet("/changes", async (FourEyesService fourEyes, IDbSession session, CancellationToken ct) =>
         {
@@ -257,3 +294,6 @@ public static class SecurityModule
         return app;
     }
 }
+
+/// <summary>Whether the tenant of this host answers (spec 026 US8), and why not.</summary>
+public sealed record SiteAvailability(bool Available, string? Reason);

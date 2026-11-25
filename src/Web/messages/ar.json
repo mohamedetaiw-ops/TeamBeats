@@ -925,6 +925,7 @@
         "security_alerts": "تنبيهات الأمان",
         "security_alerts_advanced": "تنبيهات الأمان المتقدمة",
         "security_siem": "بث الأحداث إلى نظام SIEM",
+        "security_customer_keys": "مفاتيح تشفير يديرها العميل",
         "security_max_guest_spaces": "المساحات التي تضم ضيوفا",
         "content_core": "الأخبار والصفحات",
         "content_critical_ack": "إعلانات مهمة مع إقرار",
@@ -1707,6 +1708,10 @@
     "mfa_required": {
       "title": "يلزم تسجيل الدخول متعدد العوامل",
       "body": "تشترط مؤسستك تسجيل الدخول متعدد العوامل، ولم يستخدمه تسجيل الدخول هذا. تواصل مع فريق تقنية المعلومات لإعداده، ثم سجّل الدخول مرة أخرى."
+    },
+    "key_unavailable": {
+      "title": "مساحة العمل هذه غير متاحة",
+      "body": "أُلغي مفتاح التشفير الخاص بمؤسستك، لذا TeamBeats غير متاح حاليًا. لم تُحذف أي بيانات. يعود حين يستعيد المسؤولون المفتاح."
     },
     "failed": {
       "title": "لم يكتمل تسجيل الدخول",
@@ -3828,6 +3833,7 @@
       "siem": "SIEM",
       "reviews": "مراجعات الوصول",
       "detection": "البيانات الحساسة",
+      "keys": "مفتاح التشفير",
       "changes": "الموافقات"
     },
     "openAlerts": "{count, plural, zero {لا تنبيهات مفتوحة} one {تنبيه مفتوح واحد} two {تنبيهان مفتوحان} few {# تنبيهات مفتوحة} many {# تنبيهًا مفتوحًا} other {# تنبيه مفتوح}}",
@@ -3917,7 +3923,9 @@
         "guest_confidential_access": "فتح ضيف عنصرا سريا",
         "api_denied_burst": "طلبات كثيرة مرفوضة من تطبيق",
         "api_volume_spike": "حجم طلبات غير معتاد من تطبيق",
-        "platform_access": "فتح مشغل المنصة وصولا"
+        "platform_access": "فتح مشغل المنصة وصولا",
+        "key_revoked": "إلغاء مفتاح التشفير",
+        "key_unreachable": "خدمة المفاتيح لا تستجيب"
       },
       "facts": {
         "downloads": "{files, plural, one {ملف واحد} two {ملفان} few {# ملفات} many {# ملفًا} other {# ملف}}، {size} ميغابايت، من {libraries, plural, one {مكتبة واحدة} two {مكتبتين} few {# مكتبات} many {# مكتبة} other {# مكتبة}} خلال ساعة واحدة.",
@@ -3928,7 +3936,9 @@
         "guestConfidential": "فتح ضيف عنصرا مصنفا سريا. يظهر العنصر والمساحة في سجل التدقيق.",
         "apiDenied": "التطبيق: {app}. {count, plural, one {رُفض طلب واحد} two {رُفض طلبان} few {رُفضت # طلبات} many {رُفض # طلبا} other {رُفض # طلب}} خلال 10 دقائق.",
         "apiVolume": "التطبيق: {app}. {calls, plural, one {طلب واحد} two {طلبان} few {# طلبات} many {# طلبا} other {# طلب}} في ساعة واحدة، مقابل متوسط {average} في الساعة.",
-        "platformAccess": "فتح مشغل المنصة وصول الطوارئ لمدة {minutes} دقيقة. السبب المذكور: {reason}"
+        "platformAccess": "فتح مشغل المنصة وصول الطوارئ لمدة {minutes} دقيقة. السبب المذكور: {reason}",
+        "keyRevoked": "رفضت خدمة المفاتيح المفتاح: TeamBeats غير متاح حتى يُستعاد.",
+        "keyUnreachable": "لم يتلقَّ فحص المفتاح ردًا من خدمة المفاتيح."
       },
       "raised": "أُنشئ في {at}.",
       "subject": "الشخص:",
@@ -4213,6 +4223,67 @@
       "add": "إضافة نمط",
       "added": "تمت إضافة النمط."
     },
+    "keys": {
+      "title": "مفتاح التشفير",
+      "intro": "احفظ مفتاح بيانات مؤسستك تحت مفتاح تملكه في خدمة المفاتيح الخاصة بك. إذا ألغيت ذلك المفتاح يصبح TeamBeats غير متاح للجميع خلال 15 دقيقة، ويعود حين تستعيده. لا تُحذف أي بيانات.",
+      "unavailable": "المفاتيح التي يديرها العميل جزء من باقة المؤسسات والجهات الحكومية.",
+      "failed": "تعذّر تحميل إعدادات المفتاح. حاول مرة أخرى.",
+      "statusTitle": "حالة المفتاح",
+      "none": "لا يوجد مفتاح متصل. بياناتك مشفّرة بمفاتيح يديرها TeamBeats.",
+      "statuses": {
+        "active": "يعمل",
+        "unreachable": "خدمة المفاتيح لا تستجيب",
+        "revoked": "ملغى: TeamBeats غير متاح"
+      },
+      "providers": {
+        "azure_key_vault": "Azure Key Vault",
+        "vault_transit": "HashiCorp Vault transit"
+      },
+      "provider": "خدمة المفاتيح",
+      "keyUri": "عنوان المفتاح",
+      "version": "إصدار المفتاح المستخدم",
+      "checked": "آخر فحص",
+      "rotated": "نُقل إلى إصدار جديد",
+      "since": "منذ",
+      "sinceValue": "{at}: {error}",
+      "checkNow": "افحص المفتاح الآن",
+      "checkedNow": {
+        "active": "المفتاح يعمل.",
+        "unreachable": "لم تستجب خدمة المفاتيح.",
+        "revoked": "رفضت خدمة المفاتيح المفتاح."
+      },
+      "unreachableTitle": "تعذّر على TeamBeats الوصول إلى خدمة المفاتيح لديك",
+      "unreachableBody": "يبقى TeamBeats متاحًا حتى 24 ساعة دون رد، وبعدها يُعدّ المفتاح ملغى. تحقق من خدمة المفاتيح وشبكتها.",
+      "waiting": "تغيير المفتاح بانتظار موافقة مسؤول آخر.",
+      "openChanges": "افتح الموافقات",
+      "connectTitle": "ربط مفتاح",
+      "connectIntro": "يتحقق TeamBeats من قدرته على التغليف وفك التغليف بالمفتاح قبل استخدامه. يلزمك تسجيل دخول حديث.",
+      "changeTitle": "تغيير المفتاح",
+      "changeIntro": "ينتقل مفتاح البيانات إلى المفتاح الجديد فلا يتغير شيء آخر. يجب أن يظل المفتاح الحالي يستجيب.",
+      "keyUriHintAzure": "مفتاح RSA دون إصدار، مثل https://contoso.vault.azure.net/keys/teambeats.",
+      "keyUriHintVault": "مفتاح Transit، مثل https://vault.example.com/v1/transit/keys/teambeats. أضف المضيف إلى المضيفين المسموح بهم أولًا.",
+      "directoryId": "معرّف دليل Entra",
+      "clientId": "معرّف التطبيق (العميل)",
+      "secretRefAzure": "مرجع سر العميل",
+      "secretRefVault": "مرجع الرمز",
+      "secretRefHint": "مرجع في مدير الأسرار مثل secret://tenants/{tenant}/kms. لا تدخل السر نفسه أبدًا.",
+      "connect": "اربط المفتاح",
+      "change": "غيّر المفتاح",
+      "saved": "المفتاح متصل.",
+      "held": "التغيير بانتظار موافقة مسؤول آخر.",
+      "working": "جارٍ العمل",
+      "errors": {
+        "credential_missing": "لم يُعثر على السر في مدير الأسرار",
+        "credential_refused": "رفضت خدمة المفاتيح بيانات الاعتماد",
+        "key_disabled": "المفتاح معطّل",
+        "key_not_found": "لم يُعثر على المفتاح",
+        "not_responding": "لم تستجب خدمة المفاتيح",
+        "server_error": "حدث خطأ في خدمة المفاتيح",
+        "invalid_response": "أعادت خدمة المفاتيح ردًا غير متوقع",
+        "blocked_address": "المضيف يشير إلى عنوان خاص",
+        "host_not_allowed": "المضيف ليس ضمن القائمة المسموح بها"
+      }
+    },
     "changes": {
       "title": "موافقات الإعدادات",
       "intro": "عند تفعيل موافقة الشخصين، تنتظر تغييرات سياسة الأمان وتسجيل الدخول ومدة الاحتفاظ بالتدقيق موافقة مسؤول ثانٍ.",
@@ -4246,7 +4317,8 @@
         "security_policy": "سياسة الأمان",
         "security_four_eyes": "موافقة الشخصين",
         "identity_provider": "تسجيل الدخول",
-        "audit_retention": "الاحتفاظ بالتدقيق"
+        "audit_retention": "الاحتفاظ بالتدقيق",
+        "security_keys": "مفتاح التشفير"
       },
       "approve": "الموافقة على تغيير {kind}",
       "reject": "رفض تغيير {kind}",
@@ -4274,7 +4346,12 @@
         "guestBlockDomains": "نطاقات الضيوف المحظورة",
         "days": "أيام الاحتفاظ",
         "enabled": "التشغيل أو الإيقاف",
-        "identityProvider": "مزود الهوية"
+        "identityProvider": "مزود الهوية",
+        "provider": "خدمة المفاتيح",
+        "keyUri": "عنوان المفتاح",
+        "secretRef": "مرجع السر",
+        "directoryId": "دليل Entra",
+        "clientId": "التطبيق"
       },
       "separator": "، "
     }
@@ -10118,7 +10195,9 @@
             "guest_confidential_access": "فتح ضيف عنصرا سريا",
             "api_denied_burst": "طلبات كثيرة مرفوضة من تطبيق",
             "api_volume_spike": "حجم طلبات غير معتاد من تطبيق",
-            "platform_access": "فتح مشغل المنصة وصولا"
+            "platform_access": "فتح مشغل المنصة وصولا",
+            "key_revoked": "إلغاء مفتاح التشفير",
+            "key_unreachable": "خدمة المفاتيح لا تستجيب"
           }
         },
         "guestWeeks": {

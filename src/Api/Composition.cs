@@ -252,6 +252,8 @@ public static class ApiComposition
         app.UseTeamBeatsSessions();
         // The tenant's network rules cover the authorization server, the public API and the MCP server too (spec 035 FR-027).
         app.UseNetworkRules();
+        // A tenant whose customer-managed key is revoked is unavailable (spec 026 US8).
+        app.UseTenantKeys();
         // The authorization server and bearer tokens of the public API (spec 035) after the host's tenant is known.
         app.UseOAuthServer();
         app.UsePublicApiTokens();

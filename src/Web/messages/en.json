@@ -925,6 +925,7 @@
         "security_alerts": "Security alerts",
         "security_alerts_advanced": "Advanced security alerts",
         "security_siem": "SIEM streaming",
+        "security_customer_keys": "Customer-managed encryption keys",
         "security_max_guest_spaces": "Spaces with guests",
         "content_core": "News and pages",
         "content_critical_ack": "Critical announcements with acknowledgement",
@@ -1707,6 +1708,10 @@
     "mfa_required": {
       "title": "Multi-factor sign-in is required",
       "body": "Your organization requires multi-factor sign-in, and this sign-in did not use it. Contact your IT team to set it up, then sign in again."
+    },
+    "key_unavailable": {
+      "title": "This workspace is unavailable",
+      "body": "Your organization's encryption key was revoked, so TeamBeats is unavailable for now. No data was deleted. It comes back once your administrators restore the key."
     },
     "failed": {
       "title": "Sign-in did not complete",
@@ -3828,6 +3833,7 @@
       "siem": "SIEM",
       "reviews": "Access reviews",
       "detection": "Sensitive data",
+      "keys": "Encryption key",
       "changes": "Approvals"
     },
     "openAlerts": "{count, plural, one {# open alert} other {# open alerts}}",
@@ -3917,7 +3923,9 @@
         "guest_confidential_access": "Guest opened a Confidential item",
         "api_denied_burst": "Many refused calls from an app",
         "api_volume_spike": "Unusual call volume from an app",
-        "platform_access": "Platform operator opened access"
+        "platform_access": "Platform operator opened access",
+        "key_revoked": "Encryption key revoked",
+        "key_unreachable": "Key service not answering"
       },
       "facts": {
         "downloads": "{files, plural, one {# file} other {# files}}, {size} MB, from {libraries, plural, one {# library} other {# libraries}} within one hour.",
@@ -3928,7 +3936,9 @@
         "guestConfidential": "A guest opened an item classified Confidential. The audit trail shows the item and the space.",
         "apiDenied": "App: {app}. {count, plural, one {# call} other {# calls}} refused within 10 minutes.",
         "apiVolume": "App: {app}. {calls, plural, one {# call} other {# calls}} in one hour, against an hourly average of {average}.",
-        "platformAccess": "A platform operator opened break-glass access for {minutes} minutes. Reason given: {reason}"
+        "platformAccess": "A platform operator opened break-glass access for {minutes} minutes. Reason given: {reason}",
+        "keyRevoked": "The key service refused the key: TeamBeats is unavailable until it is restored.",
+        "keyUnreachable": "The key check got no answer from the key service."
       },
       "raised": "Raised {at}.",
       "subject": "Person:",
@@ -4213,6 +4223,67 @@
       "add": "Add pattern",
       "added": "The pattern is added."
     },
+    "keys": {
+      "title": "Encryption key",
+      "intro": "Keep your organization's data key under a key you hold in your own key service. If you revoke that key, TeamBeats becomes unavailable for everyone within 15 minutes, and comes back when you restore it. No data is deleted.",
+      "unavailable": "Customer-managed keys are part of the Enterprise and Government plan.",
+      "failed": "The key settings could not be loaded. Try again.",
+      "statusTitle": "Key status",
+      "none": "No key is connected. Your data is encrypted with keys TeamBeats manages.",
+      "statuses": {
+        "active": "Working",
+        "unreachable": "Key service not answering",
+        "revoked": "Revoked: TeamBeats is unavailable"
+      },
+      "providers": {
+        "azure_key_vault": "Azure Key Vault",
+        "vault_transit": "HashiCorp Vault transit"
+      },
+      "provider": "Key service",
+      "keyUri": "Key address",
+      "version": "Key version in use",
+      "checked": "Last checked",
+      "rotated": "Moved to a new version",
+      "since": "Since",
+      "sinceValue": "{at}: {error}",
+      "checkNow": "Check the key now",
+      "checkedNow": {
+        "active": "The key works.",
+        "unreachable": "The key service did not answer.",
+        "revoked": "The key service refused the key."
+      },
+      "unreachableTitle": "TeamBeats cannot reach your key service",
+      "unreachableBody": "TeamBeats stays available for up to 24 hours without an answer. After that it counts as revoked. Check the key service and its network.",
+      "waiting": "A change of the key waits for another administrator.",
+      "openChanges": "Open approvals",
+      "connectTitle": "Connect a key",
+      "connectIntro": "TeamBeats checks that it can wrap and unwrap with the key before it uses it. You need a fresh sign-in.",
+      "changeTitle": "Change the key",
+      "changeIntro": "The data key moves to the new key, so nothing else changes. The current key must still answer.",
+      "keyUriHintAzure": "An RSA key, without a version, such as https://contoso.vault.azure.net/keys/teambeats.",
+      "keyUriHintVault": "A transit key, such as https://vault.example.com/v1/transit/keys/teambeats. Add the host to the allowed hosts first.",
+      "directoryId": "Entra directory ID",
+      "clientId": "Application (client) ID",
+      "secretRefAzure": "Client secret reference",
+      "secretRefVault": "Token reference",
+      "secretRefHint": "A secret manager reference such as secret://tenants/{tenant}/kms. Never the secret itself.",
+      "connect": "Connect the key",
+      "change": "Change the key",
+      "saved": "The key is connected.",
+      "held": "The change waits for another administrator.",
+      "working": "Working",
+      "errors": {
+        "credential_missing": "the secret was not found in the secret manager",
+        "credential_refused": "the key service refused the credentials",
+        "key_disabled": "the key is disabled",
+        "key_not_found": "the key was not found",
+        "not_responding": "the key service did not answer",
+        "server_error": "the key service had an error",
+        "invalid_response": "the key service gave an unexpected answer",
+        "blocked_address": "the host points to a private address",
+        "host_not_allowed": "the host is not on the allowlist"
+      }
+    },
     "changes": {
       "title": "Setting approvals",
       "intro": "With four-eyes approval on, changes to the security policy, sign-in and audit retention wait for a second administrator.",
@@ -4246,7 +4317,8 @@
         "security_policy": "Security policy",
         "security_four_eyes": "Four-eyes approval",
         "identity_provider": "Sign-in",
-        "audit_retention": "Audit retention"
+        "audit_retention": "Audit retention",
+        "security_keys": "Encryption key"
       },
       "approve": "Approve change to {kind}",
       "reject": "Reject change to {kind}",
@@ -4274,7 +4346,12 @@
         "guestBlockDomains": "Blocked guest domains",
         "days": "Retention days",
         "enabled": "On or off",
-        "identityProvider": "Identity provider"
+        "identityProvider": "Identity provider",
+        "provider": "Key service",
+        "keyUri": "Key address",
+        "secretRef": "Secret reference",
+        "directoryId": "Entra directory",
+        "clientId": "Application"
       },
       "separator": ", "
     }
@@ -10118,7 +10195,9 @@
             "guest_confidential_access": "Guest opened a Confidential item",
             "api_denied_burst": "Many refused calls from an app",
             "api_volume_spike": "Unusual call volume from an app",
-            "platform_access": "Platform operator opened access"
+            "platform_access": "Platform operator opened access",
+            "key_revoked": "Encryption key revoked",
+            "key_unreachable": "Key service not answering"
           }
         },
         "guestWeeks": {

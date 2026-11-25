@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Modules.AiGateway.Contracts;
+using TeamBeats.Modules.Security.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
 using TeamBeats.TenantContext;
@@ -14,7 +15,9 @@ namespace TeamBeats.Modules.AiGateway;
 /// <summary>
 /// Encrypts debug prompt logs (US8 scenario 2) with AES-GCM under the installation's AI log key
 /// (<c>Ai:DebugLog:Key</c>, 32 bytes in base64, from the secret store). Tenant and window are bound as associated data,
-/// so a row copied to another tenant or window does not decrypt. Without a key no debug window can be opened.
+/// so a row copied to another tenant or window does not decrypt. Without a key no debug window can be opened. A tenant
+/// with a customer-managed key (spec 026 US8) has its entries encrypted with its own data key instead, so they cannot be
+/// read once the customer revokes the key.
 /// </summary>
 public sealed class DebugLogProtector(IConfiguration configuration)
 {
@@ -42,9 +45,9 @@ public sealed class DebugLogProtector(IConfiguration configuration)
 
     private static byte[] Associated(Guid tenantId, Guid windowId) => [.. tenantId.ToByteArray(), .. windowId.ToByteArray()];
 
-    public (byte[] Nonce, byte[] Ciphertext) Protect(string text, Guid tenantId, Guid windowId)
+    public (byte[] Nonce, byte[] Ciphertext) Protect(string text, Guid tenantId, Guid windowId, byte[]? tenantKey = null)
     {
-        var key = Key() ?? throw new InvalidOperationException("AI debug log key is not configured.");
+        var key = tenantKey ?? Key() ?? throw new InvalidOperationException("AI debug log key is not configured.");
         var nonce = RandomNumberGenerator.GetBytes(AesGcm.NonceByteSizes.MaxSize);
         var plain = Encoding.UTF8.GetBytes(text);
         var cipher = new byte[plain.Length];
@@ -57,9 +60,9 @@ public sealed class DebugLogProtector(IConfiguration configuration)
         return (nonce, [.. cipher, .. tag]);
     }
 
-    public string? Unprotect(byte[] nonce, byte[] ciphertext, Guid tenantId, Guid windowId)
+    public string? Unprotect(byte[] nonce, byte[] ciphertext, Guid tenantId, Guid windowId, byte[]? tenantKey = null)
     {
-        var key = Key();
+        var key = tenantKey ?? Key();
         var tagSize = AesGcm.TagByteSizes.MaxSize;
         if (key is null || ciphertext.Length < tagSize)
         {
@@ -90,7 +93,8 @@ public sealed record DebugLogEntry(Guid Id, DateTimeOffset At, string UseCase, s
 /// security officers (<c>audit.read</c> with <c>ai.policy_view</c>) read what it captured; entries older than 30 days are
 /// deleted when new ones are written and never shown. Opening and closing are audited.
 /// </summary>
-public sealed class DebugWindows(IDbSession session, ITenantContext context, IAuthorizationService authz, DebugLogProtector protector, IAuditWriter audit, IClock clock)
+public sealed class DebugWindows(
+    IDbSession session, ITenantContext context, IAuthorizationService authz, DebugLogProtector protector, ITenantDataKeys dataKeys, IAuditWriter audit, IClock clock)
 {
     public const int MaxHours = 72;
     public static readonly TimeSpan KeepFor = TimeSpan.FromDays(30);
@@ -183,18 +187,42 @@ public sealed class DebugWindows(IDbSession session, ITenantContext context, IAu
         {
             throw AppException.NotFound();
         }
-        return await session.QueryAsync(
-            "select id, at, use_case, classification, model, nonce, ciphertext, correlation_id from ai.debug_log where window_id = @id and at >= @since order by at desc limit 500",
+        var rows = await session.QueryAsync(
+            """
+            select id, at, use_case, classification, model, nonce, ciphertext, correlation_id, data_key_id
+            from ai.debug_log where window_id = @id and at >= @since order by at desc limit 500
+            """,
             new { id, since = clock.UtcNow - KeepFor },
-            r => new DebugLogEntry(r.GetGuid(0), r.GetFieldValue<DateTimeOffset>(1), r.GetString(2), r.GetString(3), r.GetString(4),
-                protector.Unprotect(r.GetFieldValue<byte[]>(5), r.GetFieldValue<byte[]>(6), tenant, id), r.Get<string>("correlation_id")), ct);
+            r => (Entry: new DebugLogEntry(r.GetGuid(0), r.GetFieldValue<DateTimeOffset>(1), r.GetString(2), r.GetString(3), r.GetString(4), null, r.Get<string>("correlation_id")),
+                Nonce: r.GetFieldValue<byte[]>(5), Cipher: r.GetFieldValue<byte[]>(6), DataKey: r.Get<Guid?>("data_key_id")), ct);
+        var keys = new Dictionary<Guid, byte[]?>();
+        var entries = new List<DebugLogEntry>(rows.Count);
+        foreach (var row in rows)
+        {
+            byte[]? tenantKey = null;
+            if (row.DataKey is { } keyId)
+            {
+                if (!keys.TryGetValue(keyId, out tenantKey))
+                {
+                    keys[keyId] = tenantKey = (await dataKeys.FindAsync(keyId, ct))?.Key;
+                }
+                if (tenantKey is null)
+                {
+                    // Encrypted with the tenant's own key, which is not available: shown without its text.
+                    entries.Add(row.Entry);
+                    continue;
+                }
+            }
+            entries.Add(row.Entry with { Text = protector.Unprotect(row.Nonce, row.Cipher, tenant, id, tenantKey) });
+        }
+        return entries;
     }
 
     /// <summary>
     /// Stores one call in the open window for its use case, if any: Public and Internal only, never Restricted or
     /// Confidential (scenario 3). Runs inside the call record's own transaction. Also deletes entries past 30 days.
     /// </summary>
-    internal static async Task CaptureAsync(IDbSession session, DebugLogProtector protector, Guid tenant, DateTimeOffset now, string useCase,
+    internal static async Task CaptureAsync(IDbSession session, DebugLogProtector protector, ITenantDataKeys dataKeys, Guid tenant, DateTimeOffset now, string useCase,
         DataClassification classification, string model, IReadOnlyList<AiMessage> messages, string answer, CancellationToken ct)
     {
         if (classification > DataClassification.Internal || !protector.Configured)
@@ -209,14 +237,28 @@ public sealed class DebugWindows(IDbSession session, ITenantContext context, IAu
             return;
         }
         var window = windows[0];
+        TenantDataKey? dataKey;
+        try
+        {
+            dataKey = await dataKeys.CurrentAsync(ct);
+        }
+        catch (AppException ex) when (ex.Code == ProblemCodes.TenantKeyUnavailable)
+        {
+            // The customer's key is revoked: nothing is captured, since it could not be read anyway.
+            return;
+        }
         var text = JsonSerializer.Serialize(new { messages = messages.Select(m => new { m.Role, m.Content }), answer }, JsonDefaults.Options);
-        var (nonce, cipher) = protector.Protect(text, tenant, window);
+        var (nonce, cipher) = protector.Protect(text, tenant, window, dataKey?.Key);
         await session.ExecAsync(
             """
-            insert into ai.debug_log (tenant_id, id, window_id, at, use_case, classification, model, nonce, ciphertext, correlation_id)
-            values (platform.current_tenant_id(), @id, @window, @now, @useCase, @classification, @model, @nonce, @cipher, @correlation)
+            insert into ai.debug_log (tenant_id, id, window_id, at, use_case, classification, model, nonce, ciphertext, correlation_id, data_key_id)
+            values (platform.current_tenant_id(), @id, @window, @now, @useCase, @classification, @model, @nonce, @cipher, @correlation, @dataKeyId)
             """,
-            new { id = Ids.New(), window, now, useCase, classification = Classifications.Key(classification), model, nonce, cipher, correlation = Correlation.Id }, ct);
+            new
+            {
+                id = Ids.New(), window, now, useCase, classification = Classifications.Key(classification), model, nonce, cipher, correlation = Correlation.Id,
+                dataKeyId = dataKey?.Id,
+            }, ct);
         await session.ExecAsync("delete from ai.debug_log where at < @cutoff", new { cutoff = now - KeepFor }, ct);
     }
 }

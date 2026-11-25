@@ -1457,3 +1457,59 @@ public interface IPdfStamp
 {
     byte[]? Apply(byte[] pdf, string text);
 }
+
+/// <summary>The key management services a tenant can hold its customer-managed key in (spec 026 US8, FR-007).</summary>
+public static class KeyProviders
+{
+    /// <summary>Azure Key Vault or Managed HSM: an RSA key, wrapped with RSA-OAEP-256, signed in as an Entra app.</summary>
+    public const string AzureKeyVault = "azure_key_vault";
+
+    /// <summary>HashiCorp Vault (or OpenBao) transit secrets engine, signed in with a token; fits customer-hosted installs.</summary>
+    public const string VaultTransit = "vault_transit";
+
+    public static readonly IReadOnlyList<string> All = [AzureKeyVault, VaultTransit];
+}
+
+/// <summary>
+/// Where the tenant's key lives. <paramref name="KeyUri"/> names the key without a version; <paramref name="SecretRef"/>
+/// is a secret manager reference to the client secret (Azure) or the token (Vault), never the secret itself.
+/// <paramref name="DirectoryId"/> and <paramref name="ClientId"/> are the Entra directory and app for Azure.
+/// </summary>
+public sealed record KeyReference(string Provider, string KeyUri, string? SecretRef, string? DirectoryId = null, string? ClientId = null);
+
+/// <summary>
+/// The answer of the key service. <see cref="Denied"/> means the service refused the key (disabled, deleted, or access
+/// taken away): the customer revoked it. <see cref="Unreachable"/> is anything else that failed, such as a timeout.
+/// </summary>
+public enum KeyAccess
+{
+    Ok,
+    Denied,
+    Unreachable,
+}
+
+/// <summary>A key service call: the key version it used or found, and the wrapped or unwrapped bytes.</summary>
+public sealed record KeyResult(KeyAccess Access, string? Version = null, byte[]? Data = null, string? ErrorClass = null)
+{
+    public static KeyResult Fail(KeyAccess access, string errorClass) => new(access, null, null, errorClass);
+}
+
+/// <summary>
+/// The key management adapter (spec 026 US8, FR-007). Wraps and unwraps the tenant's data key with the customer's key;
+/// the key itself never leaves the customer's service. Calls go through the connector HTTP client and its address
+/// guard; nothing sent or received is recorded.
+/// </summary>
+public interface IKeyManagement
+{
+    /// <summary>Checks the reference and returns it normalized. Validation errors name <c>keyUri</c>, <c>secretRef</c>, <c>directoryId</c> or <c>clientId</c>.</summary>
+    Task<KeyReference> ValidateAsync(KeyReference key, CancellationToken ct = default);
+
+    /// <summary>The key's current version, or why it cannot be used.</summary>
+    Task<KeyResult> CurrentVersionAsync(KeyReference key, CancellationToken ct = default);
+
+    /// <summary>Wraps <paramref name="plaintext"/> with the current version of the key.</summary>
+    Task<KeyResult> WrapAsync(KeyReference key, byte[] plaintext, CancellationToken ct = default);
+
+    /// <summary>Unwraps <paramref name="wrapped"/> with the named version of the key.</summary>
+    Task<KeyResult> UnwrapAsync(KeyReference key, string version, byte[] wrapped, CancellationToken ct = default);
+}

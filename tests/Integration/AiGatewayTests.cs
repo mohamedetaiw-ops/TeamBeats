@@ -8,6 +8,7 @@ using TeamBeats.Modules.AiGateway;
 using TeamBeats.Modules.AiGateway.Contracts;
 using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Modules.Evaluation;
+using TeamBeats.Primitives;
 using TeamBeats.Testing;
 using Xunit;
 
@@ -433,6 +434,40 @@ public sealed class AiGatewayTests(TenantWorld world)
         var judge = await AsAsync(t, g => g.ChatAsync(new AiRequest(AiUseCases.Evaluation, [new AiMessage(AiRoles.User, "Grade")], DataClassification.Internal, PlatformCharged: true)));
         Assert.True(judge.IsOk, judge.Denial);
         Assert.Equal(1, await world.Database.CountInTenantAsync(t.Id, "select count(*) from ai.usage_record where charged_to = 'platform'"));
+    }
+
+    [Fact]
+    public async Task Debug_entries_of_a_tenant_with_a_customer_managed_key_use_its_data_key_and_cannot_be_read_once_it_is_revoked()
+    {
+        // Spec 026 US8: content encrypted at rest under the customer's key.
+        var t = await FreshAsync("enterprise_gov");
+        var vault = FakeKeyVault.Azure(world.Factory.Rest);
+        var secretRef = SecretReferences.For(t.Id, "kms-app");
+        world.Factory.Secrets.Set(secretRef, "fictional-client-secret");
+        await OkAsync(t["admin"].Client.PutAsJsonAsync("/api/v1/security/keys", new
+        {
+            provider = "azure_key_vault", keyUri = vault.KeyUri, secretRef,
+            directoryId = "3f1c2b8e-4a6d-4c2e-9b1a-6d5e4f3a2b10", clientId = "8a7b6c5d-4e3f-4a2b-9c1d-0e9f8a7b6c5d",
+        }));
+        var window = await OkAsync(t["layla"].Client.PostAsJsonAsync("/api/v1/ai/debug-windows", new { useCase = "assistant", hours = 2 }), HttpStatusCode.Created);
+        var id = window.GetProperty("id").GetGuid();
+        await ChatAsync(t, "Where is the travel policy?");
+        var dataKeyId = await world.Database.TenantScalarAsync<Guid>(t.Id, "select data_key_id from security.tenant_key");
+        Assert.Equal(1, await world.Database.CountInTenantAsync(t.Id, "select count(*) from ai.debug_log where data_key_id = @k", ("k", dataKeyId)));
+        var entries = await OkAsync(t["sec"].Client.GetAsync($"/api/v1/ai/debug-windows/{id}/entries"));
+        Assert.Contains("Where is the travel policy?", entries[0].GetProperty("text").GetString());
+
+        // Revoked: the entry stays, and reading it without the key gives no text.
+        vault.Disable();
+        await world.Factory.InScopeAsync(t.Id, async sp =>
+        {
+            await sp.GetRequiredService<TeamBeats.Modules.Security.TenantKeyService>().CheckAsync(CancellationToken.None);
+            await sp.GetRequiredService<TeamBeats.Persistence.IDbSession>().CommitAsync();
+            return 0;
+        });
+        var unread = await world.Factory.AsUserAsync(t.Id, t["sec"].Id, sp => sp.GetRequiredService<DebugWindows>().EntriesAsync(id, CancellationToken.None));
+        Assert.Null(Assert.Single(unread).Text);
+        Assert.Equal(1, await world.Database.CountInTenantAsync(t.Id, "select count(*) from ai.debug_log"));
     }
 
     [Fact]

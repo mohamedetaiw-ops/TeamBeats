@@ -42,6 +42,11 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
   if (kiosk.ok && kiosk.data.enrolled) {
     redirect("/kiosk");
   }
+  // A tenant whose customer-managed key is revoked answers nothing else (spec 026 US8): say so instead of a sign-in.
+  const availability = await apiGet<{ available: boolean; reason: string | null }>("/api/v1/site/availability");
+  if (availability.ok && !availability.data.available) {
+    redirect("/signin/problem?reason=key_unavailable");
+  }
   const t = await getTranslations("signin");
   const mode = devSignInMode();
   const [options, site] = await Promise.all([apiGet<SignInOptions>("/api/v1/auth/signin/options"), apiGet<SitePresentation>("/api/v1/site/presentation")]);

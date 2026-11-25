@@ -279,6 +279,14 @@ public static class AuditActions
     public const string SecurityChangeWithdrawn = "security.change_withdrawn";
     public const string SecurityChangeExpired = "security.change_expired";
 
+    // Spec 026 US8: customer-managed keys. Connected and changed by an administrator; rotated, revoked and restored as
+    // the key check finds them.
+    public const string SecurityKeyConnected = "security.key_connected";
+    public const string SecurityKeyRotated = "security.key_rotated";
+    public const string SecurityKeyRevoked = "security.key_revoked";
+    public const string SecurityKeyRestored = "security.key_restored";
+    public const string SecurityKeyUnreachable = "security.key_unreachable";
+
     // Spec 030 (R2): offline storage limits.
     public const string MobileOfflinePolicyChanged = "mobile.offline_policy_changed";
 
@@ -704,7 +712,8 @@ public static class AuditActions
         CalendarEventCreated, CalendarEventChanged, CalendarEventCancelled, CalendarEventDeleted, CalendarSettingsChanged, CalendarTeamViewed,
         PeopleVisibilityChanged, PeopleFieldSourceChanged, PeopleManagerSetManually, PeopleProfileUpdated, PeopleReportingCycleDetected, PeopleSettingsChanged, PeoplePhotoRemoved,
         SecurityPolicyChanged, SecurityFourEyesChanged, SecurityChangeRequested, SecurityChangeApproved, SecurityChangeRejected, SecurityChangeWithdrawn,
-        SecurityChangeExpired, MobileOfflinePolicyChanged, DeviceKioskEnrolled, DeviceKioskChanged, DeviceKioskRevoked, DeviceKioskSignIn, DeviceKioskLockout,
+        SecurityChangeExpired, SecurityKeyConnected, SecurityKeyRotated, SecurityKeyRevoked, SecurityKeyRestored, SecurityKeyUnreachable,
+        MobileOfflinePolicyChanged, DeviceKioskEnrolled, DeviceKioskChanged, DeviceKioskRevoked, DeviceKioskSignIn, DeviceKioskLockout,
         ApiAppRegistered, ApiAppChanged, ApiAppDisabled, ApiCredentialAdded, ApiCredentialRevoked, ApiConsentGranted, ApiConsentRevoked,
         ApiTokenFamilyRevoked, ApiTokenRefused, ApiSettingsChanged, ApiRoleAssignedToApp, ApiVerifiedClientChanged, ApiClientBlocked, ApiClientUnblocked, ApiTokensRevoked,
         DeviceBadgeIssued, DeviceBadgePinReset, SecurityRequestBlockedNetwork, SecurityMfaMissing, SecurityStepUpCompleted, SecurityStepUpFailed, SecurityAlertRaised, SecurityAlertHandled,

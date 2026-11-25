@@ -97,6 +97,10 @@ public sealed class DevHostProgram
         {
             builder.Services.AddHostedService<TeamBeats.Modules.Security.AccessReviewWorker>();
         }
+        if (builder.Configuration.GetValue<bool>(TeamBeats.Modules.Security.TenantKeyWorker.InProcessKey))
+        {
+            builder.Services.AddHostedService<TeamBeats.Modules.Security.TenantKeyWorker>();
+        }
         if (builder.Configuration.GetValue<bool>(TeamBeats.Modules.PublicApi.PublicApiMaintenanceWorker.InProcessKey))
         {
             builder.Services.AddHostedService<TeamBeats.Modules.PublicApi.PublicApiMaintenanceWorker>();
