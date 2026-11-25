@@ -8,6 +8,7 @@ import { Header } from "@/components/shell/Header";
 import { Badge } from "@/components/ui/Badge";
 import { StateView } from "@/components/ui/StateView";
 import { SiteCreateForm } from "@/features/content/SiteForms";
+import { TileCard } from "@/components/ui/TileCard";
 import "@/features/content/content.css";
 
 /**
@@ -34,22 +35,27 @@ export default async function ContentSitesPage() {
           <>
             <section aria-labelledby="site-list">
               <h2 id="site-list">{t("list")}</h2>
-              <ul className="content-site-list">
+              <ul className="ui-tiles">
                 {sites.data.map((s) => {
                   const name = pickName(s.names, locale);
                   return (
-                    <li key={s.id} className="content-card" data-testid="content-site">
-                      <h3>
-                        <bdi>{name}</bdi>
-                      </h3>
-                      <p className="content-meta">
-                        <Badge tone={s.status === "active" ? "success" : "neutral"}>{t(`status.${s.status === "active" ? "active" : "archived"}`)}</Badge>
-                        {s.isDefault ? <Badge tone="info">{t("default")}</Badge> : null}
-                        {s.templateKey ? <span>{t(`templates.${s.templateKey as "subsidiary"}`)}</span> : null}
-                      </p>
-                      <Link href={`/content/sites/${encodeURIComponent(s.id)}`} aria-label={t("manage", { name })}>
-                        {t("settings")}
-                      </Link>
+                    <li key={s.id} data-testid="content-site">
+                      <TileCard
+                        title={name}
+                        icon="globe"
+                        meta={
+                          <>
+                            <Badge tone={s.status === "active" ? "success" : "neutral"}>{t(`status.${s.status === "active" ? "active" : "archived"}`)}</Badge>
+                            {s.isDefault ? <Badge tone="info">{t("default")}</Badge> : null}
+                            {s.templateKey ? <span>{t(`templates.${s.templateKey as "subsidiary"}`)}</span> : null}
+                          </>
+                        }
+                        footer={
+                          <Link href={`/content/sites/${encodeURIComponent(s.id)}`} aria-label={t("manage", { name })}>
+                            {t("settings")}
+                          </Link>
+                        }
+                      />
                     </li>
                   );
                 })}

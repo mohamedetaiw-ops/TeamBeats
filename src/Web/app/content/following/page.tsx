@@ -6,6 +6,7 @@ import { pickName, topicHref, type FeedPage, type FollowView, type SiteLink } fr
 import { Header } from "@/components/shell/Header";
 import { StateView } from "@/components/ui/StateView";
 import { FollowButton } from "@/features/content/FollowButton";
+import { TileCard } from "@/components/ui/TileCard";
 import "@/features/content/content.css";
 
 /**
@@ -65,15 +66,10 @@ export default async function FollowingPage() {
           {!feed.ok || feed.data.items.length === 0 ? (
             <StateView kind="empty" title={t("feedEmpty")} message="" />
           ) : (
-            <ul className="content-site-list">
+            <ul className="ui-tiles">
               {feed.data.items.map((i) => (
-                <li key={i.id} className="content-card" data-testid="following-item">
-                  <h3>
-                    <Link href={`/content/read/${encodeURIComponent(i.id)}`}>
-                      <bdi>{i.title}</bdi>
-                    </Link>
-                  </h3>
-                  <p className="content-meta">{date(i.publishedAt)}</p>
+                <li key={i.id} data-testid="following-item">
+                  <TileCard title={i.title} href={`/content/read/${encodeURIComponent(i.id)}`} icon="megaphone" meta={date(i.publishedAt)} />
                 </li>
               ))}
             </ul>

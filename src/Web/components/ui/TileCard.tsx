@@ -7,7 +7,8 @@ export type TileTone = "accent" | "highlight" | "success" | "info";
 /**
  * Tile card (docs/design-system/components.md, Tile card): an icon tile or avatar, a title that is the one link of the
  * card and covers it, a short meta line, and an optional footer action that stays its own target above the cover.
- * Used for libraries, knowledge articles, services and people, so every catalogue looks and reads the same.
+ * Used for libraries, knowledge articles, services, people, sites and content lists, so every catalogue looks and reads
+ * the same. Without `href` the title is plain text and the footer holds the tile's actions.
  */
 export function TileCard({
   title,
@@ -23,7 +24,7 @@ export function TileCard({
   testId,
 }: {
   title: string;
-  href: string;
+  href?: string;
   icon?: IconName;
   tone?: TileTone;
   leading?: ReactNode;
@@ -46,7 +47,9 @@ export function TileCard({
           ) : null)}
         <div className="ui-tile-text">
           <Heading className="ui-tile-title">
-            {external ? (
+            {!href ? (
+              <bdi>{title}</bdi>
+            ) : external ? (
               <a className="ui-tile-link" href={href} target="_blank" rel="noopener noreferrer">
                 <bdi>{title}</bdi>
                 <Icon name="external" label={external.label} size={16} />

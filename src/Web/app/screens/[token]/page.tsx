@@ -4,6 +4,7 @@ import { getFormatter, getTranslations } from "next-intl/server";
 import { apiGet } from "@/lib/api";
 import type { LocationSignageFeed } from "@/lib/notifications/types";
 import { ScreenRefresh } from "@/features/notifications/ScreenRefresh";
+import { TileCard } from "@/components/ui/TileCard";
 import "@/features/content/content.css";
 
 export const dynamic = "force-dynamic";
@@ -38,12 +39,10 @@ export default async function ScreenPage({ params }: { params: Promise<{ token: 
       ) : (
         <ul className="content-signage-list" aria-label={t("items")}>
           {feed.data.items.map((i) => (
-            <li key={i.id} lang={i.locale} className="content-card">
-              <h2 className="content-signage-title">
-                <bdi>{i.title}</bdi>
-              </h2>
-              {i.summary ? <p>{i.summary}</p> : null}
-              <p className="content-meta">{format.dateTime(new Date(i.publishedAt), { dateStyle: "medium" })}</p>
+            <li key={i.id} lang={i.locale}>
+              <TileCard title={i.title} icon="megaphone" headingLevel={2} meta={format.dateTime(new Date(i.publishedAt), { dateStyle: "medium" })}>
+                {i.summary ? <p>{i.summary}</p> : null}
+              </TileCard>
             </li>
           ))}
         </ul>
