@@ -999,6 +999,7 @@
         "compliance_projects": "Compliance projects",
         "deployment_region_choice": "Choice of hosting region",
         "workflow_bpmn": "Process models and decisions",
+        "workflow_bpmn_advanced": "Process compensation, instance migration and BPMN import",
         "workflow_max_active_instances": "Active process instances",
         "workflow_connector_fulfilment": "Connector and webhook steps in services",
         "ai_budgets": "AI budget",
@@ -16635,6 +16636,13 @@
       "attachedTo": "Attached to",
       "interrupting": "Stops the step it is attached to",
       "interruptingHint": "Clear this to start a side path while the step goes on.",
+      "handler": "Undone by",
+      "handlerHint": "The step that undoes this one. Mark a task as a compensation step to list it here.",
+      "activityRef": "Undo",
+      "activityRefHint": "Undo one step, or every finished step of this part of the process, newest first.",
+      "allActivities": "Every finished step",
+      "forCompensation": "Compensation step",
+      "forCompensationHint": "Runs only to undo another step. It has no flows and is named from that step's compensation event.",
       "users": "Users",
       "usersHint": "User IDs separated by commas.",
       "permission": "People with permission",
@@ -16726,7 +16734,8 @@
         "message": "Message",
         "error": "Error",
         "escalation": "Escalation",
-        "terminate": "Ends everything"
+        "terminate": "Ends everything",
+        "compensation": "Undo finished steps"
       },
       "timerKinds": {
         "duration": "After a time",

@@ -81,3 +81,19 @@ Per process version: active, completed, cancelled and incident counts, per-eleme
 - Integration: publish and versions, starts within the owner's scope, parallel and inclusive joins, sub-processes, call activity, multi-instance with completion condition, loop limit, variable limits, messages (correlation, buffer, message start once, cross-tenant key), timers (boundary interrupting and non-interrupting, event-based gateway, cycle once after an outage), error boundary and incidents, operator actions and their audit, monitoring numbers and analyst masking, package refusal, cross-tenant denial.
 - Performance: 200 rule table under 20 ms p95; correlation under 1 second p95; worker kill test loses no job.
 - e2e: model, test and publish a process with a decision; resolve an incident; read monitoring; English and Arabic with axe.
+
+## R3 plan (2026-11-25)
+
+R3 adds compensation, instance migration, BPMN import from other tools and the Camunda 8 adapter, all behind `workflow.bpmn_advanced` (Enterprise & Government, section 9). Drafts with R3 elements save on any package with `workflow.bpmn`; publishing them needs the advanced capability.
+
+### Compensation (FR-011, US4 scenario 3)
+- A compensation boundary on a task names its handler through a BPMN association; the handler is a user, service, manual, send or business rule task marked `isForCompensation`, with no flows, loop or boundaries, in the same scope, named by exactly one boundary.
+- A completed activity with a compensation boundary is remembered in the instance state with its scope. Skipped activities did no work and are not remembered.
+- A compensation throw or end event runs the handlers of the activities completed in its own scope (or only the one its `activityRef` names), newest first, one at a time, while the token waits at the event. Each activity is compensated once. Then the throw event moves on and the end event ends its path.
+- The modeler offers the compensation event on boundary, throw and end events, a handler picker on the boundary, an activity picker on throw and end events, and a compensation step switch on tasks.
+- History records `compensation` on the event with the list, then `compensating` and `compensated` on each activity, so Tracking shows each handler.
+- Defaults where the spec is silent: no compensation of multi-instance activities or of sub-processes as a whole, no compensation event sub-processes, and a compensation event inside a sub-process compensates only what completed in that sub-process.
+
+### Tests (R3 slice 1)
+- Unit: `ProcessCompensationTests` (reverse order, throw and end events, activity reference, each activity once, skipped activities, a plain end does not compensate, validator problems).
+- Integration: `ProcessModelTests.Compensation_needs_the_advanced_package_and_undoes_completed_steps_newest_first` (publish refused without the capability, handlers as inbox tasks in reverse order across saved steps).

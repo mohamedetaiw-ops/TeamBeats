@@ -49,7 +49,8 @@ public static partial class BpmnReader
     {
         "sequenceFlow", "extensionElements", "documentation", "incoming", "outgoing", "laneSet", "multiInstanceLoopCharacteristics",
         "timerEventDefinition", "messageEventDefinition", "errorEventDefinition", "escalationEventDefinition", "terminateEventDefinition",
-        "conditionExpression", "dataInputAssociation", "dataOutputAssociation", "ioSpecification", "property",
+        "conditionExpression", "dataInputAssociation", "dataOutputAssociation", "ioSpecification", "property", "compensateEventDefinition",
+        "textAnnotation",
     };
 
     public static bool IsValidKey(string? key) => key is not null && KeyPattern().IsMatch(key);
@@ -97,15 +98,24 @@ public static partial class BpmnReader
         }
         var names = Names(process, problems, process.Attribute("id")?.Value ?? "");
         // Incoming and outgoing come from the flows, not from the optional bpmn:incoming and bpmn:outgoing children.
+        // A compensation boundary names its handler through an association (spec 024 R3).
+        var handlers = Associations(process).Where(a => elements.Any(e => e.Id == a.Source && e.EventKind == EventKinds.Compensation && e.Type == ElementTypes.BoundaryEvent))
+            .GroupBy(a => a.Source, StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.Count() == 1 ? g.Single().Target : "", StringComparer.Ordinal);
         var linked = elements.Select(e => e with
         {
             Incoming = flows.Where(f => f.Target == e.Id).Select(f => f.Id).ToList(),
             Outgoing = flows.Where(f => f.Source == e.Id).Select(f => f.Id).ToList(),
+            Handler = handlers.GetValueOrDefault(e.Id) ?? e.Handler,
         }).ToList();
         var graph = new ProcessGraph(key, names, linked, flows);
         problems.AddRange(ProcessValidator.Validate(graph));
         return problems.Count > 0 ? (null, problems.DistinctBy(p => (p.ElementId, p.Key)).ToList()) : (graph, problems);
     }
+
+    /// <summary>Every association of the process and its sub-processes, as source and target.</summary>
+    private static IEnumerable<(string Source, string Target)> Associations(XElement process) =>
+        process.Descendants(Bpmn + "association")
+            .Select(a => ((string?)a.Attribute("sourceRef") ?? "", (string?)a.Attribute("targetRef") ?? ""));
 
     private static IReadOnlyDictionary<string, string> Names(XElement element, List<ModelProblem> problems, string id)
     {
@@ -146,6 +156,10 @@ public static partial class BpmnReader
             }
             var local = child.Name.LocalName;
             var id = (string?)child.Attribute("id") ?? "";
+            if (local == "association")
+            {
+                continue;
+            }
             if (local == "sequenceFlow")
             {
                 if (!ElementIdPattern().IsMatch(id) || !ids.Add(id))
@@ -213,6 +227,14 @@ public static partial class BpmnReader
         else if (x.Element(Bpmn + "terminateEventDefinition") is not null)
         {
             element = element with { EventKind = EventKinds.Terminate };
+        }
+        else if (x.Element(Bpmn + "compensateEventDefinition") is { } compensate)
+        {
+            element = element with { EventKind = EventKinds.Compensation, ActivityRef = Attr(compensate, "activityRef") };
+        }
+        if (Attr(x, "isForCompensation") == "true")
+        {
+            element = element with { ForCompensation = true };
         }
         if (type is ElementTypes.ReceiveTask or ElementTypes.SendTask)
         {

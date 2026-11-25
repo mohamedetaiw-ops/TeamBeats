@@ -197,6 +197,11 @@ public sealed class ProcessModels(IDbSession session, ITenantContext context, IA
         if (graph is not null)
         {
             found.AddRange(await PublishProblemsAsync(graph, ct));
+            // Compensation is an R3 element of the advanced package (spec 024 section 11).
+            if (graph.UsesAdvanced && !await entitlements.IsEnabledAsync(Capabilities.WorkflowBpmnAdvanced, ct))
+            {
+                found.Add(new ModelProblem("", "validation.process.advanced_package"));
+            }
         }
         if (found.Count > 0)
         {

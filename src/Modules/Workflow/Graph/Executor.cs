@@ -50,6 +50,16 @@ public sealed class InstanceState
 
     /// <summary>The result named by the last end event of the process reached (<c>tb:result</c>), for the instance outcome.</summary>
     public string? Result { get; set; }
+
+    /// <summary>Completed activities with a compensation handler, in order of completion (spec 024 R3, FR-011).</summary>
+    public List<CompensableState> Compensable { get; set; } = [];
+}
+
+/// <summary>An activity that completed in a scope and can still be compensated there.</summary>
+public sealed class CompensableState
+{
+    public string ElementId { get; set; } = "";
+    public Guid Scope { get; set; }
 }
 
 /// <summary>What the executor asks the engine to do in the database after a run, in order.</summary>
@@ -107,6 +117,7 @@ public sealed class Executor(ProcessGraph graph, InstanceState state, IExecution
     private readonly Queue<TokenState> ready = new();
     private int steps;
     private bool finished;
+    private bool skipping;
 
     public IReadOnlyList<Effect> Effects => effects;
 
@@ -241,7 +252,10 @@ public sealed class Executor(ProcessGraph graph, InstanceState state, IExecution
         var token = Token(tokenId);
         token.Status = "waiting";
         Record(token.ElementId, "skipped");
+        // A skipped activity did no work, so there is nothing to compensate later.
+        skipping = true;
         Leave(token);
+        skipping = false;
         Drain();
         return effects;
     }
@@ -547,6 +561,10 @@ public sealed class Executor(ProcessGraph graph, InstanceState state, IExecution
         var element = graph.Element(token.ElementId);
         effects.Add(new CancelWaits(token.Id));
         Remove(token);
+        if (!skipping && !token.Body && ElementTypes.Activities.Contains(element.Type) && graph.CompensationOf(element.Id) is not null)
+        {
+            state.Compensable.Add(new CompensableState { ElementId = element.Id, Scope = token.Scope });
+        }
         if (token.Body)
         {
             // The activity of a multi-instance body finished: the body scope is done.
@@ -700,6 +718,9 @@ public sealed class Executor(ProcessGraph graph, InstanceState state, IExecution
             case EventKinds.Message:
                 Send(token, element);
                 break;
+            case EventKinds.Compensation:
+                Compensate(token, element);
+                return;
         }
         Leave(token);
     }
@@ -756,6 +777,9 @@ public sealed class Executor(ProcessGraph graph, InstanceState state, IExecution
                 Escalate(null, token.Scope, end.Code!, null);
                 ScopeMaybeDone(token.Scope);
                 return;
+            case EventKinds.Compensation:
+                Compensate(token, end);
+                return;
             default:
                 Remove(token);
                 ScopeMaybeDone(token.Scope);
@@ -797,6 +821,11 @@ public sealed class Executor(ProcessGraph graph, InstanceState state, IExecution
             return;
         }
         var scope = state.Scopes.First(s => s.Id == scopeId);
+        if (scope.Kind == "compensation")
+        {
+            CompensationStepDone(scope);
+            return;
+        }
         state.Scopes.Remove(scope);
         switch (scope.Kind)
         {
@@ -822,6 +851,76 @@ public sealed class Executor(ProcessGraph graph, InstanceState state, IExecution
                 return;
             }
         }
+    }
+
+    // ---- Compensation (spec 024 R3, FR-011) ----
+
+    /// <summary>
+    /// A compensation throw or end event: the handlers of the activities completed in its scope (or of the one it names)
+    /// run one at a time, in reverse order of completion, while the token waits at the event. Each activity is compensated
+    /// once. Then the token goes on, or the end event ends its path.
+    /// </summary>
+    private void Compensate(TokenState token, GraphElement element)
+    {
+        var due = state.Compensable.Where(c => c.Scope == token.Scope && (element.ActivityRef is null || c.ElementId == element.ActivityRef)).ToList();
+        foreach (var c in due)
+        {
+            state.Compensable.Remove(c);
+        }
+        Record(element.Id, "compensation", new JsonObject { ["activities"] = new JsonArray(due.Select(c => (JsonNode?)c.ElementId).Reverse().ToArray()) });
+        if (due.Count == 0)
+        {
+            AfterCompensation(token);
+            return;
+        }
+        token.Status = "compensating";
+        var scope = new ScopeState
+        {
+            Id = Guid.NewGuid(), ElementId = element.Id, Parent = token.Scope, Owner = token.Id, Kind = "compensation",
+            Items = due.Select(c => (JsonNode?)c.ElementId).Reverse().ToList(),
+        };
+        state.Scopes.Add(scope);
+        NextHandler(scope);
+    }
+
+    private void NextHandler(ScopeState scope)
+    {
+        var activity = scope.Items![scope.Next++]!.GetValue<string>();
+        var handler = graph.CompensationOf(activity)!.Handler!;
+        Record(activity, "compensating", new JsonObject { ["handler"] = handler });
+        Enqueue(NewToken(handler, scope.Id, null));
+    }
+
+    /// <summary>A handler finished: the next one runs, or the waiting token goes on.</summary>
+    private void CompensationStepDone(ScopeState scope)
+    {
+        Record(scope.Items![scope.Next - 1]!.GetValue<string>(), "compensated");
+        if (scope.Next < scope.Items.Count)
+        {
+            NextHandler(scope);
+            return;
+        }
+        state.Scopes.Remove(scope);
+        if (state.Tokens.FirstOrDefault(t => t.Id == scope.Owner) is { } owner)
+        {
+            owner.Status = "waiting";
+            AfterCompensation(owner);
+        }
+        else
+        {
+            ScopeMaybeDone(scope.Parent);
+        }
+    }
+
+    private void AfterCompensation(TokenState token)
+    {
+        if (graph.Element(token.ElementId).Type == ElementTypes.EndEvent)
+        {
+            Remove(token);
+            ScopeMaybeDone(token.Scope);
+            return;
+        }
+        Leave(token);
     }
 
     // ---- Event sub-processes ----

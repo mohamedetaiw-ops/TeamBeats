@@ -50,6 +50,9 @@ public static class Capabilities
     public const string WorkflowCatalogue = "workflow.catalogue";
     public const string WorkflowMaxServices = "workflow.max_services";
     public const string WorkflowBpmn = "workflow.bpmn";
+
+    /// <summary>Spec 024 R3: compensation, instance migration and BPMN import from other tools (Enterprise and Government).</summary>
+    public const string WorkflowBpmnAdvanced = "workflow.bpmn_advanced";
     public const string WorkflowMaxActiveInstances = "workflow.max_active_instances";
     public const string IntegrationMicrosoft365 = "integration.microsoft365";
     public const string IntegrationOracleFusion = "integration.oracle_fusion";

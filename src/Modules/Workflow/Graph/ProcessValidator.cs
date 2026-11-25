@@ -92,7 +92,7 @@ public static class ProcessValidator
             foreach (var element in graph.InScope(scope))
             {
                 var isEventSubProcess = element.Type == ElementTypes.SubProcess && element.TriggeredByEvent;
-                if (!seen.Contains(element.Id) && !isEventSubProcess)
+                if (!seen.Contains(element.Id) && !isEventSubProcess && !element.ForCompensation)
                 {
                     Add(element.Id, "unreachable");
                 }
@@ -102,9 +102,21 @@ public static class ProcessValidator
         foreach (var e in graph.Elements)
         {
             var outgoing = e.Outgoing.Count;
-            if (e.Type is not ElementTypes.EndEvent && !(e.Type == ElementTypes.SubProcess && e.TriggeredByEvent) && outgoing == 0)
+            var compensationBoundary = e.Type == ElementTypes.BoundaryEvent && e.EventKind == EventKinds.Compensation;
+            if (e.Type is not ElementTypes.EndEvent && !(e.Type == ElementTypes.SubProcess && e.TriggeredByEvent) && outgoing == 0 && !e.ForCompensation
+                && !compensationBoundary)
             {
                 Add(e.Id, "no_outgoing");
+            }
+            if (e.ForCompensation)
+            {
+                // A handler runs only when its activity is compensated: no flows, no loop, no boundaries, referenced by one boundary.
+                if (e.Type is not (ElementTypes.UserTask or ElementTypes.ServiceTask or ElementTypes.ManualTask or ElementTypes.SendTask or ElementTypes.BusinessRuleTask)
+                    || e.Incoming.Count > 0 || outgoing > 0 || e.Loop is not null || graph.BoundariesOf(e.Id).Any()
+                    || graph.Elements.Count(b => b.Handler == e.Id) != 1)
+                {
+                    Add(e.Id, "compensation_handler");
+                }
             }
             if ((ElementTypes.Activities.Contains(e.Type) || e.Type is ElementTypes.StartEvent or ElementTypes.IntermediateCatchEvent or ElementTypes.IntermediateThrowEvent) && outgoing > 1)
             {
@@ -136,6 +148,7 @@ public static class ProcessValidator
                     {
                         Add(e.Id, "result");
                     }
+                    CheckCompensationThrow(graph, e, Add);
                     break;
                 case ElementTypes.IntermediateCatchEvent:
                     CheckCatch(e, Add, Feel);
@@ -153,10 +166,11 @@ public static class ProcessValidator
                         }
                         Feel(e.Id, e.CorrelationKey);
                     }
-                    if (e.EventKind is not (EventKinds.None or EventKinds.Escalation or EventKinds.Message))
+                    if (e.EventKind is not (EventKinds.None or EventKinds.Escalation or EventKinds.Message or EventKinds.Compensation))
                     {
                         Add(e.Id, "unsupported_element");
                     }
+                    CheckCompensationThrow(graph, e, Add);
                     break;
                 case ElementTypes.BoundaryEvent:
                     if (e.AttachedTo is null || !graph.Has(e.AttachedTo) || !ElementTypes.Activities.Contains(graph.Element(e.AttachedTo).Type)
@@ -180,6 +194,18 @@ public static class ProcessValidator
                     if (e.EventKind is EventKinds.Timer or EventKinds.Message)
                     {
                         CheckCatch(e, Add, Feel);
+                    }
+                    if (compensationBoundary)
+                    {
+                        // A compensation boundary has no flow: it names its handler, which sits in the same scope.
+                        var attached = graph.Element(e.AttachedTo);
+                        if (outgoing != 0 || e.Handler is not { Length: > 0 } handler || !graph.Has(handler) || !graph.Element(handler).ForCompensation
+                            || graph.Element(handler).Scope != e.Scope || attached.Loop is not null || attached.Type == ElementTypes.SubProcess
+                            || graph.BoundariesOf(attached.Id).Count(b => b.EventKind == EventKinds.Compensation) > 1)
+                        {
+                            Add(e.Id, "compensation_boundary");
+                        }
+                        break;
                     }
                     if (outgoing != 1)
                     {
@@ -302,6 +328,19 @@ public static class ProcessValidator
             }
         }
         return problems;
+    }
+
+    /// <summary>A compensation throw or end event names no activity, or one in its scope that has a compensation boundary.</summary>
+    private static void CheckCompensationThrow(ProcessGraph graph, GraphElement e, Action<string, string> add)
+    {
+        if (e.EventKind != EventKinds.Compensation)
+        {
+            return;
+        }
+        if (e.ActivityRef is { } target && (!graph.Has(target) || graph.Element(target).Scope != e.Scope || graph.CompensationOf(target) is null))
+        {
+            add(e.Id, "compensation_activity");
+        }
     }
 
     private static HashSet<string> JoinsReachable(ProcessGraph graph, string from, string split)
