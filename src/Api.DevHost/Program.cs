@@ -46,6 +46,10 @@ public sealed class DevHostProgram
         {
             builder.Services.AddHostedService<TeamBeats.Modules.Workflow.ExternalTaskWorker>();
         }
+        if (builder.Configuration.GetValue<bool>(TeamBeats.Modules.Integrations.Mcp.McpToolRefreshWorker.InProcessKey))
+        {
+            builder.Services.AddHostedService<TeamBeats.Modules.Integrations.Mcp.McpToolRefreshWorker>();
+        }
         if (builder.Configuration.GetValue<bool>(TeamBeats.Modules.Services.ServiceScheduleWorker.InProcessKey))
         {
             builder.Services.AddHostedService<TeamBeats.Modules.Services.ServiceScheduleWorker>();

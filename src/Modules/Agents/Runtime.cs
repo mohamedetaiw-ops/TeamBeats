@@ -734,8 +734,8 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         var definition = tool.Definition;
         if (definition.Unavailable is not null)
         {
-            // A tool of a disabled connector is off for every agent (027 US7 scenario 3).
-            return new Gate(granted, null, null, Refusal: "tool.connector_disabled");
+            // A tool of a disabled connector, or an MCP tool waiting for approval, is off for every agent (027 US7 scenario 3, R3).
+            return new Gate(granted, null, null, Refusal: "tool." + definition.Unavailable);
         }
         var rule = memoryCall ? ToolApprovalRules.Execute : agent.Policy.RuleFor(definition);
         if (!memoryCall)

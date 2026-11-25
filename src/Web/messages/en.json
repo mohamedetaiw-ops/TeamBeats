@@ -1000,6 +1000,8 @@
         "deployment_region_choice": "Choice of hosting region",
         "workflow_bpmn": "Process models and decisions",
         "workflow_bpmn_advanced": "Process compensation, instance migration and BPMN import",
+        "ai_agents_mcp": "Agent tools from external MCP servers",
+        "ai_agents_autonomous": "Agents running on their own inside approved processes (L4)",
         "workflow_max_active_instances": "Active process instances",
         "workflow_connector_fulfilment": "Connector and webhook steps in services",
         "ai_budgets": "AI budget",
@@ -8307,7 +8309,8 @@
         "approval_rejected": "Not approved",
         "no_approver": "No approver named",
         "rule_changed": "The approval rule changed",
-        "connector_disabled": "The connection is turned off"
+        "connector_disabled": "The connection is turned off",
+        "mcp_not_approved": "Tool not approved"
       }
     },
     "studio": {
@@ -10445,6 +10448,7 @@
       "servicenow": "ServiceNow",
       "jira_service_management": "Jira Service Management",
       "camunda8": "Camunda 8",
+      "mcp_server": "MCP server",
       "slack": "Slack",
       "sms": "SMS gateway",
       "clock_import": "Clock data import",
@@ -10487,6 +10491,7 @@
       "servicenow": "Services and agents create incidents in ServiceNow and read their status.",
       "jira_service_management": "Services and agents create requests in Jira Service Management and read their status.",
       "camunda8": "Camunda user tasks assigned to TeamBeats people appear in their task inbox and are completed from TeamBeats.",
+      "mcp_server": "Agents use the tools of an external MCP server after an integration administrator approves each one.",
       "lms_rest": "Brings your LMS courses into the catalogue, sends assignments of them to the LMS and reads completions back."
     },
     "add": {
@@ -10506,6 +10511,10 @@
       "camunda8": {
         "addTitle": "Add a Camunda 8 connection",
         "addIntro": "Enter the Orchestration Cluster REST address, such as https://cluster.example.com, and how TeamBeats signs in. Tasks are matched to people by the assignee email."
+      },
+      "mcp_server": {
+        "addTitle": "Add an MCP server connection",
+        "addIntro": "Enter the server's MCP endpoint, such as https://tools.example.com/mcp, and how TeamBeats signs in. The host must be on the allowlist. Each tool the server lists waits for your approval before any agent can use it."
       }
     },
     "slack": {
@@ -10993,6 +11002,40 @@
       "policyNote": "Tools that change another system need agents at a higher autonomy level and always wait for the employee's confirmation.",
       "register": "Register the tool",
       "registered": "The tool is registered. The AI policy administrator can now allow it for agents."
+    },
+    "mcpTools": {
+      "title": "MCP server tools",
+      "intro": "The tools this server lists. A new tool, or one whose description or inputs changed, waits until you approve it. The AI policy then decides which agents may hold it.",
+      "refresh": "Read the tool list",
+      "refreshed": "{listed} tools listed: {new} new, {changed} changed, {gone} no longer listed.",
+      "empty": "No tools yet. Read the tool list from the server.",
+      "loadFailed": "The tools could not be loaded. Try again.",
+      "statuses": {
+        "pending": "Waiting for approval",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "unsupported": "Inputs not supported"
+      },
+      "changed": "Changed since approval",
+      "gone": "No longer listed",
+      "remoteName": "Server name",
+      "agentName": "Agent tool",
+      "noDescription": "The server gives no description.",
+      "unsupportedNote": "The inputs of this tool use schema features TeamBeats does not check, so it cannot be approved.",
+      "review": "Review and approve",
+      "edit": "Change approval",
+      "reject": "Reject",
+      "rejectQuestion": "Reject {name}? Agents can no longer use it.",
+      "rejectConfirm": "Reject the tool",
+      "rejected": "The tool is rejected.",
+      "approveTitle": "Approve {name}",
+      "nameHint": "Lowercase letters, digits and underscores, starting with a letter. Agents see it with mcp. in front.",
+      "sideEffect": "What the tool does",
+      "readOnlyHint": "The server says this tool only reads. Check before you trust it.",
+      "noReadOnlyHint": "The server does not say this tool only reads, so treat it as changing another system unless you know otherwise.",
+      "approveNote": "Agents read the server's description as it is shown above. Approve only tools from servers you trust.",
+      "approve": "Approve the tool",
+      "approved": "The tool is approved. The AI policy administrator can now allow it for agents."
     },
     "capture": {
       "title": "Payload capture",

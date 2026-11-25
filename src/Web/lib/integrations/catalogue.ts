@@ -30,6 +30,7 @@ const LOOKS: Record<ConnectionType, Look> = {
   finance_rest: { group: "finance", icon: "files" },
   custom_rest: { group: "custom", icon: "globe" },
   webhook: { group: "custom", icon: "link" },
+  mcp_server: { group: "custom", icon: "spark" },
 };
 
 export function isConnectionType(value: string | null | undefined): value is ConnectionType {

@@ -119,3 +119,8 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - Agent events already were audit events, so they reach SIEM destinations through the spec 026 stream. `AgentRuns.FinishAsync` now writes `agent.run_finished` for every run except evaluation runs; outcome `denied` for limit, policy and suspension stops.
 - Default: no agent-only destination filter; receivers select by the `agent.` prefix (documented in `docs/security/siem-schema.md`).
 
+## Spec 027 R3 slice 2: MCP servers as tool sources (T022)
+
+- Defaults are in the spec 027 R3 plan. `ai.agents.mcp` and `ai.agents.autonomous` are new capabilities (Entitlements migration 0048, Enterprise and Government). The `mcp_server` pack (Integrations) speaks Streamable HTTP, protocol version 2025-06-18: each call opens a session with `initialize`, sends one request and reads a JSON or event stream answer. No persistent session and no server-sent notifications.
+- `integrations.mcp_tool` (migration 0021) keeps each listed tool, its schema hash and the hash that was approved. `McpToolSource` adds approved tools to the agent tool registry as `mcp.<name>`; a tool of a turned-off connection or one that is not approved is refused with `tool.connector_disabled` or `tool.mcp_not_approved`.
+- The admin panel sits on the connection page (Read the tool list, review and approve, reject). Gap: no diff view of what changed in a tool; the administrator sees the current description and status only.

@@ -112,6 +112,10 @@ public static class AuditActions
     public const string ConnectionDisabled = "integration.connection_disabled";
     public const string ActionDefined = "integration.action_defined";
     public const string ActionChanged = "integration.action_changed";
+
+    /// <summary>Spec 027 R3: an MCP server tool was approved for agents, or rejected.</summary>
+    public const string IntegrationMcpToolApproved = "integration.mcp_tool_approved";
+    public const string IntegrationMcpToolRejected = "integration.mcp_tool_rejected";
     public const string WebhookSecretRotated = "integration.webhook_secret_rotated";
     public const string AgentEnrolled = "integration.agent_enrolled";
     public const string AgentRevoked = "integration.agent_revoked";

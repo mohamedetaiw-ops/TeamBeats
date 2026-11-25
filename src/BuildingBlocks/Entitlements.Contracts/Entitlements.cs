@@ -19,6 +19,12 @@ public static class Capabilities
     public const string AiAgentsMarketplace = "ai.agents.marketplace";
     public const string AiAgentsAdvanced = "ai.agents.advanced";
 
+    /// <summary>Spec 027 R3: TeamBeats agents use tools of external MCP servers the integration administrator approved (FR-006).</summary>
+    public const string AiAgentsMcp = "ai.agents.mcp";
+
+    /// <summary>Spec 027 R3: L4 bounded autonomy, agents running on their own as steps of approved processes (FR-024).</summary>
+    public const string AiAgentsAutonomous = "ai.agents.autonomous";
+
     /// <summary>The Agent Security Center: anomaly alerts, incidents, the watch list and evidence export (spec 027 FR-023).</summary>
     public const string AiGovernanceSecurityCenter = "ai.governance.security_center";
     public const string AiModelChoice = "ai.model_choice";

@@ -34,4 +34,5 @@ The spec stays Approved, not Implemented. R1 still lacks the worker that resumes
 | Requirement | Status | Evidence |
 |---|---|---|
 | SIEM export of agent events (FR-016 with spec 026 US4) | Met | `AgentRunLimitTests.A_run_stops_when_its_working_time_passes_the_limit_and_waiting_for_a_confirmation_does_not_count` (`agent.run_finished` with outcome and counts, no text); the stream itself in `SecuritySiemTests`; catalogue in `docs/security/siem-schema.md` |
+| MCP servers as tool sources (FR-006 and the edge case on changed tool lists) | Met | `McpToolTests.Tools_of_an_MCP_server_wait_for_approval_and_an_approved_tool_is_called_with_only_its_fields` (pending until approved, schema change back to pending, unsupported schema, only declared fields sent, event stream answers), `McpToolTests.MCP_servers_need_the_package_and_stay_in_their_tenant` (entitlement and cross-tenant denial); admin panel on the connection page |
 

@@ -19,6 +19,25 @@ export type ConnectorTool = {
 };
 
 export const TOOL_SIDE_EFFECTS = ["read", "write_external"] as const;
+/** A tool an external MCP server lists, waiting for or holding the integration administrator's decision (spec 027 R3). */
+export type McpTool = {
+  id: string;
+  connectionId: string;
+  remoteName: string;
+  description: string;
+  inputSchema: unknown;
+  readOnlyHint: boolean;
+  status: string;
+  listed: boolean;
+  changed: boolean;
+  name: string | null;
+  sideEffect: string | null;
+  title: Record<string, string> | null;
+  decidedAt: string | null;
+  seenAt: string;
+};
+export type McpRefreshResult = { listed: number; new: number; changed: number; gone: number; tools: McpTool[] };
+export const MCP_TOOL_STATUSES = ["pending", "approved", "rejected", "unsupported"] as const;
 export const TOOL_RULES = ["execute", "confirm"] as const;
 
 export type Pack = { kind: string; version: number; inPackage: boolean; actions: PackAction[] };
@@ -159,7 +178,7 @@ export const CHECK_RESULTS = [
 ] as const;
 
 /** Connector pack kinds with their own name on these pages. */
-export const PACK_KINDS = ["custom_rest", "webhook", "onprem_ad", "servicenow", "jira_service_management", "camunda8", "slack", "sms", "clock_import", "finance_rest", "google_workspace", "hr_rest", "hr_sftp", "lms_rest"] as const;
+export const PACK_KINDS = ["custom_rest", "webhook", "onprem_ad", "servicenow", "jira_service_management", "camunda8", "mcp_server", "slack", "sms", "clock_import", "finance_rest", "google_workspace", "hr_rest", "hr_sftp", "lms_rest"] as const;
 
 /** Settings of a clock data connection (spec 017 US7). Columns are header names, or numbers from 1 without a header row. */
 export type ClockColumns = {
@@ -288,6 +307,7 @@ export const TICKETING_KINDS = {
   servicenow: { auth: ["basic", "oauth_client_credentials"], desk: false },
   jira_service_management: { auth: ["basic", "bearer"], desk: true },
   camunda8: { auth: ["oauth_client_credentials", "bearer", "basic"], desk: false },
+  mcp_server: { auth: ["none", "bearer", "api_key", "oauth_client_credentials"], desk: false },
 } as const;
 export type TicketingKind = keyof typeof TICKETING_KINDS;
 export const isTicketing = (kind: string): kind is TicketingKind => Object.prototype.hasOwnProperty.call(TICKETING_KINDS, kind);
