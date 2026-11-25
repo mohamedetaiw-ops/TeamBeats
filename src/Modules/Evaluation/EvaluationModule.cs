@@ -46,6 +46,7 @@ public static class EvaluationModule
         services.AddScoped<ProductionPolicyService>();
         services.AddScoped<ProductionResults>();
         services.AddScoped<ProcessEvaluationResults>();
+        services.AddScoped<EstateTrends>();
         services.AddMessageHandler<Agents.Contracts.AgentTaskRunRecorded, ProcessStepEvaluator>("evaluation.process_step");
         services.AddMessageHandler<Workflow.Contracts.ProcessInstanceCompleted, ProcessInstanceEvaluator>("evaluation.process_instance_completed");
         services.AddMessageHandler<Workflow.Contracts.ProcessInstanceWithdrawn, ProcessInstanceEvaluator>("evaluation.process_instance_withdrawn");
@@ -221,6 +222,8 @@ public static class EvaluationModule
         });
         root.MapGet("/agents/{agentId:guid}/production", async (Guid agentId, ProductionResults results, CancellationToken ct) =>
             Results.Ok(await results.ForAgentAsync(agentId, ct)));
+        // Cross-version trends across the agent estate (R3, ai.evals.advanced).
+        root.MapGet("/estate/trends", async (EstateTrends trends, CancellationToken ct) => Results.Ok(await trends.GetAsync(ct)));
         // L4 process runs end to end (R3): the steps of a process's agent tasks in the viewer's scope, per process version.
         root.MapGet("/processes/{key}", async (string key, ProcessEvaluationResults results, CancellationToken ct) => Results.Ok(await results.GetAsync(key, ct)));
         root.MapGet("/agents/{agentId:guid}/drift", async (Guid agentId, DriftAlerts alerts, CancellationToken ct) => Results.Ok(await alerts.ForAgentAsync(agentId, ct)));

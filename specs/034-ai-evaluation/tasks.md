@@ -49,6 +49,6 @@ R2 covers User Stories 7 and 9, US8 scenarios 2 and 3, US10 organization level, 
 R3 covers the R3 part of the target release: evaluation of L4 process runs end to end (with spec 027 R3) and cross-version trend benchmarks across the agent estate (US6 at estate level).
 
 - [x] T026 L4 process runs: `AgentTaskRunRecorded` from Agents, deterministic trajectory checks per step (scope, approval, limit, denials, completion), critical failures, instance outcome from process events, results per process version in scope; tests including cross-tenant
-- [ ] T027 Estate trends under `ai.evals.advanced`: per agent and version headline metrics, regressions beyond the noise margin, monthly estate benchmarks per metric and locale; tests including scope, package and cross-tenant
+- [x] T027 Estate trends under `ai.evals.advanced`: per agent and version headline metrics, regressions beyond the noise margin, monthly estate benchmarks per metric and locale; tests including scope, package and cross-tenant
 - [ ] T028 Pages (estate trends with a table view, L4 panel on the process page), OpenAPI, R3 implementation notes, e2e with axe, spec evidence
 
