@@ -177,6 +177,7 @@ export const routes: readonly Route[] = [
   { path: "/communities/speak-up/reply", tier: "other" },
   { path: "/communities/surveys", tier: "other" },
   { path: "/communities/surveys/[id]", tier: "detail" },
+  { path: "/compensation", tier: "other" },
   { path: "/compliance", tier: "other" },
   { path: "/compliance/[id]", tier: "detail", reason: "needs an adopted framework with controls; opened by the compliance suite" },
   { path: "/compliance/controls/[id]", tier: "detail", reason: "needs an adopted framework with controls; opened by the compliance suite" },

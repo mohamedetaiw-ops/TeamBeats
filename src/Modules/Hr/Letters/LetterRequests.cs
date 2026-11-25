@@ -54,7 +54,17 @@ public sealed record LetterView(
     DateTimeOffset? DecidedAt,
     DateTimeOffset? IssuedAt,
     IReadOnlyList<LetterFieldView>? Fields,
-    LetterRights Rights);
+    LetterRights Rights,
+    string? IssueProblem = null);
+
+/// <summary>Why an approved letter is not printed yet (spec 019 R3 FR-022), shown to HR only.</summary>
+public static class LetterIssueProblems
+{
+    public const string CompensationUnavailable = "compensation_unavailable";
+    public const string CompensationMissing = "compensation_missing";
+    public const string PdfUnavailable = "pdf_unavailable";
+    public const string DataMissing = "data_missing";
+}
 
 /// <summary>What the public verification page shows (FR-022): the reference, the type, the issue date and the company. Nothing else.</summary>
 public sealed record LetterVerification(string Reference, Dictionary<string, string> TypeNames, DateOnly IssuedOn, string CompanyName);
@@ -62,7 +72,7 @@ public sealed record LetterVerification(string Reference, Dictionary<string, str
 internal sealed record LetterRow(
     Guid Id, string Reference, Guid UserId, Guid? OrgUnitId, Guid TypeId, Dictionary<string, string> TypeNames, string Language, string? Addressee,
     Dictionary<string, string> ManualValues, string Status, Guid? InstanceId, DateTimeOffset? DecidedAt, string? ObjectKey, DateTimeOffset? IssuedAt,
-    int IssueAttempts, DateTimeOffset CreatedAt);
+    int IssueAttempts, DateTimeOffset CreatedAt, string? IssueProblem = null);
 
 /// <summary>
 /// HR letters and certificates (spec 022 US7, FR-021, FR-022). The person asks for a letter of a type that applies to
@@ -85,6 +95,7 @@ public sealed class LetterRequests(
     INotificationSender notifications,
     IUserDirectory users,
     IHrRecords hr,
+    IHrCompensation compensation,
     ITenantSettingsReader tenantSettings,
     ITenantRegistry tenants,
     IOptions<HostResolutionOptions> hosts,
@@ -115,13 +126,14 @@ public sealed class LetterRequests(
     private static string ObjectKey(Guid id) => $"hr/letters/{id:N}.pdf";
 
     private const string Columns =
-        "id, reference, user_id, org_unit_id, letter_type_id, type_names::text, language, addressee, manual_values::text, status, instance_id, decided_at, object_key, issued_at, issue_attempts, created_at";
+        "id, reference, user_id, org_unit_id, letter_type_id, type_names::text, language, addressee, manual_values::text, status, instance_id, decided_at, object_key, issued_at, issue_attempts, created_at, issue_problem";
 
     private static LetterRow Read(Npgsql.NpgsqlDataReader r) => new(
         r.GetGuid(0), r.GetString(1), r.GetGuid(2), r.Get<Guid?>("org_unit_id"), r.GetGuid(4),
         JsonSerializer.Deserialize<Dictionary<string, string>>(r.GetString(5), JsonDefaults.Options) ?? [], r.GetString(6), r.Get<string?>("addressee"),
         JsonSerializer.Deserialize<Dictionary<string, string>>(r.GetString(8), JsonDefaults.Options) ?? [], r.GetString(9), r.Get<Guid?>("instance_id"),
-        r.Get<DateTimeOffset?>("decided_at"), r.Get<string?>("object_key"), r.Get<DateTimeOffset?>("issued_at"), r.GetInt32(14), r.GetFieldValue<DateTimeOffset>(15));
+        r.Get<DateTimeOffset?>("decided_at"), r.Get<string?>("object_key"), r.Get<DateTimeOffset?>("issued_at"), r.GetInt32(14), r.GetFieldValue<DateTimeOffset>(15),
+        r.Get<string?>("issue_problem"));
 
     internal async Task<LetterRow?> RowAsync(Guid id, bool forUpdate, CancellationToken ct) =>
         await session.QuerySingleOrDefaultAsync($"select {Columns} from hr.letter where id = @id{(forUpdate ? " for update" : "")}", new { id }, Read, ct);
@@ -380,13 +392,41 @@ public sealed class LetterRequests(
         var fields = type is null ? [] : await FieldsAsync(row, type, ct);
         if (type is null || fields.Any(f => f.Value is null))
         {
-            await session.ExecAsync("update hr.letter set issue_attempts = issue_attempts + 1, updated_at = @now where id = @id", new { id = row.Id, now }, ct);
+            await NotIssuedAsync(row.Id, LetterIssueProblems.DataMissing, ct);
             return false;
         }
         var locale = await tenantSettings.GetLocaleSettingsAsync(ct);
         var arabicDigits = row.Language == "ar" && locale.NumberingSystem == "arab";
         var company = (await tenantSettings.GetBrandingAsync(ct)).DisplayName;
-        var body = LetterRender.Fill(type.Templates[row.Language], fields.ToDictionary(f => f.Key, f => f.Value!));
+        var values = fields.ToDictionary(f => f.Key, f => f.Value!);
+        var salary = LetterRender.Placeholders(type.Templates[row.Language]).Where(LetterRender.FromCompensation.Contains).ToList();
+        if (salary.Count > 0)
+        {
+            // Read now, for this letter only, and kept nowhere but in the PDF (FR-021, FR-024). Never a blank or old figure (FR-022).
+            var read = await compensation.ForLetterAsync(row.UserId, row.Id, ct);
+            if (read.Statement is not { } statement)
+            {
+                await NotIssuedAsync(row.Id, LetterIssueProblems.CompensationUnavailable, ct);
+                return false;
+            }
+            string? Salary(string key) => key switch
+            {
+                LetterRender.SalaryBasic => statement.Basic is { } b ? LetterRender.FormatAmount(b.Amount, row.Language, arabicDigits) : null,
+                LetterRender.SalaryTotal => statement.Total is { } total ? LetterRender.FormatAmount(total, row.Language, arabicDigits) : null,
+                LetterRender.SalaryCurrency => statement.Currency ?? statement.Basic?.Currency,
+                _ => null,
+            };
+            foreach (var key in salary)
+            {
+                if (Salary(key) is not { } value)
+                {
+                    await NotIssuedAsync(row.Id, LetterIssueProblems.CompensationMissing, ct);
+                    return false;
+                }
+                values[key] = value;
+            }
+        }
+        var body = LetterRender.Fill(type.Templates[row.Language], values);
         if (arabicDigits)
         {
             body = LetterRender.ArabicDigits(body);
@@ -406,14 +446,14 @@ public sealed class LetterRequests(
         await using var pdf = await converter.HtmlToPdfAsync(html, ct);
         if (pdf is null)
         {
-            await session.ExecAsync("update hr.letter set issue_attempts = issue_attempts + 1, updated_at = @now where id = @id", new { id = row.Id, now }, ct);
+            await NotIssuedAsync(row.Id, LetterIssueProblems.PdfUnavailable, ct);
             return false;
         }
         await storage.PutAsync(ObjectKey(row.Id), pdf, "application/pdf", ct);
         await session.ExecAsync(
             """
             update hr.letter set status = 'issued', code_hash = @hash, company_name = @company, object_key = @key, issued_at = @now, manual_values = '{}',
-              type_version = @version, type_names = @names, issue_attempts = issue_attempts + 1, updated_at = @now
+              type_version = @version, type_names = @names, issue_attempts = issue_attempts + 1, issue_problem = null, updated_at = @now
             where id = @id
             """, new
             {
@@ -427,6 +467,11 @@ public sealed class LetterRequests(
             new Dictionary<string, string> { ["reference"] = row.Reference }, DedupeKey: $"hr.letter:{row.Id:N}:issued"), ct);
         return true;
     }
+
+    /// <summary>The letter stays approved and is tried again by the worker; HR sees why (FR-022).</summary>
+    private Task NotIssuedAsync(Guid id, string problem, CancellationToken ct) =>
+        session.ExecAsync("update hr.letter set issue_attempts = issue_attempts + 1, issue_problem = @problem, updated_at = @now where id = @id",
+            new { id, problem, now = clock.UtcNow }, ct);
 
     private async Task<string> TenantOriginAsync(CancellationToken ct)
     {
@@ -471,6 +516,8 @@ public sealed class LetterRequests(
             {
                 case LetterRender.Company or LetterRender.Addressee or LetterRender.Date or LetterRender.Reference:
                     break; // Filled below, never missing.
+                case var _ when LetterRender.FromCompensation.Contains(key):
+                    break; // Read from HR when the letter is printed, never shown or typed (FR-024).
                 case var _ when manual is not null:
                     fields.Add(new LetterFieldView(key, manual.Names, typed, false));
                     break;
@@ -545,7 +592,8 @@ public sealed class LetterRequests(
         var rights = new LetterRights(row.UserId == me && row.Status == LetterStatuses.Pending, deciding, deciding,
             row.Status == LetterStatuses.Issued && (row.UserId == me || hrCovers));
         return new LetterView(row.Id, row.Reference, type?.Key ?? string.Empty, row.TypeNames, row.Language, row.Addressee, new PersonRef(row.UserId, name), row.Status,
-            row.CreatedAt, row.DecidedAt, row.IssuedAt, fields, rights);
+            row.CreatedAt, row.DecidedAt, row.IssuedAt, fields, rights,
+            row.Status == LetterStatuses.Approved && (deciding || hrCovers) ? row.IssueProblem : null);
     }
 }
 

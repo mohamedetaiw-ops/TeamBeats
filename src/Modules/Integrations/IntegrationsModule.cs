@@ -111,6 +111,8 @@ public static class IntegrationsModule
         services.AddScoped<Hr.HrSchedule>();
         services.AddScoped<Hr.HrLifecycle>();
         services.AddScoped<Hr.HrPayslips>();
+        services.AddScoped<Hr.HrCompensation>();
+        services.AddScoped<IHrCompensation>(sp => sp.GetRequiredService<Hr.HrCompensation>());
         services.AddScoped<Hr.HrRestPack>();
         services.AddScoped<Hr.HrLeave>();
         services.AddScoped<IHrLeave>(sp => sp.GetRequiredService<Hr.HrLeave>());

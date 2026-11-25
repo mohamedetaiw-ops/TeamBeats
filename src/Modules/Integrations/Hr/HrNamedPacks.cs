@@ -149,7 +149,9 @@ public sealed class HrOracleHcmPack(HrRestPack rest) : HrNamedPack(rest)
 /// <summary>
 /// SAP SuccessFactors: the <c>User</c> entity of the OData v2 API in JSON, with the manager expanded, read with the next
 /// links SuccessFactors returns. The filter asks for inactive users as well as active ones, which SuccessFactors leaves out
-/// by default (FR-020). Dates come as <c>/Date(ms)/</c> and are read by <see cref="HrMapping"/>.
+/// by default (FR-020). Dates come as <c>/Date(ms)/</c> and are read by <see cref="HrMapping"/>. Compensation comes from
+/// <c>EmpPayCompRecurring</c>. Oracle HCM has no preset for compensation: salaries there follow each tenant's salary
+/// basis, so a tenant gives the compensation settings itself.
 /// </summary>
 public sealed class HrSuccessFactorsPack(HrRestPack rest) : HrNamedPack(rest)
 {
@@ -192,5 +194,12 @@ public sealed class HrSuccessFactorsPack(HrRestPack rest) : HrNamedPack(rest)
         SyncAt: null,
         TimeZone: null,
         EmployeePath: $"/odata/v2/User('{{record_id}}')?{Select}",
-        EmployeeRecordPath: "$.d");
+        EmployeeRecordPath: "$.d",
+        // Recurring pay components as of today (US10); the tenant names its basic salary code.
+        CompensationPath: "/odata/v2/EmpPayCompRecurring?$format=json&$filter=userId%20eq%20'{record_id}'",
+        CompensationRecordsPath: "$.d.results",
+        CompensationFields: new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["code"] = "$.payComponent", ["amount"] = "$.paycompvalue", ["currency"] = "$.currencyCode", ["frequency"] = "$.frequency", ["start_date"] = "$.startDate",
+        });
 }

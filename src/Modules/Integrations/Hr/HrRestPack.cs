@@ -32,6 +32,10 @@ namespace TeamBeats.Modules.Integrations.Hr;
 /// Employee data changes (spec 022 FR-019) are optional too: <paramref name="DataChangePath"/> takes an approved change
 /// as a POST, answering with the HR reference at <paramref name="DataChangeReferencePath"/>;
 /// <paramref name="DataChangeIdempotencyHeader"/> makes a repeated send safe.
+/// The compensation statement (spec 019 R3 US10) is optional too: <paramref name="CompensationPath"/> lists one
+/// employee's current pay components (with <c>{record_id}</c> in the path or the query), <paramref name="CompensationFields"/>
+/// says where the code, name, amount, currency, frequency and start date are in each, and
+/// <paramref name="CompensationBasicCode"/> is HR's code for the basic salary, which letters use (US9).
 /// </summary>
 public sealed record HrRestSettings(
     string? BaseUrl,
@@ -63,7 +67,11 @@ public sealed record HrRestSettings(
     IReadOnlyDictionary<string, string>? LeaveTypeCodes = null,
     string? DataChangePath = null,
     string? DataChangeReferencePath = null,
-    string? DataChangeIdempotencyHeader = null)
+    string? DataChangeIdempotencyHeader = null,
+    string? CompensationPath = null,
+    string? CompensationRecordsPath = null,
+    IReadOnlyDictionary<string, string>? CompensationFields = null,
+    string? CompensationBasicCode = null)
 {
     public RestSettings Rest => new(BaseUrl!, Auth!);
 }
@@ -418,6 +426,56 @@ public sealed partial class HrRestPack(ITenantContext context, RestSignIn signIn
         return (balances.Select(b => new HrLeaveBalance(b.Key, b.Value)).ToList(), null);
     }
 
+    public static readonly IReadOnlyList<string> CompensationFieldNames = ["code", "name", "amount", "currency", "frequency", "start_date"];
+
+    /// <summary>The most pay components a statement lists (spec 019 section 6).</summary>
+    public const int MaxCompensationComponents = 30;
+
+    /// <summary>
+    /// One employee's current pay components (US10), read live and never stored. Null with no failure means the
+    /// connection has no compensation address. A list longer than <see cref="MaxCompensationComponents"/>, or a component
+    /// without a code or a number for its amount, is an invalid answer, so a half read statement is never shown.
+    /// </summary>
+    public async Task<(IReadOnlyList<HrCompensationComponent>? Components, PackCallResult? Failure)> ReadCompensationAsync(PackConnection connection, string recordId,
+        CancellationToken ct)
+    {
+        if (Parse(connection.Settings) is not { CompensationPath: { } path, CompensationFields: { } fields } s)
+        {
+            return (null, null);
+        }
+        var uri = PageUri(s with { Paging = "none" }, path.Replace("{record_id}", Uri.EscapeDataString(recordId), StringComparison.Ordinal), 1, 1);
+        if (uri is null)
+        {
+            return (null, PackCallResult.Fatal(ConnectorErrorClasses.HostNotAllowed));
+        }
+        var (failure, answer) = await GetAsync(connection, s, uri, ct);
+        if (failure is not null)
+        {
+            return (null, failure);
+        }
+        if (RestDefinitions.Select(answer, s.CompensationRecordsPath ?? "$") is not { ValueKind: JsonValueKind.Array } list || list.GetArrayLength() > MaxCompensationComponents)
+        {
+            return (null, PackCallResult.Technical(ConnectorErrorClasses.InvalidResponse));
+        }
+        var components = new List<HrCompensationComponent>();
+        foreach (var item in list.EnumerateArray())
+        {
+            string? Value(string name) => fields.TryGetValue(name, out var at) ? Text(RestDefinitions.Select(item, at))?.Trim() : null;
+            var code = Value("code");
+            if (code is null || code.Length is 0 or > 60 || code.Any(char.IsControl)
+                || !decimal.TryParse(Value("amount"), NumberStyles.Number, CultureInfo.InvariantCulture, out var amount) || Math.Abs(amount) > 1_000_000_000m)
+            {
+                return (null, PackCallResult.Technical(ConnectorErrorClasses.InvalidResponse));
+            }
+            var currency = Value("currency")?.ToUpperInvariant();
+            var name = Value("name") is { Length: > 0 and <= HrMapping.MaxText } n && !n.Any(char.IsControl) ? n : null;
+            var frequency = Value("frequency") is { Length: > 0 and <= 40 } f && !f.Any(char.IsControl) ? f : null;
+            components.Add(new HrCompensationComponent(code, name, decimal.Round(amount, 2), currency is not null && CurrencyCode().IsMatch(currency) ? currency : null, frequency,
+                Value("start_date") is { } start ? HrMapping.ReadDate(start, s.DateFormat) : null));
+        }
+        return (components, null);
+    }
+
     /// <summary>
     /// Sends one approved employee data change to HR (spec 022 FR-019): the employee by HR record ID and number, the group
     /// and the new values by spec 022 field keys, and the TeamBeats request ID so HR can tell a repeat.
@@ -767,6 +825,39 @@ public sealed partial class HrRestPack(ITenantContext context, RestSignIn signIn
         {
             errors.Add("leaveTypeCodes", "validation.hr.leave_type_codes");
         }
+        var compensationPath = Blank(s.CompensationPath);
+        Dictionary<string, string>? compensationFields = null;
+        var basicCode = Blank(s.CompensationBasicCode);
+        if (compensationPath is not null || s.CompensationFields is { Count: > 0 })
+        {
+            if (compensationPath is null || !OnePath(compensationPath))
+            {
+                errors.Add("compensationPath", "validation.hr.compensation_path");
+            }
+            if (s.CompensationRecordsPath is not null && !ArrayPath().IsMatch(s.CompensationRecordsPath))
+            {
+                errors.Add("compensationRecordsPath", "validation.hr.record_path");
+            }
+            compensationFields = [];
+            foreach (var (name, at) in s.CompensationFields ?? new Dictionary<string, string>())
+            {
+                var clean = at?.Trim();
+                if (!CompensationFieldNames.Contains(name) || clean is null || !RecordPath().IsMatch(clean))
+                {
+                    errors.Add($"compensationFields.{name}", "validation.hr.field_source");
+                    continue;
+                }
+                compensationFields[name] = clean;
+            }
+            if (!compensationFields.ContainsKey("code") || !compensationFields.ContainsKey("amount"))
+            {
+                errors.Add("compensationFields", "validation.hr.compensation_fields_required");
+            }
+            if (basicCode is not null && !LeaveCode().IsMatch(basicCode))
+            {
+                errors.Add("compensationBasicCode", "validation.hr.compensation_basic_code");
+            }
+        }
         var fields = CheckFields(s.Fields, f => RecordPath().IsMatch(f), errors);
         var statuses = HrMapping.CheckStatusValues(s.StatusValues, errors);
         CheckSchedule(s.DateFormat, s.SyncAt, s.TimeZone, errors);
@@ -778,7 +869,9 @@ public sealed partial class HrRestPack(ITenantContext context, RestSignIn signIn
             payslipsPath, payslipsPath is null ? null : s.PayslipRecordsPath ?? "$", payslipsPath is null ? null : payslipFields, payslipsPath is null ? null : pdfPath,
             balancesPath, balancesPath is null ? null : s.LeaveBalanceRecordsPath ?? "$", balancesPath is null ? null : balanceFields,
             submitPath, submitPath is null ? null : s.LeaveReferencePath ?? "$.id", submitPath is null ? null : idempotency, typeCodes.Count == 0 ? null : typeCodes,
-            changePath, changePath is null ? null : s.DataChangeReferencePath ?? "$.id", changePath is null ? null : changeHeader);
+            changePath, changePath is null ? null : s.DataChangeReferencePath ?? "$.id", changePath is null ? null : changeHeader,
+            compensationPath, compensationPath is null ? null : s.CompensationRecordsPath ?? "$", compensationPath is null ? null : compensationFields,
+            compensationPath is null ? null : basicCode);
         return JsonSerializer.SerializeToElement(stored, JsonDefaults.Options);
     }
 

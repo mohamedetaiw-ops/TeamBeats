@@ -1515,3 +1515,44 @@ public interface IKeyManagement
     /// <summary>Unwraps <paramref name="wrapped"/> with the named version of the key.</summary>
     Task<KeyResult> UnwrapAsync(KeyReference key, string version, byte[] wrapped, CancellationToken ct = default);
 }
+
+/// <summary>One current pay component as HR reports it (spec 019 R3 US10): HR's code and name, amount, currency, frequency and start date.</summary>
+public sealed record HrCompensationComponent(string Code, string? Name, decimal Amount, string? Currency, string? Frequency, DateOnly? StartDate);
+
+/// <summary>
+/// A compensation statement, read live and never stored. <see cref="Total"/> and <see cref="Currency"/> are set only
+/// when every component has the same currency and frequency; <see cref="Basic"/> is the component with HR's basic
+/// salary code; <see cref="EffectiveDate"/> is the latest start date.
+/// </summary>
+public sealed record HrCompensationStatement(IReadOnlyList<HrCompensationComponent> Components, decimal? Total, string? Currency, string? Frequency, DateOnly? EffectiveDate,
+    HrCompensationComponent? Basic)
+{
+    public static HrCompensationStatement From(IReadOnlyList<HrCompensationComponent> components, string? basicCode)
+    {
+        var currencies = components.Select(c => c.Currency).Distinct().ToList();
+        var frequencies = components.Select(c => c.Frequency).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        var single = components.Count > 0 && currencies.Count == 1 && frequencies.Count == 1;
+        return new HrCompensationStatement(components, single ? components.Sum(c => c.Amount) : null, single ? currencies[0] : null, single ? frequencies[0] : null,
+            components.Max(c => c.StartDate),
+            basicCode is null ? null : components.FirstOrDefault(c => string.Equals(c.Code, basicCode, StringComparison.OrdinalIgnoreCase)));
+    }
+}
+
+/// <summary>A compensation read: <see cref="State"/> is ok, not_matched or unavailable; the statement is set only when ok.</summary>
+public sealed record HrCompensationRead(string State, HrCompensationStatement? Statement)
+{
+    public const string Ok = "ok";
+    public const string NotMatched = "not_matched";
+    public const string Unavailable = "unavailable";
+}
+
+/// <summary>
+/// Compensation for a letter (spec 019 R3 US9, FR-021, FR-024): one person's statement read live at the moment their
+/// approved letter is printed, for that letter only. The read is audited with the letter and never the amounts. Nothing
+/// is stored; the values go into the letter's PDF and nowhere else.
+/// </summary>
+public interface IHrCompensation
+{
+    Task<HrCompensationRead> ForLetterAsync(Guid userId, Guid letterId, CancellationToken ct = default);
+}
+

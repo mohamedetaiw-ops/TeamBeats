@@ -133,6 +133,9 @@ public static class HrMapping
     private static bool EmailLike(string? email) =>
         email is null || email.Count(c => c == '@') == 1 && !email.StartsWith('@') && !email.EndsWith('@') && !email.Contains(' ');
 
+    /// <summary>A date as HR systems write it: ISO, the connection's format, an OData <c>/Date(ms)/</c> or an ISO time stamp.</summary>
+    public static DateOnly? ReadDate(string text, string? format) => Date(text, format);
+
     private static DateOnly? Date(string text, string? format)
     {
         if (DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var iso))
