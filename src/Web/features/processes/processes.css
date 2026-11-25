@@ -27,6 +27,11 @@
   gap: var(--tb-space-sm);
 }
 
+.processes-import {
+  display: grid;
+  gap: var(--tb-space-sm);
+}
+
 .processes-drawer {
   display: grid;
   gap: var(--tb-space-sm);

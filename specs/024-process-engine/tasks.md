@@ -38,5 +38,5 @@ Depends on 004 (authorization), 006 (audit), 022 (working-day contract), ADR-000
 ## Phase 6: Advanced processes (R3)
 - [x] T018 Compensation boundary, throw and end events and handlers run in reverse order of completion (FR-011, US4.3); `workflow.bpmn_advanced` publish check
 - [x] T019 Instance migration plans with element mapping, dry run and audited execution (FR-015, US6)
-- [ ] T020 BPMN import from other tools with vendor extension mapping and an unsupported list (US7)
+- [x] T020 BPMN import from other tools with vendor extension mapping and an unsupported list (US7)
 - [ ] T021 Camunda 8 user task adapter through the connector framework (FR-016, US8)

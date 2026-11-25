@@ -103,9 +103,20 @@ R3 adds compensation, instance migration, BPMN import from other tools and the C
 - Defaults where the spec is silent: an open task keeps its candidates and due time; a timer keeps its due time; boundary events that are new in the target are armed only the next time their step starts; child instances of call activities are migrated on their own process.
 - Operations page: a third tab "Move to new version" with the plan, a step picker per step, the instance list with selection, a dry run and the move.
 
+### BPMN import and export (US7)
+- `POST /api/v1/workflow/processes/{key}:import` takes a .bpmn file from Camunda 7, Camunda 8 or another BPMN 2.0 tool for a new key (an import never overwrites a model). `BpmnImporter` keeps standard BPMN and converts vendor extensions with a TeamBeats meaning: assignee (a TeamBeats user ID, a Camunda 8 `=` expression or a Camunda 7 `${variable}`), candidate users and groups given as TeamBeats IDs, due dates of whole days (as working days), retries (Camunda 8 task definition or Camunda 7 retry cycle), called process, message correlation keys, input and output mappings, multi-instance collections and conditions (`=` and `${}` wrappers removed, `&&`, `||` and `==` turned into FEEL).
+- Unsupported, listed with the element and detail, and nothing saved: several pools or message flows, more than one process, elements outside the subset, user or group names that are not TeamBeats IDs, other due dates, forms, listeners, properties and any other vendor attribute or extension. Vendor settings that only tune the other engine (async, priority, history time to live, version tag) are dropped with a note.
+- The other engine's workers (job type, Java class, delegate, external task topic) are dropped with a note; the service step gets an empty `tb:connector` the designer binds, which stays an ordinary draft problem.
+- Export: `GET .../processes/{key}/versions/{version}/bpmn` (R2) and `GET /api/v1/workflow/decisions/{key}/versions/{version}/dmn` give the standard files with TeamBeats settings in the `teambeats` namespace.
+- Needs `process.design` at the owner unit and `workflow.bpmn_advanced`. The processes page has an "Import from another tool" panel with the report.
+
 ### Tests (R3 slice 1)
 - Unit: `ProcessCompensationTests` (reverse order, throw and end events, activity reference, each activity once, skipped activities, a plain end does not compensate, validator problems).
 - Integration: `ProcessModelTests.Compensation_needs_the_advanced_package_and_undoes_completed_steps_newest_first` (publish refused without the capability, handlers as inbox tasks in reverse order across saved steps).
+
+### Tests (R3 slice 3)
+- Unit: `BpmnImporterTests` (a Camunda 8 file with pool and diagram, a Camunda 7 file, several pools or processes, elements outside the subset and DTDs, a TeamBeats export imports unchanged).
+- Integration: `ProcessModelTests.A_Camunda_file_imports_as_a_draft_and_one_with_unsupported_parts_is_listed_and_not_saved` (package and design refusal, a form listed and nothing saved, the converted draft publishes and runs, no overwrite, other tenant); DMN export in `Decision_owners_test_and_publish_tables_and_a_business_rule_task_routes_on_the_current_version`.
 
 ### Tests (R3 slice 2)
 - Unit: `InstanceMigrationTests` (proposal, explicit mapping, kind and wait changes, sub-process and multi-instance structure).

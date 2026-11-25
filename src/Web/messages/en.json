@@ -16872,6 +16872,30 @@
         "not_found": "Not found",
         "other": "It cannot move"
       }
+    },
+    "import": {
+      "title": "Import from another tool",
+      "intro": "Bring in a .bpmn file from Camunda Modeler or another BPMN tool. Settings that TeamBeats understands, such as assignees, candidate groups, due days and retries, are converted. If anything cannot run here, it is listed and nothing is saved.",
+      "file": "BPMN file",
+      "fileHint": "One .bpmn file exported from Camunda 7, Camunda 8 or another BPMN 2.0 tool, up to 2 MB.",
+      "key": "Process key",
+      "keyHint": "Lowercase letters, digits and dashes. It must be new.",
+      "owner": "Owned by",
+      "wholeOrganization": "Whole organization",
+      "submit": "Import",
+      "importing": "Importing",
+      "failed": "The file could not be imported.",
+      "importedTitle": "Process imported",
+      "imported": "The draft is saved. Open it from the list to finish any steps marked with a problem, then publish it.",
+      "refusedTitle": "Nothing was imported",
+      "refused": "{count, plural, one {# part of the file cannot run in TeamBeats.} other {# parts of the file cannot run in TeamBeats.}} Change it in the other tool and import it again.",
+      "unsupportedTitle": "What cannot be imported",
+      "convertedTitle": "What was converted",
+      "nothing": "Nothing to show.",
+      "element": "Element",
+      "wholeFile": "Whole file",
+      "what": "What happened",
+      "detail": "Detail"
     }
   },
   "records": {

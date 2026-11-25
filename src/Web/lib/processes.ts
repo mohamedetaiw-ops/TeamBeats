@@ -170,3 +170,8 @@ export const MIGRATION_REASONS = [
   "other_version",
   "not_found",
 ] as const;
+
+/** Import of a .bpmn file from another tool (spec 024 R3, US7). */
+export type ImportItem = { elementId: string; key: string; detail: string | null; message: string };
+
+export type ProcessImportReport = { imported: boolean; model: ProcessModelView | null; converted: ImportItem[]; unsupported: ImportItem[] };

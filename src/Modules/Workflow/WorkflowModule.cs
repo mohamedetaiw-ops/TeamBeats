@@ -51,6 +51,16 @@ public static class WorkflowModule
             return Results.Ok(view);
         });
 
+        group.MapPost("/processes/{key}:import", async (string key, ProcessModelRequest request, ProcessModels models, IDbSession session, CancellationToken ct) =>
+        {
+            var report = await models.ImportAsync(key, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(report);
+        });
+
+        group.MapGet("/decisions/{key}/versions/{version:int}/dmn", async (string key, int version, Decisions.DecisionModels decisions, CancellationToken ct) =>
+            Results.Text(await decisions.DmnAsync(key, version, ct), "application/xml"));
+
         group.MapPost("/processes/{key}:publish", async (string key, ProcessModels models, IDbSession session, CancellationToken ct) =>
         {
             var view = await models.PublishAsync(key, ct);

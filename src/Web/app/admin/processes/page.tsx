@@ -5,6 +5,7 @@ import { apiGet, type NavigationSection } from "@/lib/api";
 import { listUnits } from "@/lib/experience/client";
 import { pick } from "@/lib/services/types";
 import type { ProcessModelSummary } from "@/lib/processes";
+import { ImportPanel } from "@/features/processes/ImportPanel";
 import { Modeler } from "@/features/processes/Modeler";
 import "@/features/processes/processes.css";
 import { StateView } from "@/components/ui/StateView";
@@ -46,6 +47,7 @@ export default async function ProcessesPage() {
         )}
       </section>
       <Modeler processKey={null} initial={null} units={units.ok ? units.data : []} />
+      <ImportPanel units={units.ok ? units.data : []} />
     </>
   );
 }

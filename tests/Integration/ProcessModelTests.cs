@@ -349,6 +349,52 @@ public sealed class ProcessModelTests(TenantWorld world)
         Assert.Equal(1, (await InstanceAsync(t, africa))!.DefinitionVersion);
     }
 
+    [Fact]
+    public async Task A_Camunda_file_imports_as_a_draft_and_one_with_unsupported_parts_is_listed_and_not_saved()
+    {
+        var o = await FreshAsync();
+        var t = o.T;
+        string Camunda(string extra) => $"""
+            <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" id="d">
+              <bpmn:process id="leave" name="Leave" isExecutable="true">
+                <bpmn:startEvent id="s"/>
+                <bpmn:userTask id="approve" name="Approve"><bpmn:extensionElements><zeebe:assignmentDefinition candidateUsers="{t["amal"].Id}"/>{extra}</bpmn:extensionElements></bpmn:userTask>
+                <bpmn:endEvent id="e"/>
+                <bpmn:sequenceFlow id="f1" sourceRef="s" targetRef="approve"/><bpmn:sequenceFlow id="f2" sourceRef="approve" targetRef="e"/>
+              </bpmn:process>
+            </bpmn:definitions>
+            """;
+
+        // Import needs the advanced package and process.design.
+        Assert.Equal(HttpStatusCode.Forbidden, (await t["owner"].Client.PostAsJsonAsync($"{Api}/leave:import", new { bpmnXml = Camunda("") })).StatusCode);
+        await world.SetCapabilityAsync(t, Capabilities.WorkflowBpmnAdvanced, new { enabled = true });
+        Assert.Equal(HttpStatusCode.Forbidden, (await t["employee"].Client.PostAsJsonAsync($"{Api}/leave:import", new { bpmnXml = Camunda("") })).StatusCode);
+
+        // A form of the other tool cannot run here: the report lists it and nothing is saved.
+        var refused = await OkAsync(t["owner"].Client.PostAsJsonAsync($"{Api}/leave:import", new { bpmnXml = Camunda("""<zeebe:formDefinition formKey="camunda-forms:bpmn:leave"/>""") }));
+        Assert.False(refused.GetProperty("imported").GetBoolean());
+        var item = Assert.Single(refused.GetProperty("unsupported").EnumerateArray());
+        Assert.Equal(("approve", "process.import.vendor_extension", "formDefinition"),
+            (item.GetProperty("elementId").GetString(), item.GetProperty("key").GetString(), item.GetProperty("detail").GetString()));
+        Assert.False(string.IsNullOrEmpty(item.GetProperty("message").GetString()));
+        Assert.Equal(HttpStatusCode.NotFound, (await t["owner"].Client.GetAsync($"{Api}/leave")).StatusCode);
+
+        // Without it the draft is created with the converted assignment, publishes and runs.
+        var imported = await OkAsync(t["owner"].Client.PostAsJsonAsync($"{Api}/leave:import", new { bpmnXml = Camunda("""<zeebe:userTask/>""") }));
+        Assert.True(imported.GetProperty("imported").GetBoolean(), imported.ToString());
+        Assert.Contains(imported.GetProperty("converted").EnumerateArray(), c => c.GetProperty("key").GetString() == "process.import.users");
+        Assert.Equal(0, imported.GetProperty("model").GetProperty("problems").GetArrayLength());
+        await PublishAsync(t, "owner", "leave");
+        var instance = await StartAsync(t, "leave", null, o.Gulf, "LV-1");
+        Assert.Equal("approve", Assert.Single(await TasksAsync(t, "amal")).ElementId);
+
+        // An import never overwrites a model, and another tenant does not see the draft.
+        Assert.Equal("conflict.process.model_exists", await ProblemKeyAsync(t["owner"].Client.PostAsJsonAsync($"{Api}/leave:import", new { bpmnXml = Camunda("") }), HttpStatusCode.Conflict));
+        var other = await FreshAsync("enterprise_gov");
+        Assert.Equal(HttpStatusCode.NotFound, (await other.T["owner"].Client.GetAsync($"{Api}/leave")).StatusCode);
+        Assert.Equal("active", (await InstanceAsync(t, instance))!.Status);
+    }
+
     private async Task<HttpStatusCode> AssertDeniedAsync(TestTenant t, string user, Guid task)
     {
         try
@@ -544,6 +590,12 @@ public sealed class ProcessModelTests(TenantWorld world)
         Assert.Equal(1, published.GetProperty("versions")[0].GetProperty("version").GetInt32());
         Assert.Equal(1, (await OkAsync(t["owner"].Client.PostAsync($"{Decisions}/band:publish", null))).GetProperty("versions").GetArrayLength());
         Assert.Equal(1, await world.Database.AuditCountAsync(t.Id, AuditActions.DecisionPublished));
+        // A published version exports as DMN for standard tools (US7 scenario 2); operators do not read decisions.
+        var dmn = await t["owner"].Client.GetAsync($"{Decisions}/band/versions/1/dmn");
+        Assert.Equal("application/xml", dmn.Content.Headers.ContentType?.MediaType);
+        Assert.Contains("https://www.omg.org/spec/DMN/", await dmn.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+        Assert.Equal(HttpStatusCode.NotFound, (await t["owner"].Client.GetAsync($"{Decisions}/band/versions/9/dmn")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await t["operator"].Client.GetAsync($"{Decisions}/band/versions/1/dmn")).StatusCode);
 
         // Employees and process operators do not edit decisions; another tenant does not see them.
         Assert.Equal(HttpStatusCode.Forbidden, (await t["employee"].Client.PutAsJsonAsync($"{Decisions}/other", new { dmnXml = Bands() })).StatusCode);

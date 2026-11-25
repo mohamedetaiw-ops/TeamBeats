@@ -99,3 +99,10 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - Defaults are in the spec 024 R3 plan. `Graph/InstanceMigration` holds the rules (propose, check, apply) with no database; `ProcessEngine.MigrateInstanceAsync` checks and moves one instance under its row lock, and `ProcessOperations.MigrateAsync` checks the operator and writes the audit event `process.migration_executed`.
 - Workflow migration 0020 grants update on `workflow.message_subscription`, so a waiting token keeps its subscription when its step is renamed.
 - Gaps: no saved migration plans (each run sends its mapping); no batch beyond 100 instances per call; child instances of call activities are moved on their own process.
+
+## Spec 024 R3 slice 3: BPMN import from other tools (T020)
+
+- Defaults are in the spec 024 R3 plan. `Graph/BpmnImporter` converts the file with the same safe XML settings as the reader (no DTDs, size limit) and then runs `BpmnReader`; only structural reader problems refuse the import, so an unfinished draft (no connector yet) is still saved for the designer.
+- Report items use catalogue keys `process.import.*` with the element and a detail (attribute or value). A new key is required: `conflict.process.model_exists`.
+- Added the DMN export of a published decision version for US7 scenario 2.
+- Gaps: no import of DMN files from other tools; group and user names are not looked up in the directory (only TeamBeats IDs are kept); Activiti and Flowable extensions are listed as unsupported rather than converted.

@@ -83,6 +83,14 @@ public sealed class DecisionModels(IDbSession session, ITenantContext context, I
         return await ViewAsync(row, ct);
     }
 
+    /// <summary>The DMN of a published version, for standard DMN tools (spec 024 US7 scenario 2).</summary>
+    public async Task<string> DmnAsync(string key, int version, CancellationToken ct = default)
+    {
+        await GetAsync(key, ct);
+        return await session.QuerySingleOrDefaultAsync("select dmn_xml from workflow.decision_definition where key = @key and version = @version",
+            new { key, version }, r => r.GetString(0), ct) ?? throw AppException.NotFound();
+    }
+
     private async Task<DecisionModelView> ViewAsync(Row row, CancellationToken ct)
     {
         var versions = await session.QueryAsync(
