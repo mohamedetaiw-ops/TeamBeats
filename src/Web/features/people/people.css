@@ -32,57 +32,6 @@
   list-style: none;
 }
 
-.people-item {
-  display: flex;
-  align-items: start;
-  gap: var(--tb-space-sm);
-}
-
-.people-item-text {
-  display: grid;
-  gap: calc(var(--tb-space-xs) / 2);
-  min-inline-size: 0;
-}
-
-.people-item-name {
-  font-weight: var(--tb-font-weight-semibold);
-}
-
-.people-avatar {
-  display: inline-grid;
-  flex: none;
-  place-items: center;
-  inline-size: 2.5rem;
-  block-size: 2.5rem;
-  border: var(--tb-border-width-thin) solid var(--tb-color-border-strong);
-  border-radius: 50%;
-  background: var(--tb-color-surface-raised);
-  color: var(--tb-color-text-primary);
-  font-weight: 600;
-  overflow: hidden;
-}
-
-.people-avatar[data-tone] {
-  border-color: transparent;
-  background: var(--tb-color-accent-subtle);
-  color: var(--tb-color-accent-base);
-}
-
-.people-avatar[data-tone="highlight"] {
-  background: var(--tb-color-tint-warm);
-  color: var(--tb-color-tint-warm-text);
-}
-
-.people-avatar[data-tone="success"] {
-  background: var(--tb-color-tint-fresh);
-  color: var(--tb-color-tint-fresh-text);
-}
-
-.people-avatar[data-tone="info"] {
-  background: var(--tb-color-tint-cool);
-  color: var(--tb-color-tint-cool-text);
-}
-
 /* Directory blocks sit on the canvas with their heading; the people in them are person cards (Person card). */
 .people-block {
   display: grid;
@@ -93,49 +42,6 @@
 .people-block h3 {
   margin: 0;
   font-size: var(--tb-font-size-lg);
-}
-
-.people-cards {
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
-  gap: var(--tb-space-md);
-}
-
-.people-cards .people-item {
-  position: relative;
-  align-items: start;
-  block-size: 100%;
-  padding: var(--tb-space-md);
-  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
-  border-radius: var(--tb-radius-md);
-  background: var(--tb-color-surface-raised);
-  box-shadow: var(--tb-shadow-sm);
-  transition: border-color var(--tb-motion-duration-fast) var(--tb-motion-easing-standard);
-}
-
-/* Hover changes the border only, never size or position (DLS-060). */
-.people-cards .people-item:hover {
-  border-color: var(--tb-color-border-strong);
-}
-
-.people-cards .people-avatar {
-  inline-size: 3rem;
-  block-size: 3rem;
-}
-
-.people-cards .people-item-name {
-  color: var(--tb-color-text-primary);
-}
-
-.people-cards .people-item-name::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-}
-
-.people-avatar-large {
-  inline-size: 4rem;
-  block-size: 4rem;
 }
 
 .people-meta {
@@ -368,47 +274,6 @@ ol.people-chart {
   color: var(--tb-color-text-secondary);
   font-size: var(--tb-font-size-sm);
   font-weight: var(--tb-font-weight-semibold);
-}
-
-/* Person part, chip form (DLS-113): avatar and name on one line. */
-.people-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--tb-space-xs);
-  color: var(--tb-color-text-primary);
-}
-
-.people-chip .people-avatar {
-  inline-size: 1.5rem;
-  block-size: 1.5rem;
-  font-size: var(--tb-font-size-xs);
-}
-
-/* Quick actions sit at the end of a card, above the link that covers it. */
-.people-quick {
-  position: relative;
-  z-index: 1;
-  display: inline-flex;
-  gap: var(--tb-space-xs);
-  margin-inline-start: auto;
-}
-
-/* Directory as a list: one row per person, a line between rows. */
-.people-rows {
-  gap: 0;
-}
-
-.people-rows > li {
-  padding-block: var(--tb-space-sm);
-  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
-}
-
-/* A photo fills the avatar circle (spec 010 FR-013); the files are square, so cover only trims rounding. */
-.people-avatar img {
-  display: block;
-  inline-size: 100%;
-  block-size: 100%;
-  object-fit: cover;
 }
 
 .people-photo-actions {

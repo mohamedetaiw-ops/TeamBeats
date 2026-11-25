@@ -1,11 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import type { PlacementProps } from "@/lib/experience/contract";
-import { initials, photoAt, localName, personName, type PersonCard, type SearchPage } from "@/lib/people/types";
+import { photoAt, localName, personName, type PersonCard, type SearchPage } from "@/lib/people/types";
 import { Button } from "@/components/ui/Button";
+import { PeopleList as People, PersonEntry } from "@/components/ui/Person";
 import { StateView } from "@/components/ui/StateView";
 import { useWidgetBudget, Widget } from "@/components/ui/Widget";
 import "@/features/people/people.css";
@@ -75,34 +75,20 @@ export default function PeopleList({ props }: PlacementProps) {
   }
   if (answer.length === 0) return shell(<StateView kind="empty" title={t("none")} message="" />);
   return shell(
-    <ul className="people-list">
-      {answer.map((p) => {
-        const name = personName(p, locale);
-        return (
-          <li key={p.id} className="people-item">
-            <span className="people-avatar" aria-hidden="true">
-              {p.photo ? (
-                // A small session-protected API file; the name is the link beside it.
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={photoAt(p.photo, 40) ?? undefined} alt="" loading="lazy" decoding="async" />
-              ) : (
-                initials(name)
-              )}
-            </span>
-            <span className="people-item-text">
-              <Link href={`/people/${p.id}`} className="people-item-name">
-                <bdi>{name}</bdi>
-              </Link>
-              {p.jobTitle ? <bdi>{p.jobTitle}</bdi> : null}
-              {p.unit ? (
-                <span className="people-meta">
-                  <bdi>{localName(p.unit.names, locale)}</bdi>
-                </span>
-              ) : null}
-            </span>
-          </li>
-        );
-      })}
-    </ul>,
+    <People>
+      {answer.map((p) => (
+        <li key={p.id}>
+          <PersonEntry
+            person={{
+              name: personName(p, locale),
+              href: `/people/${p.id}`,
+              avatar: { src: photoAt(p.photo, 40) },
+              title: p.jobTitle ? { text: p.jobTitle } : null,
+              meta: p.unit ? localName(p.unit.names, locale) : null,
+            }}
+          />
+        </li>
+      ))}
+    </People>,
   );
 }

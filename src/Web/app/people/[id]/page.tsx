@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
-import { initials, isPhoneField, photoAt, localName, locationName, personName, type OrgChart, type PersonView } from "@/lib/people/types";
+import { isPhoneField, photoAt, localName, locationName, personName, type OrgChart, type PersonView } from "@/lib/people/types";
 import type { RecognitionView } from "@/lib/engagement";
 import { Header } from "@/components/shell/Header";
 import { RecognitionCard } from "@/features/engagement/RecognitionWall";
@@ -11,6 +11,7 @@ import { PeopleNav } from "@/features/people/PeopleNav";
 import { PersonItem } from "@/features/people/PersonItem";
 import "@/features/people/people.css";
 import { Widget } from "@/components/ui/Widget";
+import { PersonAvatar } from "@/components/ui/Person";
 
 /**
  * A person's profile (spec 010 US1 and US3): the fields the viewer may see, contact actions built only from those
@@ -66,16 +67,8 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
       />
       <main id="main" className="page people">
         <div className="people-head">
-          <span className="people-avatar people-avatar-large" aria-hidden="true">
-            {p.photo ? (
-              // A session-protected API file; the image optimizer cannot fetch it. The name is the heading beside it.
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={photoAt(p.photo, 96) ?? undefined} alt="" decoding="async" />
-            ) : (
-              initials(name)
-            )}
-          </span>
-          <div className="people-item-text">
+          <PersonAvatar name={name} src={photoAt(p.photo, 96)} size="lg" />
+          <div className="ui-person-text">
             <h1>
               <bdi>{name}</bdi>
             </h1>

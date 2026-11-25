@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import type { TeamPage } from "@/lib/people/types";
 import { Widget } from "@/components/ui/Widget";
+import { PeopleList } from "@/components/ui/Person";
 import { PersonItem } from "./PersonItem";
 import "./people.css";
 
@@ -52,13 +53,13 @@ export function MyTeam({ initial }: { initial: TeamPage }) {
         {t("team.total", { count: page.total })}
       </p>
       {error ? <p className="notice notice-error">{t("failed")}</p> : null}
-      <ul className="people-list people-cards" data-testid="team-list">
+      <PeopleList layout="cards" testId="team-list">
         {page.items.map((p) => (
           <li key={p.id}>
             <PersonItem form="card" person={p} locale={locale} extra={indirect && p.level ? t("team.level", { level: p.level }) : undefined} />
           </li>
         ))}
-      </ul>
+      </PeopleList>
       {page.next !== null ? (
         <Button busy={busy} busyLabel={t("loading")} onClick={() => void load(indirect, page.next ?? 0)}>
           {t("team.more")}

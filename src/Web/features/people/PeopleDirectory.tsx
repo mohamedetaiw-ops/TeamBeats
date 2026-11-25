@@ -9,6 +9,7 @@ import { StateView } from "@/components/ui/StateView";
 import { FilterToolbar, ToolbarSearch, ToolbarSelect } from "@/components/ui/FilterToolbar";
 import { unitName, type OrgUnit } from "@/lib/experience/builder-types";
 import { locationName, type Location, type PersonCard, type SearchPage } from "@/lib/people/types";
+import { PeopleList } from "@/components/ui/Person";
 import { PersonItem } from "./PersonItem";
 import "./people.css";
 
@@ -197,13 +198,13 @@ export function PeopleDirectory({ units, locations, newcomers }: { units: OrgUni
         {items && items.length > 0 ? (
           <>
             <h3>{t("search.results")}</h3>
-            <ul className={layout === "grid" ? "people-list people-cards" : "people-list people-rows"} data-testid="people-results">
+            <PeopleList layout={layout === "grid" ? "cards" : "rows"} testId="people-results">
               {items.map((p) => (
                 <li key={p.id}>
                   <PersonItem person={p} locale={locale} form={layout === "grid" ? "card" : "row"} />
                 </li>
               ))}
-            </ul>
+            </PeopleList>
             {next !== null ? (
               <Button variant="secondary" busy={busy} busyLabel={t("loading")} onClick={() => void load(query, next)}>
                 {t("search.more")}
@@ -220,13 +221,13 @@ export function PeopleDirectory({ units, locations, newcomers }: { units: OrgUni
         {newcomers.length === 0 ? (
           <p>{t("newcomers.none")}</p>
         ) : (
-          <ul className={layout === "grid" ? "people-list people-cards" : "people-list people-rows"} data-testid="people-newcomers">
+          <PeopleList layout={layout === "grid" ? "cards" : "rows"} testId="people-newcomers">
             {newcomers.map((p) => (
               <li key={p.id}>
                 <PersonItem person={p} locale={locale} form={layout === "grid" ? "card" : "row"} />
               </li>
             ))}
-          </ul>
+          </PeopleList>
         )}
       </section>
       ) : null}

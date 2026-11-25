@@ -1,32 +1,15 @@
-import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { joinMeta } from "@/lib/format";
-import { Icon } from "@/components/ui/Icon";
-import { initials, localName, locationName, personName, photoAt, type PersonCard } from "@/lib/people/types";
+import { PersonEntry, type PersonTone } from "@/components/ui/Person";
+import { localName, locationName, personName, photoAt, type PersonCard } from "@/lib/people/types";
 
 const tones = ["accent", "highlight", "success", "info"] as const;
 
 /** A steady colour per person, from the ID, so the same colleague always has the same avatar colour. */
-function avatarTone(id: string) {
+export function avatarTone(id: string): PersonTone {
   let sum = 0;
   for (const c of id) sum = (sum + c.charCodeAt(0)) % 997;
-  return tones[sum % tones.length];
-}
-
-/** The avatar: the photo when the person has one, otherwise initials. The name beside it is what people read. */
-function PersonAvatar({ person, name, size }: { person: PersonCard; name: string; size: number }) {
-  const src = photoAt(person.photo, size);
-  return (
-    <span className="people-avatar" data-tone={src ? undefined : avatarTone(person.id)} aria-hidden="true">
-      {src ? (
-        // A small session-protected API file; the image optimizer cannot fetch it. The name is next to it, so alt is empty.
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt="" loading="lazy" decoding="async" />
-      ) : (
-        initials(name)
-      )}
-    </span>
-  );
+  return tones[sum % tones.length]!;
 }
 
 /** A channel value the API gave for this person; it sends only what the viewer may see. */
@@ -35,59 +18,31 @@ function field(person: PersonCard, key: string): string | null {
 }
 
 /**
- * The person part (spec 036 DLS-062, DLS-113) in its three forms. Chip: avatar and name. Row: avatar, the name linked
- * to the profile, the title on its own line, and unit · location on one meta line. Card: the row in a frame, with up to
- * two quick actions for the channels the person has. The API has already removed anything the viewer may not see, so
- * this shows what it is given.
+ * A directory person on the shared person part (spec 036 DLS-062, DLS-113): chip, row or card. The API has already
+ * removed anything the viewer may not see, so this maps what it is given; a card offers email and call when the
+ * person has them.
  */
 export function PersonItem({ person, locale, extra, form = "row" }: { person: PersonCard; locale: string; extra?: string; form?: "chip" | "row" | "card" }) {
   const t = useTranslations("people");
   const name = personName(person, locale);
-  if (form === "chip") {
-    return (
-      <Link href={`/people/${person.id}`} className="people-chip">
-        <PersonAvatar person={person} name={name} size={24} />
-        <bdi>{name}</bdi>
-      </Link>
-    );
-  }
-  const meta = joinMeta([person.unit ? localName(person.unit.names, locale) : null, person.location ? locationName(person.location, locale) : null, extra]);
+  const size = form === "chip" ? 24 : form === "card" ? 48 : 40;
   const email = form === "card" ? field(person, "email") : null;
   const phone = form === "card" ? (field(person, "workPhone") ?? field(person, "mobilePhone")) : null;
+  const actions = [
+    ...(email ? [{ icon: "mail" as const, label: t("quick.email", { name }), href: `mailto:${email}` }] : []),
+    ...(phone ? [{ icon: "phone" as const, label: t("quick.call", { name }), href: `tel:${phone.replace(/[^\d+]/gu, "")}` }] : []),
+  ];
   return (
-    <div className="people-item" data-form={form}>
-      <PersonAvatar person={person} name={name} size={form === "card" ? 48 : 40} />
-      <div className="people-item-text">
-        <Link href={`/people/${person.id}`} className="people-item-name">
-          <bdi>{name}</bdi>
-        </Link>
-        {person.jobTitle ? (
-          <span>
-            <bdi>{person.jobTitle}</bdi>
-          </span>
-        ) : (
-          <span className="people-meta">{t("noTitle")}</span>
-        )}
-        {meta ? (
-          <span className="people-meta">
-            <bdi>{meta}</bdi>
-          </span>
-        ) : null}
-      </div>
-      {email || phone ? (
-        <span className="people-quick">
-          {email ? (
-            <a className="button button-quiet ui-icon-button" data-size="sm" href={`mailto:${email}`} aria-label={t("quick.email", { name })} title={t("quick.email", { name })}>
-              <Icon name="mail" size={16} />
-            </a>
-          ) : null}
-          {phone ? (
-            <a className="button button-quiet ui-icon-button" data-size="sm" href={`tel:${phone.replace(/[^\d+]/gu, "")}`} aria-label={t("quick.call", { name })} title={t("quick.call", { name })}>
-              <Icon name="phone" size={16} />
-            </a>
-          ) : null}
-        </span>
-      ) : null}
-    </div>
+    <PersonEntry
+      form={form}
+      person={{
+        name,
+        href: `/people/${person.id}`,
+        avatar: { src: photoAt(person.photo, size), tone: avatarTone(person.id) },
+        title: person.jobTitle ? { text: person.jobTitle } : { text: t("noTitle"), missing: true },
+        meta: joinMeta([person.unit ? localName(person.unit.names, locale) : null, person.location ? locationName(person.location, locale) : null, extra]),
+        actions,
+      }}
+    />
   );
 }

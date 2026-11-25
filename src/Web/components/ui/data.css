@@ -950,3 +950,158 @@ a.ui-event:hover {
   color: var(--tb-color-text-secondary);
   font-size: var(--tb-font-size-sm);
 }
+
+/*
+ * DLS-062, DLS-113: the person part (chip, row, card), its avatar and lists of people. Moved from the people feature
+ * so every module shows a colleague the same way.
+ */
+.ui-people {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ui-person-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs) var(--tb-space-sm);
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-xs);
+}
+
+.ui-person {
+  display: flex;
+  align-items: start;
+  gap: var(--tb-space-sm);
+}
+
+.ui-person-text {
+  display: grid;
+  gap: calc(var(--tb-space-xs) / 2);
+  min-inline-size: 0;
+}
+
+.ui-person-name {
+  font-weight: var(--tb-font-weight-semibold);
+}
+
+.ui-person-avatar {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-strong);
+  border-radius: 50%;
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+  font-weight: 600;
+  overflow: hidden;
+}
+
+.ui-person-avatar[data-tone] {
+  border-color: transparent;
+  background: var(--tb-color-accent-subtle);
+  color: var(--tb-color-accent-base);
+}
+
+.ui-person-avatar[data-tone="highlight"] {
+  background: var(--tb-color-tint-warm);
+  color: var(--tb-color-tint-warm-text);
+}
+
+.ui-person-avatar[data-tone="success"] {
+  background: var(--tb-color-tint-fresh);
+  color: var(--tb-color-tint-fresh-text);
+}
+
+.ui-person-avatar[data-tone="info"] {
+  background: var(--tb-color-tint-cool);
+  color: var(--tb-color-tint-cool-text);
+}
+
+.ui-people[data-layout="cards"] {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+  gap: var(--tb-space-md);
+}
+
+.ui-people[data-layout="cards"] .ui-person {
+  position: relative;
+  align-items: start;
+  block-size: 100%;
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  box-shadow: var(--tb-shadow-sm);
+  transition: border-color var(--tb-motion-duration-fast) var(--tb-motion-easing-standard);
+}
+
+/* Hover changes the border only, never size or position (DLS-060). */
+.ui-people[data-layout="cards"] .ui-person:hover {
+  border-color: var(--tb-color-border-strong);
+}
+
+.ui-person-avatar[data-size="card"] {
+  inline-size: 3rem;
+  block-size: 3rem;
+}
+
+.ui-people[data-layout="cards"] .ui-person-name {
+  color: var(--tb-color-text-primary);
+}
+
+.ui-people[data-layout="cards"] .ui-person-name::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.ui-person-avatar[data-size="lg"] {
+  inline-size: 4rem;
+  block-size: 4rem;
+}
+
+/* Person part, chip form (DLS-113): avatar and name on one line. */
+.ui-person-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tb-space-xs);
+  color: var(--tb-color-text-primary);
+}
+
+.ui-person-avatar[data-size="xs"] {
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  font-size: var(--tb-font-size-xs);
+}
+
+/* Quick actions sit at the end of a card, above the link that covers it. */
+.ui-person-actions {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  gap: var(--tb-space-xs);
+  margin-inline-start: auto;
+}
+
+/* Directory as a list: one row per person, a line between rows. */
+.ui-people[data-layout="rows"] {
+  gap: 0;
+}
+
+.ui-people[data-layout="rows"] > li {
+  padding-block: var(--tb-space-sm);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+/* A photo fills the avatar circle (spec 010 FR-013); the files are square, so cover only trims rounding. */
+.ui-person-avatar img {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
