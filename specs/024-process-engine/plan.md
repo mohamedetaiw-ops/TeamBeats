@@ -110,6 +110,13 @@ R3 adds compensation, instance migration, BPMN import from other tools and the C
 - Export: `GET .../processes/{key}/versions/{version}/bpmn` (R2) and `GET /api/v1/workflow/decisions/{key}/versions/{version}/dmn` give the standard files with TeamBeats settings in the `teambeats` namespace.
 - Needs `process.design` at the owner unit and `workflow.bpmn_advanced`. The processes page has an "Import from another tool" panel with the report.
 
+### Camunda 8 user tasks (US8)
+- A `camunda8` connector pack (Integrations, behind `workflow.bpmn_advanced`) talks to the Orchestration Cluster REST API v2: `search_user_tasks` (read, a page of 100 open tasks with an assignee, canonical key, name, process, assignee and dates, next cursor) and `complete_user_task` (write, idempotent, sends the outcome and comment as the variables `outcome` and `comment`; 404 and 409 are the business errors `not_found` and `not_open`). Sign-in is OAuth client credentials, bearer or basic, the address on the tenant allowlist.
+- `workflow.external_task` keeps one reference per task: connection, Camunda key, TeamBeats assignee, name, process name, dates and the state of the completion sent from TeamBeats. The outcome and comment are kept only until Camunda has them. Process state and variables stay in Camunda.
+- `ExternalTaskWorker` runs every minute per tenant: it reads the tasks of every enabled Camunda 8 connection through the connector runtime, matches the assignee to an active TeamBeats person by email, and closes tasks Camunda no longer lists once a full read finished. It also sends again completions that failed for a technical reason (up to 6 attempts, 5 minutes doubling).
+- The tasks are personal tasks in the spec 016 inbox (source `camunda_task`), linked to `/tasks/external/{id}`, where only the assignee sees the task and completes it with an outcome (done, approved, rejected) and an optional comment. `GET /api/v1/workflow/external-tasks/{id}` and `POST .../{id}:complete`; a failure shows on the task with the next attempt. A completion Camunda refuses as no longer open closes the task. Audit `process.external_task_completed` when Camunda accepted it.
+- Defaults (spec silent): only tasks assigned to one person are shown, matched by email; candidate users and groups are not shown; the outcome set is fixed; the link is the TeamBeats task page rather than a Camunda form (Camunda forms are not rendered).
+
 ### Tests (R3 slice 1)
 - Unit: `ProcessCompensationTests` (reverse order, throw and end events, activity reference, each activity once, skipped activities, a plain end does not compensate, validator problems).
 - Integration: `ProcessModelTests.Compensation_needs_the_advanced_package_and_undoes_completed_steps_newest_first` (publish refused without the capability, handlers as inbox tasks in reverse order across saved steps).
@@ -117,6 +124,9 @@ R3 adds compensation, instance migration, BPMN import from other tools and the C
 ### Tests (R3 slice 3)
 - Unit: `BpmnImporterTests` (a Camunda 8 file with pool and diagram, a Camunda 7 file, several pools or processes, elements outside the subset and DTDs, a TeamBeats export imports unchanged).
 - Integration: `ProcessModelTests.A_Camunda_file_imports_as_a_draft_and_one_with_unsupported_parts_is_listed_and_not_saved` (package and design refusal, a form listed and nothing saved, the converted draft publishes and runs, no overwrite, other tenant); DMN export in `Decision_owners_test_and_publish_tables_and_a_business_rule_task_routes_on_the_current_version`.
+
+### Tests (R3 slice 4)
+- Integration: `ExternalTaskTests` (inbox for the assignee only, other people and tenants refused, outcome and comment sent and then cleared, audit, a failed completion shown and retried, a task closed in Camunda leaves the inbox, package refusal).
 
 ### Tests (R3 slice 2)
 - Unit: `InstanceMigrationTests` (proposal, explicit mapping, kind and wait changes, sub-process and multi-instance structure).

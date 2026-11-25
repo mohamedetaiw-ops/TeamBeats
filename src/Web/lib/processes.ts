@@ -175,3 +175,23 @@ export const MIGRATION_REASONS = [
 export type ImportItem = { elementId: string; key: string; detail: string | null; message: string };
 
 export type ProcessImportReport = { imported: boolean; model: ProcessModelView | null; converted: ImportItem[]; unsupported: ImportItem[] };
+
+/** A Camunda 8 user task as its assignee sees it (spec 024 US8). The API decides who sees it and what can be done. */
+export type ExternalTask = {
+  id: string;
+  engine: string;
+  name: string;
+  processName: string | null;
+  createdAt: string;
+  dueAt: string | null;
+  status: "open" | "completing" | "completed" | "failed" | "closed";
+  outcome: string | null;
+  comment: string | null;
+  lastError: string | null;
+  attempts: number;
+  nextAttemptAt: string | null;
+  completedAt: string | null;
+};
+
+/** The outcomes the API accepts, sent to Camunda as the variable `outcome`. */
+export const EXTERNAL_TASK_OUTCOMES = ["completed", "approved", "rejected"] as const;

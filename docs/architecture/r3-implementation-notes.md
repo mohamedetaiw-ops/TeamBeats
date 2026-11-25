@@ -106,3 +106,10 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - Report items use catalogue keys `process.import.*` with the element and a detail (attribute or value). A new key is required: `conflict.process.model_exists`.
 - Added the DMN export of a published decision version for US7 scenario 2.
 - Gaps: no import of DMN files from other tools; group and user names are not looked up in the directory (only TeamBeats IDs are kept); Activiti and Flowable extensions are listed as unsupported rather than converted.
+
+## Spec 024 R3 slice 4: Camunda 8 user tasks (T021)
+
+- Defaults are in the spec 024 R3 plan. The `camunda8` pack reuses the ticketing pack base (address checks, sign-in, status mapping); the base gained an overridable capability key and a 204 answer for writes with no body.
+- Workflow migration 0021 adds `workflow.external_task`. `ExternalTasks` reaches Camunda only through `IConnectorRuntime` and finds connections through `IConnectorActions`; people come from the user directory contract. `ExternalTaskWorker` is hosted by the worker, and in the development host with `Workflow:ExternalTasks:InProcess`.
+- New keys: `validation.process.external_task_outcome`, `validation.process.external_task_comment`, `conflict.process.external_task_not_open`; audit action `process.external_task_completed`.
+- Gaps: no candidate group tasks; no rendering of Camunda forms; the sync reads up to 2,000 open tasks per connection a minute; Camunda SaaS sign-in that needs an `audience` parameter is not supported by the shared OAuth sign-in yet.

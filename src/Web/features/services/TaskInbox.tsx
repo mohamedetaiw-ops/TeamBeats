@@ -41,6 +41,7 @@ const sourceIcons: Record<string, IconName> = {
   agent_access: "spark",
   page_approval: "edit",
   theme_approval: "image",
+  camunda_task: "tasks",
 };
 const dayMs = 86_400_000;
 
@@ -152,6 +153,8 @@ export function TaskInbox({ items, meId, units }: { items: InboxItem[]; meId: st
         return t("pageApproval");
       case "theme_approval":
         return t("themeApproval");
+      case "camunda_task":
+        return t("camundaTask");
       default:
         return i.name;
     }

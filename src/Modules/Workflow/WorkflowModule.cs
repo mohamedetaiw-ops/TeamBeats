@@ -30,6 +30,8 @@ public static class WorkflowModule
         services.AddScoped<Decisions.DecisionModels>();
         services.AddScoped<ProcessModelTasks>();
         services.AddScoped<ITaskSource>(sp => sp.GetRequiredService<ProcessModelTasks>());
+        services.AddScoped<ExternalTasks>();
+        services.AddScoped<IPersonalTaskSource, ExternalTaskInbox>();
         services.AddMessageHandler<WorkingCalendarChanged, CalendarChangeHandler>("workflow.due_recalculation");
         services.AddMessageHandler<ConnectorActionCompleted, ConnectorStepFinished>("workflow.connector_step_finished");
         services.AddMessageHandler<InboundWebhookReceived, InboundMessageReceived>("workflow.inbound_message");
@@ -47,6 +49,15 @@ public static class WorkflowModule
         group.MapPut("/processes/{key}", async (string key, ProcessModelRequest request, ProcessModels models, IDbSession session, CancellationToken ct) =>
         {
             var view = await models.SaveAsync(key, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        group.MapGet("/external-tasks/{id:guid}", async (Guid id, ExternalTasks tasks, CancellationToken ct) => Results.Ok(await tasks.GetAsync(id, ct)));
+
+        group.MapPost("/external-tasks/{id:guid}:complete", async (Guid id, CompleteExternalTaskRequest request, ExternalTasks tasks, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await tasks.CompleteAsync(id, request, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });

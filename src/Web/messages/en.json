@@ -4646,7 +4646,8 @@
       "policyReview": "Policy review",
       "policyExemption": "Policy exemption",
       "pageApproval": "Page approval",
-      "themeApproval": "Theme approval"
+      "themeApproval": "Theme approval",
+      "camundaTask": "Camunda task"
     },
     "delegation": {
       "none": "No delegation set. Your approvals stay with you.",
@@ -10443,6 +10444,7 @@
       "onprem_ad": "On-premises Active Directory",
       "servicenow": "ServiceNow",
       "jira_service_management": "Jira Service Management",
+      "camunda8": "Camunda 8",
       "slack": "Slack",
       "sms": "SMS gateway",
       "clock_import": "Clock data import",
@@ -10484,6 +10486,7 @@
       "microsoft365": "Directory sync, mail, calendar and free and busy times from your Microsoft 365 tenant, each with its own consent.",
       "servicenow": "Services and agents create incidents in ServiceNow and read their status.",
       "jira_service_management": "Services and agents create requests in Jira Service Management and read their status.",
+      "camunda8": "Camunda user tasks assigned to TeamBeats people appear in their task inbox and are completed from TeamBeats.",
       "lms_rest": "Brings your LMS courses into the catalogue, sends assignments of them to the LMS and reads completions back."
     },
     "add": {
@@ -10499,6 +10502,10 @@
       "jira_service_management": {
         "addTitle": "Add a Jira Service Management connection",
         "addIntro": "Enter your site address, such as https://your-site.atlassian.net, how TeamBeats signs in, and the service desk and request type new requests go to. For a cloud site, sign in with the account email and an API token."
+      },
+      "camunda8": {
+        "addTitle": "Add a Camunda 8 connection",
+        "addIntro": "Enter the Orchestration Cluster REST address, such as https://cluster.example.com, and how TeamBeats signs in. Tasks are matched to people by the assignee email."
       }
     },
     "slack": {
@@ -16896,6 +16903,41 @@
       "wholeFile": "Whole file",
       "what": "What happened",
       "detail": "Detail"
+    },
+    "externalTask": {
+      "eyebrow": "Camunda task",
+      "title": "Camunda task",
+      "denied": "This task is not available in your organization's plan.",
+      "failed": "The task could not be completed. Try again.",
+      "status": "Status",
+      "created": "Created",
+      "due": "Due",
+      "completedAt": "Completed",
+      "statuses": {
+        "open": "Open",
+        "completing": "Sending to Camunda",
+        "completed": "Completed",
+        "failed": "Not sent",
+        "closed": "Closed in Camunda"
+      },
+      "sendFailed": "Camunda did not accept the completion yet.",
+      "retrying": "TeamBeats will try again at {when}. You can also try again now.",
+      "noRetry": "TeamBeats stopped retrying. Try again, or ask your administrator to check the Camunda connection.",
+      "sending": "Your answer is on its way to Camunda.",
+      "done": "Camunda has your answer. The task is done.",
+      "closed": "This task was completed, cancelled or reassigned in Camunda.",
+      "formTitle": "Complete the task",
+      "outcome": "How did it end?",
+      "outcomes": {
+        "completed": "Done",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "comment": "Comment",
+      "commentHint": "Optional. Camunda receives it with the outcome.",
+      "working": "Sending…",
+      "complete": "Complete task",
+      "tryAgain": "Try again"
     }
   },
   "records": {

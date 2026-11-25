@@ -42,6 +42,10 @@ public sealed class DevHostProgram
         {
             builder.Services.AddHostedService<TeamBeats.Modules.Workflow.EngineJobWorker>();
         }
+        if (builder.Configuration.GetValue<bool>(TeamBeats.Modules.Workflow.ExternalTaskWorker.InProcessKey))
+        {
+            builder.Services.AddHostedService<TeamBeats.Modules.Workflow.ExternalTaskWorker>();
+        }
         if (builder.Configuration.GetValue<bool>(TeamBeats.Modules.Services.ServiceScheduleWorker.InProcessKey))
         {
             builder.Services.AddHostedService<TeamBeats.Modules.Services.ServiceScheduleWorker>();

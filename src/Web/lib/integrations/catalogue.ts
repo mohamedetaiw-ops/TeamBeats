@@ -22,6 +22,7 @@ const LOOKS: Record<ConnectionType, Look> = {
   onprem_ad: { group: "workplace", mark: "/connectors/microsoft.svg", icon: "building" },
   servicenow: { group: "service_desk", icon: "inbox" },
   jira_service_management: { group: "service_desk", mark: "/connectors/atlassian.svg", icon: "inbox" },
+  camunda8: { group: "service_desk", icon: "tasks" },
   hr_rest: { group: "people_time", icon: "people" },
   hr_sftp: { group: "people_time", icon: "folder" },
   clock_import: { group: "people_time", icon: "clock" },

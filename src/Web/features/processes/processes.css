@@ -316,3 +316,10 @@
 .processes-node[data-visited]::before {
   background: var(--tb-color-accent-subtle);
 }
+
+/* A Camunda 8 task page (spec 024 US8): facts, status and the completion form in one column. */
+.processes-external {
+  display: grid;
+  gap: var(--tb-space-md);
+  max-inline-size: 48rem;
+}
