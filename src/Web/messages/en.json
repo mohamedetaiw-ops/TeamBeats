@@ -11841,6 +11841,22 @@
       "contentPublish": "Publish content",
       "scopeTenant": "Whole workspace"
     },
+    "records": {
+      "title": "Records and settings",
+      "intro": "Rows that each open a record, a settings section with its help beside the controls, and a panel around a group of fields.",
+      "laptop": "Laptop replacement",
+      "laptopMeta": "Manager approval · Waiting for Sara Ali",
+      "inProgress": "In progress",
+      "done": "Completed",
+      "longTitle": "Access to the shared finance workspace for the quarterly close and the audit preparation team",
+      "changed": "Yesterday",
+      "changedFull": "24 November 2026, 09:30",
+      "settingsTitle": "Daily digest",
+      "settingsHint": "One email each morning with what changed.",
+      "digest": "Send at",
+      "panelTitle": "Reason for the request",
+      "reason": "Reason"
+    },
     "widgetBudget": {
       "title": "Content budgets",
       "intro": "A summary shows at most the budget of its region and then a link to the full view with the total: 3 rows up to a third of the width, 5 up to two thirds, 8 wider. A loading, failed or unavailable part keeps the same frame.",

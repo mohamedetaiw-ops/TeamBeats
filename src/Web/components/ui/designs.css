@@ -151,14 +151,14 @@
  * tenant accent and dark mode follow.
  */
 :root[data-design="studio"] :is(.ui-widget, .content-card, .content-side-item, .ui-card, .ui-tile, .ui-stat, .ui-form-panel, .home-tiles a),
-:root[data-design="studio"] :is(.work-items, .ui-settings-section, .documents-table, .ui-reading),
+:root[data-design="studio"] :is(.ui-work-items, .ui-settings-section, .documents-table, .ui-reading),
 :root[data-design="studio"] :is(.people-cards .people-item, .people-identity),
 :root[data-design="studio"] .ui-rows {
   border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
   box-shadow: var(--tb-shadow-sm);
 }
 
-:root[data-design="studio"] :is(.ui-widget, .content-card, .ui-card, .ui-form-panel, .work-items, .ui-settings-section),
+:root[data-design="studio"] :is(.ui-widget, .content-card, .ui-card, .ui-form-panel, .ui-work-items, .ui-settings-section),
 :root[data-design="studio"] :is(.documents-table, .ui-reading, .people-identity) {
   border-radius: var(--tb-radius-md);
 }

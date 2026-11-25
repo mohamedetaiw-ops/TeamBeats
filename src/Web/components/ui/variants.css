@@ -124,7 +124,7 @@
 }
 
 /* Work rows, dense: shorter rows for people who work through long lists. Touch targets keep their size (DLS-085). */
-:root[data-v-rows="dense"] .work-item {
+:root[data-v-rows="dense"] .ui-work-item {
   min-block-size: 3.25rem;
   padding-block: var(--tb-space-xs);
 }
