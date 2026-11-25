@@ -118,6 +118,8 @@ export type TemplateView = {
   missingTools: string[];
   blockedTools: string[];
   autonomyAbovePolicy: boolean;
+  /** An L4 template whose package does not include bounded autonomy (spec 020 section 12). */
+  needsAutonomy?: boolean;
 };
 
 /** A tenant tool (a connector action, spec 017) carries the title its administrator entered per language. */

@@ -41,5 +41,5 @@ Depends on 004, 005, 006, 013, 016, 027 (same module), 034; 012 (search source),
 
 ## R3
 - [x] T024 [US10] Handoffs: declared targets in the definition, `agent.handoff` in the gateway, child runs with depth up to 3, human contact at the limit, `ai.agents.orchestration` and `ai.agents.orchestration_custom`; tests including cross-tenant and permission separation
-- [ ] T025 Advanced templates 13 to 15 behind `ai.agents.advanced` with suites; Process Automation not ready without `ai.agents.autonomous`
+- [x] T025 Advanced templates 13 to 15 behind `ai.agents.advanced` with suites; Process Automation not ready without `ai.agents.autonomous`
 - [ ] T026 Pages (handoffs in the editor, handed over notice in the conversation), OpenAPI, R3 implementation notes, spec evidence

@@ -41,7 +41,8 @@ public sealed record TemplateView(
     bool Ready,
     IReadOnlyList<string> MissingTools,
     IReadOnlyList<string> BlockedTools,
-    bool AutonomyAbovePolicy);
+    bool AutonomyAbovePolicy,
+    bool NeedsAutonomy = false);
 
 /// <summary>
 /// Installs a template, or with no template creates a blank agent in Agent Studio (spec 020 US4): then the name,
@@ -123,7 +124,7 @@ public sealed class AgentRegistry(IDbSession session, ITenantContext context, IE
             {
                 continue;
             }
-            list.Add(View(template, policy, await UnavailableAsync(template.Definition.Tools, ct)));
+            list.Add(await ViewAsync(template, policy, ct));
         }
         return list;
     }
@@ -142,7 +143,12 @@ public sealed class AgentRegistry(IDbSession session, ITenantContext context, IE
         return set;
     }
 
-    private TemplateView View(AgentTemplate template, AgentPolicy policy, IReadOnlySet<string> unavailable)
+    /// <summary>The template's view; an L4 template (Process Automation, spec 020 section 12) is not ready without <c>ai.agents.autonomous</c>.</summary>
+    private async Task<TemplateView> ViewAsync(AgentTemplate template, AgentPolicy policy, CancellationToken ct) =>
+        View(template, policy, await UnavailableAsync(template.Definition.Tools, ct),
+            template.Definition.Autonomy == "L4" && !await entitlements.IsEnabledAsync(Capabilities.AiAgentsAutonomous, ct));
+
+    private TemplateView View(AgentTemplate template, AgentPolicy policy, IReadOnlySet<string> unavailable, bool needsAutonomy)
     {
         var d = template.Definition;
         var names = d.Tools ?? [];
@@ -151,7 +157,7 @@ public sealed class AgentRegistry(IDbSession session, ITenantContext context, IE
         var above = AgentAutonomy.Rank(d.Autonomy) > AgentAutonomy.Rank(policy.MaxAutonomy) ||
             Classifications.Rank(d.MaxClassification) > Classifications.Rank(policy.MaxClassification) || d.MaxToolCalls > policy.MaxToolCalls;
         return new TemplateView(template.Id, template.Version, d.Name, d.Description, d.Icon, d.Category, d.Autonomy, d.Knowledge, d.Tools,
-            missing.Count == 0 && blocked.Count == 0 && !above, missing, blocked, above);
+            missing.Count == 0 && blocked.Count == 0 && !above && !needsAutonomy, missing, blocked, above, needsAutonomy);
     }
 
     public async Task<IReadOnlyList<ToolView>> ToolsAsync(CancellationToken ct)
@@ -191,7 +197,7 @@ public sealed class AgentRegistry(IDbSession session, ITenantContext context, IE
             throw AppException.Validation("templateId", "validation.agent.template");
         }
         var policy = (await policies.CurrentAsync(ct)).Policy;
-        if (!View(template, policy, await UnavailableAsync(template.Definition.Tools, ct)).Ready)
+        if (!(await ViewAsync(template, policy, ct)).Ready)
         {
             throw AppException.Validation("templateId", "validation.agent.template_not_ready");
         }

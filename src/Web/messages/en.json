@@ -7861,6 +7861,7 @@
       "unit": "Org unit that owns the agent",
       "autonomy": "Autonomy {level}",
       "notReady": "Not ready",
+      "notReadyAutonomy": "It runs only as a step of approved processes, which your package does not include.",
       "notReadyPolicy": "Its autonomy is above what your agent policy allows.",
       "notReadyTools": "A tool it needs is missing or not allowed by your agent policy.",
       "install": "Use template",

@@ -34,6 +34,12 @@ public sealed class AgentDefinitionTests
         new FakeTool("get_person", ToolSideEffects.Read),
         new FakeTool("submit_service_request", ToolSideEffects.WriteSelf, ToolApprovalRules.Confirm),
         new FakeTool("draft_news", ToolSideEffects.Draft, ToolApprovalRules.Confirm),
+        new FakeTool("search", ToolSideEffects.Read),
+        new FakeTool("get_policy", ToolSideEffects.Read),
+        new FakeTool("get_document", ToolSideEffects.Read),
+        new FakeTool("list_news", ToolSideEffects.Read),
+        new FakeTool("get_page", ToolSideEffects.Read),
+        new FakeTool("list_services", ToolSideEffects.Read),
     ]);
 
     private static AgentDefinition Valid() => new(
@@ -137,19 +143,33 @@ public sealed class AgentDefinitionTests
     [Fact]
     public void The_platform_templates_are_valid_in_arabic_and_english_under_the_default_policy()
     {
-        Assert.Equal(["content_writing", "employee_onboarding", "enterprise_knowledge", "finance_expenses", "hr_assistant", "internal_communications",
-            "it_service_desk", "learning_development", "my_hr_helper", "people_directory", "personal_productivity", "procurement", "workflow_requests"],
+        Assert.Equal(["content_writing", "employee_onboarding", "enterprise_knowledge", "executive_intelligence", "finance_expenses", "hr_assistant",
+            "internal_communications", "it_service_desk", "learning_development", "legal_compliance", "my_hr_helper", "people_directory", "personal_productivity",
+            "process_automation", "procurement", "workflow_requests"],
             AgentTemplates.All.Select(t => t.Id).Order());
         foreach (var template in AgentTemplates.All)
         {
             var d = template.Definition with { Audience = new AgentAudience(AgentAudience.Units, [Guid.NewGuid()]) };
-            // Procurement is an L3 template (spec 020 section 12): it stays above what is built until spec 027 builds L3.
-            var expected = template.Id == "procurement" ? ["validation.agent.autonomy_above_policy"] : Array.Empty<string>();
+            // Procurement (L3) and Process Automation (L4) are above the default policy (L2) until a tenant raises it.
+            var expected = template.Id is "procurement" or "process_automation" ? ["validation.agent.autonomy_above_policy"] : Array.Empty<string>();
             Assert.True(Errors(d).SequenceEqual(expected), $"{template.Id}: {string.Join(", ", Errors(d))}");
             Assert.Equal(["ar", "en"], d.Languages!.Order());
-            Assert.Contains(template.Capability, new[] { "ai.agents.basic", "ai.agents.department" });
+            Assert.Contains(template.Capability, new[] { "ai.agents.basic", "ai.agents.department", "ai.agents.advanced" });
             Assert.All(new[] { "ar", "en" }, l => Assert.False(string.IsNullOrWhiteSpace(d.Description![l])));
         }
+    }
+
+    [Fact]
+    public void Advanced_templates_thirteen_to_fifteen_need_the_advanced_capability()
+    {
+        // Spec 020 section 12: Legal and Compliance and Executive Intelligence read only (L0); Process Automation is L4.
+        Assert.Equal("L0", AgentTemplates.Find("legal_compliance")!.Definition.Autonomy);
+        Assert.Equal("L0", AgentTemplates.Find("executive_intelligence")!.Definition.Autonomy);
+        Assert.Equal("L4", AgentTemplates.Find("process_automation")!.Definition.Autonomy);
+        Assert.All(new[] { "legal_compliance", "executive_intelligence", "process_automation" },
+            id => Assert.Equal("ai.agents.advanced", AgentTemplates.Find(id)!.Capability));
+        Assert.All(new[] { "legal_compliance", "executive_intelligence" },
+            id => Assert.All(AgentTemplates.Find(id)!.Definition.Tools!, tool => Assert.Equal(ToolSideEffects.Read, Tools.Find(tool)!.Definition.SideEffect)));
     }
 
     [Fact]
