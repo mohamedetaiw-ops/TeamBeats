@@ -29,3 +29,12 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - The guide (`docs/security/hardening-guide.md`) and the matrix (`docs/security/shared-responsibility.md`) cover what the product cannot see: patching, backups, volume encryption, network segmentation, secret management.
 - Gap: the checks cover the settings the API process can read. Settings of other containers (RabbitMQ users, ClamAV signatures, proxy TLS) are left to the operator's own checks.
 - With this slice spec 026 R3 is built except FR-019 (tenant export and deletion certificate), which stays a known gap in the evidence.
+
+## Spec 011 R3 slice 1: records and disposition certificates (T027, T028)
+
+- Defaults are in the spec 011 R3 plan. Migration 0018 of Documents adds `declares_record` to retention labels, `record_at`, `record_by` and `record_source` to documents, and `disposition_certificate` with its items.
+- A record refuses check-out, working copies, check-in, restore, browser editing, metadata changes and deletion with `conflict.documents.record`; the checks sit in the same guards as archived documents (`DocumentVersions.EditableAsync`, `DocumentFiles.UpdateMetadataAsync`, `DocumentVersions.DeleteAsync`, `OfficeEditing`).
+- Declaring by label happens when a label is applied or changed and on the maintenance run, for documents that are published, checked in and not checked out. A checked out document is never declared, so nobody's working copy is dropped (`conflict.records.checked_out` when done by hand).
+- Certificates use `ReadableCodes` (Primitives, new), the same alphabet as learning certificates and HR letters; those two keep their own copy for now.
+- The digest covers fields that never change after disposal (IDs, number, versions, mode, approver, time), not the label names, which are a copy kept for reading.
+- Gap: verify is for records managers inside the tenant only; no public verify page, because a disposition certificate is an internal compliance record.

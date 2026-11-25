@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
 import { msg, type LaunchLocale } from "../support/messages";
 import { tenantApi } from "../support/pages";
@@ -6,8 +8,17 @@ import { hostOrigin } from "../support/stack";
 
 /**
  * Spec 011 R2 US6 and US7 in the browser: a records manager creates a retention label, applies it to a library and
- * places a legal hold on that library, then sees the hold and the document it covers. In English and Arabic, with axe.
+ * places a legal hold on that library, then sees the hold and the document it covers. Spec 011 R3: a records manager
+ * declares a document a record on its page, finds it on the records page, and is told why an empty range gives no
+ * disposition certificate. In English and Arabic, with axe.
  */
+function apiText(locale: LaunchLocale, key: string): string {
+  const file = fileURLToPath(new URL(`../../../src/BuildingBlocks/Localization/catalogues/${locale}.json`, import.meta.url));
+  const value = (JSON.parse(readFileSync(file, "utf8")) as Record<string, string>)[key];
+  if (!value) throw new Error(`No API text for ${key}`);
+  return value;
+}
+
 for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
   test.describe(`records management in ${locale}`, () => {
     test.use({ locale: locale === "ar" ? "ar-AE" : "en-US" });
@@ -59,6 +70,36 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await hold.getByRole("button", { name: m("records.holds.showDocuments", { name: holdName }) }).click();
       await expect(hold.getByRole("link", { name: "audit-plan.txt" })).toBeVisible();
       await expectAccessible(page, testInfo, `records-hold-${locale}`);
+    });
+
+    test("a records manager declares a record and checks the certificate range", async ({ page }, testInfo) => {
+      const api = await tenantApi(tenant);
+      const library = await api.post("/api/v1/documents/libraries", { data: { names: { [locale]: locale === "ar" ? "العقود" : "Contracts" }, scope: "tenant" } });
+      expect(library.status()).toBe(201);
+      const libraryId = ((await library.json()) as { id: string }).id;
+      const file = await api.post(`/api/v1/documents/libraries/${libraryId}/files?name=signed-contract.txt&publish=true`, {
+        headers: { "content-type": "application/octet-stream" },
+        data: Buffer.from("Signed contract"),
+      });
+      expect(file.status()).toBe(201);
+      const documentId = ((await file.json()) as { id: string }).id;
+
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/documents/${documentId}`);
+      await expect(page.getByText(m("records.document.notRecord"))).toBeVisible();
+      await page.getByRole("button", { name: m("records.document.declare") }).click();
+      await expect(page.getByLabel(m("records.document.reason"))).toBeVisible();
+      await expect(page.getByText(m("records.document.isRecordBody"))).toBeVisible();
+      await expectAccessible(page, testInfo, `record-document-${locale}`);
+
+      await page.goto(`${hostOrigin(tenant.key)}/records`);
+      await expect(page.getByTestId("record-item").filter({ hasText: "signed-contract.txt" })).toBeVisible();
+      await page.getByRole("button", { name: m("records.certificates.issue") }).click();
+      await expect(page.getByText(apiText(locale, "validation.records.certificate_empty")).first()).toBeVisible();
+      await page.getByLabel(m("records.certificates.code")).fill("AAAA-BBBB-CCCC");
+      await page.getByRole("button", { name: m("records.certificates.verify"), exact: true }).click();
+      await expect(page.getByText(m("records.certificates.notFound"))).toBeVisible();
+      await expectAccessible(page, testInfo, `records-certificates-${locale}`);
     });
   });
 }

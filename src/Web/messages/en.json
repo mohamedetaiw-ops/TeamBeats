@@ -16822,7 +16822,10 @@
       "save": "Save label",
       "create": "Create label",
       "cancel": "Cancel",
-      "saved": "Label saved."
+      "saved": "Label saved.",
+      "declares": "Declares records",
+      "declaresLabel": "Declare as record",
+      "declaresHint": "Documents with this label become records once published: they cannot change, and only disposition removes them. Once a label has declared records it keeps declaring."
     },
     "apply": {
       "title": "Where labels apply",
@@ -16890,6 +16893,48 @@
       "library": "Library",
       "saving": "Saving",
       "create": "Place hold"
+    },
+    "records": {
+      "title": "Records",
+      "intro": "Documents declared records. They cannot be changed or deleted until disposition. Undeclare a record from its document page.",
+      "empty": "No documents are records yet.",
+      "source": {
+        "manual": "Declared by a records manager",
+        "label": "Declared by its label"
+      },
+      "since": "Record since {date}"
+    },
+    "certificates": {
+      "title": "Disposition certificates",
+      "intro": "A certificate lists every document disposed of in a range of days, with a digest that shows the list has not changed. Later dispositions go on the next certificate.",
+      "from": "From",
+      "to": "To",
+      "issue": "Issue certificate",
+      "issuing": "Issuing",
+      "empty": "No certificates issued yet.",
+      "range": "{from} to {to}",
+      "count": "{count, plural, one {# document} other {# documents}}",
+      "issued": "Issued by {name} on {date}",
+      "download": "Download certificate {code}",
+      "verifyTitle": "Check a certificate",
+      "code": "Certificate ID",
+      "verify": "Check",
+      "notFound": "No certificate has this ID.",
+      "intact": "Certificate {code} is valid: its {count, plural, one {# disposition record matches} other {# disposition records match}} the digest.",
+      "changed": "Certificate {code} no longer matches its digest. Its disposition records have changed since it was issued."
+    },
+    "document": {
+      "title": "Record",
+      "isRecord": "Record since {date}",
+      "isRecordBody": "This document cannot be checked out, edited, restored or deleted. Only disposition under its retention label removes it.",
+      "notRecord": "This document is not a record. Declare it to keep it unchanged until disposition.",
+      "declare": "Declare as record",
+      "undeclare": "Undeclare",
+      "reason": "Reason for undeclaring",
+      "reasonHint": "Kept in the audit log.",
+      "working": "Saving",
+      "refused": "The change was not made",
+      "failed": "Something went wrong. Try again."
     }
   },
   "assets": {

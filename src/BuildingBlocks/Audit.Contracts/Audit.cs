@@ -465,6 +465,11 @@ public static class AuditActions
     public const string RecordsHoldApplied = "records.hold_applied";
     public const string RecordsHoldReleased = "records.hold_released";
     public const string RecordsDeletionBlocked = "records.deletion_blocked";
+
+    // Spec 011 R3: records declaration and disposition certificates.
+    public const string RecordsDeclared = "records.declared";
+    public const string RecordsUndeclared = "records.undeclared";
+    public const string RecordsCertificateIssued = "records.certificate_issued";
     public const string DocSharedWithGuest = "doc.shared_with_guest";
     public const string DocGuestShareRevoked = "doc.guest_share_revoked";
     public const string DocGuestViewed = "doc.guest_viewed";
@@ -731,7 +736,7 @@ public static class AuditActions
         DocRestoredFromBin, DocPurged, DocReleaseSubmitted, DocReleaseWithdrawn, DocReleaseApproved, DocReleaseReturned, DocVersionEffective, DocReviewed,
         DocReadConfirmed,
         RecordsLabelCreated, RecordsLabelChanged, RecordsLabelApplied, RecordsDispositionApproved, RecordsDispositionKept, RecordsArchived,
-        RecordsHoldApplied, RecordsHoldReleased, RecordsDeletionBlocked, DocSharedWithGuest, DocGuestShareRevoked, DocGuestViewed,
+        RecordsHoldApplied, RecordsHoldReleased, RecordsDeletionBlocked, RecordsDeclared, RecordsUndeclared, RecordsCertificateIssued, DocSharedWithGuest, DocGuestShareRevoked, DocGuestViewed,
         DocImportStarted, DocImportCompleted, DocOfficeEditStarted, DocOfficeEditEnded, DocConnectedOpened,
         DocConnectedUploaded, DocConnectedRenamed, DocConnectedSettings, DocConnectedRemoved, DocLabelMapped,
         AssetCollectionCreated, AssetCollectionChanged, AssetUploaded, AssetChanged, AssetExpired, AssetAccessRequested, AssetAccessDecided,

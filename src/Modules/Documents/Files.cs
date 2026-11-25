@@ -60,7 +60,8 @@ public sealed record DocumentView(
     DocRights Rights,
     int Version,
     ControlledView? Controlled = null,
-    bool Downloadable = true);
+    bool Downloadable = true,
+    DateTimeOffset? RecordAt = null);
 
 /// <summary>
 /// The controlled document state (spec 011 US3): its number, whether a release is in approval or approved and waiting
@@ -405,7 +406,7 @@ public sealed class DocumentFiles(
     {
         public const string Columns = "id, library_id, folder_id, type_id, name, number, metadata::text, classification, owner_user_id, checked_in, checked_out_by, " +
             "checked_out_at, pending_version_id, current_version_id, effective_version_id, inherits, securable_type, securable_id, row_version, " +
-            "release_instance_id, release_version_id, scheduled_version_id, review_due_at, review_instance_id, disposition";
+            "release_instance_id, release_version_id, scheduled_version_id, review_due_at, review_instance_id, disposition, record_at";
 
         /// <summary>The release under approval (controlled documents), if any.</summary>
         public Guid? ReleaseInstance { get; init; }
@@ -422,6 +423,9 @@ public sealed class DocumentFiles(
         /// <summary>Archived by its retention label (spec 011 US6): kept for contributors, read-only, gone for readers and search.</summary>
         public bool Archived { get; init; }
 
+        /// <summary>Declared a record (spec 011 R3): read-only, deleted only by disposition.</summary>
+        public DateTimeOffset? RecordAt { get; init; }
+
         public static DocRow Read(Npgsql.NpgsqlDataReader r) => new(r.GetGuid(0), r.GetGuid(1), r.Get<Guid?>("folder_id"), r.Get<Guid?>("type_id"), r.GetString(4),
             r.Get<string>("number"), r.GetString(6), r.GetString(7), r.GetGuid(8), r.GetBoolean(9), r.Get<Guid?>("checked_out_by"), r.Get<DateTimeOffset?>("checked_out_at"),
             r.Get<Guid?>("pending_version_id"), r.Get<Guid?>("current_version_id"), r.Get<Guid?>("effective_version_id"), r.GetBoolean(15), r.GetString(16), r.GetGuid(17), r.GetInt32(18))
@@ -432,6 +436,7 @@ public sealed class DocumentFiles(
             ReviewDueAt = r.Get<DateTimeOffset?>("review_due_at"),
             ReviewInstance = r.Get<Guid?>("review_instance_id"),
             Archived = r.Get<string>("disposition") == "archived",
+            RecordAt = r.Get<DateTimeOffset?>("record_at"),
         };
     }
 
@@ -505,7 +510,7 @@ public sealed class DocumentFiles(
         return new DocumentView(doc.Id, doc.LibraryId, doc.FolderId, doc.TypeId, doc.Name, doc.Number, metadata, doc.Classification, doc.Owner, doc.CheckedIn,
             doc.CheckedOutBy, doc.CheckedOutAt, MetadataRules.Complete(fields, metadata), current, await VersionAsync(doc.Effective, ct),
             holder ? await VersionAsync(doc.Pending, ct) : null, doc.Inherits, rights, doc.Version, await ControlledViewAsync(doc, ct),
-            !ReaderOfViewOnly(library, rights));
+            !ReaderOfViewOnly(library, rights), doc.RecordAt);
     }
 
     private async Task<ControlledView?> ControlledViewAsync(DocRow doc, CancellationToken ct)
@@ -542,6 +547,10 @@ public sealed class DocumentFiles(
         {
             throw new AppException(ProblemCodes.Conflict, 409, "conflict.documents.checked_out", null,
                 new Dictionary<string, object?> { ["checkedOutBy"] = holder, ["since"] = doc.CheckedOutAt });
+        }
+        if (doc.RecordAt is not null)
+        {
+            throw AppException.Conflict("conflict.documents.record");
         }
         if (request.Version != doc.Version)
         {

@@ -20,3 +20,10 @@ The spec stays Approved, not Implemented, until its R2 parts are built: Office e
 | Pages: library browser, document page, upload, knowledge base, documents component (T013) | Met | `documents.spec.ts`, `knowledge.spec.ts` (en and ar, axe), `ExperienceValidationTests.The_documents_component_needs_the_document_capability_and_a_library` |
 | Tenant and org boundaries | Met | `DocumentLibraryTests.A_unit_library_is_read_by_its_members_and_hidden_from_siblings_other_tenants_...`, `DocumentControlledTests.Controlled_types_need_the_capability_and_other_tenants_reach_nothing`, `KnowledgeBaseTests.Writing_needs_kb_edit_restricted_articles_and_other_tenants_get_not_found`, `CrossTenantSuite` |
 | Entitlements | Met | `DocumentLibraryTests.Without_the_document_capability_everything_is_refused_...`, `DocumentControlledTests.Controlled_types_need_the_capability_...`, `KnowledgeBaseTests.Without_the_document_capability_the_knowledge_base_is_refused` |
+
+## R3
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| Records declaration: by records managers and by labels that declare records; records refuse check-out, edits, restore, browser editing and deletion; undeclare with a reason | Met | `RecordsDeclarationTests.Records_declared_by_hand_or_by_label_refuse_every_change_and_undeclaring_needs_a_reason`, `A_record_is_disposed_of_only_through_disposition_and_a_held_record_is_kept`, `records.spec.ts` (en and ar, axe) |
+| Disposition certificates with a fixed list, digest, verify by ID and PDF | Met | `RecordsDeclarationTests.A_disposition_certificate_lists_a_fixed_set_with_a_digest_that_verify_checks_and_prints_as_pdf`, `records.spec.ts` (en and ar, axe) |

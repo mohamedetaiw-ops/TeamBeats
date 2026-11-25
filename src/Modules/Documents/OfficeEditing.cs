@@ -63,7 +63,7 @@ public sealed class OfficeEditing(
     }
 
     private static bool Editable(DocumentFiles.DocRow doc) =>
-        doc.CheckedIn && !doc.Archived && doc.ReleaseInstance is null && doc.Classification != "restricted";
+        doc.CheckedIn && !doc.Archived && doc.RecordAt is null && doc.ReleaseInstance is null && doc.Classification != "restricted";
 
     public async Task<OfficeEditView> GetAsync(Guid id, CancellationToken ct)
     {

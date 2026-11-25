@@ -71,6 +71,10 @@ public sealed class DocumentVersions(
         {
             throw AppException.Conflict("conflict.documents.archived");
         }
+        if (doc.RecordAt is not null)
+        {
+            throw AppException.Conflict("conflict.documents.record");
+        }
         if (doc.ReleaseInstance is not null)
         {
             // The version under approval is the one approvers see; it may not change under them.
@@ -439,6 +443,10 @@ public sealed class DocumentVersions(
         if (doc.ReleaseInstance is not null)
         {
             throw AppException.Conflict("conflict.documents.in_release");
+        }
+        if (doc.RecordAt is not null)
+        {
+            throw AppException.Conflict("conflict.documents.record");
         }
         // Spec 011 US6 scenario 4 and US7 scenario 2: a label still in its period or a legal hold refuses the deletion.
         // Everyone but records managers sees the same retention message, so a hold does not show.

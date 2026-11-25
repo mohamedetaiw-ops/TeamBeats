@@ -160,6 +160,8 @@ export type DocumentView = {
   version: number;
   controlled?: ControlledView | null;
   downloadable?: boolean;
+  /** Declared a record (spec 011 R3): read-only until disposition. */
+  recordAt?: string | null;
 };
 
 /** Whether "Edit in browser" is offered (spec 011 FR-010): the API decides; a Microsoft 365 state means the person must connect first. */

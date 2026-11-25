@@ -53,3 +53,10 @@ Depends on 004 (resource grants), 005, 006, 007, 009 (acknowledgement, body docu
 ## R2 Phase 12: User Stories 9 and 10, SharePoint Online
 - [x] T024 Connected libraries through the Microsoft 365 connection with live permission checks, sync, degraded mode and label mapping
 - [x] T025 Import from SharePoint into TeamBeats libraries through bulk import
+
+## R3 Phase 13: records and disposition certificates
+- [x] T027 Records declaration by records managers and by declaring labels; records refuse every write path except disposition; undeclare with a reason; document and records pages
+- [x] T028 Disposition certificates for a date range with a fixed list, digest, verify by ID and PDF; records page section; integration and e2e tests
+
+## R3 Phase 14: customer-managed keys per library
+- [ ] T029 Libraries encrypted with the tenant data key (spec 026 FR-007): files, previews and working copies encrypted at rest, existing files moved by a background pass, refused without a connected key; tests for revocation and cross-tenant

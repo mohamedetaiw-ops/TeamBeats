@@ -12,9 +12,11 @@ import {
 } from "@/lib/documents/types";
 import { Header } from "@/components/shell/Header";
 import { DocumentPanel } from "@/features/documents/DocumentPanel";
+import { RecordStatus } from "@/features/records/RecordStatus";
+import type { DocumentRetentionView } from "@/lib/records/types";
 
 /**
- * A document (spec 011 US1 to US3): its metadata, preview, versions and the actions the API allows this person. Readers
+ * A document (spec 011 US1 to US3, R3 records): its metadata, preview, versions and the actions the API allows this person. Readers
  * who may not see it, and other tenants, get not found.
  */
 export default async function DocumentPage({
@@ -33,12 +35,16 @@ export default async function DocumentPage({
   if (!doc.ok) {
     notFound();
   }
-  const [library, versions] = await Promise.all([
+  // The retention view answers only for records managers; for anyone else the record notice alone shows.
+  const [library, versions, retention] = await Promise.all([
     apiGet<LibraryView>(
       `/api/v1/documents/libraries/${encodeURIComponent(doc.data.libraryId)}`,
     ),
     apiGet<VersionView[]>(
       `/api/v1/documents/${encodeURIComponent(id)}/versions`,
+    ),
+    apiGet<DocumentRetentionView>(
+      `/api/v1/records/documents/${encodeURIComponent(id)}`,
     ),
   ]);
   const t = await getTranslations("documents.libraries");
@@ -63,6 +69,11 @@ export default async function DocumentPage({
           versions={versions.ok ? versions.data : []}
           types={library.ok ? library.data.types : []}
           me={me.data.id}
+        />
+        <RecordStatus
+          documentId={id}
+          recordAt={doc.data.recordAt ?? null}
+          retention={retention.ok ? retention.data : null}
         />
       </main>
     </>
