@@ -7,6 +7,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { FormField, SelectField } from "@/components/ui/FormField";
 import { Icon } from "@/components/ui/Icon";
+import { Widget } from "@/components/ui/Widget";
 import { dateLong, joinMeta, languageName, timeZoneLabel, timeZones } from "@/lib/format";
 import { problemMessages } from "@/lib/notifications/types";
 import { isPhoneField, localName, locationName, personName, photoAt, type OwnField, type OwnProfile } from "@/lib/people/types";
@@ -214,18 +215,21 @@ export function OwnProfileForm({ initial }: { initial: OwnProfile }) {
         const oneSource = sources.size === 1 ? [...sources][0]! : null;
         const editable = fields.filter((f) => f.editable);
         return (
-          <section key={g.key} className="people-section people-group" aria-labelledby={`profile-${g.key}`}>
-            <div className="people-group-head">
-              <h3 id={`profile-${g.key}`}>{t(`me.groups.${g.key}`)}</h3>
-              {oneSource && oneSource !== "person" ? (
+          <Widget
+            key={g.key}
+            title={t(`me.groups.${g.key}`)}
+            headingLevel={3}
+            count={
+              oneSource && oneSource !== "person" ? (
                 <span className="people-managed">
                   <Icon name="lock" size={14} />
                   {t(`me.managed.${oneSource}` as "me.managed.directory")}
                 </span>
-              ) : null}
-            </div>
+              ) : undefined
+            }
+          >
             {fixed.length > 0 ? (
-              <dl className="people-details">
+              <dl className="people-details people-details-group">
                 {fixed.map((f) => (
                   <div key={f.key} className="people-pair">
                     <dt>{label(f)}</dt>
@@ -253,7 +257,7 @@ export function OwnProfileForm({ initial }: { initial: OwnProfile }) {
                 ))}
               </div>
             ) : null}
-          </section>
+          </Widget>
         );
       })}
 

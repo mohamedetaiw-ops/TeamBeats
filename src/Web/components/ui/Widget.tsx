@@ -57,6 +57,7 @@ export function Widget({
   more,
   busy = false,
   as: Tag = "section",
+  headingLevel = 2,
   lang,
   testId,
   children,
@@ -74,11 +75,14 @@ export function Widget({
   more?: { href: string; total: number; shown?: number } | null;
   busy?: boolean;
   as?: "section" | "nav" | "article";
+  /** 3 for a frame nested under a section heading of its own, such as a profile group. */
+  headingLevel?: 2 | 3;
   lang?: string;
   testId?: string;
   children?: ReactNode;
 }) {
   const id = useId();
+  const Heading = `h${headingLevel}` as const;
   const t = useTranslations("ui.widget");
   const budget = useContext(BudgetContext)?.size ?? null;
   const custom = head !== undefined && head !== null;
@@ -88,9 +92,9 @@ export function Widget({
     <Tag className="ui-widget" {...named} aria-busy={busy || undefined} lang={lang} data-testid={testId} data-budget={budget ?? undefined}>
       {custom ? head : (
         <div className="ui-widget-head">
-          <h2 id={id} className="ui-widget-title">
+          <Heading id={id} className="ui-widget-title">
             <bdi>{title}</bdi>
-          </h2>
+          </Heading>
           {count ? <span className="ui-widget-count">{count}</span> : null}
           {action ? <span className="ui-widget-action">{action}</span> : null}
         </div>

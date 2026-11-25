@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import type { TeamPage } from "@/lib/people/types";
+import { Widget } from "@/components/ui/Widget";
 import { PersonItem } from "./PersonItem";
 import "./people.css";
 
@@ -35,11 +36,9 @@ export function MyTeam({ initial }: { initial: TeamPage }) {
   }
 
   return (
-    <section aria-labelledby="people-team-list" className="people-section">
-      <div className="people-head">
-        <h2 id="people-team-list" aria-live="polite">
-          {t("team.total", { count: page.total })}
-        </h2>
+    <Widget
+      title={t("team.total", { count: page.total })}
+      action={
         <label className="people-check">
           <input type="checkbox" checked={indirect} onChange={(e) => {
               setIndirect(e.target.checked);
@@ -47,7 +46,11 @@ export function MyTeam({ initial }: { initial: TeamPage }) {
             }} />
           {t("team.indirect")}
         </label>
-      </div>
+      }
+    >
+      <p className="visually-hidden" role="status">
+        {t("team.total", { count: page.total })}
+      </p>
       {error ? <p className="notice notice-error">{t("failed")}</p> : null}
       <ul className="people-list people-cards" data-testid="team-list">
         {page.items.map((p) => (
@@ -61,6 +64,6 @@ export function MyTeam({ initial }: { initial: TeamPage }) {
           {t("team.more")}
         </Button>
       ) : null}
-    </section>
+    </Widget>
   );
 }

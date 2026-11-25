@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { personName, type OrgChart, type PersonCard } from "@/lib/people/types";
+import { Widget } from "@/components/ui/Widget";
 import { PersonItem } from "./PersonItem";
 import "./people.css";
 
@@ -34,9 +35,9 @@ export function OrgChartView({ chart, reportsHref }: { chart: OrgChart; reportsH
   );
 
   return (
-    <section aria-labelledby="people-org-title" className="people-section">
-      <div className="people-head">
-        <h2 id="people-org-title">{t("title")}</h2>
+    <Widget
+      title={t("title")}
+      action={
         <fieldset className="people-toggle">
           <legend className="visually-hidden">{t("view")}</legend>
           {(["chart", "list"] as const).map((v) => (
@@ -45,7 +46,8 @@ export function OrgChartView({ chart, reportsHref }: { chart: OrgChart; reportsH
             </button>
           ))}
         </fieldset>
-      </div>
+      }
+    >
 
       {view === "chart" ? (
         <div className="people-chart" data-testid="org-chart">
@@ -85,7 +87,7 @@ export function OrgChartView({ chart, reportsHref }: { chart: OrgChart; reportsH
           {moreReports > 0 && reportsHref ? <Link href={reportsHref}>{t("seeAll")}</Link> : null}
         </div>
       )}
-    </section>
+    </Widget>
   );
 }
 

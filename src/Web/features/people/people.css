@@ -13,21 +13,6 @@
   list-style: none;
 }
 
-.people-section {
-  display: grid;
-  gap: var(--tb-space-sm);
-  padding: var(--tb-space-lg);
-  border-radius: var(--tb-radius-lg);
-  box-shadow: var(--tb-shadow-sm);
-  background: var(--tb-color-surface-raised);
-  color: var(--tb-color-text-primary);
-}
-
-.people-section h2,
-.people-section h3 {
-  margin: 0;
-}
-
 .people-search {
   display: flex;
   flex-wrap: wrap;
@@ -332,24 +317,6 @@ ol.people-chart {
   color: var(--tb-color-text-primary);
 }
 
-.people-group {
-  gap: var(--tb-space-md);
-  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
-}
-
-.people-group-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--tb-space-sm);
-}
-
-.people-group-head h3 {
-  font-size: var(--tb-font-size-md);
-  font-weight: var(--tb-font-weight-semibold);
-}
-
 .people-managed,
 .people-source,
 .people-visibility {
@@ -360,12 +327,12 @@ ol.people-chart {
   font-size: var(--tb-font-size-xs);
 }
 
-.people-group .people-details {
+.people-details-group {
   grid-template-columns: minmax(9rem, 14rem) 1fr;
   row-gap: var(--tb-space-sm);
 }
 
-.people-group .people-details dd {
+.people-details-group dd {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -389,7 +356,7 @@ ol.people-chart {
 }
 
 @media (width <= 40rem) {
-  .people-group .people-details {
+  .people-details-group {
     grid-template-columns: minmax(0, 1fr);
   }
 }
