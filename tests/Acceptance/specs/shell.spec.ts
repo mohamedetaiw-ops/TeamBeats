@@ -272,7 +272,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
 
     test("only one shell panel is open at a time, and a press outside closes it (spec 008 FR-060)", async ({ page }) => {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
-      const settings = page.locator(".shell-settings-panel");
+      const settings = page.getByTestId("shell-settings-panel");
       const account = page.locator(".shell-account-panel");
       await page.getByRole("button", { name: msg(locale, "shell.settings.open") }).click();
       await expect(settings).toBeVisible();

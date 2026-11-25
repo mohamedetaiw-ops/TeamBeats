@@ -49,12 +49,27 @@ export function place(panel: HTMLElement, anchor: Box, placement: Placement) {
   panel.dataset.placed = "true";
 }
 
+/** Phones show a panel frame popover as a bottom sheet (DLS-045), so it is not placed beside its button there. */
+const sheetQuery = "(width <= 40rem)";
+
+function placeOrSheet(el: HTMLElement, anchor: HTMLElement, placement: Placement, sheet: boolean) {
+  if (sheet && window.matchMedia(sheetQuery).matches) {
+    el.style.insetInlineStart = "";
+    el.style.insetBlockStart = "";
+    el.dataset.sheet = "true";
+    el.dataset.placed = "true";
+    return;
+  }
+  delete el.dataset.sheet;
+  place(el, anchor.getBoundingClientRect(), placement);
+}
+
 /**
  * A button that opens a popover beside itself (Popover API). Opening places the panel and runs `onOpen` in the same
  * task as the click, so focus can move into the panel at once. The browser gives the top layer, Escape, a click
  * outside and focus return; this hook adds the place, the expanded state and closing by a second press of the button.
  */
-export function usePopover(placement: Placement, onOpen?: (panel: HTMLElement) => void) {
+export function usePopover(placement: Placement, onOpen?: (panel: HTMLElement) => void, sheet = false) {
   const trigger = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -65,9 +80,9 @@ export function usePopover(placement: Placement, onOpen?: (panel: HTMLElement) =
     const el = panel.current;
     if (!el || !trigger.current) return;
     if (!el.matches(":popover-open")) el.showPopover();
-    place(el, trigger.current.getBoundingClientRect(), placement);
+    placeOrSheet(el, trigger.current, placement, sheet);
     onOpen?.(el);
-  }, [placement, onOpen]);
+  }, [placement, onOpen, sheet]);
 
   const hide = useCallback(() => {
     if (panel.current?.matches(":popover-open")) panel.current.hidePopover();
@@ -78,7 +93,7 @@ export function usePopover(placement: Placement, onOpen?: (panel: HTMLElement) =
     const el = panel.current;
     if (!el) return;
     const update = () => {
-      if (trigger.current && el.matches(":popover-open")) place(el, trigger.current.getBoundingClientRect(), placement);
+      if (trigger.current && el.matches(":popover-open")) placeOrSheet(el, trigger.current, placement, sheet);
     };
     const onToggle = (event: Event) => {
       const opened = (event as ToggleEvent).newState === "open";
@@ -93,7 +108,7 @@ export function usePopover(placement: Placement, onOpen?: (panel: HTMLElement) =
       window.removeEventListener("resize", update);
       window.removeEventListener("scroll", update, true);
     };
-  }, [placement]);
+  }, [placement, sheet]);
 
   const onPointerDown = useCallback(() => {
     pressedWhileOpen.current = panel.current?.matches(":popover-open") ?? false;

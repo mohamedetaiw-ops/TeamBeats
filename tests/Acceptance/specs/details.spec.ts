@@ -50,7 +50,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
     test("shell popovers share one frame, stay inside the window and keep the launcher in the bar", async ({ page }) => {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.getByRole("button", { name: msg(locale, "shell.settings.open") }).click();
-      const settings = page.locator(".shell-settings-panel");
+      const settings = page.getByTestId("shell-settings-panel");
       await expect(settings.getByRole("heading", { name: msg(locale, "shell.settings.title") })).toBeVisible();
       await expect(settings.getByRole("link", { name: msg(locale, "shell.settings.allPreferences") })).toHaveAttribute("href", "/settings");
       // The launcher lives in the shell bar, so an open panel never sits under it (spec 008 FR-066).
