@@ -58,3 +58,6 @@ The spec stays Approved, not Implemented. Everything in its R2 scope is built: t
 | MCP prompts, localized, filtered like tools | Met | `PublicMcpPromptTests` (both) |
 | Admin APIs beside SCIM, read only within FR-012 | Met | `PublicAdminApiTests` (both), `PublicApiDeveloperTests.Only_api_viewers_open_the_developer_page_and_the_public_document_is_on_the_tenant_host` |
 | Role changes through the API | Open decision | FR-012 forbids it; needs the spec amended first |
+| Developer sandbox tenant: lower API limits, end date shown, suspended then closed on its own | Met | `SandboxTenantTests.A_sandbox_has_lower_limits_says_when_it_ends_and_ends_on_its_own` |
+| Sandbox length 1 to 30 days, platform operators only | Met | `SandboxTenantTests.A_sandbox_lasts_1_to_30_days_and_only_platform_operators_make_one` |
+| Demo data in a production sandbox | Gap | Demo data action on staging and the development host only |

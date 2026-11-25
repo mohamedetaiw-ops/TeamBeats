@@ -16050,6 +16050,8 @@
       "mcpUrl": "MCP server",
       "resourceMetadataUrl": "MCP protected resource metadata",
       "deprecationsTitle": "Deprecated operations",
+      "sandboxNotice": "This is a developer sandbox. It is suspended on {date} and closed 14 days later, with everything in it. Its API limits are lower than a live organization's.",
+      "sandboxTitle": "Developer sandbox",
       "noDeprecations": "No deprecated operations",
       "noDeprecationsHint": "Operations are announced here at least 12 months before they stop working.",
       "operation": "Operation",

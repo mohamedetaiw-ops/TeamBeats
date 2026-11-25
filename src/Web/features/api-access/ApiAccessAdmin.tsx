@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
+import { Alert } from "@/components/ui/Alert";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Checkbox } from "@/components/ui/Checkbox";
@@ -456,6 +457,11 @@ function DeveloperPanel({ page }: { page: DeveloperPage | null }) {
       <section className="admin-panel" aria-labelledby="api-developer-title">
         <h2 id="api-developer-title">{t("developerTitle")}</h2>
         <p className="admin-meta">{t("developerIntro")}</p>
+        {page.sandboxUntil ? (
+          <Alert tone="info" title={t("sandboxTitle")}>
+            <span data-testid="sandbox-notice">{t("sandboxNotice", { date: format.dateTime(new Date(page.sandboxUntil), { dateStyle: "long" }) })}</span>
+          </Alert>
+        ) : null}
         <dl className="api-access-addresses">
           {(
             [

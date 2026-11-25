@@ -18,7 +18,8 @@ public sealed record DeveloperMcpItem(string Name, string Scope, string Kind, st
 /// <summary>
 /// The tenant's developer page (spec 035 US7, FR-014): where the public OpenAPI document, the authorization server
 /// metadata and the MCP server are, and the operations, scopes, events, MCP tools and resources, with deprecations, as
-/// far as the tenant's package includes them. Addresses are on the tenant's own host.
+/// far as the tenant's package includes them. Addresses are on the tenant's own host. A developer sandbox shows when it
+/// ends (spec 035 R3).
 /// </summary>
 public sealed record DeveloperPageView(
     string OpenApiUrl,
@@ -29,14 +30,16 @@ public sealed record DeveloperPageView(
     IReadOnlyList<DeveloperScope> Scopes,
     IReadOnlyList<EventCatalogueEntry> Events,
     IReadOnlyList<DeveloperMcpItem> Mcp,
-    IReadOnlyList<DeveloperOperation> Deprecations);
+    IReadOnlyList<DeveloperOperation> Deprecations,
+    DateTimeOffset? SandboxUntil = null);
 
 public sealed class DeveloperPage(
     IAuthorizationService authz,
     IEntitlementService entitlements,
     EndpointDataSource endpoints,
     EventSubscriptions events,
-    IEnumerable<Agents.Contracts.IAgentTool> tools)
+    IEnumerable<Agents.Contracts.IAgentTool> tools,
+    Tenancy.Contracts.ITenantSettingsReader settings)
 {
     public async Task<DeveloperPageView> GetAsync(string origin, CancellationToken ct)
     {
@@ -101,6 +104,7 @@ public sealed class DeveloperPage(
             scopes,
             catalogue,
             mcp,
-            operations.Where(o => o.Deprecation is not null).ToList());
+            operations.Where(o => o.Deprecation is not null).ToList(),
+            await settings.GetSandboxUntilAsync(ct));
     }
 }

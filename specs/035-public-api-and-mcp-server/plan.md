@@ -117,6 +117,16 @@ R3 slices, in order:
 - **Same use cases as the admin area** with the person's own rights: `authz.roles_view` coverage decides what comes back, so a unit administrator sees their units only. Apps' own role assignments and attribute conditions are left out of the answer.
 - SCIM (spec 003 FR-008) stays the way to provision people; directory, security, identity provider, entitlement and app administration stay in the admin area.
 
+### Developer sandbox
+- **Made by platform operators only**, as a tenant with an end date: the create tenant request takes `sandboxDays` (1 to 30). There is no self-service sign-up in R3.
+- **Lower API limits until the end date:** entitlement overrides that end on that date set `api.monthly_calls` to 10,000 and `api.max_apps` to 5, whatever the package gives. Other capabilities follow the package.
+- **The developer page says when it ends**, and the platform tenant list shows the date.
+- **Expiry:** an hourly worker suspends a sandbox when its date passes (audited as `tenant.status_changed` with reason `sandbox_expired`) and closes it 14 days later, which starts the usual retention and deletion. Tenants without a date are never touched.
+- **Demo data:** a sandbox starts empty in production. On staging and the development host the existing demo data action fills it; a production demo pack is a gap.
+
+### Tests (R3 slice 4)
+- A sandbox gets the lower limits, shows its end date on the developer page and in the platform list, is suspended after the date and closed 14 days later; a live tenant is left alone; 0 or 31 days are refused; a tenant administrator cannot create one.
+
 ### Tests (R3 slice 1)
 - A client credentials token with a proof is bound; calls succeed with matching proofs and fail without one, with another key, a reused `jti`, a wrong `htm` or `htu`, an old `iat` or a wrong `ath`; a bound token sent as `Bearer` is refused.
 - An app that requires DPoP gets no token without a proof; an app that does not still gets bearer tokens.

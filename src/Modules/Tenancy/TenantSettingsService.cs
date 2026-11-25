@@ -62,6 +62,11 @@ public sealed class TenantSettingsService(
     public async Task<string> GetRegionAsync(CancellationToken ct = default) =>
         await session.ScalarAsync<string?>("select region from tenancy.tenant_settings", null, ct) ?? regions.Default;
 
+    public async Task<DateTimeOffset?> GetSandboxUntilAsync(CancellationToken ct = default) =>
+        await session.ScalarAsync<DateTime?>("select sandbox_until from tenancy.tenant where id = platform.current_tenant_id()", null, ct) is { } until
+            ? new DateTimeOffset(DateTime.SpecifyKind(until, DateTimeKind.Utc))
+            : null;
+
     public async Task<TenantBranding> GetBrandingAsync(CancellationToken ct = default)
     {
         var s = await GetAsync(ct);

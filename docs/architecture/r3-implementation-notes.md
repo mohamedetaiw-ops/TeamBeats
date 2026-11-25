@@ -66,3 +66,10 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - The operations live in the Authorization module (`AuthorizationPublicEndpoints`) and call `AuthorizationAdmin`, so the person's `authz.roles_view` coverage decides the answer, as in the admin area.
 - `PublicApiDeveloperTests` keeps guarding FR-012; it now allows administration paths that only read.
 - Gap: no public reads yet for security policy, identity providers, entitlements or apps; they stay in the admin area.
+
+## Spec 035 R3 slice 4: developer sandbox tenants (T024)
+
+- Defaults are in the spec 035 R3 plan. Migration 0005 of Tenancy adds `tenancy.tenant.sandbox_until`. The lower limits are entitlement overrides that end on that date, written through `ISubscriptionProvisioning.ApplySandboxLimitsAsync`, so Tenancy never touches Entitlements tables.
+- `SandboxWorker` runs hourly in Workers (and in the development host when `Tenancy:Sandboxes:InProcess` is set), suspends due sandboxes and closes them after 14 days through the same status change the platform page uses.
+- The developer page reads the end date through `ITenantSettingsReader.GetSandboxUntilAsync`.
+- Gaps: no self-service sandbox sign-up; production sandboxes start without demo data.

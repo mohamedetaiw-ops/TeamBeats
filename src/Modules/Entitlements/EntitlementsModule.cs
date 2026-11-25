@@ -235,6 +235,21 @@ public sealed class EntitlementService(IDbSession session, ITenantContext contex
             new { t = context.RequireTenant(), id = Ids.New(), v = versionId }, ct);
         _resolved = null;
     }
+
+    public async Task ApplySandboxLimitsAsync(DateTimeOffset until, CancellationToken ct = default)
+    {
+        foreach (var (key, limit) in new[] { (Capabilities.ApiMonthlyCalls, SandboxLimits.MonthlyCalls), (Capabilities.ApiMaxApps, SandboxLimits.MaxApps) })
+        {
+            await session.ExecAsync(
+                """
+                insert into entitlements.override (tenant_id, capability_key, enabled, limit_value, valid_from, valid_to, reason)
+                values (@t, @k, true, @limit, now(), @until, 'developer sandbox')
+                on conflict (tenant_id, capability_key) do update set enabled = true, limit_value = excluded.limit_value, valid_to = excluded.valid_to,
+                  reason = excluded.reason, updated_at = now()
+                """, new { t = context.RequireTenant(), k = key, limit, until }, ct);
+        }
+        _resolved = null;
+    }
 }
 
 /// <summary>Platform-side package definitions and subscription changes. Every change is audited (ENT-008).</summary>

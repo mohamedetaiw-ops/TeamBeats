@@ -155,4 +155,6 @@ export type DeveloperPage = {
   events: { type: string; version: number; resourceType: string; readScope: string }[];
   mcp: { name: string; scope: string; kind: "tool" | "write_tool" | "resource"; description: string | null }[];
   deprecations: DeveloperOperation[];
+  /** For a developer sandbox tenant (spec 035 R3), when it is suspended; it is closed 14 days later. */
+  sandboxUntil?: string | null;
 };

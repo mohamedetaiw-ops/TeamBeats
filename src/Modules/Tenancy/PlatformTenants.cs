@@ -19,9 +19,12 @@ public sealed record CreateTenantRequest(
     IReadOnlyList<string>? EnabledLocales,
     string? TimeZone,
     IReadOnlyList<string> Admins,
-    string? Region = null);
+    string? Region = null,
+    int? SandboxDays = null);
 
-public sealed record TenantView(Guid Id, string Key, string DisplayName, string Status, DateTimeOffset CreatedAt, DateTimeOffset? DeletionDueAt);
+/// <param name="SandboxUntil">For a developer sandbox (spec 035 R3), when it is suspended; it is closed 14 days later.</param>
+public sealed record TenantView(Guid Id, string Key, string DisplayName, string Status, DateTimeOffset CreatedAt, DateTimeOffset? DeletionDueAt,
+    DateTimeOffset? SandboxUntil = null);
 
 public sealed record StatusChangeRequest(string? Reason);
 
@@ -68,14 +71,19 @@ public sealed class PlatformTenants(
         {
             errors.Add("region", "validation.tenant.region_unknown");
         }
+        if (request.SandboxDays is < 1 or > TenantRules.MaxSandboxDays)
+        {
+            errors.Add("sandboxDays", "validation.tenant.sandbox_days");
+        }
         errors.ThrowIfAny();
+        DateTimeOffset? sandboxUntil = request.SandboxDays is { } days ? TruncateToMicroseconds(clock.UtcNow.AddDays(days)) : null;
 
         var id = Ids.New();
         try
         {
             await session.ExecAsync(
-                "insert into tenancy.tenant (id, key, display_name, status) values (@id, @key, @name, 'active')",
-                new { id, key, name = request.DisplayName.Trim() }, ct);
+                "insert into tenancy.tenant (id, key, display_name, status, sandbox_until) values (@id, @key, @name, 'active', @sandboxUntil)",
+                new { id, key, name = request.DisplayName.Trim(), sandboxUntil }, ct);
         }
         catch (PostgresException ex) when (ex.IsUniqueViolation())
         {
@@ -99,6 +107,11 @@ public sealed class PlatformTenants(
 
         await authz.SeedTenantRolesAsync(ct);
         await subscriptions.AssignInitialPackageAsync(request.PackageKey, ct);
+        if (sandboxUntil is { } until)
+        {
+            // A developer sandbox has lower API limits until it ends (spec 035 R3).
+            await subscriptions.ApplySandboxLimitsAsync(until, ct);
+        }
 
         // Spec 026 section 9: a region other than the platform default needs the package capability. Throwing here rolls
         // the whole creation back, since nothing is committed yet.
@@ -119,18 +132,18 @@ public sealed class PlatformTenants(
                 Changes: new { status = "pending" }), ct);
         }
 
-        var created = new { key, package = request.PackageKey, defaultLocale = request.DefaultLocale, admins = admins.Count, region };
+        var created = new { key, package = request.PackageKey, defaultLocale = request.DefaultLocale, admins = admins.Count, region, sandboxUntil };
         await audit.WriteAsync(new AuditEntry(AuditActions.TenantCreated, "tenant", id.ToString(), Changes: created), ct);
         await audit.WritePlatformAsync(new AuditEntry(AuditActions.TenantCreated, "tenant", id.ToString(), Changes: created), id, ct);
         await outbox.EnqueueAsync(new TenantCreated(id, key, request.PackageKey), ct);
 
-        return new TenantView(id, key, request.DisplayName.Trim(), "active", clock.UtcNow, null);
+        return new TenantView(id, key, request.DisplayName.Trim(), "active", clock.UtcNow, null, sandboxUntil);
     }
 
     public async Task<IReadOnlyList<TenantView>> ListAsync(string? status, string? q, CancellationToken ct) =>
         await session.QueryAsync(
             """
-            select id, key, display_name, status, created_at, deletion_due_at from tenancy.tenant
+            select id, key, display_name, status, created_at, deletion_due_at, sandbox_until from tenancy.tenant
             where (@status::text is null or status = @status)
               and (@q::text is null or key ilike '%' || @q || '%' or display_name ilike '%' || @q || '%')
             order by key
@@ -142,8 +155,8 @@ public sealed class PlatformTenants(
     public async Task<TenantView> ChangeStatusAsync(Guid tenantId, TenantLifecycleStatus to, string? reason, CancellationToken ct)
     {
         var current = await session.QuerySingleOrDefaultAsync(
-            "select id, key, display_name, status, created_at, deletion_due_at, closed_retention_days from tenancy.tenant where id = @id for update",
-            new { id = tenantId }, r => (View: MapView(r), Retention: r.GetInt32(6)), ct);
+            "select id, key, display_name, status, created_at, deletion_due_at, sandbox_until, closed_retention_days from tenancy.tenant where id = @id for update",
+            new { id = tenantId }, r => (View: MapView(r), Retention: r.GetInt32(7)), ct);
         if (current == default)
         {
             throw AppException.NotFound();
@@ -190,6 +203,37 @@ public sealed class PlatformTenants(
         return current.View with { Status = Sql.ToSnake(to.ToString()), DeletionDueAt = deletionDue ?? current.View.DeletionDueAt };
     }
 
+    /// <summary>The time as Postgres keeps it (whole microseconds), so the created view matches later reads.</summary>
+    private static DateTimeOffset TruncateToMicroseconds(DateTimeOffset value) => new(value.Ticks - value.Ticks % 10, value.Offset);
+
     private static TenantView MapView(NpgsqlDataReader r) =>
-        new(r.GetGuid(0), r.GetString(1), r.GetString(2), r.GetString(3), r.GetFieldValue<DateTimeOffset>(4), r.Get<DateTimeOffset?>("deletion_due_at"));
+        new(r.GetGuid(0), r.GetString(1), r.GetString(2), r.GetString(3), r.GetFieldValue<DateTimeOffset>(4), r.Get<DateTimeOffset?>("deletion_due_at"),
+            r.Get<DateTimeOffset?>("sandbox_until"));
+
+    /// <summary>The developer sandboxes due to end (spec 035 R3, T024): active ones past their date, suspended ones 14 days past it.</summary>
+    public async Task<IReadOnlyList<Guid>> DueSandboxesAsync(CancellationToken ct)
+    {
+        var now = clock.UtcNow;
+        return await session.QueryAsync(
+            """
+            select id from tenancy.tenant
+            where sandbox_until is not null and ((status = 'active' and sandbox_until <= @now) or (status = 'suspended' and sandbox_until <= @closeBefore))
+            order by sandbox_until limit 100
+            """, new { now, closeBefore = now.AddDays(-TenantRules.SandboxGraceDays) }, r => r.GetGuid(0), ct);
+    }
+
+    /// <summary>Suspends an active sandbox past its date, or closes a suspended one 14 days past it, with the reason <c>sandbox_expired</c>.</summary>
+    public async Task EndSandboxAsync(Guid tenantId, CancellationToken ct)
+    {
+        var now = clock.UtcNow;
+        var status = await session.ScalarAsync<string?>(
+            """
+            select status from tenancy.tenant where id = @tenantId and sandbox_until is not null
+              and ((status = 'active' and sandbox_until <= @now) or (status = 'suspended' and sandbox_until <= @closeBefore))
+            """, new { tenantId, now, closeBefore = now.AddDays(-TenantRules.SandboxGraceDays) }, ct);
+        if (status is not null)
+        {
+            await ChangeStatusAsync(tenantId, status == "active" ? TenantLifecycleStatus.Suspended : TenantLifecycleStatus.Closed, "sandbox_expired", ct);
+        }
+    }
 }
