@@ -1104,10 +1104,6 @@
   position: relative;
 }
 
-.shell-help-panel {
-  --xp-popover-width: 20rem;
-}
-
 .shell-help-none {
   margin: 0;
   padding: var(--tb-space-sm);

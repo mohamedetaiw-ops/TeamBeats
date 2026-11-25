@@ -1,14 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore, type MouseEvent } from "react";
 import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
+import { Popover } from "@/components/ui/Popover";
 import type { HelpItem } from "@/lib/shell/types";
-import { useShellPanel } from "@/lib/shell/panel";
 
 const noSubscription = () => () => {};
 
@@ -22,8 +22,7 @@ export function HelpCenter() {
   const t = useTranslations("shell.help");
   const path = usePathname() || "/";
   const root = useRef<HTMLDivElement>(null);
-  const button = useRef<HTMLButtonElement>(null);
-  const [open, setOpen] = useShellPanel(root);
+  const [open, setOpen] = useState(false);
   const panelId = useId();
   const [items, setItems] = useState<HelpItem[]>([]);
   const [tour, setTour] = useState<{ key: string; step: number } | null>(null);
@@ -61,11 +60,22 @@ export function HelpCenter() {
     await fetch(`/api/v1/me/help/${encodeURIComponent(key)}/dismiss`, { method: dismissed ? "POST" : "DELETE" }).catch(() => undefined);
   }
 
-  function onKeyDown(e: KeyboardEvent<HTMLDivElement>) {
-    if (e.key === "Escape" && open) {
-      setOpen(false);
-      button.current?.focus();
-    }
+  // The list loads each time the panel opens, so it shows what was dismissed since.
+  const changed = useCallback(
+    (next: boolean) => {
+      setOpen(next);
+      if (next) void load();
+    },
+    [load],
+  );
+
+  /** The help button, which a closed tour returns focus to. */
+  const trigger = () => root.current?.querySelector<HTMLButtonElement>(".ui-popover-trigger");
+
+  function choose(e: MouseEvent<HTMLButtonElement>, item: HelpItem) {
+    e.currentTarget.closest<HTMLElement>("[popover]")?.hidePopover();
+    if (item.kind === "tour") setTour({ key: item.key, step: 0 });
+    else void dismiss(item.key, false);
   }
 
   const hints = items.filter((i) => i.kind === "hint" && !i.dismissed);
@@ -75,7 +85,7 @@ export function HelpCenter() {
   function closeTour() {
     if (current) void dismiss(current.key, true);
     setTour(null);
-    button.current?.focus();
+    trigger()?.focus();
   }
 
   const area =
@@ -125,60 +135,26 @@ export function HelpCenter() {
     ) : null;
 
   return (
-    <div ref={root} className="shell-help" onKeyDown={onKeyDown}>
-      <button
-        ref={button}
-        type="button"
-        className="button button-quiet shell-icon-button"
-        aria-expanded={open}
-        aria-controls={panelId}
-        aria-label={t("button")}
-        title={t("button")}
-        onClick={() => {
-          setOpen(!open);
-          if (!open) void load();
-        }}
-      >
-        <Icon name="info" size={20} />
-      </button>
-      <div className="shell-help-panel shell-popover" id={panelId} role="dialog" aria-labelledby={`${panelId}-title`} hidden={!open}>
-        {open ? (
-          <>
-            <div className="shell-popover-head">
-              <h2 className="shell-popover-title" id={`${panelId}-title`}>
-                {t("title")}
-              </h2>
-            </div>
-            <div className="shell-popover-body">
-              {items.length === 0 ? (
-                <p className="shell-help-none">{t("none")}</p>
-              ) : (
-                <ul className="shell-favorites-list">
-                  {items.map((item) => (
-                    <li key={item.key}>
-                      <button
-                        type="button"
-                        className="shell-popover-row"
-                        onClick={() => {
-                          setOpen(false);
-                          if (item.kind === "tour") setTour({ key: item.key, step: 0 });
-                          else void dismiss(item.key, false);
-                        }}
-                      >
-                        <Icon name={item.kind === "tour" ? "arrow-forward" : "info"} size={16} />
-                        <span className="shell-favorites-text">
-                          <bdi>{item.title}</bdi>
-                          <small>{item.kind === "tour" ? t("startTour", { count: item.steps.length }) : item.dismissed ? t("showHint") : t("shownHint")}</small>
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </>
-        ) : null}
-      </div>
+    <div ref={root} className="shell-help">
+      <Popover label={t("button")} title={t("title")} icon="info" iconOnly frame="panel" list placement="bottom-end" testId="shell-help-panel" onOpenChange={changed}>
+        {!open ? null : items.length === 0 ? (
+          <p className="shell-help-none">{t("none")}</p>
+        ) : (
+          <ul className="shell-favorites-list">
+            {items.map((item) => (
+              <li key={item.key}>
+                <button type="button" className="shell-popover-row" onClick={(e) => choose(e, item)}>
+                  <Icon name={item.kind === "tour" ? "arrow-forward" : "info"} size={16} />
+                  <span className="shell-favorites-text">
+                    <bdi>{item.title}</bdi>
+                    <small>{item.kind === "tour" ? t("startTour", { count: item.steps.length }) : item.dismissed ? t("showHint") : t("shownHint")}</small>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Popover>
       {slot && area ? createPortal(area, slot) : null}
     </div>
   );

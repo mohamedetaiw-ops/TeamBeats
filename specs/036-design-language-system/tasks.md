@@ -33,7 +33,7 @@ Depends on 033 (theme engine, brand manager), 008 (shell), 032 (templates), 007.
 - [x] T023 Global details: value formatters (`lib/format.ts`), link and breadcrumb rules, native radio and checkbox look, hints under controls, filled selected chips, status badges, empty states with icons, space for Ask TeamBeats
 - [x] T024 Shell panels on one popover surface: account menu rows, notification rows with relative time and category icons, grouped settings with segmented controls
 - [x] T025 Pages: Your day empty state, request rows, person cards, own profile values and tags, knowledge article header and feedback toggles, documents filter bar, sort direction and folder chips, service form column
-- [ ] T026 Move the shell panels onto the T016 popover and T018 notification panel and settings blocks once they merge, keeping the DLS-045 to DLS-047 look
+- [x] T026 Move the shell panels onto the T016 popover and T018 notification panel and settings blocks once they merge, keeping the DLS-045 to DLS-047 look (the bell keeps the spec 015 tabs, groups and row actions, which the notification panel block does not have, inside the shared panel frame)
 
 ## Phase 6: Calendar parts (DLS-069 to DLS-074, spec 037)
 - [x] T027 Calendar header, layer chips, week strip, agenda rows, month with ranges, day panel and bottom sheet, availability stats and heatmap in `components/ui`, gallery section `cg-calendar`, keyboard coverage
