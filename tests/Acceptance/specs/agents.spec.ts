@@ -52,6 +52,8 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
     });
 
     test("design, review, use and switch off an agent", async ({ page }, testInfo) => {
+      // One journey through the whole agent lifecycle, the gate wait and the policy page; it runs close to a minute in each language.
+      test.setTimeout(150_000);
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.goto(`${hostOrigin(tenant.key)}/admin`);
       await page.getByRole("navigation", { name: m("admin.navLabel") }).getByRole("link", { name: m("admin.nav.agents"), exact: true }).click();
