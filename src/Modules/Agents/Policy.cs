@@ -3,6 +3,7 @@ using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Modules.Agents.Contracts;
+using TeamBeats.Modules.Search.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
 using TeamBeats.TenantContext;
@@ -29,8 +30,15 @@ public sealed record AgentPolicy(
     int MaxDailyRunsPerAgent = AgentPolicy.DefaultDailyRuns,
     ExternalAiPolicy? External = null,
     List<string>? ScheduledRiskClasses = null,
-    Dictionary<string, ToolApprover>? Approvers = null)
+    Dictionary<string, ToolApprover>? Approvers = null,
+    Dictionary<string, ContextualActionRule>? ContextualActions = null)
 {
+    /// <summary>
+    /// The contextual action rule for a kind of item (spec 020 FR-012): the saved one, else on for any agent the person
+    /// may use, which is how contextual actions behaved before the rule existed.
+    /// </summary>
+    public ContextualActionRule ContextualRule(string kind) => ContextualActions?.GetValueOrDefault(kind) ?? ContextualActionRule.Default;
+
     /// <summary>The risk classes whose agents may run on a schedule (spec 020 US8 scenario 4); Low only until the administrator widens it.</summary>
     [System.Text.Json.Serialization.JsonIgnore]
     public IReadOnlyList<string> ScheduledClasses => ScheduledRiskClasses ?? [AgentRiskClasses.Low];
@@ -105,6 +113,22 @@ public sealed record ExternalAiPolicy(bool Enabled = true, List<ExternalAiClient
     public ExternalAiClient? Client(string clientId) => Clients?.FirstOrDefault(c => string.Equals(c.ClientId, clientId, StringComparison.Ordinal));
 
     public bool Allows(string tool) => AllowedTools is null || AllowedTools.Contains(tool);
+}
+
+/// <summary>
+/// Whether "Ask an agent" shows on one kind of item (spec 020 FR-012), and which agents it offers there: null means any
+/// agent the person may use. The runtime checks the rule again when the item is passed to an agent.
+/// </summary>
+public sealed record ContextualActionRule(bool Enabled = true, List<Guid>? Agents = null)
+{
+    public static readonly ContextualActionRule Default = new();
+
+    public const int MaxAgents = 20;
+
+    /// <summary>The kinds of item an agent can work on from its page: content (news, announcements, pages), knowledge articles, policies and documents.</summary>
+    public static readonly IReadOnlyList<string> Kinds = [SearchKinds.Content, SearchKinds.Knowledge, SearchKinds.Policy, SearchKinds.Document];
+
+    public bool Allows(Guid agent) => Enabled && (Agents is null || Agents.Contains(agent));
 }
 
 public sealed record AgentPolicyView(int Version, AgentPolicy Policy, DateTimeOffset? UpdatedAt);
@@ -260,9 +284,20 @@ public sealed class AgentPolicyService(IDbSession session, ITenantContext contex
                 errors.Add("external.allowedTools", "validation.agent_policy.external_tools");
             }
         }
+        foreach (var (kind, rule) in p.ContextualActions ?? [])
+        {
+            var agents = rule.Agents ?? [];
+            if (!ContextualActionRule.Kinds.Contains(kind) || agents.Count > ContextualActionRule.MaxAgents || agents.Distinct().Count() != agents.Count || agents.Contains(Guid.Empty))
+            {
+                errors.Add($"contextualActions.{kind}", "validation.agent_policy.contextual_actions");
+            }
+        }
         errors.ThrowIfAny();
         return p with
         {
+            ContextualActions = p.ContextualActions is null ? null
+                : new Dictionary<string, ContextualActionRule>(p.ContextualActions.OrderBy(k => k.Key, StringComparer.Ordinal)
+                    .Select(k => KeyValuePair.Create(k.Key, k.Value with { Agents = k.Value.Agents?.Order().ToList() }))),
             AllowedTools = p.AllowedTools?.Distinct().Order(StringComparer.Ordinal).ToList(),
             ToolRules = p.ToolRules is null ? [] : new Dictionary<string, string>(p.ToolRules.OrderBy(k => k.Key, StringComparer.Ordinal)),
             Approvers = p.Approvers is null ? null

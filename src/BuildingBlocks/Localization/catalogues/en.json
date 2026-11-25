@@ -2621,6 +2621,8 @@
   "notifications.template.agents.action_expired.title": "Your agent's action was cancelled",
   "notifications.template.agents.action_expired.body": "The action {agent} asked for on your behalf was cancelled because nobody approved it in time, or the rules changed. Nothing was done.",
   "validation.agent_policy.approver": "Name approvers for a registered tool: a known permission, up to 20 people, or both.",
+  "validation.agent_policy.contextual_actions": "Set contextual actions for content, knowledge, policies or documents only, with up to 20 different agents each.",
+  "validation.agent_run.contextual_off": "Agents are not offered for this kind of item, or not this agent. Open the agent from the agents page instead.",
   "validation.people.photo_size": "Choose a photo of up to 2 MB and 8000 pixels on each side.",
   "validation.people.photo_type": "Choose a PNG or JPEG photo.",
   "conflict.people.photo_processing": "Your photo could not be processed right now. Your profile is unchanged; try again later.",

@@ -140,6 +140,16 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.getByRole("button", { name: m("agents.use.send") }).click();
       await expect(page.getByTestId("agent-answer")).toBeVisible();
 
+      // The tenant can turn the contextual action off for news and pages; the link then goes from the item (020 FR-012).
+      await page.goto(`${hostOrigin(tenant.key)}/admin/agents/policy`);
+      const contextual = page.getByTestId("agent-policy-contextual");
+      await contextual.getByLabel(m("agents.policy.contextual.show", { kind: m("agents.policy.contextual.kinds.content") }), { exact: true }).uncheck();
+      await page.getByRole("button", { name: m("agents.policy.save") }).click();
+      await expect(page.getByText(m("agents.policy.saved"))).toBeVisible();
+      await page.goto(`${hostOrigin(tenant.key)}/content/read/${news}`);
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+      await expect(page.getByRole("link", { name: m("agents.use.ask") })).toHaveCount(0);
+
       // The runs list holds the test run and the two real ones; the timeline shows the steps.
       await page.goto(`${hostOrigin(tenant.key)}/admin/agents/runs`);
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("agents.runs.title"));

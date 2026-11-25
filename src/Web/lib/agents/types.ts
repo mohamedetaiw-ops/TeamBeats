@@ -164,7 +164,14 @@ export type AgentPolicy = {
   maxRunSeconds: number;
   maxDailyRunsPerAgent: number;
   external?: ExternalAiPolicy | null;
+  contextualActions?: Record<string, ContextualActionRule> | null;
 };
+
+/** Where "Ask an agent" shows for one kind of item, and which agents it offers there; no list means any agent (spec 020 FR-012). */
+export type ContextualActionRule = { enabled: boolean; agents?: string[] | null };
+
+/** The kinds of item a contextual action can start from, as Search names them. */
+export const CONTEXTUAL_KINDS = ["content", "knowledge", "policy", "document"] as const;
 
 /** Which external AI clients may reach TeamBeats through MCP, each with the highest classification it may receive (spec 035 FR-020). */
 export type ExternalAiPolicy = {

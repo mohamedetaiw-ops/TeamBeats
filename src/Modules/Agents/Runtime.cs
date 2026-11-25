@@ -494,6 +494,13 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         {
             throw AppException.NotFound();
         }
+        // The tenant chooses per kind of item whether agents are offered there and which (spec 020 FR-012). The kind is the
+        // one Search holds for the item, never what the page said, so a turned-off kind cannot be reached by a typed address.
+        var kind = result.Passages.FirstOrDefault()?.Kind ?? source switch { "policies" => SearchKinds.Policy, "documents" => SearchKinds.Document, _ => SearchKinds.Content };
+        if (agent.Mode == "run" && !agent.Policy.ContextualRule(kind).Allows(agent.Id))
+        {
+            throw AppException.Validation("itemId", "validation.agent_run.contextual_off");
+        }
         var cap = Classifications.Rank(agent.Definition.MaxClassification ?? "internal");
         var passages = result.Passages.Where(p => Classifications.Rank(p.Classification) is var rank && rank >= 0 && rank <= cap).ToList();
         if (passages.Count == 0)

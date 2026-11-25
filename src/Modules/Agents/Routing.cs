@@ -46,7 +46,7 @@ public static class RouteMethods
 /// answers a turn, the assistant gains none of its tools, and every decision is recorded without the question text.
 /// </summary>
 public sealed partial class AgentRouter(IDbSession session, ITenantContext context, IEntitlementService entitlements, IOrganizationHierarchy org,
-    IAiGateway gateway, IClock clock, ToolRegistry tools)
+    IAiGateway gateway, IClock clock, ToolRegistry tools, AgentPolicyService policies)
 {
     public const int MaxCandidates = 20;
     public const string PromptVersion = "route.v1";
@@ -91,6 +91,25 @@ public sealed partial class AgentRouter(IDbSession session, ITenantContext conte
             .Select(r => new AgentChoice(r.Id, r.Definition.Name, r.Definition.Description, r.Definition.Icon, r.Definition.Category, favourites.Contains(r.Id),
                 AgentDefinitions.UnavailableTools(r.Definition, tools).Count > 0))
             .ToList();
+    }
+
+    /// <summary>
+    /// The agents "Ask an agent" offers on one kind of item (spec 020 FR-012): none when the tenant turned the action off
+    /// there, only the named agents when it chose some. An unknown kind offers none.
+    /// </summary>
+    public async Task<IReadOnlyList<AgentChoice>> AvailableForAsync(string kind, CancellationToken ct)
+    {
+        if (!ContextualActionRule.Kinds.Contains(kind))
+        {
+            return [];
+        }
+        var rule = (await policies.CurrentAsync(ct)).Policy.ContextualRule(kind);
+        if (!rule.Enabled)
+        {
+            return [];
+        }
+        var available = await AvailableAsync(ct);
+        return rule.Agents is null ? available : available.Where(a => rule.Allows(a.Id)).ToList();
     }
 
     /// <summary><c>POST /api/v1/agents/route</c>: routes a message without running anything.</summary>

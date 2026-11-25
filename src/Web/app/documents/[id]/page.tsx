@@ -57,7 +57,7 @@ export default async function DocumentPage({
         ]}
       />
       <main id="main" className="page">
-        <AskAgentLink source="documents" itemId={id} />
+        <AskAgentLink source="documents" kind="document" itemId={id} />
         <DocumentPanel
           initial={doc.data}
           versions={versions.ok ? versions.data : []}

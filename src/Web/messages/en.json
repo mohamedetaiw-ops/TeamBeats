@@ -7942,6 +7942,19 @@
       "memory": "Agent memory",
       "persistentMemory": "Allow agents to keep notes for people who accept",
       "persistentMemoryHint": "Each agent's designer chooses whether it keeps notes, and each person accepts per agent. Turning this off deletes every note in the organization.",
+      "contextual": {
+        "title": "Ask an agent on pages",
+        "hint": "Choose on which kinds of item people see Ask an agent, and which agents it offers there. The API checks this again when the agent runs.",
+        "show": "Show Ask an agent on {kind}",
+        "anyAgent": "Offer any agent the person may use on {kind}",
+        "offer": "Offer {agent} on {kind}",
+        "kinds": {
+          "content": "news, announcements and pages",
+          "knowledge": "knowledge articles",
+          "policy": "policies",
+          "document": "documents"
+        }
+      },
       "scheduled": "Scheduled agents",
       "scheduledAgents": "Allow agents to send daily briefings people subscribe to",
       "scheduledRisk": "Agents of {risk} risk",
