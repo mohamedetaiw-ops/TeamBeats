@@ -1,14 +1,14 @@
 "use client";
 
-import { useId, useRef, useState, type KeyboardEvent } from "react";
+import { useId, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { PreferenceKey } from "@/lib/shell/types";
 import { Icon } from "@/components/ui/Icon";
+import { Popover } from "@/components/ui/Popover";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Switch } from "@/components/ui/Switch";
-import { useShellPanel } from "@/lib/shell/panel";
 
 const options: Record<PreferenceKey, string[]> = {
   mode: ["system", "light", "dark", "high_contrast"],
@@ -101,38 +101,28 @@ export function PreferenceControls({ locales, locale, values }: { locales: strin
  */
 export function SettingsPanel({ locales, locale, values }: { locales: string[]; locale: string; values: Record<PreferenceKey, string> }) {
   const t = useTranslations("shell.settings");
-  const root = useRef<HTMLDivElement>(null);
-  const [open, setOpen] = useShellPanel(root);
-  const panelId = useId();
-  const button = useRef<HTMLButtonElement>(null);
-
-  function onKeyDown(e: KeyboardEvent<HTMLDivElement>) {
-    if (e.key === "Escape" && open) {
-      setOpen(false);
-      button.current?.focus();
-    }
-  }
-
+  // The controls render only while the panel is open, so the Preferences page keeps the only copy of each label.
+  const [open, setOpen] = useState(false);
   return (
-    <div ref={root} className="shell-settings" onKeyDown={onKeyDown}>
-      <button ref={button} type="button" className="button button-quiet shell-icon-button" aria-expanded={open} aria-controls={panelId} onClick={() => setOpen(!open)}>
-        <Icon name="settings" size={20} />
-        <span className="visually-hidden">{t("open")}</span>
-      </button>
-      <div className="shell-settings-panel shell-popover" id={panelId} role="dialog" aria-labelledby={`${panelId}-title`} hidden={!open}>
-        <div className="shell-popover-head">
-          <h2 className="shell-popover-title" id={`${panelId}-title`}>
-            {t("title")}
-          </h2>
-        </div>
-        <div className="shell-popover-body">{open ? <PreferenceControls locales={locales} locale={locale} values={values} /> : null}</div>
-        <div className="shell-popover-foot">
-          <Link href="/settings" className="shell-popover-anchor shell-popover-more">
+    <div className="shell-settings">
+      <Popover
+        label={t("open")}
+        title={t("title")}
+        icon="settings"
+        iconOnly
+        frame="panel"
+        placement="bottom-end"
+        testId="shell-settings-panel"
+        onOpenChange={setOpen}
+        footer={
+          <Link href="/settings" className="ui-popover-more">
             {t("allPreferences")}
             <Icon name="arrow-forward" size={14} />
           </Link>
-        </div>
-      </div>
+        }
+      >
+        {open ? <PreferenceControls locales={locales} locale={locale} values={values} /> : null}
+      </Popover>
     </div>
   );
 }

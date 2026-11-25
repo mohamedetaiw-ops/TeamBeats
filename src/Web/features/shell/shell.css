@@ -350,6 +350,7 @@
 }
 
 .shell-icon-button,
+.shell-bar .ui-popover-trigger,
 .shell-bar .notification-bell-button,
 .shell-bar .task-badge {
   border-radius: var(--tb-radius-full);
@@ -803,22 +804,10 @@
 }
 
 /* Quick preferences: a label above a segmented control, or a label and a compact control on one line. */
-.shell-settings-panel {
-  --xp-popover-width: 21rem;
-}
-
-.shell-settings-panel .shell-popover-head {
-  padding-block-end: var(--tb-space-sm);
-}
-
 .shell-popover-title {
   margin: 0;
   font-size: var(--tb-font-size-md);
   font-weight: var(--tb-font-weight-semibold);
-}
-
-.shell-settings-panel .shell-popover-body {
-  padding: var(--tb-space-md);
 }
 
 .shell-preferences {
@@ -865,7 +854,7 @@
   inline-size: 100%;
 }
 
-.shell-settings-panel .ui-switch {
+.ui-popover .shell-preferences .ui-switch {
   margin: 0;
 }
 
@@ -921,7 +910,7 @@
  * its 44 px target and gives up its side padding, so the account menu stays on the screen (DLS-085, WCAG 1.4.10).
  */
 @media (width <= 40rem) {
-  .shell-bar :is(.shell-icon-button, .notification-bell-button, .task-badge) {
+  .shell-bar :is(.shell-icon-button, .ui-popover-trigger, .notification-bell-button, .task-badge) {
     justify-content: center;
     min-inline-size: 2.75rem;
     padding-inline: var(--tb-space-xs);
