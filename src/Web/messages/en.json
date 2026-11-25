@@ -7780,6 +7780,14 @@
         "apply": "Apply template update",
         "applied": "The template update is in a new draft. Check it, then send it for review."
       },
+      "securityUpdate": {
+        "inForce": "A security update to this agent's template applies to it now, without review.",
+        "coming": "A security update to this agent's template applies to it on {date}, without review.",
+        "removeTool": "Removes {tool}",
+        "maxAutonomy": "Autonomy no higher than {level}",
+        "maxClassification": "Reads nothing above {classification}",
+        "maxToolCalls": "{count, plural, one {At most # tool call a run} other {At most # tool calls a run}}"
+      },
       "clone": {
         "title": "Clone this agent",
         "intro": "A clone is a new draft with its own identity and no published history. Its audience and tools are copied only if you tick them.",

@@ -83,7 +83,7 @@ public sealed record AgentVersionView(int Number, string State, string RiskClass
 
 /// <summary>An agent with the definition of its latest version, which is what the editor works on.</summary>
 public sealed record AgentDetail(AgentSummary Agent, AgentDefinition Definition, AgentVersionView Latest, IReadOnlyList<AgentVersionView> Versions, bool CanEdit,
-    int? TemplateUpdate = null, IReadOnlyList<string>? UnavailableTools = null);
+    int? TemplateUpdate = null, IReadOnlyList<string>? UnavailableTools = null, IReadOnlyList<TemplateSecurityView>? SecurityUpdates = null);
 
 public sealed record TemplateUpdateRequest(int? Version);
 
@@ -94,7 +94,8 @@ public sealed record TemplateUpdateRequest(int? Version);
 /// people without a covering permission do not learn the agent exists.
 /// </summary>
 public sealed class AgentRegistry(IDbSession session, ITenantContext context, IEntitlementService entitlements, IAuthorizationService authz,
-    IOrganizationHierarchy org, IAuditWriter audit, IClock clock, ToolRegistry tools, AgentPolicyService policies, ITenantMemberships memberships)
+    IOrganizationHierarchy org, IAuditWriter audit, IClock clock, ToolRegistry tools, AgentPolicyService policies, ITenantMemberships memberships,
+    ITemplateSecurityUpdates securityUpdates)
 {
     private static string Json(object value) => JsonSerializer.Serialize(value, AgentPolicyService.Json);
 
@@ -194,18 +195,22 @@ public sealed class AgentRegistry(IDbSession session, ITenantContext context, IE
         {
             throw AppException.Validation("templateId", "validation.agent.template_not_ready");
         }
-        var definition = template.Definition with { Audience = new AgentAudience(AgentAudience.Units, [unit]) };
+        var now = clock.UtcNow;
+        // A forced security update in force is part of the install (FR-005), so its owner is not told it was applied later.
+        var inForce = securityUpdates.InForce(template.Id, now);
+        var definition = TemplateSecurity.Apply(template.Definition, inForce) with { Audience = new AgentAudience(AgentAudience.Units, [unit]) };
         AgentDefinitions.Validate(definition, tools, policy);
         var risk = AgentDefinitions.RiskClass(definition, tools);
         var id = Guid.NewGuid();
-        var now = clock.UtcNow;
+        var applied = inForce.Count > 0 ? inForce[^1].Version : 0;
         await session.ExecAsync(
             """
-            insert into agents.agent (tenant_id, id, template_id, template_version, owner_user_id, org_unit_id, status, current_version, risk_class, created_at, created_by, updated_at)
-            values (platform.current_tenant_id(), @id, @template, @version, @user, @unit, 'draft', null, @risk, @now, @user, @now);
+            insert into agents.agent (tenant_id, id, template_id, template_version, owner_user_id, org_unit_id, status, current_version, risk_class, created_at, created_by, updated_at,
+              template_security_applied, template_security_announced)
+            values (platform.current_tenant_id(), @id, @template, @version, @user, @unit, 'draft', null, @risk, @now, @user, @now, @applied, @applied);
             insert into agents.agent_version (tenant_id, agent_id, number, state, definition, risk_class, revision, last_editor, created_at, updated_at)
             values (platform.current_tenant_id(), @id, 1, 'draft', @definition::jsonb, @risk, 1, @user, @now, @now);
-            """, new { id, template = template.Id, version = template.Version, user, unit, risk, now, definition = Json(definition) }, ct);
+            """, new { id, template = template.Id, version = template.Version, user, unit, risk, now, definition = Json(definition), applied }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.AgentInstalledFromTemplate, "agent", id.ToString(), TargetOrgUnitId: unit,
             Changes: new { template = template.Id, templateVersion = template.Version, riskClass = risk }), ct);
         return await DetailAsync(id, ct);
@@ -376,8 +381,12 @@ public sealed class AgentRegistry(IDbSession session, ITenantContext context, IE
             ? template.Version : null;
         var definition = Definition(versions[0].Definition);
         await tools.LoadAsync(ct);
+        var now = clock.UtcNow;
+        var security = securityUpdates.Of(agent.TemplateId)
+            .Select(u => new TemplateSecurityView(u.Version, u.Reason, u.AppliesAt, u.Critical, u.AppliesBy(now), u.RemoveTools, u.MaxAutonomy, u.MaxClassification, u.MaxToolCalls))
+            .ToList();
         return new AgentDetail(agent, definition, versions[0].View, versions.Select(v => v.View).ToList(),
-            canEdit && agent.Status != AgentStatuses.Retired, update, AgentDefinitions.UnavailableTools(definition, tools));
+            canEdit && agent.Status != AgentStatuses.Retired, update, AgentDefinitions.UnavailableTools(definition, tools), security);
     }
 
     /// <summary>
@@ -407,6 +416,11 @@ public sealed class AgentRegistry(IDbSession session, ITenantContext context, IE
         }
         var policy = (await policies.CurrentAsync(ct)).Policy;
         AgentDefinitions.Validate(definition, tools, policy);
+        // A forced security update of the template in force cannot be undone in a draft (FR-005).
+        if (TemplateSecurity.Breaks(definition, securityUpdates.InForce(current.Agent.TemplateId, clock.UtcNow)))
+        {
+            throw AppException.Validation("definition", "validation.agent.template_security");
+        }
         if ((await UnavailableAsync(definition.Tools, ct)).Count > 0)
         {
             throw AppException.Validation("tools", "validation.agent.tool_not_in_package");
@@ -520,6 +534,7 @@ public sealed class AgentRegistry(IDbSession session, ITenantContext context, IE
             Audience = mine.Audience,
             Languages = mine.Languages,
         };
+        merged = TemplateSecurity.Apply(merged, securityUpdates.InForce(current.Agent.TemplateId, clock.UtcNow));
         var detail = await SaveDraftAsync(id, new DraftRequest(current.Latest.Revision, merged), ct);
         await session.ExecAsync("update agents.agent set template_version = @offered where id = @id", new { id, offered }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.AgentTemplateUpdateApplied, "agent", id.ToString(), TargetOrgUnitId: current.Agent.OrgUnitId,

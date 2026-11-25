@@ -89,6 +89,20 @@ export type AgentDetail = {
   templateUpdate: number | null;
   /** Tools the agent holds that cannot be called now, such as those of a disabled connection (spec 027 US7 scenario 3). */
   unavailableTools?: string[] | null;
+  /** Forced security updates of the agent's template (spec 020 FR-005): in force ones already apply, the others on their date. */
+  securityUpdates?: TemplateSecurityUpdate[] | null;
+};
+
+export type TemplateSecurityUpdate = {
+  version: number;
+  reason: Localized | null;
+  appliesAt: string;
+  critical: boolean;
+  inForce: boolean;
+  removeTools: string[] | null;
+  maxAutonomy: string | null;
+  maxClassification: string | null;
+  maxToolCalls: number | null;
 };
 
 export type TemplateView = {

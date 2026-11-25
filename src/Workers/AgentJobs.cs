@@ -48,6 +48,8 @@ public sealed class AgentRunResumeService(IServiceScopeFactory scopes, ILogger<P
             await runner.RunAsync((sp, ct) => sp.GetRequiredService<AgentRunResumer>().ResumeStalledAsync(ct), stoppingToken);
             await runner.RunAsync((sp, ct) => sp.GetRequiredService<AgentRunResumer>().ApplyApprovalsAsync(ct), stoppingToken);
             await runner.RunAsync((sp, ct) => sp.GetRequiredService<AgentSecurityCenter>().ScanAsync(ct), stoppingToken);
+            // Forced security updates of templates (spec 020 FR-005): owners told when one is announced and when it applies.
+            await runner.RunAsync((sp, ct) => sp.GetRequiredService<AgentTemplateSecurity>().ApplyAsync(ct), stoppingToken);
             await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
         }
     }

@@ -48,6 +48,8 @@ public static class AgentsModule
         services.AddScoped<UnitAgentPolicyService>();
         services.AddScoped<AgentSecurityCenter>();
         services.AddScoped<AgentRegistry>();
+        services.AddSingleton<ITemplateSecurityUpdates, ShippedTemplateSecurityUpdates>();
+        services.AddScoped<AgentTemplateSecurity>();
         services.AddScoped<AgentOwnerHandover>();
         services.AddScoped<AgentAnalytics>();
         services.AddScoped<Contracts.IAssistantUsageFigures, AssistantUsageFigures>();

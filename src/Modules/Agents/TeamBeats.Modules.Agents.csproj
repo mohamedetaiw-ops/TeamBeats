@@ -24,5 +24,6 @@
     <InternalsVisibleTo Include="TeamBeats.Unit.Tests" />
     <EmbeddedResource Include="Migrations/*.sql" />
     <EmbeddedResource Include="Templates/*.json" />
+    <EmbeddedResource Include="SecurityUpdates/*.json" />
   </ItemGroup>
 </Project>
