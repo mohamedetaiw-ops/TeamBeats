@@ -178,3 +178,14 @@ The spec says the tenant connects a key in its key management service, its data 
 - Vault transit with the host allowlist; bad addresses, another tenant's secret reference, a missing secret and a disabled key are refused before anything is stored; the plan and permission checks.
 - Debug log entries use the tenant's data key and cannot be read once it is revoked.
 - e2e: the key page empty and with a refusal that says why, and the plan notice, in English and Arabic with axe.
+
+### On-prem hardening pack
+The spec asks for a hardening guide and a shared responsibility matrix for customer-hosted installs and says the product code is the same on every install. It does not say how the product knows it is customer hosted or what the posture page can check. Defaults:
+- **Documents:** `docs/security/hardening-guide.md` (what runs, settings before go-live, database, secrets, network, identity, operating, upgrade checklist) and `docs/security/shared-responsibility.md` (TeamBeats, customer and tenant administrator per area).
+- **Switch:** the platform setting `Platform:Hosting`; the value `customer` turns on the installation checks. Any other value, or none, leaves the posture page as it was.
+- **Installation checks** on the posture page, each read from the running configuration and naming the guide setting when it fails: `install_production_mode` (production environment), `install_database_tls` (SSL mode Require, VerifyCA or VerifyFull, or a database on a Unix socket or loopback), `install_durable_messaging` (RabbitMQ transport), `install_private_addresses_blocked` (`Integrations:Network:AllowPrivateAddresses` off). They are the same for every tenant of the install and have no fix link, because only the operator of the install can change them.
+- Items outside the product (patching, backups, volume encryption, network segmentation) are in the guide and matrix only; the product cannot see them.
+
+### Tests (R3 slice 3)
+- With `Platform:Hosting` unset, no installation checks appear.
+- With `customer`, a weak configuration (development, no TLS, in-memory messaging, private addresses allowed) fails the four checks and a hardened one passes; a loopback or socket database counts as protected.

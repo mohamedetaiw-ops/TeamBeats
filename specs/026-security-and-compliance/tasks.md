@@ -69,4 +69,4 @@ Depends on 001 (break-glass), 003 (sessions, Entra sign-in), 004 (conditions, ex
 - [x] T036 Key management adapter port, key status, wrapping, revocation check, rotation; key page
 
 ## R3 Phase 14: on-prem hardening pack
-- [ ] T037 Hardening guide and shared responsibility matrix; posture self check for customer-hosted installs
+- [x] T037 Hardening guide and shared responsibility matrix; posture self check for customer-hosted installs

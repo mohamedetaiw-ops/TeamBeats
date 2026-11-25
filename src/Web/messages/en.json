@@ -4027,6 +4027,22 @@
         "no_platform_access": {
           "title": "No platform operator access open",
           "why": "Platform operators reach your data only through break-glass. Every session, its reason and its actions are in your audit log."
+        },
+        "install_production_mode": {
+          "title": "Production mode",
+          "why": "The installation runs in production mode, so development pages and detailed errors are off. Your IT team sets this, as the hardening guide describes."
+        },
+        "install_database_tls": {
+          "title": "Encrypted database connection",
+          "why": "The application reaches the database over TLS, or on the same host. Your IT team sets this in the connection settings."
+        },
+        "install_durable_messaging": {
+          "title": "Durable message queue",
+          "why": "Background work goes through RabbitMQ, so nothing is lost when a server restarts. Your IT team sets this."
+        },
+        "install_private_addresses_blocked": {
+          "title": "Connectors kept off your internal network",
+          "why": "Connectors cannot reach private addresses unless your IT team allows them for a reason, such as an internal key service."
         }
       },
       "region": "Hosting region: {region}. Your data at rest, backups and search indexes stay in this region.",
@@ -10219,7 +10235,11 @@
             "idle_timeout": "Sign out after inactivity",
             "absolute_timeout": "Longest session",
             "dev_sign_in_absent": "No development sign-in",
-            "no_platform_access": "No platform operator access open"
+            "no_platform_access": "No platform operator access open",
+            "install_production_mode": "Production mode",
+            "install_database_tls": "Encrypted database connection",
+            "install_durable_messaging": "Durable message queue",
+            "install_private_addresses_blocked": "Connectors kept off your internal network"
           }
         }
       }

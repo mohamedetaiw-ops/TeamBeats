@@ -17,7 +17,7 @@ public sealed record PostureView(int Passed, int Total, IReadOnlyList<PostureChe
 /// link to the page that fixes it. Readable by tenant administrators and security officers.
 /// </summary>
 public sealed class PostureService(IAuthorizationService authz, IEntitlementService entitlements, PolicyStore store, ISignInMethods signIns,
-    BreakGlassService breakGlass, TeamBeats.Modules.Tenancy.Contracts.ITenantSettingsReader settings)
+    BreakGlassService breakGlass, TeamBeats.Modules.Tenancy.Contracts.ITenantSettingsReader settings, InstallationPosture installation)
 {
     public const string Passed = "passed";
     public const string Failed = "failed";
@@ -50,7 +50,7 @@ public sealed class PostureService(IAuthorizationService authz, IEntitlementServ
         var policy = await store.ReadAsync(ct) ?? SecurityPolicySnapshot.Default;
         var scoped = await entitlements.IsEnabledAsync(Capabilities.SecurityIpRulesScoped, ct);
         var methods = await signIns.CurrentAsync(ct);
-        return [.. Evaluate(policy, scoped, methods), PlatformAccess(await breakGlass.AnyOpenAsync(ct))];
+        return [.. Evaluate(policy, scoped, methods), PlatformAccess(await breakGlass.AnyOpenAsync(ct)), .. installation.Checks()];
     }
 
     /// <summary>Spec 026 FR-020: fails while a platform operator has a break-glass session open on the tenant; links to the audit entries.</summary>
@@ -71,5 +71,56 @@ public sealed class PostureService(IAuthorizationService authz, IEntitlementServ
             // Development sign-in is a configuration of the host, not something a tenant administrator can fix: no link.
             new("dev_sign_in_absent", State(!methods.DevSignInEnabled), null),
         ];
+    }
+}
+
+/// <summary>
+/// The hardening self check of a customer-hosted install (spec 026 R3 slice 3, <c>docs/security/hardening-guide.md</c>):
+/// installation settings the customer's IT team owns, shown on the posture page only when <c>Platform:Hosting</c> is
+/// <c>customer</c>. A platform-hosted install is checked by the platform's own operations, so its tenants see none of
+/// these. No link: the fix is in the installation's configuration, as the guide describes.
+/// </summary>
+public sealed class InstallationPosture(Microsoft.Extensions.Configuration.IConfiguration configuration, Microsoft.Extensions.Hosting.IHostEnvironment environment)
+{
+    public const string HostingSetting = "Platform:Hosting";
+    public const string CustomerHosted = "customer";
+
+    public bool CustomerHostedInstall => string.Equals(configuration[HostingSetting], CustomerHosted, StringComparison.OrdinalIgnoreCase);
+
+    public IReadOnlyList<PostureCheck> Checks() => CustomerHostedInstall ? Evaluate(configuration, environment.EnvironmentName) : [];
+
+    public static IReadOnlyList<PostureCheck> Evaluate(Microsoft.Extensions.Configuration.IConfiguration configuration, string environmentName)
+    {
+        static string State(bool ok) => ok ? PostureService.Passed : PostureService.Failed;
+        return
+        [
+            new("install_production_mode", State(string.Equals(environmentName, "Production", StringComparison.OrdinalIgnoreCase)), null),
+            new("install_database_tls", State(DatabaseEncrypted(configuration["ConnectionStrings:App"])), null),
+            new("install_durable_messaging", State(string.Equals(configuration["Messaging:Transport"], "RabbitMq", StringComparison.OrdinalIgnoreCase)), null),
+            new("install_private_addresses_blocked", State(!bool.TryParse(configuration[SafeHttp.AllowPrivateSetting], out var allow) || !allow), null),
+        ];
+    }
+
+    /// <summary>TLS to the database is required, or the database is on the same host (a Unix socket or loopback).</summary>
+    public static bool DatabaseEncrypted(string? connectionString)
+    {
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            return false;
+        }
+        try
+        {
+            var b = new Npgsql.NpgsqlConnectionStringBuilder(connectionString);
+            if (b.SslMode is Npgsql.SslMode.Require or Npgsql.SslMode.VerifyCA or Npgsql.SslMode.VerifyFull)
+            {
+                return true;
+            }
+            var host = b.Host ?? "";
+            return host.Split(',').All(h => h.StartsWith('/') || h is "localhost" or "127.0.0.1" or "::1");
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
     }
 }
