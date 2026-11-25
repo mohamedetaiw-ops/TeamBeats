@@ -4,6 +4,7 @@ import { useId, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { problemMessages } from "@/lib/notifications/types";
+import { FormPanel } from "@/components/ui/FormField";
 
 /**
  * Approve, reject or return one task (spec 016 US3 scenario 2). A reason is required to reject; the API checks the
@@ -42,7 +43,7 @@ export function TaskDecisionPanel({ taskId, onDone, title }: { taskId: string; o
   }
 
   return (
-    <section className="services-section" aria-labelledby={`${id}-title`}>
+    <FormPanel as="section" aria-labelledby={`${id}-title`}>
       <h2 id={`${id}-title`}>{title ?? t("title")}</h2>
       <div className="field">
         <label htmlFor={`${id}-comment`}>{t("comment")}</label>
@@ -71,6 +72,6 @@ export function TaskDecisionPanel({ taskId, onDone, title }: { taskId: string; o
           {t("reject")}
         </Button>
       </div>
-    </section>
+    </FormPanel>
   );
 }

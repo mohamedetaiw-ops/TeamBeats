@@ -10,6 +10,7 @@ import { Icon, type IconName } from "@/components/ui/Icon";
 import { problemMessages } from "@/lib/notifications/types";
 import { pick, type ServiceTemplateView } from "@/lib/services/types";
 import "./services.css";
+import { FormPanel } from "@/components/ui/FormField";
 
 /**
  * The starter template pack (spec 016 section 12): a tenant-wide catalogue owner switches a template on, which makes
@@ -42,7 +43,7 @@ export function ServiceTemplateList({ initial }: { initial: ServiceTemplateView[
   }
 
   return (
-    <section className="services-section" aria-labelledby="service-templates">
+    <FormPanel as="section" aria-labelledby="service-templates">
       <h2 id="service-templates">{t("title")}</h2>
       <p className="field-hint">{t("intro")}</p>
       {messages.length > 0 ? (
@@ -82,6 +83,6 @@ export function ServiceTemplateList({ initial }: { initial: ServiceTemplateView[
           );
         })}
       </ul>
-    </section>
+    </FormPanel>
   );
 }

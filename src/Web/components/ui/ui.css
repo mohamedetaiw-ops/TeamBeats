@@ -944,6 +944,25 @@
   margin: 0;
 }
 
+/* A form on the panel spaces its fields wider and frames a nested group of fields with a hairline. */
+form.ui-form-panel {
+  gap: var(--tb-space-md);
+}
+
+.ui-form-panel fieldset:not(.ui-form-panel) {
+  display: grid;
+  gap: var(--tb-space-xs);
+  min-inline-size: 0;
+  margin: 0;
+  padding: var(--tb-space-sm);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-sm);
+}
+
+.ui-form-panel :is(textarea, select) {
+  font: inherit;
+}
+
 .ui-form-panel > legend {
   float: inline-start;
   inline-size: 100%;

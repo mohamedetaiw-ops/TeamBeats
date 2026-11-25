@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { FormField } from "@/components/ui/FormField";
+import { FormField, FormPanel } from "@/components/ui/FormField";
 import { StateView } from "@/components/ui/StateView";
 import { problemMessages } from "@/lib/notifications/types";
 import { unitName, type OrgUnit } from "@/lib/experience/builder-types";
@@ -80,7 +80,7 @@ export function ServiceAdminList({ initial, categories: initialCategories, units
 
   return (
     <div className="services">
-      <section className="services-section" aria-labelledby="services-admin-list">
+      <FormPanel as="section" aria-labelledby="services-admin-list">
         <h2 id="services-admin-list">{t("listTitle")}</h2>
         {initial.length === 0 ? (
           <StateView kind="empty" title={t("none")} message="" />
@@ -100,10 +100,9 @@ export function ServiceAdminList({ initial, categories: initialCategories, units
             ))}
           </ul>
         )}
-      </section>
+      </FormPanel>
 
-      <form
-        className="services-section services-form"
+      <FormPanel as="form"
         aria-labelledby="services-admin-create"
         onSubmit={(e) => {
           e.preventDefault();
@@ -144,9 +143,9 @@ export function ServiceAdminList({ initial, categories: initialCategories, units
             {t("create")}
           </Button>
         </div>
-      </form>
+      </FormPanel>
 
-      <section className="services-section" aria-labelledby="services-admin-categories">
+      <FormPanel as="section" aria-labelledby="services-admin-categories">
         <h2 id="services-admin-categories">{t("categoriesTitle")}</h2>
         <ul className="services-list">
           {categories.map((c) => (
@@ -172,7 +171,7 @@ export function ServiceAdminList({ initial, categories: initialCategories, units
         <div className="services-actions">
           <Button onClick={() => void addCategory()}>{t("addCategory")}</Button>
         </div>
-      </section>
+      </FormPanel>
     </div>
   );
 }

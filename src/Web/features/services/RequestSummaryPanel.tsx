@@ -4,6 +4,7 @@ import { useId, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { problemMessages } from "@/lib/notifications/types";
+import { FormPanel } from "@/components/ui/FormField";
 
 type Summary = { outcome: "summarized" | "policy_blocked" | "unavailable"; summary: string | null; denial: string | null };
 
@@ -33,7 +34,7 @@ export function RequestSummaryPanel({ requestId }: { requestId: string }) {
   }
 
   return (
-    <section className="services-section" aria-labelledby={`${id}-title`} data-testid="request-summary">
+    <FormPanel as="section" aria-labelledby={`${id}-title`} data-testid="request-summary">
       <h2 id={`${id}-title`}>{t("title")}</h2>
       <p className="field-hint">{t("intro")}</p>
       <div className="services-actions">
@@ -58,6 +59,6 @@ export function RequestSummaryPanel({ requestId }: { requestId: string }) {
           <p className="notice">{t(result.outcome)}</p>
         ) : null}
       </div>
-    </section>
+    </FormPanel>
   );
 }

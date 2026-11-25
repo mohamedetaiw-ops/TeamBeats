@@ -13,21 +13,6 @@
   list-style: none;
 }
 
-.services-section {
-  display: grid;
-  gap: var(--tb-space-sm);
-  padding: var(--tb-space-lg);
-  border-radius: var(--tb-radius-lg);
-  box-shadow: var(--tb-shadow-sm);
-  background: var(--tb-color-surface-raised);
-  color: var(--tb-color-text-primary);
-}
-
-.services-section h2,
-.services-section h3 {
-  margin: 0;
-}
-
 .services-toolbar {
   display: flex;
   flex-wrap: wrap;
