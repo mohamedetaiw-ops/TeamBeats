@@ -21,10 +21,12 @@ export function AccountMenu({ name, administration = false }: { name: string; ad
   const t = useTranslations("shell");
   const [details, setDetails] = useState<{ title: string | null; email: string | null } | null>(null);
   const [payslips, setPayslips] = useState(false);
+  const [open, setOpen] = useState(false);
   const loaded = useRef(false);
 
-  const changed = useCallback((open: boolean) => {
-    if (!open || loaded.current) return;
+  const changed = useCallback((next: boolean) => {
+    setOpen(next);
+    if (!next || loaded.current) return;
     loaded.current = true;
     // My payslips shows when the API says the person has them (spec 019 US6); the page checks again.
     void fetch("/api/v1/me/payslips-available", { cache: "no-store" })
@@ -53,6 +55,9 @@ export function AccountMenu({ name, administration = false }: { name: string; ad
         triggerTestId="shell-account"
         onOpenChange={changed}
       >
+        {/* The rows render only while the menu is open, so a closed menu adds no names or links to the page. */}
+        {open ? (
+          <>
         <PersonEntry
           person={{
             name,
@@ -85,6 +90,8 @@ export function AccountMenu({ name, administration = false }: { name: string; ad
         ) : null}
         <hr className="ui-menu-separator" />
         <SignOutButton className="ui-menu-item" label={t("signOut")} icon={<Icon name="arrow-forward" size={16} />} />
+          </>
+        ) : null}
       </Popover>
     </div>
   );
