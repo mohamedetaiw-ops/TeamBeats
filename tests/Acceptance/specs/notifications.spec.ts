@@ -42,10 +42,10 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await sample(tenant, unique("it"), "security_notice");
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
 
-      const bell = page.locator(".notification-bell-button");
-      await expect(bell.locator(".notification-count")).toHaveText("2");
+      const bell = page.getByTestId("notification-bell");
+      await expect(bell.locator(".ui-popover-badge")).toHaveText("2");
       await bell.click();
-      const panel = page.locator(".notification-panel");
+      const panel = page.getByTestId("notification-panel");
       await expect(panel.getByRole("heading", { name: msg(locale, "notifications.title") })).toBeVisible();
       await expect(panel.locator(".notification-entry")).toHaveCount(2);
       await expect(panel.locator(".notification-entry[data-mandatory]")).toHaveCount(1);
@@ -58,7 +58,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await bell.click();
       await panel.locator(".notification-entry", { hasText: label }).getByRole("link").click();
       await page.waitForURL(`${hostOrigin(tenant.key)}/`);
-      await expect(page.locator(".notification-bell-button .notification-count")).toHaveText("1");
+      await expect(page.getByTestId("notification-bell").locator(".ui-popover-badge")).toHaveText("1");
     });
 
     test("the centre filters, marks all read and fits a phone", async ({ page }, testInfo) => {
@@ -76,7 +76,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.locator("main").getByRole("button", { name: msg(locale, "notifications.readAll") }).click();
       await expect(page.locator("main .notification-entry[data-unread]")).toHaveCount(0);
       await page.reload();
-      await expect(page.locator(".notification-bell-button .notification-count")).toHaveCount(0);
+      await expect(page.getByTestId("notification-bell").locator(".ui-popover-badge")).toHaveCount(0);
 
       await page.setViewportSize({ width: 375, height: 800 });
       await noHorizontalScroll(page);

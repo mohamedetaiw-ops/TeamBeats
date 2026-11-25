@@ -1,22 +1,16 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type KeyboardEvent,
-} from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
+import { Popover } from "@/components/ui/Popover";
 import { StateView } from "@/components/ui/StateView";
 import type {
   NotificationItem,
   NotificationPage,
 } from "@/lib/notifications/types";
-import { useShellPanel } from "@/lib/shell/panel";
 import {
   NotificationEntry,
   needsAction,
@@ -46,15 +40,12 @@ function startOfToday(now: number): number {
 export function NotificationBell({ initialUnread = null }: { initialUnread?: number | null } = {}) {
   const t = useTranslations("notifications");
   const [unread, setUnread] = useState<number | null>(initialUnread);
-  const root = useRef<HTMLDivElement>(null);
-  const [open, setOpen] = useShellPanel(root);
+  const [open, setOpen] = useState(false);
   const [items, setItems] = useState<NotificationItem[] | "loading" | "failed">(
     "loading",
   );
   const [tab, setTab] = useState<Tab>("all");
   const [now, setNow] = useState(0);
-  const panelId = useId();
-  const button = useRef<HTMLButtonElement>(null);
 
   const refreshCount = useCallback(async () => {
     try {
@@ -82,7 +73,7 @@ export function NotificationBell({ initialUnread = null }: { initialUnread?: num
     };
   }, [refreshCount]);
 
-  async function loadItems() {
+  const loadItems = useCallback(async () => {
     setItems("loading");
     try {
       const response = await fetch("/api/v1/me/notifications?limit=20", {
@@ -99,13 +90,16 @@ export function NotificationBell({ initialUnread = null }: { initialUnread?: num
     } catch {
       setItems("failed");
     }
-  }
+  }, []);
 
-  function toggle() {
-    const next = !open;
-    setOpen(next);
-    if (next) void loadItems();
-  }
+  // The items load each time the panel opens, so the list is never older than the count on the bell.
+  const changed = useCallback(
+    (next: boolean) => {
+      setOpen(next);
+      if (next) void loadItems();
+    },
+    [loadItems],
+  );
 
   async function readOne(item: NotificationItem) {
     await fetch(`/api/v1/me/notifications/${item.id}/read`, { method: "POST" });
@@ -117,127 +111,94 @@ export function NotificationBell({ initialUnread = null }: { initialUnread?: num
     await loadItems();
   }
 
-  function onKeyDown(e: KeyboardEvent<HTMLDivElement>) {
-    if (e.key === "Escape" && open) {
-      setOpen(false);
-      button.current?.focus();
-    }
-  }
-
   const count = unread ?? 0;
   return (
-    <div ref={root} className="notification-bell" onKeyDown={onKeyDown}>
-      <button
-        ref={button}
-        type="button"
-        className="button button-quiet notification-bell-button"
-        aria-expanded={open}
-        aria-controls={panelId}
-        aria-label={t("bell", { count })}
-        onClick={toggle}
+    <div className="notification-bell">
+      <Popover
+        label={t("bell", { count })}
+        title={t("title")}
+        icon="bell"
+        iconOnly
+        badge={count > 0 ? (count > 99 ? t("overflow") : String(count)) : null}
+        frame="panel"
+        width="wide"
+        list
+        placement="bottom-end"
+        testId="notification-panel"
+        triggerTestId="notification-bell"
+        onOpenChange={changed}
+        headAction={
+          open && count > 0 ? (
+            <Button variant="quiet" size="sm" onClick={() => void readAll()}>
+              {t("readAll")}
+            </Button>
+          ) : null
+        }
+        headBelow={
+          // Like the rows, the tabs render only while the panel is open, so a closed panel adds no labels to the page.
+          open ? (
+          <div
+            role="group"
+            aria-label={t("tabs.label")}
+            className="ui-tablist"
+            data-size="sm"
+          >
+            {tabs.map((key) => (
+              <button
+                key={key}
+                type="button"
+                className="ui-tab"
+                aria-pressed={tab === key}
+                onClick={() => setTab(key)}
+              >
+                {t(`tabs.${key}`)}
+              </button>
+            ))}
+          </div>
+          ) : null
+        }
+        footer={
+          <>
+            <Link href="/notifications" className="ui-popover-more">
+              {t("viewAll")}
+            </Link>
+            <Link href="/notifications/preferences" className="ui-popover-more">
+              <Icon name="settings" size={14} />
+              {t("preferences.link")}
+            </Link>
+          </>
+        }
       >
-        <Icon name="bell" />
-        {count > 0 ? (
-          <span className="notification-count" aria-hidden="true">
-            {count > 99 ? t("overflow") : count}
-          </span>
-        ) : null}
-      </button>
+        {/* The rows render only while the panel is open, so a closed panel adds no names to the page. */}
+        {!open ? null : items === "loading" ? (
+          <div className="notification-skeleton" aria-busy="true">
+            {[0, 1, 2].map((i) => (
+              <span key={i} className="ui-skeleton" />
+            ))}
+          </div>
+        ) : items === "failed" ? (
+          <StateView
+            kind="error"
+            title={t("failed")}
+            message=""
+            action={
+              <Button variant="secondary" onClick={() => void loadItems()}>
+                {t("retry")}
+              </Button>
+            }
+          />
+        ) : (
+          <Groups
+            items={items}
+            tab={tab}
+            now={now}
+            onRead={(i) => void readOne(i)}
+          />
+        )}
+      </Popover>
       <span className="visually-hidden" role="status" aria-live="polite">
         {unread === null ? "" : t("unreadStatus", { count })}
       </span>
-      <div
-        className="notification-panel shell-popover"
-        id={panelId}
-        role="dialog"
-        aria-labelledby={`${panelId}-title`}
-        hidden={!open}
-      >
-        {/* The rows render only while the panel is open, so a closed panel adds no names to the page. */}
-        {open ? (
-          <>
-            <div className="shell-popover-head">
-              <div className="notification-panel-head">
-                <h2
-                  className="notification-panel-title"
-                  id={`${panelId}-title`}
-                >
-                  {t("title")}
-                </h2>
-                {count > 0 ? (
-                  <button
-                    type="button"
-                    className="shell-popover-link"
-                    onClick={() => void readAll()}
-                  >
-                    {t("readAll")}
-                  </button>
-                ) : null}
-              </div>
-              <div
-                role="group"
-                aria-label={t("tabs.label")}
-                className="ui-tablist" data-size="sm"
-              >
-                {tabs.map((key) => (
-                  <button
-                    key={key}
-                    type="button"
-                    className="ui-tab"
-                    aria-pressed={tab === key}
-                    onClick={() => setTab(key)}
-                  >
-                    {t(`tabs.${key}`)}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="shell-popover-body">
-              {items === "loading" ? (
-                <div className="notification-skeleton" aria-busy="true">
-                  {[0, 1, 2].map((i) => (
-                    <span key={i} className="ui-skeleton" />
-                  ))}
-                </div>
-              ) : items === "failed" ? (
-                <StateView
-                  kind="error"
-                  title={t("failed")}
-                  message=""
-                  action={
-                    <button
-                      type="button"
-                      className="button button-secondary"
-                      onClick={() => void loadItems()}
-                    >
-                      {t("retry")}
-                    </button>
-                  }
-                />
-              ) : (
-                <Groups
-                  items={items}
-                  tab={tab}
-                  now={now}
-                  onRead={(i) => void readOne(i)}
-                />
-              )}
-            </div>
-            <div className="shell-popover-foot notification-panel-foot">
-              <Link href="/notifications" className="shell-popover-anchor">
-                {t("viewAll")}
-              </Link>
-              <Link
-                href="/notifications/preferences"
-                className="shell-popover-anchor shell-popover-quiet"
-              >
-                <Icon name="settings" size={14} />
-                {t("preferences.link")}
-              </Link>
-            </div>
-          </>
-        ) : null}
-      </div>
     </div>
   );
 }

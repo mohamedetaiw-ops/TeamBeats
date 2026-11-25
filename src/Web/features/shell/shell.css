@@ -351,7 +351,6 @@
 
 .shell-icon-button,
 .shell-bar .ui-popover-trigger,
-.shell-bar .notification-bell-button,
 .shell-bar .task-badge {
   border-radius: var(--tb-radius-full);
 }
@@ -906,7 +905,7 @@
  * its 44 px target and gives up its side padding, so the account menu stays on the screen (DLS-085, WCAG 1.4.10).
  */
 @media (width <= 40rem) {
-  .shell-bar :is(.shell-icon-button, .ui-popover-trigger, .notification-bell-button, .task-badge) {
+  .shell-bar :is(.shell-icon-button, .ui-popover-trigger, .task-badge) {
     justify-content: center;
     min-inline-size: 2.75rem;
     padding-inline: var(--tb-space-xs);

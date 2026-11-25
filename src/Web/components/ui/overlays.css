@@ -217,6 +217,15 @@
   border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
 }
 
+.ui-popover-head-below {
+  flex: 1 0 100%;
+}
+
+/* Tabs under the title sit in the head, which draws the divider itself. */
+.ui-popover-head-below .ui-tablist {
+  border-block-end: 0;
+}
+
 .ui-popover-head .ui-popover-title {
   font-size: var(--tb-font-size-md);
 }

@@ -29,8 +29,10 @@ export function Popover({
   list = false,
   headAction,
   footer,
+  headBelow,
   onOpenChange,
   testId,
+  triggerTestId,
   children,
 }: {
   /** The text of the button that opens the panel; with `iconOnly` it is the button's accessible name. */
@@ -39,8 +41,8 @@ export function Popover({
   title?: string;
   icon?: IconName;
   iconOnly?: boolean;
-  /** A short count on the trigger and the words a screen reader hears for it. */
-  badge?: { text: string; label: string } | null;
+  /** A short count on the trigger, such as "3" or "99+". It is not read out, so the label says it in words. */
+  badge?: string | null;
   variant?: ButtonVariant;
   size?: ButtonSize;
   placement?: Exclude<Placement, "side">;
@@ -52,9 +54,12 @@ export function Popover({
   headAction?: ReactNode;
   /** In the fixed footer of the panel frame, such as a link to the full page. */
   footer?: ReactNode;
+  /** A row under the head's title, such as tabs that choose what the body shows. */
+  headBelow?: ReactNode;
   /** Told when the panel opens or closes, so a feature can load its content only while it is open. */
   onOpenChange?: (open: boolean) => void;
   testId?: string;
+  triggerTestId?: string;
   children: ReactNode;
 }) {
   const id = useId();
@@ -70,7 +75,7 @@ export function Popover({
   useEffect(() => {
     report.current?.(open);
   }, [open]);
-  const triggerProps = { id: triggerId, "aria-expanded": open, "aria-controls": id, onPointerDown, onClick } as const;
+  const triggerProps = { id: triggerId, "aria-expanded": open, "aria-controls": id, "data-testid": triggerTestId, onPointerDown, onClick } as const;
   return (
     <>
       {iconOnly && icon ? (
@@ -78,9 +83,8 @@ export function Popover({
           <Icon name={icon} size={20} />
           <span className="visually-hidden">{label}</span>
           {badge ? (
-            <span className="ui-popover-badge">
-              <span aria-hidden="true">{badge.text}</span>
-              <span className="visually-hidden">{badge.label}</span>
+            <span className="ui-popover-badge" aria-hidden="true">
+              {badge}
             </span>
           ) : null}
         </button>
@@ -102,7 +106,7 @@ export function Popover({
       >
         {panelFrame ? (
           <>
-            {title || headAction ? (
+            {title || headAction || headBelow ? (
               <div className="ui-popover-head">
                 {title ? (
                   <h2 id={titleId} className="ui-popover-title">
@@ -110,6 +114,7 @@ export function Popover({
                   </h2>
                 ) : null}
                 {headAction}
+                {headBelow ? <div className="ui-popover-head-below">{headBelow}</div> : null}
               </div>
             ) : null}
             <div className="ui-popover-body" data-list={list || undefined}>

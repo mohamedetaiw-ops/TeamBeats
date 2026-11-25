@@ -33,8 +33,8 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
 
     test("the inbox groups what needs action first and the tabs narrow it", async ({ page }, testInfo) => {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
-      await page.locator(".notification-bell-button").click();
-      const panel = page.locator(".notification-panel");
+      await page.getByTestId("notification-bell").click();
+      const panel = page.getByTestId("notification-panel");
       await expect(panel.getByRole("heading", { level: 3, name: msg(locale, "notifications.groups.action") })).toBeVisible();
       await expect(panel.locator(".notification-entry .notification-dot")).toHaveCount(2);
       await panel.getByRole("button", { name: msg(locale, "notifications.tabs.action"), exact: true }).click();
