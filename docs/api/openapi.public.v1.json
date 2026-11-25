@@ -84,6 +84,76 @@
         }
       }
     },
+    "/api/public/v1/admin/roles": {
+      "get": {
+        "tags": [
+          "Public: role administration"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicRole"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/admin/role-assignments": {
+      "get": {
+        "tags": [
+          "Public: role administration"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicPageOfPublicRoleAssignment"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/public/v1/tasks": {
       "get": {
         "tags": [
@@ -2303,6 +2373,27 @@
           }
         }
       },
+      "PublicPageOfPublicRoleAssignment": {
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicRoleAssignment"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "PublicPageOfPublicService": {
         "required": [
           "items",
@@ -2851,6 +2942,70 @@
           }
         }
       },
+      "PublicRole": {
+        "required": [
+          "key",
+          "builtIn",
+          "permissions"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "builtIn": {
+            "type": "boolean"
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "PublicRoleAssignment": {
+        "required": [
+          "id",
+          "subjectType",
+          "subjectId",
+          "roleKey",
+          "scopeType",
+          "scopeId",
+          "createdAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "subjectType": {
+            "type": "string"
+          },
+          "subjectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "roleKey": {
+            "type": "string"
+          },
+          "scopeType": {
+            "type": "string"
+          },
+          "scopeId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "PublicSearchPage": {
         "required": [
           "query",
@@ -3180,6 +3335,9 @@
   "tags": [
     {
       "name": "Public: organization"
+    },
+    {
+      "name": "Public: role administration"
     },
     {
       "name": "Public: tasks"

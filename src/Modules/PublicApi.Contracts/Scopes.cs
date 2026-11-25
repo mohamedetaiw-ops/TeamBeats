@@ -46,6 +46,7 @@ public static class ScopeCatalogue
     public const string RequestsSubmit = "requests:submit";
     public const string TasksRead = "tasks:read";
     public const string EventsSubscribe = "events:subscribe";
+    public const string RolesRead = "roles:read";
 
     public static readonly IReadOnlyList<ScopeDefinition> All =
     [
@@ -64,6 +65,8 @@ public static class ScopeCatalogue
         new(RequestsSubmit, [Capabilities.ApiWriteScopes], false, ScopeHolder.Both, ["submit_service_request"]),
         new(TasksRead, [Capabilities.ApiPublic], true, ScopeHolder.Delegated, ["list_my_tasks"]),
         new(EventsSubscribe, [Capabilities.ApiEventSubscriptions], false, ScopeHolder.Application),
+        // Admin APIs beside SCIM (R3): read only (FR-012), for a person acting through an app with their own rights, admin consent only.
+        new(RolesRead, [Capabilities.ApiPublic, Capabilities.ApiAdmin], false, ScopeHolder.Delegated),
     ];
 
     private static readonly Dictionary<string, ScopeDefinition> ByKey = All.ToDictionary(s => s.Key, StringComparer.Ordinal);

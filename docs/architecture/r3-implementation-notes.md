@@ -59,3 +59,10 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - `McpPrompts` holds the catalogue and the `prompts/list` and `prompts/get` handlers of the MCP server; texts are API catalogue keys `mcp.prompt.<name>.*` in English and Arabic.
 - A prompt is offered when the tool gateway offers every tool it names to the caller, the same call the tool list makes, so nothing new decides what a client sees.
 - Gap: the catalogue is fixed in code; tenant-defined prompts would be versioned configuration (constitution XXIX) and are not in R3.
+
+## Spec 035 R3 slice 3: admin APIs beside SCIM (T023)
+
+- The R3 release line asks for admin APIs, and FR-012 forbids public operations that change roles and the other administration areas. The slice keeps FR-012: role administration is read only, through scope `roles:read` (delegated, admin consent, capability `api.admin`, Entitlements migration 0046). Writes wait for a decision on FR-012.
+- The operations live in the Authorization module (`AuthorizationPublicEndpoints`) and call `AuthorizationAdmin`, so the person's `authz.roles_view` coverage decides the answer, as in the admin area.
+- `PublicApiDeveloperTests` keeps guarding FR-012; it now allows administration paths that only read.
+- Gap: no public reads yet for security policy, identity providers, entitlements or apps; they stay in the admin area.

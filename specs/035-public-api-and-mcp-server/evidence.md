@@ -56,3 +56,5 @@ The spec stays Approved, not Implemented. Everything in its R2 scope is built: t
 | Bound refresh tokens and the MCP server | Met | `PublicApiDpopTests.Refresh_tokens_and_mcp_calls_stay_on_the_key_they_were_bound_to` |
 | Mutual TLS bound tokens | Not offered | DPoP only (R3 plan) |
 | MCP prompts, localized, filtered like tools | Met | `PublicMcpPromptTests` (both) |
+| Admin APIs beside SCIM, read only within FR-012 | Met | `PublicAdminApiTests` (both), `PublicApiDeveloperTests.Only_api_viewers_open_the_developer_page_and_the_public_document_is_on_the_tenant_host` |
+| Role changes through the API | Open decision | FR-012 forbids it; needs the spec amended first |

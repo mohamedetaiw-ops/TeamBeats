@@ -926,6 +926,7 @@
         "security_alerts_advanced": "تنبيهات الأمان المتقدمة",
         "security_siem": "بث الأحداث إلى نظام SIEM",
         "security_customer_keys": "مفاتيح تشفير يديرها العميل",
+        "api_admin": "واجهات برمجة الإدارة",
         "security_max_guest_spaces": "المساحات التي تضم ضيوفا",
         "content_core": "الأخبار والصفحات",
         "content_critical_ack": "إعلانات مهمة مع إقرار",
@@ -15844,7 +15845,8 @@
       "requests_read": "عرض الطلبات التي يمكنك رؤيتها",
       "requests_submit": "تقديم طلبات خدمة نيابة عنك",
       "tasks_read": "عرض المهام في صندوقك",
-      "events_subscribe": "تلقي إشعارات بالتغييرات"
+      "events_subscribe": "تلقي إشعارات بالتغييرات",
+      "roles_read": "عرض الأدوار ومن يحملها، بصلاحياتك أنت"
     },
     "admin": {
       "title": "الوصول عبر واجهة البرمجة وMCP",
