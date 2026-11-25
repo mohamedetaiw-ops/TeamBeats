@@ -99,6 +99,6 @@ Moderate and minor findings from the gate, and gaps from manual review, with the
 | Issue | Criterion | Task |
 |---|---|---|
 | Uploaded video previews have no caption track unless the uploader provides captions | 1.2.2 | Listed as a limitation in the statement |
-| 31 detail routes whose record needs the workers, a connected system, HR setup or a device are opened by their feature suites, which fail on critical findings only (the reason for each is in `routes.ts`) | all | T022 |
+| Three detail routes (an agent security alert, an evaluation review item and an agent approval) have no record an end-to-end suite can build; they share their parts with checked pages and are listed with a review date in `a11y/exclusions.ts` (`unseededRoutes`). The other 32 suite-built detail routes are checked in their matrix design, mode and width by `expectDetailConformant` | all | T022 follow-up |
 | Generated PDFs are not tagged | 1.3.1, 4.1.2 for documents | T019 (R3) |
 | No external assistive technology audit yet | all | T018 (R3) |

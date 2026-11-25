@@ -5,6 +5,7 @@ import {
   signInWithDevForm,
   test,
 } from "../support/fixtures";
+import { expectDetailConformant } from "../support/a11y";
 import { msg, type LaunchLocale } from "../support/messages";
 import { sessionToken, tenantApi } from "../support/pages";
 import { createTenant, type TestTenant } from "../support/platform";
@@ -130,6 +131,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
         labels.getByText(m("connections.m365.labels.empty")),
       ).toBeVisible();
       await expectAccessible(page, testInfo, `sharepoint-sites-${locale}`);
+      await expectDetailConformant(page, testInfo, tenant, "/admin/connections/microsoft365/[id]");
 
       // The manager connects the document library for the whole organization.
       await page.goto(`${hostOrigin(tenant.key)}/documents`);

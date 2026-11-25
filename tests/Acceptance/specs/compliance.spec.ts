@@ -1,4 +1,5 @@
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
+import { expectDetailConformant } from "../support/a11y";
 import { msg, type LaunchLocale } from "../support/messages";
 import { tenantApi } from "../support/pages";
 import { createTenant, type TestTenant } from "../support/platform";
@@ -37,6 +38,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByRole("meter", { name: msg(locale, "compliance.status.not_started") })).toHaveAttribute("aria-valuenow", "93");
       await expect(page.getByRole("link", { name: locale === "ar" ? "التحكم في الوصول" : "Access control", exact: true })).toBeVisible();
       await expectAccessible(page, testInfo, `compliance-project-${locale}`);
+      await expectDetailConformant(page, testInfo, tenant, "/compliance/[id]");
     });
 
     test("a control moves on and an audit export attached as evidence shows its hash", async ({ page }, testInfo) => {
@@ -54,6 +56,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.getByRole("link", { name: locale === "ar" ? "التحكم في الوصول" : "Access control", exact: true }).click();
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(locale === "ar" ? "التحكم في الوصول" : "Access control");
       await expectAccessible(page, testInfo, `compliance-control-${locale}`);
+      await expectDetailConformant(page, testInfo, tenant, "/compliance/controls/[id]");
 
       await page.getByLabel(msg(locale, "compliance.control.status"), { exact: true }).selectOption("in_progress");
       await page.getByRole("button", { name: msg(locale, "compliance.control.save") }).click();

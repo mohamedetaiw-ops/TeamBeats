@@ -1,5 +1,6 @@
 import { request, type APIRequestContext } from "@playwright/test";
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
+import { expectDetailConformant } from "../support/a11y";
 import { msg, type LaunchLocale } from "../support/messages";
 import { createTenant, type TestTenant } from "../support/platform";
 import { hostOrigin, stack } from "../support/stack";
@@ -119,6 +120,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.waitForURL(/\/attendance\/requests\/[0-9a-f-]{36}\?task=/);
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("attendance.detail.title"));
       await expectAccessible(page, testInfo, `attendance-decision-${locale}`);
+      await expectDetailConformant(page, testInfo, tenant, "/attendance/requests/[id]");
       await page.getByRole("button", { name: m("services.decision.approve") }).click();
       await expect(page.getByText(m("attendance.detail.decided"), { exact: true })).toBeVisible();
       await expect(page.getByText(m("attendance.requests.statuses.approved")).first()).toBeVisible();

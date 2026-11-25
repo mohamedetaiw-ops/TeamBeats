@@ -1,5 +1,6 @@
 import type { APIRequestContext } from "@playwright/test";
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
+import { expectDetailConformant } from "../support/a11y";
 import { msg, type LaunchLocale } from "../support/messages";
 import { tenantApi, tenantApiAs } from "../support/pages";
 import { createTenant, type TestTenant } from "../support/platform";
@@ -58,6 +59,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(card).toHaveCount(1);
       await expect(card.getByRole("table", { name: m("policies.team.owing") }).getByRole("row").filter({ hasText: /rana/i })).toHaveCount(1);
       await expectAccessible(page, testInfo, `policy-team-${locale}`);
+      await expectDetailConformant(page, testInfo, tenant, "/policies/team");
     });
   });
 }

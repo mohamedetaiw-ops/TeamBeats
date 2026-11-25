@@ -1,6 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, type TestInfo } from "@playwright/test";
 import { exclusions } from "../a11y/exclusions";
+import { routes } from "../a11y/routes";
 import { tenantApi } from "./pages";
 import type { TestTenant } from "./platform";
 
@@ -75,5 +76,63 @@ export async function chooseMode(tenant: TestTenant, mode: string): Promise<void
     expect(saved.ok(), await saved.text()).toBe(true);
   } finally {
     await api.dispose();
+  }
+}
+
+const designs = ["beats", "atlas", "pulse", "studio"] as const;
+const widths = [
+  { name: "desktop", width: 1280, height: 900 },
+  { name: "phone", width: 390, height: 844 },
+] as const;
+
+/** The detail routes that need workers, a connected system, HR setup or a device: their feature suites check them. */
+export const suiteCheckedRoutes = routes.filter((r) => r.tier === "detail" && r.reason && !r.reason.includes("checked here")).map((r) => r.path);
+
+/**
+ * A detail route checked on the record its feature suite built (spec 038 T022). The page is open on that record. The
+ * route gets the design, colour mode and width the matrix rotation gives it, the same way `a11y/details.spec.ts` turns
+ * the routes it seeds itself, and the gate runs. The page then goes back to the default design, mode and width, so the
+ * rest of the suite carries on as before. A signed-out page has no tenant design, so only its mode and width turn.
+ */
+/** Puts the given tokens on the tenant's first brand and returns the tokens it had, so they can be put back. */
+async function putBrandTokens(tenant: TestTenant, change: (tokens: Record<string, unknown>) => Record<string, unknown>): Promise<Record<string, unknown>> {
+  const api = await tenantApi(tenant);
+  try {
+    const brands = (await (await api.get("/api/v1/experience/brands")).json()) as { id: string }[];
+    const brand = (await (await api.get(`/api/v1/experience/brands/${brands[0]!.id}`)).json()) as { name: string; tokens: Record<string, unknown> };
+    const saved = await api.put(`/api/v1/experience/brands/${brands[0]!.id}`, { data: { name: brand.name, tokens: change(brand.tokens) } });
+    expect(saved.ok(), await saved.text()).toBe(true);
+    return brand.tokens;
+  } finally {
+    await api.dispose();
+  }
+}
+
+export async function expectDetailConformant(page: Page, testInfo: TestInfo, tenant: TestTenant, route: string): Promise<void> {
+  const index = suiteCheckedRoutes.indexOf(route);
+  expect(index, `${route} is a detail route with a reason in a11y/routes.ts`).toBeGreaterThanOrEqual(0);
+  const html = page.locator("html");
+  const lang = (await html.getAttribute("lang")) ?? "en";
+  // Signed-out pages (a signage screen, a pre-boarding link) keep the platform design whatever the tenant chose.
+  const signedIn = (await page.locator(".shell-bar").count()) > 0;
+  // The other language starts half way round, so each route is seen in two designs.
+  const design = designs[(index + (lang.startsWith("ar") ? 2 : 0)) % designs.length]!;
+  const mode = Math.floor(index / designs.length) % 2 === 0 ? "light" : "dark";
+  const width = widths[Math.floor(index / (designs.length * 2)) % widths.length]!;
+  const viewport = page.viewportSize();
+  const before = signedIn ? await putBrandTokens(tenant, (tokens) => ({ ...tokens, "design.preset": { $value: design } })) : null;
+  await page.emulateMedia({ colorScheme: mode });
+  await page.setViewportSize(width);
+  try {
+    await page.reload();
+    if (signedIn) await expect(html).toHaveAttribute("data-design", design);
+    await settle(page);
+    await expectConformant(page, testInfo, `${signedIn ? design : "public"}-${mode}-${lang}-${width.name}${route.replace(/[/[\]]+/g, "-")}`);
+  } finally {
+    if (before) await putBrandTokens(tenant, () => before);
+    await page.emulateMedia({ colorScheme: null });
+    if (viewport) await page.setViewportSize(viewport);
+    await page.reload();
+    await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => undefined);
   }
 }

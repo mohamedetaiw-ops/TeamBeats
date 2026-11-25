@@ -1,4 +1,5 @@
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
+import { expectDetailConformant } from "../support/a11y";
 import { msg, type LaunchLocale } from "../support/messages";
 import { tenantApi } from "../support/pages";
 import { createTenant, type TestTenant } from "../support/platform";
@@ -42,6 +43,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByRole("rowheader", { name: m("content.delivery.channelName.in_app") })).toBeVisible();
       await expect(page.locator("html")).toHaveAttribute("dir", locale === "ar" ? "rtl" : "ltr");
       await expectAccessible(page, testInfo, `delivery-report-${locale}`);
+      await expectDetailConformant(page, testInfo, tenant, "/content/items/[id]/delivery");
     });
   });
 }

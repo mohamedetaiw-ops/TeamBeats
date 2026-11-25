@@ -1,4 +1,5 @@
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
+import { expectDetailConformant } from "../support/a11y";
 import { msg, type LaunchLocale } from "../support/messages";
 import { tenantApi } from "../support/pages";
 import { createTenant, type TestTenant } from "../support/platform";
@@ -35,6 +36,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByRole("heading", { level: 1, name: `#${tag}` })).toBeVisible();
       await expect(page.getByTestId("topic-item").filter({ hasText: title })).toBeVisible();
       await expectAccessible(page, testInfo, `content-topic-${locale}`);
+      await expectDetailConformant(page, testInfo, tenant, "/content/topics/[tag]");
 
       await page.getByRole("button", { name: m("content.topics.followNamed", { name: `#${tag}` }) }).click();
       await expect(page.getByRole("button", { name: m("content.topics.unfollowNamed", { name: `#${tag}` }) })).toBeVisible();

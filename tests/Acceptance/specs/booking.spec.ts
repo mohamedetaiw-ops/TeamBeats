@@ -1,4 +1,5 @@
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
+import { expectDetailConformant } from "../support/a11y";
 import { msg, type LaunchLocale } from "../support/messages";
 import { createTenant, type TestTenant } from "../support/platform";
 import { hostOrigin } from "../support/stack";
@@ -64,6 +65,11 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await main.getByRole("button", { name: m("booking.manage.addResource") }).click();
       await expect(page.getByText(m("booking.manage.resourceAdded", { name: camera }))).toBeVisible();
       await expectAccessible(page, testInfo, `booking-site-${locale}`);
+      await main.getByRole("link", { name: m("booking.manage.kiosk") }).click();
+      await page.waitForURL(/\/booking\/kiosk\/[0-9a-f-]{36}$/);
+      await expectDetailConformant(page, testInfo, tenant, "/booking/kiosk/[site]");
+      await page.goBack();
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(site);
 
       await main.getByRole("link", { name: m("booking.manage.labels") }).click();
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("booking.manage.labels"));
@@ -96,6 +102,11 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(list.getByRole("listitem")).toHaveCount(1);
       await expect(list.getByText(m("booking.status.confirmed"))).toBeVisible();
       await expectAccessible(page, testInfo, `booking-mine-${locale}`);
+      await list.getByRole("link").first().click();
+      await page.waitForURL(/\/booking\/bookings\/[0-9a-f-]{36}$/);
+      await expectDetailConformant(page, testInfo, tenant, "/booking/bookings/[id]");
+      await page.goBack();
+      await expect(list.getByRole("listitem")).toHaveCount(1);
       await list.getByRole("button", { name: m("booking.mine.cancel") }).click();
       await list.getByRole("button", { name: m("booking.mine.cancelConfirm") }).click();
       await expect(list.getByText(m("booking.status.cancelled"))).toBeVisible();
@@ -144,6 +155,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(main.getByText(m("booking.checkIn.doneTitle"))).toBeVisible();
       await expect(main.getByText(m("booking.status.checked_in"), { exact: true })).toBeVisible();
       await expectAccessible(page, testInfo, `booking-scan-done-${locale}`);
+      await expectDetailConformant(page, testInfo, tenant, "/booking/scan/[code]");
     });
 
     test("an administrator sees how the site was used without names", async ({ page }, testInfo) => {

@@ -1,5 +1,6 @@
 import { request, type APIRequestContext } from "@playwright/test";
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
+import { expectDetailConformant } from "../support/a11y";
 import { msg, type LaunchLocale } from "../support/messages";
 import { createTenant, type TestTenant } from "../support/platform";
 import { hostOrigin, stack } from "../support/stack";
@@ -65,6 +66,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("letters.detail.title"));
       await expect(page.getByText("Emirates Bank")).toBeVisible();
       await expectAccessible(page, testInfo, `letter-detail-${locale}`);
+      await expectDetailConformant(page, testInfo, tenant, "/letters/[id]");
 
       const layla = await signedIn(tenant, laylaEmail);
       const letters = (await (await layla.get("/api/v1/me/letters")).json()) as { id: string }[];

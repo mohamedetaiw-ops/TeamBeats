@@ -1,5 +1,6 @@
 import { request, type APIRequestContext } from "@playwright/test";
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
+import { expectDetailConformant } from "../support/a11y";
 import { msg, type LaunchLocale } from "../support/messages";
 import { createTenant, type TestTenant } from "../support/platform";
 import { hostOrigin, stack } from "../support/stack";
@@ -69,6 +70,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.goto(`${hostOrigin(tenant.key)}/my-details/requests/${changeId}`);
       await expect(page.getByText(m("data_changes.detail.manual"))).toBeVisible();
       await expectAccessible(page, testInfo, `data-change-approved-${locale}`);
+      await expectDetailConformant(page, testInfo, tenant, "/my-details/requests/[id]");
       await page.getByRole("button", { name: m("data_changes.detail.complete") }).click();
       await expect(page.getByText(m("data_changes.detail.completed"))).toBeVisible();
       await expect(page.getByText(m("data_changes.detail.cleared"))).toBeVisible();

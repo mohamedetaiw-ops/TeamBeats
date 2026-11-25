@@ -1,5 +1,6 @@
 import { request, type APIRequestContext } from "@playwright/test";
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
+import { expectDetailConformant } from "../support/a11y";
 import { msg, type LaunchLocale } from "../support/messages";
 import { createTenant, type TestTenant } from "../support/platform";
 import { hostOrigin, stack } from "../support/stack";
@@ -103,6 +104,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(results.getByText('"head"')).toBeVisible();
       await expect(results.getByText('"manager"')).toBeVisible();
       await expectAccessible(page, testInfo, "decision test");
+      await expectDetailConformant(page, testInfo, tenant, "/admin/decisions/[key]");
     });
     test("a designer draws, saves and publishes a process with the keyboard friendly modeler", async ({ page }, testInfo) => {
       const md = (key: string, values: Record<string, string> = {}) => m(`processes.modeler.${key}`, values);
@@ -142,6 +144,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       const steps = page.getByRole("list", { name: md("testSteps") });
       await expect(steps.getByText(md("testEvents.assigned", { who: md("testLineManager") }))).toBeVisible();
       await expectAccessible(page, testInfo, "process test run");
+      await expectDetailConformant(page, testInfo, tenant, "/admin/processes/[key]");
 
       await page.getByRole("button", { name: md("showXml") }).click();
       await expect(page.getByLabel(md("xml"))).toHaveValue(/tb:assignment lineManager="true"/);

@@ -1,4 +1,5 @@
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
+import { expectDetailConformant } from "../support/a11y";
 import { msg, type LaunchLocale } from "../support/messages";
 import { createTenant, type TestTenant } from "../support/platform";
 import { tenantApi } from "../support/pages";
@@ -82,6 +83,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByRole("status").filter({ hasText: m("ai.debug.closed", { useCase: assistant }) })).toBeVisible();
       await page.getByRole("link", { name: m("ai.debug.view", { useCase: assistant }) }).click();
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("ai.debug.entriesTitle"));
+      await expectDetailConformant(page, testInfo, tenant, "/admin/ai/debug/[id]");
       await expect(page.getByText(m("ai.debug.noEntries"))).toBeVisible();
       await expectAccessible(page, testInfo, `ai-debug-entries-${locale}`);
     });

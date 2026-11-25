@@ -1,4 +1,5 @@
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
+import { expectDetailConformant } from "../support/a11y";
 import { msg, type LaunchLocale } from "../support/messages";
 import { tenantApi } from "../support/pages";
 import { createTenant, type TestTenant } from "../support/platform";
@@ -48,6 +49,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByTestId("count-failed")).toContainText("1");
       await expect(page.getByTestId("import-row")).toHaveCount(3);
       await expectAccessible(page, testInfo, `document-import-report-${locale}`);
+      await expectDetailConformant(page, testInfo, tenant, "/documents/imports/[id]");
 
       await page.getByTestId("count-failed").click();
       await expect(page.getByTestId("import-row")).toHaveCount(1);

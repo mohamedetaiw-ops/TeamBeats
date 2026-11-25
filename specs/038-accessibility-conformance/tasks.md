@@ -25,7 +25,7 @@ Depends on 007 (baseline), 008 (shell and preferences), 032 (page builder), 033 
 - [x] T014 Non-drag move controls with announcements: page builder, home arrange mode, process modeler, boards (A11Y-019)
 - [x] T015 Sign-in fields: autocomplete and paste, checked by `a11y/authentication.spec.ts` (A11Y-022)
 - [x] T021 Redundant entry review of multi-step forms in `docs/accessibility/redundant-entry-review.md` (A11Y-021)
-- [ ] T022 Seed the 31 detail routes that need the workers, a connected system, HR setup or a device, and move them from their feature suites into `a11y/details.spec.ts`
+- [x] T022 Check the detail routes that need the workers, a connected system, HR setup or a device in their matrix design, mode and width on the record their feature suite builds (`expectDetailConformant` in `support/a11y.ts`); `a11y/inventory.spec.ts` fails a reasoned detail route without that check, apart from the three in `unseededRoutes` with a reason and review date
 
 ## Phase 5: Statement and report (US6)
 - [x] T016 `/accessibility` statement page, public, ar and en, footer fallback link (A11Y-023)

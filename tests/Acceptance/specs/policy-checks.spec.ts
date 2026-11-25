@@ -1,5 +1,6 @@
 import type { APIRequestContext } from "@playwright/test";
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
+import { expectDetailConformant } from "../support/a11y";
 import { msg, type LaunchLocale } from "../support/messages";
 import { tenantApi, tenantApiAs } from "../support/pages";
 import { createTenant, type TestTenant } from "../support/platform";
@@ -75,6 +76,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.getByRole("link", { name: m("policies.attest.takeCheck") }).click();
       await page.waitForURL(/\/check$/);
       await expectAccessible(page, testInfo, `policy-check-start-${locale}`);
+      await expectDetailConformant(page, testInfo, tenant, "/policies/[id]/check");
       await page.getByRole("button", { name: m("policies.check.start") }).click();
       await expect(page.getByTestId("check-question")).toHaveCount(2);
       await expectAccessible(page, testInfo, `policy-check-attempt-${locale}`);
