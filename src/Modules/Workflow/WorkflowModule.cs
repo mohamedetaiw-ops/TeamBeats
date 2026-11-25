@@ -97,6 +97,19 @@ public static class WorkflowModule
             return Results.Ok(view);
         });
 
+        group.MapGet("/processes/{key}/migration", async (string key, int? fromVersion, int? toVersion, ProcessOperations ops, CancellationToken ct) =>
+            Results.Ok(await ops.PlanMigrationAsync(key, fromVersion, toVersion, ct)));
+
+        group.MapPost("/processes/{key}/migration:dry-run", async (string key, MigrationRequest request, ProcessOperations ops, CancellationToken ct) =>
+            Results.Ok(await ops.MigrateAsync(key, request, false, ct)));
+
+        group.MapPost("/processes/{key}/migration:execute", async (string key, MigrationRequest request, ProcessOperations ops, IDbSession session, CancellationToken ct) =>
+        {
+            var report = await ops.MigrateAsync(key, request, true, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(report);
+        });
+
         group.MapGet("/processes/{key}/monitoring", async (string key, int? version, DateTimeOffset? from, DateTimeOffset? to, ProcessOperations ops, CancellationToken ct) =>
             Results.Ok(await ops.MonitoringAsync(key, version, from, to, ct)));
 

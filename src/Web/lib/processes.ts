@@ -141,3 +141,32 @@ export type TestStep = {
 
 /** A sandbox run of a draft: nothing is created or sent. Outcome is completed, terminated, error:<code>, incident, waiting, stopped or invalid. */
 export type ProcessTestResult = { outcome: string; steps: TestStep[]; variables: Record<string, unknown>; problems: ModelProblem[] };
+
+/** Instance migration of spec 024 R3 (FR-015, US6): a proposed plan and the report of a dry run or a move. */
+export type MigrationPlanRow = { elementId: string; name: string; type: string; target: string | null };
+
+export type MigrationPlan = {
+  process: string;
+  fromVersion: number;
+  toVersion: number;
+  elements: MigrationPlanRow[];
+  targetElements: { elementId: string; name: string; type: string }[];
+  activeInstances: number;
+};
+
+export type MigrationOutcome = { instanceId: string; businessKey: string | null; migratable: boolean; reason: string | null; elementId: string | null };
+
+export type MigrationReport = { executed: boolean; migratable: number; refused: number; instances: MigrationOutcome[] };
+
+export const MIGRATION_REASONS = [
+  "unmapped",
+  "kind_changed",
+  "structure_changed",
+  "wait_changed",
+  "join_changed",
+  "compensating",
+  "compensation_changed",
+  "not_active",
+  "other_version",
+  "not_found",
+] as const;

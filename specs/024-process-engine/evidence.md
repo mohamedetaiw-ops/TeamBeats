@@ -51,4 +51,5 @@ R2 adds the modeler, the BPMN subset of section 12, DMN, messages, timers, servi
 | Requirement | Status | Evidence |
 |---|---|---|
 | US4.3 and FR-011 compensation handlers in reverse order, shown in Tracking | Met | `ProcessCompensationTests`, `ProcessModelTests.Compensation_needs_the_advanced_package_and_undoes_completed_steps_newest_first` |
-| Package split for R3 items (section 9) | Met for compensation | Publish refused with `validation.process.advanced_package` without `workflow.bpmn_advanced` in the same integration test |
+| US6.1 to US6.4 and FR-015 migration plan, dry run, audited move, unsafe instances stay | Met | `InstanceMigrationTests`, `ProcessModelTests.Operators_dry_run_and_move_running_instances_to_a_new_version_with_a_mapping` |
+| Package split for R3 items (section 9) | Met for compensation and migration | Publish refused with `validation.process.advanced_package` without `workflow.bpmn_advanced`; migration refused without it |

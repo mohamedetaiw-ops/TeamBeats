@@ -272,6 +272,83 @@ public sealed class ProcessModelTests(TenantWorld world)
         Assert.Equal(["order", "reserve"], history.Where(h => h.Event == "compensated").Select(h => h.ElementId));
     }
 
+    [Fact]
+    public async Task Operators_dry_run_and_move_running_instances_to_a_new_version_with_a_mapping()
+    {
+        var o = await FreshAsync();
+        var t = o.T;
+        var amal = $"users=\"{t["amal"].Id}\"";
+        string Version(string second, string sub) => Model($"""
+            <bpmn:startEvent id="s"/>{UserTask("review", amal)}{UserTask(second, amal, "Approve")}
+            <bpmn:subProcess id="check"><bpmn:startEvent id="cs"/>{sub}<bpmn:endEvent id="ce"/></bpmn:subProcess>
+            <bpmn:endEvent id="done"/>
+            {Flow("f1", "s", "review")}{Flow("f2", "review", second)}{Flow("f3", second, "check")}{Flow("f4", "check", "done")}
+            """);
+        var inner = $"""{UserTask("inspect", amal, "Inspect")}{Flow("c1", "cs", "inspect")}{Flow("c2", "inspect", "ce")}""";
+        await SaveAsync(t, "owner", "moving", Version("approve", inner));
+        await PublishAsync(t, "owner", "moving");
+        var atApprove = await StartAsync(t, "moving", null, o.Gulf, "MV-1");
+        var inside = await StartAsync(t, "moving", null, o.Gulf, "MV-2");
+        var africa = await StartAsync(t, "moving", null, o.Africa, "MV-3");
+        async Task Finish(Guid instance, string element)
+        {
+            var task = (await TasksAsync(t, "amal")).Single(x => x.InstanceId == instance && x.ElementId == element);
+            await CompleteAsync(t, "amal", task.Id);
+        }
+        await Finish(atApprove, "review");
+        await Finish(inside, "review");
+        await Finish(inside, "approve");
+
+        // Version 2 renames the approval step and adds a step inside the check.
+        await SaveAsync(t, "owner", "moving", Version("sign_off", $"""{UserTask("inspect", amal, "Inspect")}{UserTask("record", amal, "Record")}{Flow("c1", "cs", "inspect")}{Flow("c2", "inspect", "record")}{Flow("c3", "record", "ce")}"""));
+        await PublishAsync(t, "owner", "moving");
+        const string Migration = $"{Api}/moving/migration";
+
+        // Migration needs the advanced package and process.operate.
+        Assert.Equal(HttpStatusCode.Forbidden, (await t["operator"].Client.GetAsync($"{Migration}?fromVersion=1&toVersion=2")).StatusCode);
+        await world.SetCapabilityAsync(t, Capabilities.WorkflowBpmnAdvanced, new { enabled = true });
+        var plan = await OkAsync(t["operator"].Client.GetAsync($"{Migration}?fromVersion=1&toVersion=2"));
+        var rows = plan.GetProperty("elements").EnumerateArray().ToDictionary(r => r.GetProperty("elementId").GetString()!, r => r.GetProperty("target"));
+        Assert.Equal("review", rows["review"].GetString());
+        Assert.Equal(JsonValueKind.Null, rows["approve"].ValueKind);
+        Assert.Equal(3, plan.GetProperty("activeInstances").GetInt32());
+        Assert.Equal(HttpStatusCode.NotFound, (await t["employee"].Client.GetAsync($"{Migration}?fromVersion=1&toVersion=2")).StatusCode);
+        Assert.Equal("validation.process.migration_versions", await ProblemKeyAsync(t["operator"].Client.GetAsync($"{Migration}?fromVersion=1&toVersion=1"), HttpStatusCode.BadRequest));
+        Assert.Equal("validation.process.migration_mapping", await ProblemKeyAsync(t["operator"].Client.PostAsJsonAsync($"{Migration}:dry-run",
+            new { fromVersion = 1, toVersion = 2, mapping = new Dictionary<string, string> { ["approve"] = "check" }, instanceIds = new[] { atApprove } }), HttpStatusCode.BadRequest));
+
+        object Body(params Guid[] ids) => new { fromVersion = 1, toVersion = 2, mapping = new Dictionary<string, string> { ["approve"] = "sign_off" }, instanceIds = ids };
+        var other = await FreshAsync("enterprise_gov");
+        var stranger = Guid.NewGuid();
+        var dry = await OkAsync(t["operator"].Client.PostAsJsonAsync($"{Migration}:dry-run", Body(atApprove, inside, africa, stranger)));
+        var report = dry.GetProperty("instances").EnumerateArray().ToDictionary(i => i.GetProperty("instanceId").GetGuid(), i => i);
+        Assert.True(report[atApprove].GetProperty("migratable").GetBoolean());
+        Assert.Equal(("structure_changed", "check"), (report[inside].GetProperty("reason").GetString(), report[inside].GetProperty("elementId").GetString()));
+        Assert.True(report[africa].GetProperty("migratable").GetBoolean());
+        Assert.Equal("not_found", report[stranger].GetProperty("reason").GetString());
+        Assert.Equal(1, (await InstanceAsync(t, atApprove))!.DefinitionVersion);
+
+        // Executing moves the instance: its open task now belongs to the renamed step and it finishes on version 2.
+        var executed = await OkAsync(t["operator"].Client.PostAsJsonAsync($"{Migration}:execute", Body(atApprove, inside)));
+        Assert.Equal((1, 1), (executed.GetProperty("migratable").GetInt32(), executed.GetProperty("refused").GetInt32()));
+        Assert.Equal(2, (await InstanceAsync(t, atApprove))!.DefinitionVersion);
+        Assert.Equal(1, (await InstanceAsync(t, inside))!.DefinitionVersion);
+        Assert.Equal(1, await world.Database.AuditCountAsync(t.Id, AuditActions.ProcessMigrationExecuted));
+        await Finish(atApprove, "sign_off");
+        await Finish(atApprove, "inspect");
+        await Finish(atApprove, "record");
+        Assert.Equal("completed", (await InstanceAsync(t, atApprove))!.Status);
+        var history = await AsAsync(t, null, sp => sp.GetRequiredService<IProcessEngine>().HistoryAsync(atApprove));
+        Assert.Contains(history, h => h.Event == "migrated");
+        Assert.Contains(history, h => h.ElementId == "review" && h.Event == "completed");
+
+        // The instance left behind still runs on version 1; another tenant cannot plan or move this tenant's instances.
+        await Finish(inside, "inspect");
+        Assert.Equal("completed", (await InstanceAsync(t, inside))!.Status);
+        Assert.Equal(HttpStatusCode.NotFound, (await other.T["operator"].Client.GetAsync($"{Migration}?fromVersion=1&toVersion=2")).StatusCode);
+        Assert.Equal(1, (await InstanceAsync(t, africa))!.DefinitionVersion);
+    }
+
     private async Task<HttpStatusCode> AssertDeniedAsync(TestTenant t, string user, Guid task)
     {
         try

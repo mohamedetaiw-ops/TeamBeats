@@ -3026,5 +3026,8 @@
   "validation.process.compensation_handler": "يجب أن يكون معالج التعويض مهمة مستخدم أو خدمة أو مهمة يدوية أو إرسال أو قاعدة عمل، بلا مسارات أو تكرار أو أحداث حدودية، ويشير إليه حدث تعويض حدودي واحد فقط.",
   "validation.process.compensation_boundary": "يحتاج حدث التعويض الحدودي إلى ارتباط واحد بمعالج تعويض في النطاق نفسه، وبلا مسار خارج، وبنشاط ليس عملية فرعية ولا نشاطًا متعدد النسخ. ولكل نشاط حدث واحد على الأكثر.",
   "validation.process.compensation_activity": "يجب أن يكون النشاط المراد تعويضه في النطاق نفسه وأن يكون له حدث تعويض حدودي.",
-  "validation.process.advanced_package": "يتطلب التعويض ميزات العمليات المتقدمة في باقتك."
+  "validation.process.advanced_package": "يتطلب التعويض ميزات العمليات المتقدمة في باقتك.",
+  "validation.process.migration_versions": "اختر إصدارين منشورين مختلفين من هذه العملية.",
+  "validation.process.migration_mapping": "لا يمكن ربط كل خطوة إلا بخطوة من النوع نفسه في الإصدار الجديد.",
+  "validation.process.migration_instances": "اختر من 1 إلى 100 نسخة قيد التشغيل لنقلها."
 }

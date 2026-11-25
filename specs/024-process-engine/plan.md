@@ -94,6 +94,19 @@ R3 adds compensation, instance migration, BPMN import from other tools and the C
 - History records `compensation` on the event with the list, then `compensating` and `compensated` on each activity, so Tracking shows each handler.
 - Defaults where the spec is silent: no compensation of multi-instance activities or of sub-processes as a whole, no compensation event sub-processes, and a compensation event inside a sub-process compensates only what completed in that sub-process.
 
+### Instance migration (FR-015, US6)
+- `GET /api/v1/workflow/processes/{key}/migration?fromVersion&toVersion` proposes a plan: each step of the source version with the step of the same ID and kind in the target, or none, and the target's steps to choose from.
+- `POST .../migration:dry-run` and `POST .../migration:execute` take the versions, a mapping (source step to target step of the same kind) and 1 to 100 instance IDs, and report per instance whether it can move and why not. Execute moves those that can and writes one audit event `process.migration_executed` with the counts and the mapping.
+- An instance moves only when every token maps to a step of the same kind, a token waiting at a join still has its incoming flow, every timer or message it waits for maps to the same kind of event with the same message and key on the mapped step, every completed step it could still compensate keeps a compensation boundary, it is not compensating, and every sub-process or multi-instance it is inside keeps the same ID and the same inside (US6 scenario 4).
+- Moving keeps tokens, variables and history; open tasks, service steps, incidents, timers and subscriptions take the target's step IDs in one statement per table, and history records `migrated`.
+- Needs `process.operate` at the model's owner unit and, per instance, at the instance's unit; an instance the operator does not operate is reported as not found. Needs `workflow.bpmn_advanced`.
+- Defaults where the spec is silent: an open task keeps its candidates and due time; a timer keeps its due time; boundary events that are new in the target are armed only the next time their step starts; child instances of call activities are migrated on their own process.
+- Operations page: a third tab "Move to new version" with the plan, a step picker per step, the instance list with selection, a dry run and the move.
+
 ### Tests (R3 slice 1)
 - Unit: `ProcessCompensationTests` (reverse order, throw and end events, activity reference, each activity once, skipped activities, a plain end does not compensate, validator problems).
 - Integration: `ProcessModelTests.Compensation_needs_the_advanced_package_and_undoes_completed_steps_newest_first` (publish refused without the capability, handlers as inbox tasks in reverse order across saved steps).
+
+### Tests (R3 slice 2)
+- Unit: `InstanceMigrationTests` (proposal, explicit mapping, kind and wait changes, sub-process and multi-instance structure).
+- Integration: `ProcessModelTests.Operators_dry_run_and_move_running_instances_to_a_new_version_with_a_mapping` (package refusal, plan proposal, bad versions and mapping, dry run changes nothing, a changed sub-process stays, an unknown instance is not found, the moved task completes on the new version, audit, other tenant refused).

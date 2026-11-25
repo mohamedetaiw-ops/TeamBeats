@@ -16446,7 +16446,8 @@
       "history": "History",
       "instanceLevel": "Instance",
       "cancelInstance": "Cancel this instance",
-      "cancelled": "The instance is cancelled."
+      "cancelled": "The instance is cancelled.",
+      "migrationTab": "Move to new version"
     },
     "monitoring": {
       "title": "Monitoring",
@@ -16822,6 +16823,55 @@
         "action_not_run": "not carried out in a test run"
       },
       "testGroups": "members of the step's groups ({count})"
+    },
+    "migration": {
+      "title": "Move instances to a new version",
+      "intro": "Choose two versions of a process, check which step of the old version becomes which step of the new one, then try the move on the instances you pick before you run it. Instances that cannot move safely stay where they are.",
+      "nothingToMove": "No process has a second published version yet.",
+      "process": "Process",
+      "fromVersion": "From version",
+      "toVersion": "To version",
+      "prepare": "Prepare the plan",
+      "loading": "Preparing",
+      "failed": "The migration could not be prepared or run.",
+      "mappingTitle": "Steps of version {from} in version {to}",
+      "mappingHint": "Steps with the same ID and kind are matched for you. Choose a step for the others, or leave them unmapped if no instance is there.",
+      "noSteps": "This version has no steps.",
+      "step": "Step",
+      "target": "In the new version",
+      "targetFor": "{step} becomes",
+      "notMapped": "Not mapped",
+      "instancesTitle": "Running instances ({count})",
+      "noInstances": "No running instances of this version.",
+      "businessKey": "Business key",
+      "dryRun": "Try the move",
+      "checking": "Checking",
+      "move": "Move {count, plural, one {# instance} other {# instances}}",
+      "moving": "Moving",
+      "checkedTitle": "Dry run finished",
+      "checked": "{migratable} can move and {refused} cannot. Nothing was changed.",
+      "movedTitle": "Instances moved",
+      "moved": "{migratable} moved and {refused} stayed on the old version.",
+      "reportTitle": "Result per instance",
+      "result": "Result",
+      "resultCanMove": "Can move",
+      "resultMoved": "Moved",
+      "resultCannotMove": "Stays",
+      "reason": "Why",
+      "reasonAt": "{reason} ({step})",
+      "reasons": {
+        "unmapped": "A step it is at has no step in the new version",
+        "kind_changed": "The new step is of another kind",
+        "structure_changed": "It is inside a part that changed",
+        "wait_changed": "An event it waits for changed",
+        "join_changed": "A join it waits at changed",
+        "compensating": "It is undoing finished steps",
+        "compensation_changed": "A finished step can no longer be undone",
+        "not_active": "It is no longer running",
+        "other_version": "It runs on another version",
+        "not_found": "Not found",
+        "other": "It cannot move"
+      }
     }
   },
   "records": {

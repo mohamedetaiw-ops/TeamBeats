@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { Tabs } from "@/components/ui/Tabs";
 import type { ProcessModelSummary } from "@/lib/processes";
+import { MigrationPanel } from "./MigrationPanel";
 import { MonitoringPanel } from "./MonitoringPanel";
 import { OperationsPanel } from "./OperationsPanel";
 
@@ -24,6 +25,7 @@ export function ProcessOperationsTabs({
       tabs={[
         { key: "instances", label: t("instancesTab"), content: <OperationsPanel processes={processes} /> },
         { key: "monitoring", label: t("monitoringTab"), content: <MonitoringPanel processes={processes} initialProcess={initialProcess} /> },
+        { key: "migration", label: t("migrationTab"), content: <MigrationPanel processes={processes} /> },
       ]}
     />
   );

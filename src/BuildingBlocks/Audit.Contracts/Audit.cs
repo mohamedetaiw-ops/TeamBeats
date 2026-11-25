@@ -367,6 +367,7 @@ public static class AuditActions
     public const string ProcessInstanceStarted = "process.instance_started";
     public const string ProcessInstanceCancelled = "process.instance_cancelled";
     public const string ProcessVariablesChanged = "process.variables_changed";
+    public const string ProcessMigrationExecuted = "process.migration_executed";
     public const string DecisionModelSaved = "decision.model_saved";
     public const string DecisionPublished = "decision.published";
 

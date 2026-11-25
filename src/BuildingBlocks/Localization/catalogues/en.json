@@ -3026,5 +3026,8 @@
   "validation.process.compensation_handler": "A compensation handler must be a user, service, manual, send or business rule task with no flows, loop or boundary events, named by exactly one compensation boundary event.",
   "validation.process.compensation_boundary": "A compensation boundary event needs one association to a compensation handler in the same scope, no outgoing flow, and an activity that is not a sub-process or a multi-instance activity. An activity has at most one.",
   "validation.process.compensation_activity": "The activity to compensate must be in the same scope and have a compensation boundary event.",
-  "validation.process.advanced_package": "Compensation needs the advanced process features of your plan."
+  "validation.process.advanced_package": "Compensation needs the advanced process features of your plan.",
+  "validation.process.migration_versions": "Choose two different published versions of this process.",
+  "validation.process.migration_mapping": "Each step can only be mapped to a step of the same kind in the new version.",
+  "validation.process.migration_instances": "Choose between 1 and 100 running instances to move."
 }

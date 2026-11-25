@@ -93,3 +93,9 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - Capability `workflow.bpmn_advanced` (Entitlements migration 0047, Enterprise & Government) is checked at publish through `ProcessGraph.UsesAdvanced`.
 - The modeler reads and writes compensation: the compensation event on boundary, throw and end events, the handler a boundary names (written as a BPMN association), the activity a throw or end event undoes, and a "Compensation step" switch on tasks.
 - Gaps: no multi-instance or sub-process compensation; the canvas does not draw the association line, the properties panel shows it.
+
+## Spec 024 R3 slice 2: instance migration (T019)
+
+- Defaults are in the spec 024 R3 plan. `Graph/InstanceMigration` holds the rules (propose, check, apply) with no database; `ProcessEngine.MigrateInstanceAsync` checks and moves one instance under its row lock, and `ProcessOperations.MigrateAsync` checks the operator and writes the audit event `process.migration_executed`.
+- Workflow migration 0020 grants update on `workflow.message_subscription`, so a waiting token keeps its subscription when its step is renamed.
+- Gaps: no saved migration plans (each run sends its mapping); no batch beyond 100 instances per call; child instances of call activities are moved on their own process.
