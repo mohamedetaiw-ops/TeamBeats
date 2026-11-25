@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, type ReactNode } from "react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 import { Button, type ButtonSize, type ButtonVariant } from "./Button";
 import { Icon, type IconName } from "./Icon";
 import { usePopover, type Placement } from "./overlay";
@@ -26,6 +26,7 @@ export function Popover({
   placement = "bottom-start",
   frame = "plain",
   width = "md",
+  list = false,
   headAction,
   footer,
   onOpenChange,
@@ -45,6 +46,8 @@ export function Popover({
   placement?: Exclude<Placement, "side">;
   frame?: "plain" | "panel";
   width?: "md" | "wide";
+  /** The body is a list of rows, which bring their own padding. */
+  list?: boolean;
   /** In the panel head, after the title, such as "Mark all read". */
   headAction?: ReactNode;
   /** In the fixed footer of the panel frame, such as a link to the full page. */
@@ -59,9 +62,14 @@ export function Popover({
   const triggerId = useId();
   const panelFrame = frame === "panel";
   const { trigger, panel, open, onPointerDown, onClick } = usePopover(placement, undefined, panelFrame);
+  // Only a change of state is reported, not a new callback from the feature's render.
+  const report = useRef(onOpenChange);
   useEffect(() => {
-    onOpenChange?.(open);
-  }, [open, onOpenChange]);
+    report.current = onOpenChange;
+  });
+  useEffect(() => {
+    report.current?.(open);
+  }, [open]);
   const triggerProps = { id: triggerId, "aria-expanded": open, "aria-controls": id, onPointerDown, onClick } as const;
   return (
     <>
@@ -104,7 +112,9 @@ export function Popover({
                 {headAction}
               </div>
             ) : null}
-            <div className="ui-popover-body">{children}</div>
+            <div className="ui-popover-body" data-list={list || undefined}>
+              {children}
+            </div>
             {footer ? <div className="ui-popover-foot">{footer}</div> : null}
           </>
         ) : (

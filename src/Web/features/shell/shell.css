@@ -371,10 +371,6 @@
   position: relative;
 }
 
-.shell-favorites-panel {
-  --xp-popover-width: 20rem;
-}
-
 .shell-favorites-list {
   display: grid;
   margin: 0;

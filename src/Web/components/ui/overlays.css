@@ -230,6 +230,10 @@
   scrollbar-width: thin;
 }
 
+.ui-popover-body[data-list] {
+  padding: var(--tb-space-xs);
+}
+
 .ui-popover-foot {
   display: flex;
   flex: none;
