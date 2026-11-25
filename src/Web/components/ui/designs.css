@@ -150,7 +150,7 @@
  * (variants.css), so a tenant on another design can pick them too. Only structure and the design's own tokens, so a
  * tenant accent and dark mode follow.
  */
-:root[data-design="studio"] :is(.ui-widget, .content-card, .content-side-item, .ui-card, .ui-tile, .ui-stat, .ui-form-panel, .home-tiles a),
+:root[data-design="studio"] :is(.ui-widget, .content-card, .content-side-item, .ui-card, .ui-tile, .ui-stat, .ui-form-panel, .ui-launch-tiles a),
 :root[data-design="studio"] :is(.ui-work-items, .ui-settings-section, .documents-table, .ui-reading),
 :root[data-design="studio"] :is(.people-cards .people-item, .people-identity),
 :root[data-design="studio"] .ui-rows {
@@ -163,18 +163,18 @@
   border-radius: var(--tb-radius-md);
 }
 
-:root[data-design="studio"] :is(.ui-tile, .home-tiles a, .content-side-item) {
+:root[data-design="studio"] :is(.ui-tile, .ui-launch-tiles a, .content-side-item) {
   border-radius: var(--tb-radius-md);
   transition: border-color var(--tb-motion-duration-fast) var(--tb-motion-easing-standard),
     box-shadow var(--tb-motion-duration-fast) var(--tb-motion-easing-standard);
 }
 
-:root[data-design="studio"] :is(.ui-tile, .home-tiles a, .content-side-item):hover {
+:root[data-design="studio"] :is(.ui-tile, .ui-launch-tiles a, .content-side-item):hover {
   border-color: var(--tb-color-border-strong);
   box-shadow: var(--tb-shadow-md);
 }
 
-:root[data-design="studio"] .home-tiles a {
+:root[data-design="studio"] .ui-launch-tiles a {
   background: var(--tb-color-surface-raised);
 }
 

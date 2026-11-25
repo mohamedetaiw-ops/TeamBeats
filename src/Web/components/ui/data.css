@@ -916,3 +916,37 @@ a.ui-event:hover {
     display: none;
   }
 }
+
+/* DLS-039: launch tiles, a tinted icon and a name per tile. 8rem keeps two tiles side by side on a phone, so the strip is three short rows there and one row on a desktop. */
+.ui-launch-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ui-launch-tiles a {
+  display: grid;
+  gap: var(--tb-space-sm);
+  align-content: space-between;
+  justify-items: start;
+  min-block-size: 7rem;
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-base);
+  color: var(--tb-color-text-primary);
+  font-weight: var(--tb-font-weight-medium);
+  text-decoration: none;
+}
+
+.ui-launch-tiles a:hover {
+  background: var(--tb-color-accent-subtle);
+}
+
+.ui-launch-tile-meta {
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}

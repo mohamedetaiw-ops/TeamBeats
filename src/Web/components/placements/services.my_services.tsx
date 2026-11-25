@@ -7,7 +7,7 @@ import { localized, type PlacementProps } from "@/lib/experience/contract";
 import { pick, type CatalogueView, type Category, type ServiceCard } from "@/lib/services/types";
 import { serviceLook } from "@/lib/services/look";
 import { Button } from "@/components/ui/Button";
-import { Icon } from "@/components/ui/Icon";
+import { LaunchTiles } from "@/components/ui/LaunchTiles";
 import { StateView } from "@/components/ui/StateView";
 import { Widget } from "@/components/ui/Widget";
 import "@/features/services/home.css";
@@ -75,33 +75,21 @@ export default function MyServices({ props }: PlacementProps) {
   }
   if (answer.shown.length === 0) return shell(<StateView kind="empty" title={t("none")} message="" />, answer.total);
   return shell(
-    <ul className="home-tiles">
-      {answer.shown.map((s) => {
-        const name = pick(s.names, locale);
+    <LaunchTiles
+      tiles={answer.shown.map((s) => {
         const look = serviceLook(s, answer.categories);
-        const tile = (
-          <span className="ui-icon-tile" data-tone={look.tone} aria-hidden="true">
-            <Icon name={s.kind === "linked" ? "external" : look.icon} size={20} />
-          </span>
-        );
-        return (
-          <li key={s.id}>
-            {s.kind === "linked" && s.url ? (
-              <a href={s.url} target="_blank" rel="noopener noreferrer" onClick={() => void fetch(`/api/v1/services/${s.id}/used`, { method: "POST" })}>
-                {tile}
-                <bdi>{name}</bdi>
-                <span className="home-meta">{tc("external")}</span>
-              </a>
-            ) : (
-              <Link href={s.kind === "module" && s.launchRoute ? s.launchRoute : `/services/${s.id}`}>
-                {tile}
-                <bdi>{name}</bdi>
-              </Link>
-            )}
-          </li>
-        );
+        const linked = s.kind === "linked" && s.url;
+        return {
+          id: s.id,
+          title: pick(s.names, locale),
+          icon: look.icon,
+          tone: look.tone,
+          href: linked ? s.url! : s.kind === "module" && s.launchRoute ? s.launchRoute : `/services/${s.id}`,
+          external: linked ? { label: tc("external") } : undefined,
+          onOpen: linked ? () => void fetch(`/api/v1/services/${s.id}/used`, { method: "POST" }) : undefined,
+        };
       })}
-    </ul>,
+    />,
     answer.total,
   );
 }
