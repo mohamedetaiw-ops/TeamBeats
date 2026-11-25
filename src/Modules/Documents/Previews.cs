@@ -67,7 +67,7 @@ public sealed class DocumentPreviews(
     ITenantContext context,
     DocumentFiles files,
     Libraries libraries,
-    TenantObjectStorage storage,
+    DocumentStorage storage,
     IDocumentConverter converter,
     ILocalizer localizer,
     ITenantSettingsReader tenantSettings,

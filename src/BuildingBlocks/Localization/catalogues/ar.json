@@ -2993,5 +2993,7 @@
   "records.certificate.pdf.verify": "يمكن لمديري السجلات التحقق من هذه الشهادة برقمها في صفحة السجلات.",
   "records.certificate.pdf.modes.reviewed": "بعد المراجعة",
   "records.certificate.pdf.modes.automatic": "تلقائيًا",
-  "conflict.records.checked_out": "سجّل إيداع المستند قبل إعلانه سجلًا."
+  "conflict.records.checked_out": "سجّل إيداع المستند قبل إعلانه سجلًا.",
+  "conflict.documents.customer_key_fixed": "المكتبة التي تستخدم المفتاح الذي يديره العميل تبقى تستخدمه. العودة إلى مفاتيح المنصة طلب يُرفع إلى فريق التشغيل.",
+  "conflict.documents.customer_key_missing": "أوصل مفتاحًا يديره العميل من الأمان، مفتاح التشفير، وتأكد أنه يستجيب، قبل أن تستخدمه مكتبة."
 }

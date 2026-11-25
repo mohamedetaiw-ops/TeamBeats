@@ -109,7 +109,7 @@ public sealed class DocumentFiles(
     Libraries libraries,
     IEntitlementService entitlements,
     IAuthorizationProvisioning provisioning,
-    TenantObjectStorage storage,
+    DocumentStorage storage,
     IMalwareScanner scanner,
     INotificationSender notifications,
     IAuditWriter audit,

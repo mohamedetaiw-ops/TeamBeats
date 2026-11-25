@@ -59,4 +59,4 @@ Depends on 004 (resource grants), 005, 006, 007, 009 (acknowledgement, body docu
 - [x] T028 Disposition certificates for a date range with a fixed list, digest, verify by ID and PDF; records page section; integration and e2e tests
 
 ## R3 Phase 14: customer-managed keys per library
-- [ ] T029 Libraries encrypted with the tenant data key (spec 026 FR-007): files, previews and working copies encrypted at rest, existing files moved by a background pass, refused without a connected key; tests for revocation and cross-tenant
+- [x] T029 Libraries encrypted with the tenant data key (spec 026 FR-007): files, previews and working copies encrypted at rest, existing files moved by a background pass, refused without a connected key; tests for revocation and cross-tenant

@@ -328,6 +328,60 @@
         }
       }
     },
+    "/api/v1/documents/libraries/{id}/encryption": {
+      "get": {
+        "tags": [
+          "Documents"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Documents"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LibraryEncryptionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/me/policies": {
       "get": {
         "tags": [
@@ -41582,6 +41636,17 @@
           }
         }
       },
+      "LibraryEncryptionRequest": {
+        "required": [
+          "customerKey"
+        ],
+        "type": "object",
+        "properties": {
+          "customerKey": {
+            "type": "boolean"
+          }
+        }
+      },
       "LibraryRequest": {
         "required": [
           "names",
@@ -49456,6 +49521,9 @@
       "name": "Content: sites"
     },
     {
+      "name": "Documents"
+    },
+    {
       "name": "Policies"
     },
     {
@@ -49586,9 +49654,6 @@
     },
     {
       "name": "Content: critical"
-    },
-    {
-      "name": "Documents"
     },
     {
       "name": "Documents: libraries"

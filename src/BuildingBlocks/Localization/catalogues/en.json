@@ -2993,5 +2993,7 @@
   "records.certificate.pdf.verify": "Records managers can check this certificate by its ID on the records page.",
   "records.certificate.pdf.modes.reviewed": "After review",
   "records.certificate.pdf.modes.automatic": "Automatically",
-  "conflict.records.checked_out": "Check the document in before declaring it a record."
+  "conflict.records.checked_out": "Check the document in before declaring it a record.",
+  "conflict.documents.customer_key_fixed": "A library that uses the customer-managed key keeps using it. Going back to platform keys is a request to operations.",
+  "conflict.documents.customer_key_missing": "Connect a customer-managed key in Security, Encryption key, and check that it answers, before a library uses it."
 }

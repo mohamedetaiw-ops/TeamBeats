@@ -17,7 +17,7 @@ public sealed record DocumentTextRequested(Guid VersionId) : IIntegrationEvent;
 /// </summary>
 public sealed class DocumentText(
     IDbSession session,
-    TenantObjectStorage storage,
+    DocumentStorage storage,
     ITextRecognizer recognizer,
     IEntitlementService entitlements,
     IOutbox outbox) : IMessageHandler<DocumentTextRequested>

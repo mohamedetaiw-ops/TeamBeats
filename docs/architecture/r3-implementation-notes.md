@@ -38,3 +38,11 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - Certificates use `ReadableCodes` (Primitives, new), the same alphabet as learning certificates and HR letters; those two keep their own copy for now.
 - The digest covers fields that never change after disposal (IDs, number, versions, mode, approver, time), not the label names, which are a copy kept for reading.
 - Gap: verify is for records managers inside the tenant only; no public verify page, because a disposition certificate is an internal compliance record.
+
+## Spec 011 R3 slice 2: customer-managed keys per library (T029)
+
+- Defaults are in the spec 011 R3 plan. Migration 0019 of Documents adds `customer_key` and `customer_key_at` to libraries and `encrypted` to document versions (set by the background pass).
+- `DocumentStorage` wraps the tenant object storage for document files: keys `documents/{library:N}/...` of a library on the key are sealed on write and opened on read, through a scratch file that is deleted on close, so downloads keep a length and range reads. Only those keys are ever checked for the sealed format. Assets and import archives keep the plain storage.
+- Format: 8 byte magic, data key id, 8 byte nonce prefix, then 64 KiB chunks with AES-256-GCM; the nonce carries the chunk index and a last chunk flag, and the header is the associated data. No new library.
+- `LibraryEncryption.RunAsync` runs in the document maintenance worker (50 versions per tenant per minute) and stops at the first key that does not answer.
+- Gaps: extracted text (`document_version.text_extract`), the search index and the AI index stay under platform encryption at rest; the tenant key protects files only. Background jobs of a revoked tenant that open a library file fail and retry later.

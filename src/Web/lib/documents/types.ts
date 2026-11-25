@@ -164,6 +164,9 @@ export type DocumentView = {
   recordAt?: string | null;
 };
 
+/** Whether a library's files use the tenant's customer-managed key (spec 011 R3), and how many stored versions still wait to move onto it. */
+export type LibraryEncryptionView = { libraryId: string; customerKey: boolean; since: string | null; pending: number; available: boolean };
+
 /** Whether "Edit in browser" is offered (spec 011 FR-010): the API decides; a Microsoft 365 state means the person must connect first. */
 export type OfficeEditView = {
   state: "unavailable" | "ready" | "editing" | "not_connected" | "reconnect" | "admin_setup" | "degraded" | "no_drive" | "conditional_access";

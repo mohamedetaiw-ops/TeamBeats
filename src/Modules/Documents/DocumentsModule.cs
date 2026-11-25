@@ -32,6 +32,8 @@ public static class DocumentsModule
         services.AddScoped<OfficeEditing>();
         services.AddScoped<DocumentText>();
         services.AddScoped<Records>();
+        services.AddScoped<DocumentStorage>();
+        services.AddScoped<LibraryEncryption>();
         services.AddScoped<DispositionCertificates>();
         services.AddScoped<GuestShares>();
         services.AddScoped<Assets>();
@@ -704,6 +706,18 @@ public static class DocumentsModule
         });
 
         records.MapGet("/dispositions", async (Records service, CancellationToken ct) => Results.Ok(await service.DispositionRecordsAsync(ct)));
+
+        // Spec 011 R3: customer-managed keys per library, for its managers.
+        app.MapGet("/api/v1/documents/libraries/{id:guid}/encryption", async (Guid id, LibraryEncryption service, CancellationToken ct) =>
+            Results.Ok(await service.GetAsync(id, ct))).RequireTenantUser().WithTags("Documents");
+
+        app.MapPut("/api/v1/documents/libraries/{id:guid}/encryption", async (Guid id, LibraryEncryptionRequest request, LibraryEncryption service, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var view = await service.SetAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        }).RequireTenantUser().WithTags("Documents");
 
         // Spec 011 R3: records declaration and disposition certificates.
         records.MapGet("/records", async (Records service, CancellationToken ct) => Results.Ok(await service.RecordsAsync(ct)));

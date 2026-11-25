@@ -33,7 +33,7 @@ public sealed class OfficeEditing(
     ITenantContext context,
     DocumentFiles files,
     DocumentVersions versions,
-    TenantObjectStorage storage,
+    DocumentStorage storage,
     IOfficeEditor editor,
     IAuditWriter audit,
     IClock clock)

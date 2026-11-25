@@ -11,7 +11,7 @@ namespace TeamBeats.Modules.Documents;
 /// Every minute, for every active tenant in its own scope and transaction: purges documents left in the
 /// recycle bin past the tenant's period (spec 011 FR-018) reminds holders of check-outs older than fourteen days, puts
 /// approved controlled versions in force on their date, opens or flags owner reviews, and acts on documents whose retention
-/// label period has ended (spec 011 US6), and queues the sync of connected libraries that are due (US9).
+/// label period has ended (spec 011 US6), queues the sync of connected libraries that are due (US9), and moves stored files of libraries on the customer's key onto it (R3).
 /// Runs as the system actor. Hosted by the worker, and by the development host when <c>Documents:Maintenance:InProcess</c> is true.
 /// </summary>
 public sealed class DocumentMaintenanceWorker(IServiceScopeFactory scopes, IClock clock, ILogger<DocumentMaintenanceWorker> logger) : BackgroundService
@@ -57,6 +57,7 @@ public sealed class DocumentMaintenanceWorker(IServiceScopeFactory scopes, ICloc
                 await versions.RemindCheckOutsAsync(now, 200, ct);
                 await scope.ServiceProvider.GetRequiredService<DocumentReleases>().RunDueAsync(now, 200, ct);
                 await scope.ServiceProvider.GetRequiredService<ConnectedSync>().QueueDueAsync(now, ct);
+                await scope.ServiceProvider.GetRequiredService<LibraryEncryption>().RunAsync(50, ct);
                 await scope.ServiceProvider.GetRequiredService<IDbSession>().CommitAsync(ct);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
