@@ -36,6 +36,7 @@ public static class AnalyticsModule
         services.AddScoped<ServiceAnalytics>();
         services.AddScoped<ComplianceAnalytics>();
         services.AddScoped<ScopeDashboards>();
+        services.AddScoped<KpiTiles>();
         services.AddScoped<ExperienceAnalytics>();
         services.AddScoped<ReportDefinitions>();
         services.AddScoped<AnalyticsReports>();
@@ -161,6 +162,14 @@ public static class AnalyticsModule
         admin.MapPut("/policy", async (AnalyticsPolicyRequest request, AnalyticsPolicies policies, IDbSession session, CancellationToken ct) =>
         {
             var view = await policies.ChangeAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+        // KPI tiles on location dashboards (spec 021 R3): the tile set, changed by people who manage tenant settings.
+        analytics.MapGet("/kpi-tiles", async (KpiTiles tiles, CancellationToken ct) => Results.Ok(await tiles.ViewAsync(ct)));
+        admin.MapPut("/kpi-tiles", async (KpiTileSetRequest request, KpiTiles tiles, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await tiles.ChangeAsync(request, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });

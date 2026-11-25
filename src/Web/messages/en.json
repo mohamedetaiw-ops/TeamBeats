@@ -9293,7 +9293,8 @@
       "weeksSummary": "Weekly active people over the last {weeks} weeks; {last} this week.",
       "unitsSummary": "Active people in {count} units this week.",
       "otherNote": "Units with fewer than {size} active people are counted together as Other.",
-      "estimatesLink": "Effort estimates for campaigns"
+      "estimatesLink": "Effort estimates for campaigns",
+      "kpiTilesLink": "KPI tiles for location dashboards"
     },
     "errors": {
       "title": "Frontend errors",
@@ -9602,8 +9603,15 @@
         "figure": "Figure",
         "value": "This scope",
         "rate": "Rate",
-        "group": "Whole organization"
-      }
+        "group": "Whole organization",
+        "source": "Source"
+      },
+      "kpisTitle": "Business figures",
+      "kpisEmpty": "No reading yet",
+      "kpiSource": "From {source}",
+      "kpiMeasured": "Measured {time}",
+      "kpiReceived": "Received {time}",
+      "kpiPeriod": "Period"
     },
     "experience": {
       "title": "Experience",
@@ -10308,6 +10316,28 @@
           }
         }
       }
+    },
+    "kpiTiles": {
+      "title": "KPI tiles",
+      "intro": "Business figures from connected systems shown on each location's dashboard, such as monthly sales or safety incidents. A connected system sends them through a KPI feed; each tile shows the latest value for the location with its source and when it was measured.",
+      "denied": "KPI tiles are not available",
+      "deniedHint": "Your package does not include KPI tiles, or you cannot see analytics for the whole organization.",
+      "none": "No KPI tiles yet. Add one for each metric your connected systems send.",
+      "tile": "Tile {number}",
+      "metric": "Metric",
+      "metricHint": "The metric name exactly as the KPI feed sends it, for example monthly_sales.",
+      "nameEn": "Name in English",
+      "nameAr": "Name in Arabic",
+      "permission": "Also needs permission",
+      "permissionHint": "People without this permission do not see the tile. Leave it at none to show it to everyone who sees the dashboard.",
+      "noPermission": "None",
+      "remove": "Remove tile",
+      "add": "Add a tile",
+      "save": "Save KPI tiles",
+      "saving": "Saving",
+      "saved": "KPI tiles saved.",
+      "failed": "The KPI tiles could not be saved. Try again.",
+      "readOnly": "You can see the KPI tiles but not change them."
     }
   },
   "design_system": {

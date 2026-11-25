@@ -38,6 +38,7 @@ export const routes: readonly Route[] = [
   { path: "/admin/analytics", tier: "other" },
   { path: "/admin/analytics/errors", tier: "other" },
   { path: "/admin/analytics/estimates", tier: "other" },
+  { path: "/admin/analytics/kpi-tiles", tier: "other" },
   { path: "/admin/api", tier: "other" },
   { path: "/admin/api/apps/[id]", tier: "detail" },
   { path: "/admin/attendance", tier: "other" },

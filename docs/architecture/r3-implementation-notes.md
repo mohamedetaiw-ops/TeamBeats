@@ -159,3 +159,10 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - Marketplace: `GET /api/v1/integrations/packs` now also returns each pack's capability key, whether the platform offers it, why not, and the tenant's connection count; the page is `/admin/connections/marketplace`. Integrations migration 0022 adds `platform_pack_state` (platform data). `PUT /api/v1/platform/connector-packs/{kind}` turns a pack off or on, with platform audit. A pack turned off refuses new connections (`conflict.integrations.pack_unavailable`), and its jobs wait with `pack_unavailable` until it is on again, then run.
 - Gaps: SAP payment (clearing) is not read; Oracle and SAP field values were taken from the published API references and have not been run against a customer system; tax lines are not sent, only a tax code per line for SAP. The platform switch has no page in a platform console yet; it is an API for the platform operator.
 
+## Spec 021 R3 slice 1: KPI tiles (T022, with spec 017 T024)
+
+- Defaults are in the spec 021 R3 plan. Analytics migration 0006 adds `kpi_tile_set` (versioned documents, forced RLS). `GET /api/v1/analytics/kpi-tiles` and `PUT` (tenant settings managers, with the version read) under `analytics.kpi_tiles`; the location dashboard answer gains `kpis`, null for units and without the capability.
+- Analytics now references Integrations.Contracts and reads readings only through `IKpiFeed`. `KpiReading` gained `Source`, the connection's display name, which `KpiFeed` fills in when reading.
+- The admin page is `/admin/analytics/kpi-tiles`; the permission picker offers the permissions the workspace's roles grant.
+- Gaps: a location dashboard e2e with readings is not possible yet, since locations come only from directory sync; the integration suite covers the tiles on the dashboard. Tiles show the latest value only, without a trend.
+

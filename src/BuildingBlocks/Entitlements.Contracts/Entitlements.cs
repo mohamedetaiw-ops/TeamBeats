@@ -140,6 +140,9 @@ public static class Capabilities
     public const string AnalyticsAdvanced = "analytics.advanced";
     public const string AnalyticsExport = "analytics.export";
     public const string AnalyticsLocationDashboards = "analytics.location_dashboards";
+
+    /// <summary>Spec 021 R3: KPI tiles from connected systems on location dashboards (Enterprise and Government).</summary>
+    public const string AnalyticsKpiTiles = "analytics.kpi_tiles";
     public const string AnalyticsExperience = "analytics.experience";
     public const string AnalyticsSentiment = "analytics.sentiment";
     public const string DeploymentOnPrem = "deployment.on_prem";

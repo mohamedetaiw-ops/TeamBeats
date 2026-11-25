@@ -218,7 +218,26 @@ export type ScopeDashboardView = {
   enough: boolean;
   groupShown: boolean;
   tiles: ScopeTile[];
+  /** KPI tiles of a location from connected systems (spec 021 R3); null for a unit or when the package has none. */
+  kpis?: KpiTileView[] | null;
 };
+
+/** A configured KPI tile (spec 021 R3): the metric a KPI feed sends, its names, and the permission a viewer also needs. */
+export type KpiTileDefinition = { id: string; metric: string; names: Record<string, string>; permission: string | null };
+export type KpiTileSetView = { tiles: KpiTileDefinition[]; version: number; changedAt: string | null; canChange: boolean };
+export type KpiTileView = {
+  id: string;
+  metric: string;
+  names: Record<string, string>;
+  value: number | null;
+  unit: string | null;
+  periodStart: string | null;
+  periodEnd: string | null;
+  source: string | null;
+  sourceTime: string | null;
+  receivedAt: string | null;
+};
+export const MAX_KPI_TILES = 12;
 
 export const scopeHref = (scope: Pick<ScopeRef, "kind" | "key">) =>
   scope.kind === "unit" ? `/analytics/scopes/unit/${encodeURIComponent(scope.key)}` : `/analytics/scopes/location?key=${encodeURIComponent(scope.key)}`;

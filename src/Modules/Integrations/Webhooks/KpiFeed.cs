@@ -101,15 +101,18 @@ public sealed class KpiFeed(IDbSession session, IEntitlementService entitlements
         }
         return await session.QueryAsync(
             """
-            select connection_id, feed, metric, value, unit, period_start, period_end, nullif(location, '') as location, source_time, received_at
-            from integrations.kpi_reading
-            where (@metric::text is null or metric = @metric) and (@location::text is null or location = @location)
-              and (@from::timestamptz is null or period_start >= @from) and (@to::timestamptz is null or period_start < @to)
-            order by period_start desc, metric, location limit @limit
+            select k.connection_id, k.feed, k.metric, k.value, k.unit, k.period_start, k.period_end, nullif(k.location, '') as location, k.source_time, k.received_at,
+              c.display_name
+            from integrations.kpi_reading k
+            left join integrations.connection c on c.id = k.connection_id
+            where (@metric::text is null or k.metric = @metric) and (@location::text is null or k.location = @location)
+              and (@from::timestamptz is null or k.period_start >= @from) and (@to::timestamptz is null or k.period_start < @to)
+            order by k.period_start desc, k.metric, k.location limit @limit
             """,
             new { metric = query.Metric, location = query.Location, from = query.From, to = query.To, limit = Math.Clamp(query.Limit, 1, 1000) },
             r => new KpiReading(r.GetGuid(0), r.GetString(1), r.GetString(2), r.GetDecimal(3), r.GetString(4), r.GetFieldValue<DateTimeOffset>(5),
-                r.GetFieldValue<DateTimeOffset>(6), r.Get<string>("location"), r.GetFieldValue<DateTimeOffset>(8), r.GetFieldValue<DateTimeOffset>(9)), ct);
+                r.GetFieldValue<DateTimeOffset>(6), r.Get<string>("location"), r.GetFieldValue<DateTimeOffset>(8), r.GetFieldValue<DateTimeOffset>(9),
+                r.Get<string>("display_name")), ct);
     }
 
     public Task<int> PurgeAsync(DateTimeOffset now, CancellationToken ct) =>

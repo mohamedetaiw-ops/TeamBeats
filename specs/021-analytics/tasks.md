@@ -36,3 +36,6 @@ R2 covers User Stories 1 (dashboard), 2, 4 to 8 and 9 (dashboards). Search gaps 
 - [x] T019 OpenAPI, R2 implementation notes, e2e with axe for the workspace, a schedule and an export in `ar` and `en`, spec evidence
 - [x] T020 FR-002 gap found in the R2 evidence: HR (leave, journeys, letters, data changes, expenses), knowledge (article reach, helpfulness, review dates) engagement (survey and poll results, recognition, community activity) and security posture trends (spec 026 alerts, guest counts, policies weaker than baseline) dashboards as workspace sections, read from their owners' contracts with the minimum group size
 - [x] T021 FR-002 gap left after T020: the search dashboard by org unit and query refinements (spec 012 query log carries neither yet; needs the unit at search time, pseudonymous, and refinement pairs counted with the five people rule)
+
+## R3
+- [x] T022 [US6] KPI tiles on location dashboards (FR-010, US6 scenario 2) on the spec 017 KPI feed contract: versioned tile set with a permission per tile, latest reading with source and times, admin page, e2e

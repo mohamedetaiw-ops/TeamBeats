@@ -45,3 +45,4 @@ The spec stays Approved, not Implemented. The R2 runtime, connection lifecycle, 
 | MCP server registration for agents | Met | Spec 027 R3 T022 (`McpToolTests`) |
 | Connector marketplace with package state and connection counts | Met | `ConnectorMarketplaceTests.The_marketplace_lists_each_pack_with_its_capability_package_state_and_the_tenants_connections`, `connector-marketplace.spec.ts` (en, ar, axe) |
 | Platform operator turns a pack off for all tenants | Met | `ConnectorMarketplaceTests.A_pack_the_platform_turns_off_cannot_be_added_and_its_connections_make_no_calls` |
+| KPI tiles on location dashboards | Met | Spec 021 R3 T022 (`KpiTileTests`); `IKpiFeed` readings now carry the source connection's name |

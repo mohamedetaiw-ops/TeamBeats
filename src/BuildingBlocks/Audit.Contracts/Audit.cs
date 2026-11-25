@@ -695,6 +695,7 @@ public static class AuditActions
     // 021
     public const string AnalyticsPrivacySettingChanged = "analytics.privacy_setting_changed";
     public const string AnalyticsEstimatesChanged = "analytics.estimates_changed";
+    public const string AnalyticsKpiTileConfigured = "analytics.kpi_tile_configured";
     public const string AnalyticsExportRequested = "analytics.export_requested";
     public const string AnalyticsExportCompleted = "analytics.export_completed";
     public const string AnalyticsExportDownloaded = "analytics.export_downloaded";
@@ -735,7 +736,7 @@ public static class AuditActions
         SecurityChangeExpired, SecurityKeyConnected, SecurityKeyRotated, SecurityKeyRevoked, SecurityKeyRestored, SecurityKeyUnreachable,
         MobileOfflinePolicyChanged, DeviceKioskEnrolled, DeviceKioskChanged, DeviceKioskRevoked, DeviceKioskSignIn, DeviceKioskLockout,
         ApiAppRegistered, ApiAppChanged, ApiAppDisabled, ApiCredentialAdded, ApiCredentialRevoked, ApiConsentGranted, ApiConsentRevoked,
-        ApiTokenFamilyRevoked, ApiTokenRefused, ApiSettingsChanged, ApiRoleAssignedToApp, ApiVerifiedClientChanged, ApiGalleryAppChanged, ApiGalleryAppAdded, ApiClientBlocked, ApiClientUnblocked, ConnectorPackTurnedOff, ConnectorPackTurnedOn, ApiTokensRevoked,
+        ApiTokenFamilyRevoked, ApiTokenRefused, ApiSettingsChanged, ApiRoleAssignedToApp, ApiVerifiedClientChanged, ApiGalleryAppChanged, ApiGalleryAppAdded, ApiClientBlocked, ApiClientUnblocked, AnalyticsKpiTileConfigured, ConnectorPackTurnedOff, ConnectorPackTurnedOn, ApiTokensRevoked,
         DeviceBadgeIssued, DeviceBadgePinReset, SecurityRequestBlockedNetwork, SecurityMfaMissing, SecurityStepUpCompleted, SecurityStepUpFailed, SecurityAlertRaised, SecurityAlertHandled,
         WorkflowDefinitionPublished, WorkflowTaskCompleted, WorkflowInstanceWithdrawn,
         ServiceCreated, ServiceChanged, ServicePublished, ServiceRetired, ServiceCategoryChanged, RequestSubmitted, RequestCancelled, RequestResubmitted,
