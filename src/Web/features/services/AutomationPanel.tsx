@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
-import { TextAreaField } from "@/components/ui/FormField";
+import { TextAreaField, FormPanel } from "@/components/ui/FormField";
 import { problemMessages } from "@/lib/notifications/types";
 import { AUTOMATION_STATES, pick, type RequestAutomation } from "@/lib/services/types";
 
@@ -45,7 +45,7 @@ export function AutomationPanel({ requestId, automation }: { requestId: string; 
   }
 
   return (
-    <section className="services-section" aria-labelledby="request-automation">
+    <FormPanel as="section" aria-labelledby="request-automation">
       <h2 id="request-automation">{t("title")}</h2>
       <ol className="services-list" data-testid="request-automation">
         {automation.steps.map((s) => (
@@ -94,6 +94,6 @@ export function AutomationPanel({ requestId, automation }: { requestId: string; 
           ))}
         </div>
       ) : null}
-    </section>
+    </FormPanel>
   );
 }

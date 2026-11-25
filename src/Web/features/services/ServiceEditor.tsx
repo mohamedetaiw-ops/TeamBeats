@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { serviceIcons } from "@/lib/services/look";
 import { ConfirmAction } from "@/components/ui/ConfirmAction";
-import { FormField, SelectField } from "@/components/ui/FormField";
+import { FormField, SelectField, FormPanel } from "@/components/ui/FormField";
 import { problemMessages, type Problem } from "@/lib/notifications/types";
 import { unitName, type OrgUnit } from "@/lib/experience/builder-types";
 import {
@@ -430,8 +430,7 @@ export function ServiceEditor({
         {latest ? <span className="services-meta">{t("versionState", { version: latest.version, state: t(`versionStates.${latest.state}`) })}</span> : null}
       </p>
 
-      <form
-        className="services-section services-form"
+      <FormPanel as="form"
         aria-labelledby="service-settings"
         onSubmit={(e) => {
           e.preventDefault();
@@ -528,11 +527,10 @@ export function ServiceEditor({
             {t("saveSettings")}
           </Button>
         </div>
-      </form>
+      </FormPanel>
 
       {s.kind === "form" ? (
-        <form
-          className="services-section services-form"
+        <FormPanel as="form"
           aria-labelledby="service-form"
           onSubmit={(e) => {
             e.preventDefault();
@@ -700,9 +698,9 @@ export function ServiceEditor({
               <ConfirmAction label={t("retire")} question={t("retireQuestion")} confirmLabel={t("retireConfirm")} cancelLabel={t("keep")} onConfirm={retire} />
             ) : null}
           </div>
-        </form>
+        </FormPanel>
       ) : (
-        <section className="services-section" aria-labelledby="service-publish">
+        <FormPanel as="section" aria-labelledby="service-publish">
           <h2 id="service-publish">{t("publishTitle")}</h2>
           <Notice result={draftResult} />
           <div className="services-actions">
@@ -713,7 +711,7 @@ export function ServiceEditor({
               <ConfirmAction label={t("retire")} question={t("retireQuestion")} confirmLabel={t("retireConfirm")} cancelLabel={t("keep")} onConfirm={retire} />
             ) : null}
           </div>
-        </section>
+        </FormPanel>
       )}
 
       {s.kind === "form" && graph ? (
@@ -734,12 +732,12 @@ export function ServiceEditor({
       ) : null}
 
       {preview ? (
-        <section className="services-section" aria-labelledby="service-preview" data-testid="service-preview">
+        <FormPanel as="section" aria-labelledby="service-preview" data-testid="service-preview">
           <h2 id="service-preview">{t("previewTitle", { version: preview.version })}</h2>
           <p className="notice">{t("previewNote")}</p>
           {preview.approvalStep ? <p>{t("previewStep", { name: pick(preview.approvalStep, locale) })}</p> : null}
           <RequestForm target={{ kind: "preview" }} form={preview.form} initial={preview.prefill.values} readOnly={preview.prefill.readOnly} unconfirmed={preview.prefill.unconfirmed} units={units} />
-        </section>
+        </FormPanel>
       ) : null}
     </div>
   );

@@ -11,7 +11,7 @@ import { PersonPicker } from "./PersonPicker";
 import "./services.css";
 import { announceMeaningfulAction } from "@/lib/push";
 import { dayInWords } from "@/lib/format";
-import { DayReadout } from "@/components/ui/FormField";
+import { DayReadout, FormPanel } from "@/components/ui/FormField";
 
 type Target = { kind: "new"; serviceId: string; preparedId?: string } | { kind: "resubmit"; requestId: string } | { kind: "preview" };
 
@@ -388,8 +388,7 @@ export function RequestForm({
   }
 
   return (
-    <form
-      className="services-form services-section"
+    <FormPanel as="form"
       noValidate
       onSubmit={(e) => {
         e.preventDefault();
@@ -435,6 +434,6 @@ export function RequestForm({
           </Button>
         )}
       </div>
-    </form>
+    </FormPanel>
   );
 }

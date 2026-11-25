@@ -14,6 +14,7 @@ import { RequestSummaryPanel } from "./RequestSummaryPanel";
 import { TaskDecisionPanel } from "./TaskDecisionPanel";
 import { isolate } from "@/lib/bidi";
 import "./services.css";
+import { FormPanel } from "@/components/ui/FormField";
 
 const cancellable = new Set(["submitted", "in_approval", "returned"]);
 const decisions = new Set(["approved", "rejected", "returned"]);
@@ -99,7 +100,7 @@ export function RequestDetailView({
     ) : null;
   return (
     <div className="services">
-      <section className="services-section" aria-labelledby="request-summary">
+      <FormPanel as="section" aria-labelledby="request-summary">
         <h2 id="request-summary">{t("summary")}</h2>
         <dl className="services-details">
           <dt>{t("number")}</dt>
@@ -165,11 +166,11 @@ export function RequestDetailView({
             ))}
           </div>
         ) : null}
-      </section>
+      </FormPanel>
 
       {onDecided ? null : deciding}
 
-      <section className="services-section" aria-labelledby="request-values">
+      <FormPanel as="section" aria-labelledby="request-values">
         <h2 id="request-values">{t("values")}</h2>
         <dl className="services-details">
           {detail.form.fields
@@ -202,13 +203,13 @@ export function RequestDetailView({
             </ul>
           </>
         ) : null}
-      </section>
+      </FormPanel>
 
       {onDecided ? deciding : null}
 
       {detail.automation && detail.automation.steps.length > 0 ? <AutomationPanel requestId={r.id} automation={detail.automation} /> : null}
 
-      <section className="services-section" aria-labelledby="request-tracking">
+      <FormPanel as="section" aria-labelledby="request-tracking">
         <h2 id="request-tracking">{t("tracking")}</h2>
         <ol className="services-list" data-testid="request-tracking">
           {detail.tracking.map((e, i) => (
@@ -234,7 +235,7 @@ export function RequestDetailView({
             </li>
           ))}
         </ol>
-      </section>
+      </FormPanel>
     </div>
   );
 }

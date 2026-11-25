@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { Checkbox } from "@/components/ui/Checkbox";
-import { FormField, SelectField } from "@/components/ui/FormField";
+import { FormField, SelectField, FormPanel } from "@/components/ui/FormField";
 import { IconButton } from "@/components/ui/IconButton";
 import { unitName, type OrgUnit } from "@/lib/experience/builder-types";
 import { problemMessages } from "@/lib/notifications/types";
@@ -328,7 +328,7 @@ export function RouteTestPanel({
   const [outcomeKind, outcomeResult] = (run?.outcome ?? "").split(":");
   const lines = (run?.steps ?? []).map((s) => ({ step: s, text: stepText(s) })).filter((l) => l.text !== null);
   return (
-    <section className="services-section" aria-labelledby="route-test" data-testid="route-test">
+    <FormPanel as="section" aria-labelledby="route-test" data-testid="route-test">
       <h2 id="route-test">{t("testTitle")}</h2>
       <p className="field-hint">{t("testIntro")}</p>
       <PersonPicker label={t("testRequester")} value={requester} onChange={setRequester} />
@@ -410,6 +410,6 @@ export function RouteTestPanel({
           )}
         </div>
       ) : null}
-    </section>
+    </FormPanel>
   );
 }
