@@ -1,6 +1,6 @@
 import { useLocale } from "next-intl";
 import { dayInWords } from "@/lib/format";
-import { useId, type InputHTMLAttributes, type ReactNode, type Ref, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
+import { useId, type FieldsetHTMLAttributes, type FormHTMLAttributes, type HTMLAttributes, type InputHTMLAttributes, type ReactNode, type Ref, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
 
 type Props = InputHTMLAttributes<HTMLInputElement> & {
   label: string;
@@ -159,4 +159,27 @@ export function SelectField({
       )}
     </Field>
   );
+}
+
+type FormPanelProps =
+  | ({ as: "form" } & Omit<FormHTMLAttributes<HTMLFormElement>, "className">)
+  | ({ as: "fieldset" } & Omit<FieldsetHTMLAttributes<HTMLFieldSetElement>, "className">)
+  | ({ as?: "section" } & Omit<HTMLAttributes<HTMLElement>, "className">);
+
+/**
+ * Form panel (docs/design-system/components.md, Form panel; spec 036 T037a): the one raised surface a form, a group of
+ * fields or a set of record actions sits on, so a check-in form, an audience fieldset and an import form look the same
+ * in every design. A fieldset keeps its legend as the group name; a form or section names itself with a heading.
+ */
+export function FormPanel(props: FormPanelProps) {
+  if (props.as === "form") {
+    const { as: _form, ...rest } = props;
+    return <form className="ui-form-panel" {...rest} />;
+  }
+  if (props.as === "fieldset") {
+    const { as: _fieldset, ...rest } = props;
+    return <fieldset className="ui-form-panel" {...rest} />;
+  }
+  const { as: _section, ...rest } = props;
+  return <section className="ui-form-panel" {...rest} />;
 }

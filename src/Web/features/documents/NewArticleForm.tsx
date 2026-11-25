@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { problemMessages } from "@/lib/notifications/types";
 import type { KbTemplate } from "@/lib/documents/types";
 import "./documents.css";
+import { FormPanel } from "@/components/ui/FormField";
 
 /**
  * The new article form: a template and a title in each language the tenant uses. The API starts the draft with the
@@ -81,8 +82,7 @@ export function NewArticleForm({
 
   const chosen = templates.find((x) => x.key === template);
   return (
-    <form
-      className="documents-card"
+    <FormPanel as="form"
       onSubmit={(e) => void create(e)}
       noValidate
     >
@@ -135,6 +135,6 @@ export function NewArticleForm({
       <Button type="submit" variant="primary" busy={busy} busyLabel={t("busy")}>
         {t("create")}
       </Button>
-    </form>
+    </FormPanel>
   );
 }

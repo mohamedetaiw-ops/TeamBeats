@@ -4,7 +4,7 @@ import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
-import { FormField } from "@/components/ui/FormField";
+import { FormField, FormPanel } from "@/components/ui/FormField";
 import { problemMessages } from "@/lib/notifications/types";
 import { contentTypes, editHref, pickName, type ItemView, type SiteView } from "@/lib/content/types";
 import "./content.css";
@@ -46,7 +46,7 @@ export function NewItemForm({ sites, locales, defaultLocale }: { sites: SiteView
   }
 
   return (
-    <form className="content-card" onSubmit={(e) => void create(e)} noValidate>
+    <FormPanel as="form" onSubmit={(e) => void create(e)} noValidate>
       {messages.length > 0 ? (
         <div className="notice notice-error" role="alert">
           {messages.map((m) => (
@@ -90,6 +90,6 @@ export function NewItemForm({ sites, locales, defaultLocale }: { sites: SiteView
           {t("create")}
         </Button>
       </div>
-    </form>
+    </FormPanel>
   );
 }

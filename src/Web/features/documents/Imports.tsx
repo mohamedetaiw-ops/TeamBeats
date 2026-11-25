@@ -7,7 +7,7 @@ import { useFormatter, useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { FileUpload, type UploadItem } from "@/components/ui/FileUpload";
-import { SelectField } from "@/components/ui/FormField";
+import { SelectField, FormPanel } from "@/components/ui/FormField";
 import { Progress } from "@/components/ui/Status";
 import { problemMessages } from "@/lib/notifications/types";
 import {
@@ -82,8 +82,7 @@ export function ImportStart({
   }
 
   return (
-    <form
-      className="documents-card"
+    <FormPanel as="form"
       noValidate
       onSubmit={(e) => {
         e.preventDefault();
@@ -126,7 +125,7 @@ export function ImportStart({
       >
         {t("start")}
       </Button>
-    </form>
+    </FormPanel>
   );
 }
 

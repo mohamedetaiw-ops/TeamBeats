@@ -5,7 +5,7 @@ import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
-import { FormField } from "@/components/ui/FormField";
+import { FormField, FormPanel } from "@/components/ui/FormField";
 import { problemMessages } from "@/lib/notifications/types";
 import { unitName, type OrgUnit } from "@/lib/experience/builder-types";
 import {
@@ -329,7 +329,7 @@ export function ItemEditor({ initial, site, units, locales }: { initial: ItemVie
         ) : null}
       </Widget>
 
-      <fieldset className="content-card" disabled={locked}>
+      <FormPanel as="fieldset" disabled={locked}>
         <legend>{t("audience")}</legend>
         <p className="content-meta">{t("audienceHint")}</p>
         <label className="content-check">
@@ -370,10 +370,10 @@ export function ItemEditor({ initial, site, units, locales }: { initial: ItemVie
             </fieldset>
           </>
         ) : null}
-      </fieldset>
+      </FormPanel>
 
       {item.type === "announcement" ? (
-        <fieldset className="content-card" disabled={locked}>
+        <FormPanel as="fieldset" disabled={locked}>
           <legend>{t("critical")}</legend>
           <label className="content-check">
             <input type="checkbox" checked={critical} onChange={(e) => setCritical(e.target.checked)} />
@@ -408,7 +408,7 @@ export function ItemEditor({ initial, site, units, locales }: { initial: ItemVie
               ) : null}
             </>
           ) : null}
-        </fieldset>
+        </FormPanel>
       ) : null}
 
       <Widget title={t("saveAndPublish")}>

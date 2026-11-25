@@ -150,16 +150,16 @@
  * (variants.css), so a tenant on another design can pick them too. Only structure and the design's own tokens, so a
  * tenant accent and dark mode follow.
  */
-:root[data-design="studio"] :is(.ui-widget, .content-card, .content-side-item, .ui-card, .ui-tile, .ui-stat, .home-tiles a),
-:root[data-design="studio"] :is(.services-section, .work-items, .preferences-section, .documents-card, .documents-table, .kb-article),
+:root[data-design="studio"] :is(.ui-widget, .content-card, .content-side-item, .ui-card, .ui-tile, .ui-stat, .ui-form-panel, .home-tiles a),
+:root[data-design="studio"] :is(.services-section, .work-items, .preferences-section, .documents-table, .kb-article),
 :root[data-design="studio"] :is(.people-section, .people-cards .people-item, .people-identity, .content-article, .content-social),
 :root[data-design="studio"] .ui-rows {
   border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
   box-shadow: var(--tb-shadow-sm);
 }
 
-:root[data-design="studio"] :is(.ui-widget, .content-card, .ui-card, .services-section, .work-items, .preferences-section),
-:root[data-design="studio"] :is(.documents-card, .documents-table, .kb-article, .people-section, .people-identity, .content-article) {
+:root[data-design="studio"] :is(.ui-widget, .content-card, .ui-card, .ui-form-panel, .services-section, .work-items, .preferences-section),
+:root[data-design="studio"] :is(.documents-table, .kb-article, .people-section, .people-identity, .content-article) {
   border-radius: var(--tb-radius-md);
 }
 
