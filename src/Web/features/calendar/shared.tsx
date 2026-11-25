@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { AgendaRow, type LayerOption } from "@/components/ui/CalendarParts";
 import { Button, ButtonLink } from "@/components/ui/Button";
+import { Checkbox } from "@/components/ui/Checkbox";
 import { problemMessages } from "@/lib/notifications/types";
 import { LAYER_LOOK, liveNow, touches, zoneDay, type CalendarItem, type Layer, type Rsvp, type SourceStatus } from "@/lib/calendar";
 import "./calendar.css";
@@ -141,6 +142,7 @@ export function ItemRow({
           {item.location ? <p className="cal-detail-line">{item.location}</p> : null}
           {item.description ? <p className="cal-detail-text">{item.description}</p> : null}
           {item.rsvp ? <RsvpControl item={item} rsvp={item.rsvp} onChanged={onChanged} /> : null}
+          {item.actions.includes("answer") && item.invitation ? <InvitationControl item={item} current={item.invitation} onChanged={onChanged} /> : null}
           <div className="cal-actions">
             {item.actions.includes("join") && item.onlineUrl && !live ? (
               <ButtonLink href={item.onlineUrl} size="sm" target="_blank" rel="noopener noreferrer" aria-label={t("joinLabel", { title })}>
@@ -212,6 +214,64 @@ function RsvpControl({ item, rsvp, onChanged }: { item: CalendarItem; rsvp: Rsvp
         </div>
       ) : null}
       {rsvp.going !== null ? <p className="cal-detail-line">{t("rsvp.counts", { going: rsvp.going, maybe: rsvp.maybe ?? 0, declined: rsvp.declined ?? 0 })}</p> : null}
+      {error ? (
+        <p className="cal-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+const INVITATION_STATES = ["reconnect", "not_found", "refused", "turned_off", "admin_setup", "no_mailbox", "conditional_access"] as const;
+
+/** Accept, tentative or decline an Outlook invitation as the employee (spec 018 R3, FR-015). Outlook tells the organizer. */
+function InvitationControl({ item, current, onChanged }: { item: CalendarItem; current: NonNullable<CalendarItem["invitation"]>; onChanged?: () => void }) {
+  const t = useTranslations("calendar");
+  const [answer, setAnswer] = useState<string>(current === "accepted" ? "accept" : current === "tentative" ? "tentative" : "");
+  const [notify, setNotify] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const answers = ["accept", "tentative", "decline"] as const;
+
+  async function choose(value: (typeof answers)[number]) {
+    setBusy(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/v1/me/calendar/events/${encodeURIComponent(item.sourceId)}/response`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ response: value, notifyOrganizer: notify }),
+      });
+      if (!response.ok) {
+        setError((await problemMessages(response)).join(" ") || t("invitation.failed"));
+        return;
+      }
+      const { state } = (await response.json()) as { state: string };
+      if (state === "ok") {
+        setAnswer(value);
+        onChanged?.();
+      } else {
+        setError(t(`invitation.states.${(INVITATION_STATES as readonly string[]).includes(state) ? state : "failed"}`));
+      }
+    } catch {
+      setError(t("invitation.failed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="cal-rsvp" data-testid="calendar-invitation">
+      <p className="cal-detail-line">{t("invitation.question")}</p>
+      <div className="cal-actions" role="group" aria-label={t("invitation.question")}>
+        {answers.map((a) => (
+          <Button key={a} size="xs" variant={answer === a ? "primary" : "secondary"} aria-pressed={answer === a} disabled={busy} onClick={() => void choose(a)}>
+            {t(`invitation.${a}`)}
+          </Button>
+        ))}
+      </div>
+      <Checkbox label={t("invitation.notify")} checked={notify} disabled={busy} onChange={(e) => setNotify(e.target.checked)} />
       {error ? (
         <p className="cal-error" role="alert">
           {error}

@@ -27,11 +27,18 @@ public sealed record CalendarItemView(
     string? Location,
     string? OnlineJoinUrl,
     string WebLink,
-    bool HalfDay = false);
+    bool HalfDay = false,
+    string? Response = null,
+    bool CanRespond = false);
 
 public sealed record CalendarResponse(string State, DateTimeOffset? AsOf, string TimeZone, DateTimeOffset From, DateTimeOffset To, IReadOnlyList<CalendarItemView> Items);
 
 public sealed record AvailabilityResponse(string State, bool Shared, IReadOnlyList<AvailabilityBlock> Blocks);
+
+/// <summary>An answer to an invitation: accept, tentative or decline, an optional note and whether the organizer hears of it.</summary>
+public sealed record InvitationAnswer(string? Response, string? Comment, bool? NotifyOrganizer);
+
+public sealed record InvitationAnswerResult(string State);
 
 /// <summary>
 /// My mail, My calendar and a colleague's free and busy (spec 018 US2 to US4). Every endpoint needs
@@ -59,7 +66,7 @@ public static class WorkspaceEndpoints
             return Results.Ok(await mailbox.GetInboxAsync(new MailQuery(view ?? "focused", top ?? 5, refresh == true), ct));
         });
 
-        me.MapGet("/calendar", async (int? days, bool? hidePrivate, bool? refresh, IEntitlementService entitlements, ICalendar calendar,
+        me.MapGet("/calendar", async (int? days, bool? hidePrivate, bool? refresh, IEntitlementService entitlements, ICalendar calendar, ICalendarResponses responses,
             ITenantSettingsReader settings, IClock clock, IWorkingCalendar working, ITenantContext context, CancellationToken ct) =>
         {
             await entitlements.DemandAsync(Capabilities.IntegrationMicrosoft365, ct);
@@ -71,7 +78,7 @@ public static class WorkspaceEndpoints
             var from = StartOfDay(clock.UtcNow, zone);
             var to = from.AddDays(days ?? 7);
             var result = await calendar.GetEventsAsync(new CalendarQuery(from, to, refresh == true), ct);
-            var items = Shape(result.Occurrences, zone, hidePrivate == true);
+            var items = Shape(result.Occurrences, zone, hidePrivate == true, result.State == M365States.Ok && await responses.AvailableAsync(ct));
             if (result.State is M365States.Ok or M365States.Degraded)
             {
                 // FR-017: TeamBeats items join the Outlook ones, labelled by source. R1 has location holidays (spec 022);
@@ -80,6 +87,36 @@ public static class WorkspaceEndpoints
                 items = Order(items.Concat(Holidays(snapshot, DateOnly.FromDateTime(from.DateTime), days ?? 7)), zone);
             }
             return Results.Ok(new CalendarResponse(result.State, result.AsOf, zone.Id, from, to, items));
+        });
+
+        // Answer an invitation (spec 018 R3, FR-015): as the employee, in their own calendar only; audited without the event.
+        me.MapPost("/calendar/events/{eventId}/response", async (string eventId, InvitationAnswer body, IEntitlementService entitlements, ICalendarResponses responses,
+            Audit.Contracts.IAuditWriter audit, ITenantContext context, Persistence.IDbSession session, CancellationToken ct) =>
+        {
+            await entitlements.DemandAsync(Capabilities.IntegrationMicrosoft365, ct);
+            var errors = new ValidationErrors();
+            if (eventId.Length is 0 or > 512 || eventId.Any(char.IsControl))
+            {
+                errors.Add("eventId", "validation.calendar.event_id");
+            }
+            if (body.Response is null || !InvitationResponses.All.Contains(body.Response))
+            {
+                errors.Add("response", "validation.calendar.response");
+            }
+            var comment = body.Comment?.Trim();
+            if (comment is { Length: > 500 } || comment?.Any(c => char.IsControl(c) && c is not '\n') == true)
+            {
+                errors.Add("comment", "validation.calendar.response_comment");
+            }
+            errors.ThrowIfAny();
+            var state = await responses.RespondAsync(eventId, body.Response!, string.IsNullOrEmpty(comment) ? null : comment, body.NotifyOrganizer ?? true, ct);
+            if (state == M365States.Ok)
+            {
+                await audit.WriteAsync(new Audit.Contracts.AuditEntry(Audit.Contracts.AuditActions.CalendarInvitationAnswered, "user", context.RequireUser().ToString(),
+                    Changes: new { response = body.Response }), ct);
+                await session.CommitAsync(ct);
+            }
+            return Results.Ok(new InvitationAnswerResult(state));
         });
 
         app.MapGet("/api/v1/people/{userId:guid}/availability", async (Guid userId, IEntitlementService entitlements, IUserDirectory users,
@@ -111,11 +148,14 @@ public static class WorkspaceEndpoints
     /// FR-014 and FR-016: cancelled and declined hidden, free and tentative marked in text, private subjects hidden when the
     /// placement asks, and per day all-day items first.
     /// </summary>
-    public static IReadOnlyList<CalendarItemView> Shape(IEnumerable<CalendarOccurrence> occurrences, TimeZoneInfo zone, bool hidePrivate) =>
+    public static IReadOnlyList<CalendarItemView> Shape(IEnumerable<CalendarOccurrence> occurrences, TimeZoneInfo zone, bool hidePrivate, bool canRespond = false) =>
         Order(occurrences
             .Where(o => !o.IsCancelled && o.Response != "declined")
             .Select(o => new CalendarItemView(o.Id, "outlook", hidePrivate && o.IsPrivate ? null : o.Subject, o.Start, o.End, o.IsAllDay, o.IsPrivate,
-                o.ShowAs == "free", o.ShowAs == "tentative" || o.Response == "tentative", o.Location, o.OnlineJoinUrl, o.WebLink)), zone);
+                o.ShowAs == "free", o.ShowAs == "tentative" || o.Response == "tentative", o.Location, o.OnlineJoinUrl, o.WebLink,
+                Response: o.Response is "none" ? null : o.Response,
+                // Only an invitation can be answered: never the employee's own meeting (R3, FR-015).
+                CanRespond: canRespond && o.Response is "not_responded" or "tentative" or "accepted")), zone);
 
     /// <summary>Per day, all-day items first, then by start; all-day items keep the date they carry.</summary>
     private static IReadOnlyList<CalendarItemView> Order(IEnumerable<CalendarItemView> items, TimeZoneInfo zone) =>

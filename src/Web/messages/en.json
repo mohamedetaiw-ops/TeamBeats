@@ -10876,7 +10876,8 @@
         "office_editing": "Office editing in the browser",
         "sharepoint_documents": "SharePoint documents",
         "sharepoint_upload": "SharePoint uploads",
-        "teams": "Teams notifications"
+        "teams": "Teams notifications",
+        "calendar_responses": "Answering meeting invitations"
       },
       "featureOn": "On",
       "featureOff": "Off",
@@ -10897,7 +10898,8 @@
         "sites_selected": "Read only the SharePoint sites you allow, to keep connected libraries and search in step",
         "files_read_all": "Let each employee browse, preview and download SharePoint files they can already open in SharePoint",
         "files_read_write_all": "Let each employee upload files and rename items in connected SharePoint libraries where SharePoint lets them",
-        "teams_activity_send": "Send notifications to each person's Teams activity feed, without reading chats or channels"
+        "teams_activity_send": "Send notifications to each person's Teams activity feed, without reading chats or channels",
+        "calendars_read_write": "Answer meeting invitations on the employee's behalf, only when they choose to"
       },
       "application": "application",
       "delegated": "on behalf of the employee",
@@ -13674,6 +13676,24 @@
       "layers": "Layers shown by default",
       "save": "Save settings",
       "saved": "Settings saved as version {version}."
+    },
+    "invitation": {
+      "question": "Your answer to this invitation",
+      "accept": "Accept",
+      "tentative": "Tentative",
+      "decline": "Decline",
+      "notify": "Tell the organizer",
+      "failed": "Your answer was not sent. Try again.",
+      "states": {
+        "reconnect": "Sign in to Microsoft 365 again, then answer.",
+        "not_found": "This meeting is no longer in your calendar.",
+        "refused": "Outlook did not take this answer. Answer in Outlook instead.",
+        "turned_off": "Answering from TeamBeats is turned off. Answer in Outlook instead.",
+        "admin_setup": "Your administrator needs to finish setting up answers to invitations.",
+        "no_mailbox": "You have no Outlook mailbox to answer from.",
+        "conditional_access": "Your organization's sign-in rules block this. Answer in Outlook instead.",
+        "failed": "Your answer was not sent. Try again."
+      }
     }
   },
   "letters": {

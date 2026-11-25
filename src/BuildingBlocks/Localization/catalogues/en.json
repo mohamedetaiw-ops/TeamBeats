@@ -3079,5 +3079,9 @@
   "validation.hr.compensation_path": "The compensation address must start with / and name {record_id} once, in the path or the query.",
   "validation.hr.compensation_fields_required": "Say where the code and the amount are in each pay component.",
   "validation.hr.compensation_basic_code": "Use letters, digits, dots, dashes or spaces for the basic salary code, up to 60.",
-  "validation.letters.salary_needs_payroll": "Salary placeholders need payslips in your plan, because salary comes from HR compensation."
+  "validation.letters.salary_needs_payroll": "Salary placeholders need payslips in your plan, because salary comes from HR compensation.",
+  "integrations.permission.calendars_read_write": "Answer meeting invitations on the employee's behalf, only when they choose to",
+  "validation.calendar.event_id": "The calendar event was not recognised.",
+  "validation.calendar.response": "Choose Accept, Tentative or Decline.",
+  "validation.calendar.response_comment": "Keep the note to the organizer under 500 characters."
 }

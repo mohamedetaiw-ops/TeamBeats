@@ -10876,7 +10876,8 @@
         "office_editing": "التحرير في Office عبر المتصفح",
         "sharepoint_documents": "مستندات SharePoint",
         "sharepoint_upload": "الرفع إلى SharePoint",
-        "teams": "إشعارات Teams"
+        "teams": "إشعارات Teams",
+        "calendar_responses": "الرد على دعوات الاجتماعات"
       },
       "featureOn": "مفعلة",
       "featureOff": "متوقفة",
@@ -10897,7 +10898,8 @@
         "sites_selected": "قراءة مواقع SharePoint التي تسمح بها فقط، لإبقاء المكتبات المتصلة والبحث محدّثة",
         "files_read_all": "السماح لكل موظف بتصفح ملفات SharePoint ومعاينتها وتنزيلها إذا كان يستطيع فتحها في SharePoint",
         "files_read_write_all": "السماح لكل موظف برفع الملفات وإعادة تسمية العناصر في مكتبات SharePoint المتصلة حيث يسمح له SharePoint بذلك",
-        "teams_activity_send": "إرسال الإشعارات إلى موجز النشاط في Teams لكل شخص، دون قراءة المحادثات أو القنوات"
+        "teams_activity_send": "إرسال الإشعارات إلى موجز النشاط في Teams لكل شخص، دون قراءة المحادثات أو القنوات",
+        "calendars_read_write": "الرد على دعوات الاجتماعات نيابة عن الموظف، فقط عندما يختار ذلك"
       },
       "application": "تطبيق",
       "delegated": "نيابة عن الموظف",
@@ -13674,6 +13676,24 @@
       "layers": "الطبقات المعروضة افتراضيًا",
       "save": "حفظ الإعدادات",
       "saved": "حُفظت الإعدادات بالإصدار {version}."
+    },
+    "invitation": {
+      "question": "ردك على هذه الدعوة",
+      "accept": "قبول",
+      "tentative": "مبدئي",
+      "decline": "رفض",
+      "notify": "إبلاغ المنظم",
+      "failed": "لم يتم إرسال ردك. حاول مرة أخرى.",
+      "states": {
+        "reconnect": "سجّل الدخول إلى Microsoft 365 مرة أخرى، ثم أرسل ردك.",
+        "not_found": "لم يعد هذا الاجتماع في تقويمك.",
+        "refused": "لم يقبل Outlook هذا الرد. أرسل ردك من Outlook.",
+        "turned_off": "الرد من TeamBeats متوقف. أرسل ردك من Outlook.",
+        "admin_setup": "يحتاج المسؤول إلى إكمال إعداد الرد على الدعوات.",
+        "no_mailbox": "ليس لديك صندوق بريد Outlook للرد منه.",
+        "conditional_access": "تمنع قواعد تسجيل الدخول في مؤسستك ذلك. أرسل ردك من Outlook.",
+        "failed": "لم يتم إرسال ردك. حاول مرة أخرى."
+      }
     }
   },
   "letters": {

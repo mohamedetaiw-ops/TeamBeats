@@ -1282,6 +1282,34 @@ public sealed partial class FakeMicrosoftGraph : HttpMessageHandler
             }).ToList();
             return Json(new { value = items });
         }
+        if (path.StartsWith("events/", StringComparison.Ordinal) && request.Method == HttpMethod.Post)
+        {
+            // accept, tentativelyAccept or decline on the employee's own event (spec 018 R3).
+            var slash = path.LastIndexOf('/');
+            var id = Uri.UnescapeDataString(path[("events/".Length)..slash]);
+            var action = path[(slash + 1)..];
+            if (!scopes.Contains("Calendars.ReadWrite"))
+            {
+                return forbidden;
+            }
+            var index = mailbox.Events.FindIndex(e => e.Id == id);
+            if (action is not ("accept" or "tentativelyAccept" or "decline") || index < 0)
+            {
+                return new HttpResponseMessage(HttpStatusCode.NotFound) { Content = new StringContent("{\"error\":{\"code\":\"ErrorItemNotFound\"}}") };
+            }
+            if (mailbox.Events[index].Response is "organizer" or "none")
+            {
+                return new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new StringContent("{\"error\":{\"code\":\"ErrorInvalidRequest\"}}") };
+            }
+            using var answer = JsonDocument.Parse(await request.Content!.ReadAsStringAsync(ct));
+            mailbox.Events[index] = mailbox.Events[index] with
+            {
+                Response = action switch { "accept" => "accepted", "tentativelyAccept" => "tentativelyAccepted", _ => "declined" },
+            };
+            InvitationAnswers.Enqueue(new InvitationAnswer(upn, id, action, answer.RootElement.GetProperty("comment").GetString() ?? string.Empty,
+                answer.RootElement.GetProperty("sendResponse").GetBoolean()));
+            return new HttpResponseMessage(HttpStatusCode.Accepted);
+        }
         if (path == "calendar/getSchedule" && request.Method == HttpMethod.Post)
         {
             if (!scopes.Contains("Calendars.ReadBasic"))
@@ -1296,6 +1324,11 @@ public sealed partial class FakeMicrosoftGraph : HttpMessageHandler
         }
         return new HttpResponseMessage(HttpStatusCode.NotFound);
     }
+
+    /// <summary>An answer to an invitation sent as the employee: the Graph action, the note and whether the organizer is told.</summary>
+    public sealed record InvitationAnswer(string Upn, string EventId, string Action, string Comment, bool SendResponse);
+
+    public ConcurrentQueue<InvitationAnswer> InvitationAnswers { get; } = new();
 
     /// <summary>Every calendar event of a directory's mailboxes, once each.</summary>
     public IReadOnlyList<Event> DirectoryEvents(Guid directoryId) => AllEvents(directoryId);

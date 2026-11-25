@@ -48,6 +48,7 @@ public static class IntegrationsModule
         services.AddScoped<GraphReadCache>();
         services.AddScoped<IMailbox, GraphMailbox>();
         services.AddScoped<ICalendar, GraphCalendar>();
+        services.AddScoped<ICalendarResponses, GraphCalendarResponses>();
         services.AddScoped<Agents.Contracts.IAgentTool, CalendarEventsTool>();
         services.AddScoped<IAvailability, GraphAvailability>();
         services.AddScoped<IOfficeEditor, GraphOfficeEditor>();

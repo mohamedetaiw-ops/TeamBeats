@@ -19,7 +19,7 @@ export const LAYER_LOOK: Record<Layer, { icon: IconName; swatch: number }> = {
 export const VIEWS = ["agenda", "week", "month", "team"] as const;
 export type CalendarView = (typeof VIEWS)[number];
 
-export type ItemAction = "join" | "open_source" | "rsvp" | "open_leave" | "request_leave" | "view_team";
+export type ItemAction = "join" | "open_source" | "rsvp" | "open_leave" | "request_leave" | "view_team" | "answer";
 export type ItemStatus = "confirmed" | "tentative" | "pending" | "cancelled";
 export type Rsvp = { answer: "going" | "maybe" | "declined" | null; open: boolean; going: number | null; maybe: number | null; declined: number | null };
 
@@ -52,6 +52,8 @@ export type CalendarItem = {
   occurrenceKey: string | null;
   recurring: boolean;
   leaveRequestId: string | null;
+  /** The employee's answer to an Outlook invitation they can still answer from TeamBeats (spec 018 R3, FR-015). */
+  invitation?: "not_responded" | "tentative" | "accepted" | null;
 };
 
 export type SourceStatus = { source: string; state: string; asOf: string | null };

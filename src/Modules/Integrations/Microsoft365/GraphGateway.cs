@@ -334,8 +334,9 @@ public sealed class HttpMicrosoftGraph(IHttpClientFactory httpClients, IConfigur
             {
                 if (response is { IsSuccessStatusCode: true })
                 {
-                    // A delete answers 204 without a body.
-                    return response.StatusCode == System.Net.HttpStatusCode.NoContent ? default : await response.Content.ReadFromJsonAsync<JsonElement>(ct);
+                    // A delete answers 204 and an invitation answer 202, both without a body.
+                    return response.StatusCode is System.Net.HttpStatusCode.NoContent or System.Net.HttpStatusCode.Accepted
+                        ? default : await response.Content.ReadFromJsonAsync<JsonElement>(ct);
                 }
                 var status = response is null ? 503 : (int)response.StatusCode;
                 if (status is 429 or >= 500)
@@ -380,6 +381,8 @@ public sealed class HttpMicrosoftGraph(IHttpClientFactory httpClients, IConfigur
             401 => "unauthorized",
             _ when code is "MailboxNotEnabledForRESTAPI" or "MailboxNotSupportedForRESTAPI" or "ResourceNotFound" && status is 404 or 400 => "no_mailbox",
             403 => "forbidden",
+            // Graph refuses a request it understood, such as an answer to a meeting the employee organized.
+            400 when code is "ErrorInvalidRequest" => "rejected",
             409 => "conflict",
             413 => "too_large",
             _ => "not_found",

@@ -3202,6 +3202,38 @@
         }
       }
     },
+    "/api/v1/me/calendar/events/{eventId}/response": {
+      "post": {
+        "tags": [
+          "Integrations: mail and calendar"
+        ],
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvitationAnswer"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/weather": {
       "get": {
         "tags": [
@@ -41015,6 +41047,34 @@
             "items": {
               "type": "string"
             }
+          }
+        }
+      },
+      "InvitationAnswer": {
+        "required": [
+          "response",
+          "comment",
+          "notifyOrganizer"
+        ],
+        "type": "object",
+        "properties": {
+          "response": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "comment": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "notifyOrganizer": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },

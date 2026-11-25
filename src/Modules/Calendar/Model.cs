@@ -51,6 +51,9 @@ public static class ItemActions
     public const string OpenLeave = "open_leave";
     public const string RequestLeave = "request_leave";
     public const string ViewTeam = "view_team";
+
+    /// <summary>Accept, tentative or decline an Outlook invitation from TeamBeats (spec 018 R3, FR-015).</summary>
+    public const string Answer = "answer";
 }
 
 public static class ItemStatuses
@@ -106,7 +109,8 @@ public sealed record CalendarItemView(
     string? OccurrenceKey = null,
     bool Recurring = false,
     Guid? LeaveRequestId = null,
-    string? TypeKey = null)
+    string? TypeKey = null,
+    string? Invitation = null)
 {
     /// <summary>The first local date the item touches, for ordering and grouping.</summary>
     [JsonIgnore]

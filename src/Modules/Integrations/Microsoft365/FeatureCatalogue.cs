@@ -42,6 +42,11 @@ public static class FeatureCatalogue
         [
             new("Calendars.ReadBasic", PermissionType.Delegated, "integrations.permission.calendars_read_basic"),
         ]),
+        // Invitation answers (spec 018 R3, FR-015): a separate feature so a tenant that only reads never grants write access.
+        new(Microsoft365Features.CalendarResponses, Capabilities.IntegrationMicrosoft365,
+        [
+            new("Calendars.ReadWrite", PermissionType.Delegated, "integrations.permission.calendars_read_write"),
+        ]),
         new(Microsoft365Features.FreeBusy, Capabilities.IntegrationMicrosoft365,
         [
             new("Calendars.ReadBasic", PermissionType.Delegated, "integrations.permission.calendars_read_basic"),

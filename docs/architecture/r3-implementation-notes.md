@@ -175,3 +175,8 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - Compensation is a live read like payslips and comes with `hr.payslips` (recorded default: section 9 lists no separate key). Kiosks block `/compensation` because the shared device allow list never names it.
 - Letters read compensation only at print time through `IHrCompensation`, so approvers see no salary field and nothing is stored; a letter that cannot be printed keeps a reason key (`hr.letter.issue_problem`) shown to HR, and the existing worker retries it up to 20 times.
 - Recorded defaults: the basic salary is the component with the connection's basic salary code; the total needs one currency and one frequency; amounts print with two decimals and grouping, in Arabic-Indic digits when the tenant uses them. Oracle HCM has no compensation preset because salaries there follow each tenant's salary basis.
+
+## Spec 018 R3 slice 1: answers to invitations (T019)
+- Answers are their own connection feature (`calendar_responses`, delegated `Calendars.ReadWrite`), so a tenant that only reads its calendars never grants write access. Recorded defaults: a note of up to 500 characters, the organizer told unless the employee unticks it, and only invitations (not responded, tentative or accepted) answerable; the employee's own meetings are not.
+- Graph answers `202 Accepted` with no body; the delegated gateway now treats it like `204`. A `400 ErrorInvalidRequest` (answering a meeting one organized) maps to `rejected`, shown as `refused`.
+- The read cache moves the employee's calendar to a new generation after an answer instead of removing keys, so My calendar and the unified calendar read fresh at once without a refresh limit.

@@ -37,3 +37,11 @@ Depends on 003 (Entra ID sign-in), 006 (Microsoft 365 connection), 005 (entitlem
 
 ## Final phase
 - [x] T018 Telemetry `integration.graph_call` without content; rate limit per employee; OpenAPI; R1 implementation notes; spec evidence
+
+## R3
+- [x] T019 [US3] Invitation answers (FR-015): `calendar_responses` feature with `Calendars.ReadWrite`, `ICalendarResponses` Graph adapter, answer endpoint with audit, `canRespond` on My calendar, `answer` action in the unified calendar and its Accept, Tentative and Decline control; tests for the answer and its note, organizer told or not, own meeting refused, unknown event, feature off, cache refreshed, another person's event and the entitlement
+- [ ] T020 Teams presence on profile cards (`Presence.Read.All`, opt-in by tenant)
+- [ ] T021 [US6] Assistant mail summaries: tenant switch, employee opt-in, Inbox only, untrusted content (FR-022)
+- [ ] T022 Google Workspace mail through `IMailbox` and calendar through the same ports (FR-024)
+- [ ] T023 R3 implementation notes, OpenAPI and spec evidence
+

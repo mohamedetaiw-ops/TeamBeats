@@ -3079,5 +3079,9 @@
   "validation.hr.compensation_path": "يجب أن يبدأ عنوان التعويضات بـ / وأن يذكر {record_id} مرة واحدة في المسار أو الاستعلام.",
   "validation.hr.compensation_fields_required": "حدّد موضع الرمز والمبلغ في كل بند من بنود الأجر.",
   "validation.hr.compensation_basic_code": "استخدم حروفًا أو أرقامًا أو نقاطًا أو شرطات أو مسافات لرمز الراتب الأساسي، بحد أقصى 60.",
-  "validation.letters.salary_needs_payroll": "تحتاج عناصر الراتب إلى كشوف الرواتب في باقتك، لأن الراتب يُقرأ من تعويضات الموارد البشرية."
+  "validation.letters.salary_needs_payroll": "تحتاج عناصر الراتب إلى كشوف الرواتب في باقتك، لأن الراتب يُقرأ من تعويضات الموارد البشرية.",
+  "integrations.permission.calendars_read_write": "الرد على دعوات الاجتماعات نيابة عن الموظف، فقط عندما يختار ذلك",
+  "validation.calendar.event_id": "لم يتم التعرف على حدث التقويم.",
+  "validation.calendar.response": "اختر قبول أو مبدئي أو رفض.",
+  "validation.calendar.response_comment": "اجعل الملاحظة للمنظم أقل من 500 حرف."
 }

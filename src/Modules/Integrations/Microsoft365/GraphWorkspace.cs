@@ -72,7 +72,20 @@ public sealed class GraphReadCache(IMemoryCache cache, TenantContextAccessor con
     }
 
     private string Key(string feature, string query) =>
-        $"graph:{context.RequireTenant():N}:{context.ActorId:N}:{context.SessionId:N}:{feature}:{query}";
+        $"graph:{context.RequireTenant():N}:{context.ActorId:N}:{context.SessionId:N}:{feature}:{Generation(feature)}:{query}";
+
+    public Guid Tenant => context.RequireTenant();
+
+    /// <summary>Drops the employee's cached answers for a feature, for example after they answered an invitation.</summary>
+    public void Forget(string feature)
+    {
+        var key = GenerationKey(feature);
+        cache.Set(key, Generation(feature) + 1, LastKnown);
+    }
+
+    private int Generation(string feature) => cache.Get<int?>(GenerationKey(feature)) ?? 0;
+
+    private string GenerationKey(string feature) => $"graph-gen:{context.RequireTenant():N}:{context.ActorId:N}:{context.SessionId:N}:{feature}";
 }
 
 /// <summary>Microsoft 365 adapter for <see cref="IMailbox"/> (spec 018 US2). Graph types stay here.</summary>
@@ -211,6 +224,54 @@ public sealed class GraphCalendar(DelegatedAccessService access, IMicrosoftGraph
             string.IsNullOrWhiteSpace(join) ? null : join,
             GraphMailbox.Text(e, "webLink") ?? string.Empty,
             GraphMailbox.Text(e, "iCalUId"));
+    }
+}
+
+/// <summary>
+/// Microsoft 365 adapter for <see cref="ICalendarResponses"/> (spec 018 R3, FR-015): <c>accept</c>,
+/// <c>tentativelyAccept</c> or <c>decline</c> on the employee's own event, with <c>Calendars.ReadWrite</c> as the employee.
+/// The event ID is escaped into the path, so it cannot reach another resource. A sent answer drops the employee's cached
+/// calendar so My calendar shows it at once.
+/// </summary>
+public sealed class GraphCalendarResponses(DelegatedAccessService access, IMicrosoftGraph graph, GraphReadCache cache) : ICalendarResponses
+{
+    public async Task<bool> AvailableAsync(CancellationToken ct = default) =>
+        (await access.AcquireAsync(Microsoft365Features.CalendarResponses, ct)).State == M365States.Ok;
+
+    public async Task<string> RespondAsync(string eventId, string response, string? comment, bool notifyOrganizer, CancellationToken ct = default)
+    {
+        var grant = await access.AcquireAsync(Microsoft365Features.CalendarResponses, ct);
+        if (grant.State != M365States.Ok)
+        {
+            return grant.State;
+        }
+        var action = response switch
+        {
+            InvitationResponses.Accept => "accept",
+            InvitationResponses.Tentative => "tentativelyAccept",
+            InvitationResponses.Decline => "decline",
+            _ => throw new ArgumentOutOfRangeException(nameof(response)),
+        };
+        try
+        {
+            await GraphTelemetry.MeasureAsync(cache.Tenant, Microsoft365Features.CalendarResponses, () =>
+                graph.DelegatedSendAsync(grant.AccessToken!, HttpMethod.Post, $"me/events/{Uri.EscapeDataString(eventId)}/{action}",
+                    new { comment = comment ?? string.Empty, sendResponse = notifyOrganizer }, ct));
+        }
+        catch (GraphCallException ex)
+        {
+            return ex.Kind switch
+            {
+                "unauthorized" => M365States.Reconnect,
+                "no_mailbox" => M365States.NoMailbox,
+                "forbidden" => M365States.AdminSetup,
+                "not_found" => M365States.NotFound,
+                "rejected" => M365States.Refused,
+                _ => M365States.Degraded,
+            };
+        }
+        cache.Forget(Microsoft365Features.Calendar);
+        return M365States.Ok;
     }
 }
 

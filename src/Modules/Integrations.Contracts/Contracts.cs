@@ -26,6 +26,9 @@ public static class Microsoft365Features
 
     /// <summary>Notifications in the Microsoft Teams activity feed (spec 015 US5).</summary>
     public const string Teams = "teams";
+
+    /// <summary>Accept, tentatively accept or decline invitations from My calendar (spec 018 R3, FR-015), as the employee.</summary>
+    public const string CalendarResponses = "calendar_responses";
 }
 
 /// <summary>Connection status (spec 006 FR-014).</summary>
@@ -429,6 +432,12 @@ public static class M365States
     public const string Degraded = "degraded";
     public const string NotInPlan = "not_in_plan";
     public const string NoDrive = "no_drive";
+
+    /// <summary>The provider has no such item for the employee (spec 018 R3, an invitation answered elsewhere or removed).</summary>
+    public const string NotFound = "not_found";
+
+    /// <summary>The provider refused the change, for example an answer to a meeting the employee organizes.</summary>
+    public const string Refused = "refused";
 }
 
 // Canonical mail, calendar and free and busy ports (spec 018 FR-024). They act as the session's membership only and take
@@ -505,6 +514,29 @@ public sealed record CalendarResult(string State, DateTimeOffset? AsOf, IReadOnl
 public interface ICalendar
 {
     Task<CalendarResult> GetEventsAsync(CalendarQuery query, CancellationToken ct = default);
+}
+
+/// <summary>The answers to an invitation (spec 018 R3, FR-015).</summary>
+public static class InvitationResponses
+{
+    public const string Accept = "accept";
+    public const string Tentative = "tentative";
+    public const string Decline = "decline";
+
+    public static readonly IReadOnlyList<string> All = [Accept, Tentative, Decline];
+}
+
+/// <summary>
+/// Answers invitations in the employee's own calendar as the employee (spec 018 R3, FR-015). The provider sends the
+/// answer to the organizer under its own rules; TeamBeats keeps nothing about the event.
+/// </summary>
+public interface ICalendarResponses
+{
+    /// <summary>Whether the employee can answer from TeamBeats now: the feature is on, consented and in their token.</summary>
+    Task<bool> AvailableAsync(CancellationToken ct = default);
+
+    /// <summary>Returns an M365States value: ok, or why the answer could not be sent.</summary>
+    Task<string> RespondAsync(string eventId, string response, string? comment, bool notifyOrganizer, CancellationToken ct = default);
 }
 
 /// <summary>A status block only: free, busy, tentative, oof or working_elsewhere. Never a subject, location or attendee.</summary>
