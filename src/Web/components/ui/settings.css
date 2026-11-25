@@ -167,3 +167,48 @@
   min-block-size: 1.5rem;
   min-inline-size: 1.5rem;
 }
+
+/* DLS-047: a settings section, its heading and help on the start side and the controls on the end side. */
+.ui-settings-section {
+  display: grid;
+  grid-template-columns: minmax(12rem, 18rem) minmax(0, 1fr);
+  gap: var(--tb-space-lg);
+  max-inline-size: 60rem;
+  padding: var(--tb-space-lg);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-lg);
+  background: var(--tb-color-surface-raised);
+  box-shadow: var(--tb-shadow-sm);
+}
+
+.ui-settings-section-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--tb-space-sm);
+}
+
+.ui-settings-section-head h2 {
+  margin: 0;
+  font-size: var(--tb-font-size-md);
+  font-weight: var(--tb-font-weight-semibold);
+}
+
+.ui-settings-section-head p {
+  margin: 0;
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-xs);
+}
+
+.ui-settings-section-body {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: var(--tb-space-sm);
+}
+
+@media (width <= 40rem) {
+  .ui-settings-section {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--tb-space-md);
+  }
+}

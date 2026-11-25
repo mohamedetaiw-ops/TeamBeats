@@ -1,5 +1,6 @@
 import { useLocale } from "next-intl";
 import { dayInWords } from "@/lib/format";
+import { Icon, type IconName } from "@/components/ui/Icon";
 import { useId, type FieldsetHTMLAttributes, type FormHTMLAttributes, type HTMLAttributes, type InputHTMLAttributes, type ReactNode, type Ref, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
 
 type Props = InputHTMLAttributes<HTMLInputElement> & {
@@ -182,4 +183,25 @@ export function FormPanel(props: FormPanelProps) {
   }
   const { as: _section, ...rest } = props;
   return <section className="ui-form-panel" {...rest} />;
+}
+
+/**
+ * One section of a settings page (spec 036 DLS-047): an icon, a heading and one line of help on the start side, the
+ * controls on the end side; one column below 40rem.
+ */
+export function SettingsSection({ id, icon, title, hint, children }: { id: string; icon: IconName; title: string; hint: string; children: ReactNode }) {
+  return (
+    <section className="ui-settings-section" aria-labelledby={id}>
+      <div className="ui-settings-section-head">
+        <span className="ui-icon-tile" aria-hidden="true">
+          <Icon name={icon} size={18} />
+        </span>
+        <div>
+          <h2 id={id}>{title}</h2>
+          <p>{hint}</p>
+        </div>
+      </div>
+      <div className="ui-settings-section-body">{children}</div>
+    </section>
+  );
 }
