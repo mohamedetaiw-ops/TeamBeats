@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useLocale, useTranslations } from "next-intl";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { PersonPicker } from "@/features/services/PersonPicker";
@@ -89,6 +89,7 @@ export function AgentEditor({
   const t = useTranslations("agents.editor");
   const ts = useTranslations("agents");
   const locale = useLocale();
+  const format = useFormatter();
   const router = useRouter();
   const ids = useId();
   const [detail, setDetail] = useState(initial);
@@ -210,6 +211,29 @@ export function AgentEditor({
               {t("templateUpdate.apply")}
             </Button>
           ) : null}
+        </div>
+      ) : null}
+
+      {(detail.securityUpdates ?? []).length > 0 ? (
+        <div className="notice" data-testid="agent-security-updates">
+          {(detail.securityUpdates ?? []).map((u) => (
+            <div key={u.version}>
+              <p>
+                {u.inForce
+                  ? t("securityUpdate.inForce")
+                  : t("securityUpdate.coming", { date: format.dateTime(new Date(u.appliesAt), { dateStyle: "medium" }) })}{" "}
+                <bdi>{pickText(u.reason, locale)}</bdi>
+              </p>
+              <ul>
+                {(u.removeTools ?? []).map((tool) => (
+                  <li key={tool}>{t("securityUpdate.removeTool", { tool: toolLabel(tool) })}</li>
+                ))}
+                {u.maxAutonomy ? <li>{t("securityUpdate.maxAutonomy", { level: t(`autonomyLevels.${u.maxAutonomy}`) })}</li> : null}
+                {u.maxClassification ? <li>{t("securityUpdate.maxClassification", { classification: ts(`classifications.${u.maxClassification}`) })}</li> : null}
+                {u.maxToolCalls ? <li>{t("securityUpdate.maxToolCalls", { count: u.maxToolCalls })}</li> : null}
+              </ul>
+            </div>
+          ))}
         </div>
       ) : null}
 

@@ -1939,6 +1939,14 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - The rule is checked again at run time on the server: the kind comes from what Search holds for the item, not from the link, and a run on an item whose kind does not allow the agent is `validation.agent_run.contextual_off`.
 - The editor is on Agents > Policy and offers only published agents. Unit policies do not narrow this rule yet; the tenant rule applies everywhere.
 
+## Spec 020 R2 slice 9: forced security updates of templates (FR-005, section 7)
+
+- A forced security update is platform data shipped with the product, like the templates (`src/Modules/Agents/SecurityUpdates/*.json`, none yet), and so released and signed with the build. Each names a template, a version, a reason in Arabic and English, when it was announced, and either a set date at least 7 days later or `critical` to apply at once. A bad update (unknown template or limit, no reason, short notice, repeated version) stops the product from starting.
+- Default: an update can only take things away (remove tools, lower autonomy, classification or tool calls per run), so it applies without review or the gate; anything that adds behaviour stays an offered template version. It applies to every agent built on the template, whatever template version it is on, including clones.
+- It applies where the definition is read: every run (person, briefing, test panel, evaluation, resumed run, comparison arm) reads the version with the updates in force applied, so an agent is safe from the date whether or not the sweep has run. A draft that still holds what an update in force takes away is refused (`validation.agent.template_security`); an install and an applied template update start with it.
+- A sweep every minute per tenant tells the owner and backup owner once when an update with a set date is announced and once when it applies (security notices), and audits the application as `agent.template_security_applied` with what changed. Agents installed while an update is in force are not told it was applied. Agents migration 0024 keeps the versions announced and applied.
+- The agent editor lists the template's updates: in force or the date it applies, the reason, and what it takes away. The stored published version is not rewritten, so a later update that is withdrawn needs a new release; version history shows what the designer published.
+
 ## Spec 027 R2 slice 1: L3 governed execution with approvals (T015, US1 L3, US4, FR-010)
 
 - L3 is built. The default policy still caps autonomy at L2. The AI Policy Administrator raises it, and raising it to L3 needs `ai.agents.write_tools` (Workplace Plus and above); the gateway checks the same key at run time for every L3 call, so a downgraded package refuses them (`tool.not_in_package`).

@@ -184,7 +184,7 @@ internal sealed record RunAgent(Guid Id, int Version, Guid OrgUnitId, AgentDefin
 public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntitlementService entitlements, IAuthorizationService authz,
     IOrganizationHierarchy org, IAuditWriter audit, IClock clock, IAiGateway gateway, ToolRegistry tools, UnitAgentPolicyService unitPolicies,
     ISearchRetrieval retrieval, AgentMemory memory, MemoryRememberTool remember, AgentApprovals approvals, INotificationSender notifications,
-    IProductionSampler sampler, IAgentArmAllocator arms)
+    IProductionSampler sampler, IAgentArmAllocator arms, ITemplateSecurityUpdates securityUpdates)
 {
     public const int MaxMessage = 2000;
     public const string PromptVersion = "agent.v1";
@@ -220,9 +220,14 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         return rows.Count == 0 ? null : rows[0];
     }
 
-    private async Task<AgentDefinition> VersionAsync(Guid id, int number, CancellationToken ct) =>
-        Definition((await session.ScalarAsync<string>("select definition::text from agents.agent_version where agent_id = @id and number = @number",
-            new { id, number }, ct))!);
+    /// <summary>A version's definition with the forced security updates of its template in force applied (spec 020 FR-005), whatever version it came from.</summary>
+    private async Task<AgentDefinition> VersionAsync(Guid id, int number, CancellationToken ct)
+    {
+        var rows = await session.QueryAsync(
+            "select v.definition::text, a.template_id from agents.agent_version v join agents.agent a on a.id = v.agent_id where v.agent_id = @id and v.number = @number",
+            new { id, number }, r => (Definition: r.GetString(0), Template: r.Get<string?>("template_id")), ct);
+        return TemplateSecurity.Apply(Definition(rows[0].Definition), securityUpdates.InForce(rows[0].Template, clock.UtcNow));
+    }
 
     /// <summary>Whether the person is in the agent's audience: the whole tenant, a member of one of its org units or their subtrees, or granted access.</summary>
     private Task<bool> InAudienceAsync(Guid agentId, AgentAudience? audience, Guid user, CancellationToken ct) =>

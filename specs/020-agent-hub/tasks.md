@@ -27,7 +27,7 @@ Depends on 004, 005, 006, 013, 016, 027 (same module), 034; 012 (search source),
 - [x] T014 Registry, template library, agent editor with test panel, review page and the conversation component, in English and Arabic, RTL; e2e with axe
 
 ## Final phase
-- [ ] T015 OpenAPI; R1 implementation notes; spec evidence
+- [x] T015 OpenAPI; R1 implementation notes; spec evidence
 
 ## R2
 - [x] T016 [US4] Studio: blank agents within `ai.agents.custom` and `ai.agents.max_custom`, clone with confirmed copies, tool picker by policy and scope, Studio sections and read-only JSON view; tests

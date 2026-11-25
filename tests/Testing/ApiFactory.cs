@@ -56,6 +56,8 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
 
     public TestAgentToolLog AgentTools { get; } = new();
 
+    public TestTemplateSecurityUpdates TemplateSecurity { get; } = new();
+
     public FakeTicketing Ticketing { get; } = new();
 
     public FakeRestApi Rest { get; } = new();
@@ -106,6 +108,7 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
             services.AddSingleton<TeamBeats.Persistence.IMalwareScanner, TeamBeats.Persistence.TestSignatureScanner>();
             services.AddScoped<TeamBeats.Modules.Notifications.IEmailSender>(_ => Email);
             services.AddSingleton(AgentTools);
+            services.AddSingleton<TeamBeats.Modules.Agents.ITemplateSecurityUpdates>(TemplateSecurity);
             services.AddSingleton(Ticketing);
             services.AddSingleton<TeamBeats.Modules.Integrations.Runtime.IConnectorPack, TestTicketingPack>();
             services.AddScoped<TeamBeats.Modules.Agents.Contracts.IAgentTool, TestNoteTool>();
