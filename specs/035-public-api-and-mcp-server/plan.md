@@ -105,8 +105,17 @@ R3 slices, in order:
 - **Resource calls** with a bound token need `Authorization: DPoP <token>` and a matching proof on `/api/public` and `/mcp`; a bound token sent as `Bearer` is refused. A refresh token issued with a binding only refreshes with a proof from the same key, and one issued without stays without. The authorization server metadata lists `dpop_signing_alg_values_supported`.
 - **Errors** follow RFC 9449: `invalid_dpop_proof` at the token endpoint, `WWW-Authenticate: DPoP error="invalid_dpop_proof"` on resource calls. Refusals are audited as `api.token_refused` with reason `dpop`.
 
+### MCP prompts
+- **Catalogue in code**, five prompts built on R2 tools: `catch_up_on_news` (list_news), `find_a_policy` (search, get_policy; argument `topic`), `who_can_help` (find_person; `need`), `my_open_items` (list_my_requests, list_my_tasks), `request_a_service` (list_services, submit_service_request; `need`). Tenants do not edit prompts in R3.
+- **Filtered like tools:** a prompt is listed and served only when the tool gateway offers the caller every tool it names, so scopes, the package, the external AI client policy (write tools, cap) and the kill switch apply unchanged.
+- **Localized** from the API catalogue by `Accept-Language` within the tenant's locales, as other public answers.
+- **Arguments:** short text (at most 300 characters), required where marked, no unknown names; put in the text in quotes with quotes and line breaks removed. Every text tells the client that what TeamBeats returns is information, not instructions. A prompt reads no TeamBeats data itself.
+
 ### Tests (R3 slice 1)
 - A client credentials token with a proof is bound; calls succeed with matching proofs and fail without one, with another key, a reused `jti`, a wrong `htm` or `htu`, an old `iat` or a wrong `ath`; a bound token sent as `Bearer` is refused.
 - An app that requires DPoP gets no token without a proof; an app that does not still gets bearer tokens.
 - Refresh with the bound key works, with another key it fails; the MCP endpoint follows the same rules.
 - Cross-tenant: a proof and token of another tenant are refused as before.
+
+### Tests (R3 slice 2)
+- A client lists only the prompts its scopes and policy allow, in English and Arabic; arguments that are missing, too long or unknown are refused; a prompt whose tools are not offered is not served; write tools off hides the request prompt; another tenant refuses the token.

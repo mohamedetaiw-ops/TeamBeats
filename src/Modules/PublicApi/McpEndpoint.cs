@@ -21,6 +21,7 @@ namespace TeamBeats.Modules.PublicApi;
 /// switches, the network rules and the call limits. Here the token's scopes name the tools the client may see, and
 /// every list and call goes through the Agents tool gateway with the caller type external AI client (FR-020), which
 /// decides everything else. Tool results go back as data with each source's reference and classification (FR-024).
+/// Prompts (<see cref="McpPrompts"/>) are listed only where every tool they use is offered.
 /// </summary>
 public static class McpEndpoint
 {
@@ -43,7 +44,19 @@ public static class McpEndpoint
             .WithCallToolHandler((request, ct) => CallAsync(Http(request.Services), request.Params, ct))
             .WithListResourceTemplatesHandler((request, ct) => TemplatesAsync(Http(request.Services), ct))
             .WithListResourcesHandler((request, ct) => ResourcesAsync(Http(request.Services), ct))
-            .WithReadResourceHandler((request, ct) => ReadAsync(Http(request.Services), request.Params?.Uri, ct));
+            .WithReadResourceHandler((request, ct) => ReadAsync(Http(request.Services), request.Params?.Uri, ct))
+            .WithListPromptsHandler(async (request, ct) =>
+            {
+                var http = Http(request.Services);
+                var (caller, scoped) = await CallerAsync(http, ct);
+                return await McpPrompts.ListAsync(http, caller, scoped, ct);
+            })
+            .WithGetPromptHandler(async (request, ct) =>
+            {
+                var http = Http(request.Services);
+                var (caller, scoped) = await CallerAsync(http, ct);
+                return await McpPrompts.GetAsync(http, caller, scoped, request.Params, ct);
+            });
         return services;
     }
 

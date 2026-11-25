@@ -55,3 +55,4 @@ The spec stays Approved, not Implemented. Everything in its R2 scope is built: t
 | App setting "require DPoP": no token without a proof, no call with an unbound token | Met | `PublicApiDpopTests.An_app_that_requires_dpop_gets_no_token_and_no_call_without_a_proof` |
 | Bound refresh tokens and the MCP server | Met | `PublicApiDpopTests.Refresh_tokens_and_mcp_calls_stay_on_the_key_they_were_bound_to` |
 | Mutual TLS bound tokens | Not offered | DPoP only (R3 plan) |
+| MCP prompts, localized, filtered like tools | Met | `PublicMcpPromptTests` (both) |
