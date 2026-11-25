@@ -8,6 +8,7 @@ import { problemMessages } from "@/lib/notifications/types";
 import type { KbTemplate } from "@/lib/documents/types";
 import "./documents.css";
 import { FormPanel } from "@/components/ui/FormField";
+import { RadioGroup } from "@/components/ui/RadioGroup";
 
 /**
  * The new article form: a template and a title in each language the tenant uses. The API starts the draft with the
@@ -93,21 +94,13 @@ export function NewArticleForm({
           ))}
         </div>
       ) : null}
-      <fieldset className="documents-templates">
-        <legend>{t("template")}</legend>
-        {templates.map((x) => (
-          <label key={x.key} className="documents-check">
-            <input
-              type="radio"
-              name={`${ids}-template`}
-              value={x.key}
-              checked={template === x.key}
-              onChange={() => setTemplate(x.key)}
-            />
-            {t(`templateValue.${x.key}`)}
-          </label>
-        ))}
-      </fieldset>
+      <RadioGroup
+        legend={t("template")}
+        name={`${ids}-template`}
+        value={template}
+        onChange={(e) => setTemplate(e.target.value)}
+        options={templates.map((x) => ({ value: x.key, label: t(`templateValue.${x.key}`) }))}
+      />
       <p className="field-hint" data-testid="template-sections">
         {chosen && chosen.sections.length > 0
           ? t("sections", {

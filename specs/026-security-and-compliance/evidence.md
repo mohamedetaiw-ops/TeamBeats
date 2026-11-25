@@ -58,4 +58,10 @@ R2 adds guests and guest spaces (US3), SIEM streaming (US4), the full alert set 
 | Arabic and English, RTL, accessibility | Met | The three e2e suites in en and ar with axe; catalogue and message checks in `npm run verify` |
 | OpenAPI | Met | `docs/api/openapi.v1.json` regenerated, checked by `OpenApiContractTests` |
 
-Known gaps for R3: customer-managed keys (FR-007), four-eyes approval (FR-016), tenant export and deletion certificate (FR-019). Break-glass offers only the network rule reset; reading tenant content stays closed.
+## R3
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| FR-016 four-eyes approval of critical settings when the tenant enables it | Met for security policy, sign-in and audit retention (key changes come with FR-007) | `SecurityFourEyesTests.A_held_policy_change_applies_only_when_another_administrator_approves_it`, `Rejected_withdrawn_and_expired_changes_leave_the_setting_and_retention_and_sign_in_are_held_too`, `The_switch_needs_two_administrators_and_turning_it_off_waits_for_the_other`, `security.spec.ts` (en and ar, axe) |
+
+Known gaps for R3: customer-managed keys (FR-007), tenant export and deletion certificate (FR-019). Break-glass offers only the network rule reset; reading tenant content stays closed.

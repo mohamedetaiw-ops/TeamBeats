@@ -33,7 +33,8 @@ public sealed record SecurityPolicyView(
     IReadOnlyList<string> GuestAllowDomains,
     IReadOnlyList<string> GuestBlockDomains,
     string MfaProvider = PolicyService.DefaultProvider,
-    bool MfaClaimsUnavailable = false)
+    bool MfaClaimsUnavailable = false,
+    PendingChangeView? PendingChange = null)
 {
     public string ETag => PolicyService.ETag(Version);
 }
@@ -76,7 +77,8 @@ public sealed partial class PolicyService(
     IClock clock,
     PolicyStore store,
     ISignInHistory signIns,
-    ISignInMethods signInMethods)
+    ISignInMethods signInMethods,
+    IFourEyes fourEyes)
 {
     public const int MaxZones = 20;
     public const int MaxDomains = 200;
@@ -132,7 +134,7 @@ public sealed partial class PolicyService(
         return new(p.IpAllow, p.IpBlock, p.AdminIpAllow, p.NetworkZones, p.RequireMfa, await MfaClaimSeenAsync(ct), p.StepUpMinutes, p.IdleMinutes,
             p.AbsoluteHours, p.MaxSessions, p.RememberDeviceDays, await entitlements.IsEnabledAsync(Capabilities.SecurityIpRulesScoped, ct), Caller(),
             Math.Max(p.Version, 1), p.OfflineMaxItems, p.OfflineMaxMb, p.OfflineDays, p.GuestAllowDomains ?? [], p.GuestBlockDomains ?? [],
-            provider, NoMfaClaimKinds.Contains(provider));
+            provider, NoMfaClaimKinds.Contains(provider), await fourEyes.PendingAsync(FourEyesKinds.SecurityPolicy, ct));
     }
 
     /// <summary>Guest domain rules (section 14): lower case domain names, no duplicates, at most 200.</summary>
@@ -278,6 +280,11 @@ public sealed partial class PolicyService(
         if (changed.Count == 0)
         {
             return await ViewAsync(current, ct);
+        }
+        // Spec 026 FR-016: with four-eyes on, the checked change waits for another administrator.
+        if (await fourEyes.HoldAsync(FourEyesKinds.SecurityPolicy, request with { }, changed, ct) is { } held)
+        {
+            return await ViewAsync(current, ct) with { PendingChange = held };
         }
         await session.ExecAsync(
             """

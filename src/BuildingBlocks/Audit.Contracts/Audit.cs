@@ -272,6 +272,12 @@ public static class AuditActions
 
     // Spec 026 (R1): security policy and network refusals.
     public const string SecurityPolicyChanged = "security.policy_changed";
+    public const string SecurityFourEyesChanged = "security.four_eyes_changed";
+    public const string SecurityChangeRequested = "security.change_requested";
+    public const string SecurityChangeApproved = "security.change_approved";
+    public const string SecurityChangeRejected = "security.change_rejected";
+    public const string SecurityChangeWithdrawn = "security.change_withdrawn";
+    public const string SecurityChangeExpired = "security.change_expired";
 
     // Spec 030 (R2): offline storage limits.
     public const string MobileOfflinePolicyChanged = "mobile.offline_policy_changed";
@@ -697,7 +703,8 @@ public static class AuditActions
         HrJourneyTemplateChanged, HrJourneyStarted, HrJourneyRescheduled, HrJourneyStepCompleted, HrJourneyCancelled, HrAccessRemovalConfirmed, HrAccessRemovalEscalated, HrExitInterviewRecorded, HrJourneySettingsChanged, HrPreboardingSent, HrAttendanceSettingsChanged, HrWorkRuleChanged, HrAttendanceExported, HrAttendanceRequested, HrAttendanceCorrected, HrCompensationCredited, HrAttendanceRequestRejected, HrLetterTypeChanged, HrLetterSettingsChanged, HrLetterRequested, HrLetterIssued, HrLetterRejected, HrLetterVerified, HrDataChangeSettingsChanged, HrDataChangeRequested, HrDataChangeApproved, HrDataChangeRejected, HrDataChangeWrittenBack, HrDataChangeWriteFailed, HrExpensePolicyChanged, HrExpenseRatesChanged, HrExpenseSubmitted, HrExpenseApproved, HrExpenseRejected, HrExpenseHandedOff,
         CalendarEventCreated, CalendarEventChanged, CalendarEventCancelled, CalendarEventDeleted, CalendarSettingsChanged, CalendarTeamViewed,
         PeopleVisibilityChanged, PeopleFieldSourceChanged, PeopleManagerSetManually, PeopleProfileUpdated, PeopleReportingCycleDetected, PeopleSettingsChanged, PeoplePhotoRemoved,
-        SecurityPolicyChanged, MobileOfflinePolicyChanged, DeviceKioskEnrolled, DeviceKioskChanged, DeviceKioskRevoked, DeviceKioskSignIn, DeviceKioskLockout,
+        SecurityPolicyChanged, SecurityFourEyesChanged, SecurityChangeRequested, SecurityChangeApproved, SecurityChangeRejected, SecurityChangeWithdrawn,
+        SecurityChangeExpired, MobileOfflinePolicyChanged, DeviceKioskEnrolled, DeviceKioskChanged, DeviceKioskRevoked, DeviceKioskSignIn, DeviceKioskLockout,
         ApiAppRegistered, ApiAppChanged, ApiAppDisabled, ApiCredentialAdded, ApiCredentialRevoked, ApiConsentGranted, ApiConsentRevoked,
         ApiTokenFamilyRevoked, ApiTokenRefused, ApiSettingsChanged, ApiRoleAssignedToApp, ApiVerifiedClientChanged, ApiClientBlocked, ApiClientUnblocked, ApiTokensRevoked,
         DeviceBadgeIssued, DeviceBadgePinReset, SecurityRequestBlockedNetwork, SecurityMfaMissing, SecurityStepUpCompleted, SecurityStepUpFailed, SecurityAlertRaised, SecurityAlertHandled,

@@ -58,3 +58,15 @@ Depends on 001 (break-glass), 003 (sessions, Entra sign-in), 004 (conditions, ex
 
 ## R2 final phase
 - [x] T031 OpenAPI; e2e in English and Arabic with axe; R2 implementation notes; spec evidence
+
+## R3 Phase 12: four-eyes approval (FR-016)
+- [x] T032 [P] Tests: held changes per kind, approval by another holder with step-up, reject, withdraw, expiry, one pending per kind, switch needs two holders, turning off is held, audit, notifications, cross-tenant
+- [x] T033 `IFourEyes` and `IFourEyesApplier` in Security.Contracts; `security.pending_change`; appliers in Security, Identity and Audit; expiry sweep
+- [x] T034 Endpoints, `/admin/security/changes` page and the notice on held settings pages; e2e
+
+## R3 Phase 13: customer-managed keys (US8, FR-007)
+- [ ] T035 [P] Tests: key connection, wrapped data keys, revocation within 15 minutes, restore, rotation without downtime, four-eyes kind
+- [ ] T036 Key management adapter port, key status, wrapping, revocation check, rotation; key page
+
+## R3 Phase 14: on-prem hardening pack
+- [ ] T037 Hardening guide and shared responsibility matrix; posture self check for customer-hosted installs

@@ -31,6 +31,7 @@ public static class IdentityModule
         services.AddHttpClient(Sso.HttpOidcProvider.ClientName, c => c.Timeout = TimeSpan.FromSeconds(10));
         services.AddSingleton<Sso.IOidcProvider, Sso.HttpOidcProvider>();
         services.AddScoped<Sso.IdentityProviderStore>();
+        services.AddScoped<TeamBeats.Modules.Security.Contracts.IFourEyesApplier, Sso.IdentityProviderApplier>();
         services.AddScoped<Sso.GroupRoleSync>();
         services.AddScoped<Sso.SsoService>();
         services.AddScoped<Sso.SamlService>();

@@ -3827,7 +3827,8 @@
       "posture": "Posture",
       "siem": "SIEM",
       "reviews": "Access reviews",
-      "detection": "Sensitive data"
+      "detection": "Sensitive data",
+      "changes": "Approvals"
     },
     "openAlerts": "{count, plural, one {# open alert} other {# open alerts}}",
     "policy": {
@@ -3893,7 +3894,8 @@
         "allowHint": "One domain per line, such as partner.example. Leave empty to allow every domain that is not blocked. A domain covers its subdomains.",
         "block": "Blocked guest email domains",
         "blockHint": "One domain per line. Recommended: personal email providers. Blocked domains are refused even when they are allowed."
-      }
+      },
+      "held": "The change waits for another administrator to approve it. Nothing changes until then."
     },
     "alerts": {
       "title": "Security alerts",
@@ -4210,6 +4212,71 @@
       "testInvalid": "This is not a valid regular expression.",
       "add": "Add pattern",
       "added": "The pattern is added."
+    },
+    "changes": {
+      "title": "Setting approvals",
+      "intro": "With four-eyes approval on, changes to the security policy, sign-in and audit retention wait for a second administrator.",
+      "switchTitle": "Four-eyes approval",
+      "on": "Four-eyes approval is on.",
+      "off": "Four-eyes approval is off. Critical settings change at once.",
+      "switchHint": "{count, plural, one {# person manages security. Two are needed to turn this on.} other {# people manage security. Two are needed to turn this on.}}",
+      "offWaiting": "Turning four-eyes approval off waits for another administrator.",
+      "turnOn": "Turn on four-eyes approval",
+      "turnOff": "Turn off four-eyes approval",
+      "turnedOn": "Four-eyes approval is on.",
+      "offAsked": "Turning it off now waits for another administrator.",
+      "working": "Working",
+      "listTitle": "Changes waiting and decided",
+      "none": "No changes",
+      "noneHint": "Changes held for approval show here.",
+      "kind": "Setting",
+      "fields": "What changes",
+      "requested": "Asked on",
+      "status": "Status",
+      "actions": "Actions",
+      "waitsUntil": "Waiting until {date}",
+      "statuses": {
+        "pending": "Waiting",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "withdrawn": "Withdrawn",
+        "expired": "Expired"
+      },
+      "kinds": {
+        "security_policy": "Security policy",
+        "security_four_eyes": "Four-eyes approval",
+        "identity_provider": "Sign-in",
+        "audit_retention": "Audit retention"
+      },
+      "approve": "Approve change to {kind}",
+      "reject": "Reject change to {kind}",
+      "withdraw": "Withdraw change to {kind}",
+      "approved": "The change is approved and applied.",
+      "rejected": "The change is rejected.",
+      "withdrawn": "The change is withdrawn.",
+      "policyWaiting": "A change to this policy waits for approval.",
+      "open": "Open approvals",
+      "fieldNames": {
+        "ipAllow": "Allowed networks",
+        "ipBlock": "Blocked networks",
+        "adminIpAllow": "Admin area networks",
+        "networkZones": "Network zones",
+        "requireMfa": "Require MFA",
+        "stepUpMinutes": "Fresh sign-in window",
+        "idleMinutes": "Idle timeout",
+        "absoluteHours": "Session length",
+        "maxSessions": "Sessions per person",
+        "rememberDeviceDays": "Remembered devices",
+        "offlineMaxItems": "Offline items",
+        "offlineMaxMb": "Offline storage",
+        "offlineDays": "Offline days",
+        "guestAllowDomains": "Allowed guest domains",
+        "guestBlockDomains": "Blocked guest domains",
+        "days": "Retention days",
+        "enabled": "On or off",
+        "identityProvider": "Identity provider"
+      },
+      "separator": ", "
     }
   },
   "services": {

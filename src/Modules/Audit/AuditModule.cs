@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Messaging;
+using TeamBeats.Modules.Security.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
 using TeamBeats.TenantContext;
@@ -28,6 +29,8 @@ public static class AuditModule
         services.AddScoped<IAuditStream, AuditStream>();
         services.AddScoped<IAuditExports, AuditExports>();
         services.AddScoped<AuditMaintenance>();
+        services.AddScoped<AuditRetention>();
+        services.AddScoped<IFourEyesApplier, AuditRetentionApplier>();
         services.AddMessageHandler<AuditExportRequested, AuditExportHandler>("audit.export");
         return services;
     }
@@ -87,22 +90,17 @@ public static class AuditModule
             return Results.Ok(new { days, minimumDays = MinimumRetentionDays });
         });
 
-        group.MapPut("/retention", async (RetentionRequest request, IAuthorizationService authz, IDbSession session,
-            ITenantContext context, IAuditWriter audit, CancellationToken ct) =>
+        group.MapPut("/retention", async (RetentionRequest request, AuditRetention retention, IFourEyes fourEyes, IDbSession session, CancellationToken ct) =>
         {
-            await authz.DemandAsync(Permissions.AuditRetentionManage, AuthzTarget.Tenant, ct);
-            if (request.Days < MinimumRetentionDays)
+            await retention.CheckAsync(request, ct);
+            // Spec 026 FR-016: with four-eyes on, the checked change waits for another administrator.
+            if (await fourEyes.HoldAsync(FourEyesKinds.AuditRetention, request, ["days"], ct) is { } held)
             {
-                throw AppException.Validation("days", "validation.audit.retention_below_minimum");
+                var days = await retention.DaysAsync(ct);
+                await session.CommitAsync(ct);
+                return Results.Accepted(null, new { days, minimumDays = MinimumRetentionDays, pendingChange = held });
             }
-            var previous = await session.ScalarAsync<int?>("select days from audit.retention", null, ct) ?? MinimumRetentionDays;
-            await session.ExecAsync(
-                """
-                insert into audit.retention (tenant_id, days) values (@t, @d)
-                on conflict (tenant_id) do update set days = excluded.days, updated_at = now()
-                """, new { t = context.RequireTenant(), d = request.Days }, ct);
-            await audit.WriteAsync(new AuditEntry(AuditActions.AuditRetentionChanged, "audit_stream", context.TenantId.ToString(),
-                Changes: new { from = previous, to = request.Days }), ct);
+            await retention.SetAsync(request, ct);
             await session.CommitAsync(ct);
             return Results.Ok(new { days = request.Days, minimumDays = MinimumRetentionDays });
         });
@@ -365,4 +363,44 @@ public sealed class AuditExportHandler(IDbSession session, TenantObjectStorage s
             ? "\"" + value.Replace("\"", "\"\"", StringComparison.Ordinal) + "\""
             : value;
     }
+}
+
+/// <summary>The tenant's audit retention (spec 006 US3): at least the minimum, changed by holders of <c>audit.retention_manage</c>.</summary>
+public sealed class AuditRetention(IAuthorizationService authz, IDbSession session, ITenantContext context, IAuditWriter audit)
+{
+    public async Task CheckAsync(RetentionRequest request, CancellationToken ct)
+    {
+        await authz.DemandAsync(Permissions.AuditRetentionManage, AuthzTarget.Tenant, ct);
+        if (request.Days < AuditModule.MinimumRetentionDays)
+        {
+            throw AppException.Validation("days", "validation.audit.retention_below_minimum");
+        }
+    }
+
+    public async Task<int> DaysAsync(CancellationToken ct) =>
+        await session.ScalarAsync<int?>("select days from audit.retention", null, ct) ?? AuditModule.MinimumRetentionDays;
+
+    public async Task SetAsync(RetentionRequest request, CancellationToken ct)
+    {
+        await CheckAsync(request, ct);
+        var previous = await DaysAsync(ct);
+        await session.ExecAsync(
+            """
+            insert into audit.retention (tenant_id, days) values (@t, @d)
+            on conflict (tenant_id) do update set days = excluded.days, updated_at = now()
+            """, new { t = context.RequireTenant(), d = request.Days }, ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.AuditRetentionChanged, "audit_stream", context.TenantId.ToString(),
+            Changes: new { from = previous, to = request.Days }), ct);
+    }
+}
+
+/// <summary>Applies an approved retention change (spec 026 FR-016) as the approver.</summary>
+public sealed class AuditRetentionApplier(AuditRetention retention) : IFourEyesApplier
+{
+    public string Kind => FourEyesKinds.AuditRetention;
+
+    public string Permission => Permissions.AuditRetentionManage;
+
+    public Task ApplyAsync(JsonElement request, CancellationToken ct) =>
+        retention.SetAsync(request.Deserialize<RetentionRequest>(new JsonSerializerOptions(JsonSerializerDefaults.Web))!, ct);
 }

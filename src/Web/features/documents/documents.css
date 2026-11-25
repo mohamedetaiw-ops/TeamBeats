@@ -287,15 +287,6 @@
   gap: var(--tb-space-md);
 }
 
-.documents-templates {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--tb-space-md);
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
 .documents-toc ol {
   margin: 0;
   padding-inline-start: var(--tb-space-lg);
