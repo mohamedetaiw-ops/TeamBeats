@@ -3,29 +3,6 @@
   position: relative;
 }
 
-.notification-bell-button {
-  position: relative;
-  gap: var(--tb-space-xs);
-}
-
-.notification-count {
-  min-inline-size: 1.25rem;
-  padding-inline: var(--tb-space-xs);
-  border-radius: var(--tb-radius-full);
-  background: var(--tb-color-state-danger);
-  color: var(--tb-color-text-inverse);
-  font-size: var(--tb-font-size-xs);
-  font-weight: var(--tb-font-weight-bold);
-  line-height: 1.25rem;
-  text-align: center;
-}
-
-.notification-panel {
-  --xp-popover-width: 26rem;
-}
-
-.notification-panel-head,
-.notification-panel-foot,
 .notification-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -34,19 +11,10 @@
   gap: var(--tb-space-sm);
 }
 
-.notification-panel-head {
-  padding-block-start: var(--tb-space-xs);
-}
-
 .notification-panel-title {
   margin: 0;
   font-size: var(--tb-font-size-md);
   font-weight: var(--tb-font-weight-semibold);
-}
-
-/* The tabs in the panel sit in its head, which draws the divider itself. */
-.notification-panel-head .ui-tablist {
-  border-block-end: 0;
 }
 
 .notification-group + .notification-group {
@@ -112,7 +80,7 @@
   border-radius: 0;
 }
 
-.shell .notification-panel a.notification-entry-link {
+.shell .ui-popover a.notification-entry-link {
   color: var(--tb-color-text-primary);
   font-weight: var(--tb-font-weight-regular);
   text-decoration: none;
