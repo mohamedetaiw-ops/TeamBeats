@@ -267,7 +267,7 @@ public sealed class AgentRegistryTests(TenantWorld world)
         async Task<string> RefusedAsync(AgentPolicy policy) =>
             await ProblemAsync(t["aip"].Client.PutAsJsonAsync($"{Agents}/policy", new { version = 1, policy }), HttpStatusCode.BadRequest);
 
-        Assert.Equal("validation.agent_policy.autonomy", await RefusedAsync(AgentPolicy.Default with { MaxAutonomy = "L4" }));
+        Assert.Equal("validation.agent_policy.autonomy", await RefusedAsync(AgentPolicy.Default with { MaxAutonomy = "L5" }));
         Assert.Equal("validation.agent_policy.tools", await RefusedAsync(AgentPolicy.Default with { AllowedTools = ["mail.send"] }));
         Assert.Equal("validation.agent_policy.risk_classes", await RefusedAsync(AgentPolicy.Default with { ScheduledAgents = true, ScheduledRiskClasses = ["critical"] }));
         Assert.Equal("validation.agent_policy.max_tool_calls", await RefusedAsync(AgentPolicy.Default with { MaxToolCalls = 0 }));

@@ -569,6 +569,7 @@ export function Modeler({ processKey, initial, units }: { processKey: string | n
               options={[
                 { value: "connector", label: t("serviceKinds.connector") },
                 { value: "webhook", label: t("serviceKinds.webhook") },
+                { value: "agent", label: t("serviceKinds.agent") },
               ]}
             />
             {e.serviceKind === "connector" ? (
@@ -576,10 +577,16 @@ export function Modeler({ processKey, initial, units }: { processKey: string | n
                 {text("connection", t("connection"), { hint: t("connectionHint"), dir: "ltr" })}
                 {text("action", t("action"), { dir: "ltr" })}
               </>
-            ) : (
+            ) : e.serviceKind === "webhook" ? (
               text("webhook", t("webhook"), { hint: t("webhookHint"), dir: "ltr" })
+            ) : (
+              <>
+                {text("agent", t("agent"), { hint: t("agentHint"), dir: "ltr" })}
+                {text("agentTools", t("agentTools"), { hint: t("agentToolsHint"), dir: "ltr" })}
+                {text("agentMinutes", t("agentMinutes"), { hint: t("agentMinutesHint"), inputMode: "numeric", dir: "ltr" })}
+              </>
             )}
-            {text("retries", t("retries"), { inputMode: "numeric", dir: "ltr" })}
+            {e.serviceKind !== "agent" ? text("retries", t("retries"), { inputMode: "numeric", dir: "ltr" }) : null}
           </>
         ) : null}
         {e.type === "businessRuleTask" ? (

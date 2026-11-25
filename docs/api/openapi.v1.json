@@ -31689,6 +31689,82 @@
         }
       }
     },
+    "/api/v1/workflow/processes/{key}/autonomy": {
+      "get": {
+        "tags": [
+          "Workflow"
+        ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/workflow/processes/{key}/versions/{version}/autonomy:approve": {
+      "post": {
+        "tags": [
+          "Workflow"
+        ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutonomyApprovalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/workflow/processes/{key}:test": {
       "post": {
         "tags": [
@@ -35040,6 +35116,20 @@
               {
                 "$ref": "#/components/schemas/AudienceConditions"
               }
+            ]
+          }
+        }
+      },
+      "AutonomyApprovalRequest": {
+        "required": [
+          "as"
+        ],
+        "type": "object",
+        "properties": {
+          "as": {
+            "type": [
+              "null",
+              "string"
             ]
           }
         }

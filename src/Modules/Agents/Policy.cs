@@ -186,6 +186,11 @@ public sealed class AgentPolicyService(IDbSession session, ITenantContext contex
             // Governed execution is a package feature (spec 027 US1 table): L3 needs write tools in the package.
             await entitlements.DemandAsync(Capabilities.AiAgentsWriteTools, ct);
         }
+        if (AgentAutonomy.Rank(policy.MaxAutonomy) >= AgentAutonomy.Rank("L4"))
+        {
+            // Bounded autonomy runs only inside approved processes and is its own package feature (spec 027 FR-024, R3).
+            await entitlements.DemandAsync(Capabilities.AiAgentsAutonomous, ct);
+        }
         if (request.Version != current.Version)
         {
             throw AppException.Conflict("conflict.agent_policy.version");

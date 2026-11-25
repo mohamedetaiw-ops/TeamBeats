@@ -162,6 +162,11 @@ public sealed partial class ProcessEngine
             {
                 problems.Add(new ModelProblem(element.Id, "validation.process.product_action"));
             }
+            // Agent tasks run only in process models that people approve (spec 027 FR-024), not in routes a module publishes.
+            if (element.Call?.Agent is not null && productActions)
+            {
+                problems.Add(new ModelProblem(element.Id, "validation.process.agent_task_place"));
+            }
             if (element.CalledKey is { } called && called != graph.Key && await GetDefinitionAsync(ModelPrefix + called, null, ct) is null)
             {
                 problems.Add(new ModelProblem(element.Id, "validation.process.called_missing"));
@@ -781,6 +786,11 @@ public sealed partial class ProcessEngine
         var element = instance.Graph.Element(effect.ElementId);
         var call = element.Call!;
         var id = Ids.New();
+        if (call.Agent is { } agentStep)
+        {
+            await CallAgentAsync(instance, element, agentStep, effect, id, ct);
+            return;
+        }
         if (call.Product is { } product)
         {
             // A product action runs inside the product (spec 016 R2): set writes its inputs to variables; notify and start
@@ -827,6 +837,48 @@ public sealed partial class ProcessEngine
         var (instanceId, outcome, reference, errorClass, errorCode, output) = (instance.Info.Id, result.Outcome, result.ExternalReference, result.ErrorClass, result.ErrorCode,
             result.Output);
         deferred.Enqueue(() => OnGraphServiceOutcomeAsync(instanceId, id, outcome, reference, errorClass, errorCode, output, ct));
+    }
+
+    /// <summary>
+    /// An agent task (spec 027 FR-024): runs only in a package with <c>ai.agents.autonomous</c>, in a version both
+    /// approvers signed, for the person who started the instance. Otherwise the step raises an incident at once.
+    /// </summary>
+    private async Task CallAgentAsync(GraphInstance instance, GraphElement element, AgentStep step, CallService effect, Guid id, CancellationToken ct)
+    {
+        var key = $"{GraphCorrelationPrefix}{instance.Info.Id:N}:{id:N}";
+        await session.ExecAsync(
+            """
+            insert into workflow.service_task (tenant_id, id, instance_id, element_id, step_index, idempotency_key, status, started_at, token_id)
+            values (platform.current_tenant_id(), @id, @instanceId, @element, 0, @key, 'running', @now, @token)
+            """, new { id, instanceId = instance.Info.Id, element = element.Id, key, now = clock.UtcNow, token = effect.Token }, ct);
+        await HistoryAsync(instance.Info.Id, element.Id, "agent_task_started", null, null, ct);
+        var refused = !await entitlements.IsEnabledAsync(Capabilities.AiAgentsAutonomous, ct) ? "agent_not_in_package"
+            : !await ProcessAutonomy.ApprovedAsync(session, instance.Info.DefinitionKey, instance.Info.DefinitionVersion, ct) ? "agent_not_approved"
+            : instance.Info.StartedBy is null ? "agent_no_person"
+            : null;
+        if (refused is not null)
+        {
+            MarkIncident(instance, effect.Token);
+            await session.ExecAsync("update workflow.service_task set status = 'incident', error_class = @refused where id = @id", new { id, refused }, ct);
+            await RaiseGraphIncidentAsync(instance, effect.Token, element.Id, refused, null, id, ct);
+            return;
+        }
+        await outbox.EnqueueAsync(new AgentTaskRequested(id, instance.Info.Id, instance.Info.DefinitionKey, instance.Info.DefinitionVersion, element.Id, step.AgentId,
+            instance.Info.StartedBy!.Value, step.Tools, step.MaxMinutes, (JsonObject)effect.Inputs.DeepClone()), ct);
+    }
+
+    /// <summary>
+    /// The end of an L4 run an agent task asked for. A completed run gives the step its answer as <c>answer</c>; any other
+    /// end raises an incident with the reason. Duplicate deliveries do nothing: only a running service task moves.
+    /// </summary>
+    public async Task OnAgentTaskFinishedAsync(AgentTaskFinished done, CancellationToken ct = default)
+    {
+        var completed = done.Outcome == AgentTaskOutcomes.Completed;
+        JsonElement? output = completed ? JsonSerializer.SerializeToElement(new { answer = done.Answer ?? string.Empty, run = done.RunId }) : null;
+        var reason = done.Reason is { Length: > 0 } r ? "agent_" + (r.Length > 60 ? r[..60] : r) : "agent_failed";
+        await OnGraphServiceOutcomeAsync(done.InstanceId, done.ServiceTaskId, completed ? ConnectorOutcomes.Succeeded : ConnectorOutcomes.Failed,
+            done.RunId?.ToString(), completed ? null : reason, null, output, ct);
+        await DrainAsync(ct);
     }
 
     private async Task OnGraphServiceOutcomeAsync(Guid instanceId, Guid serviceTaskId, string outcome, string? reference, string? errorClass, string? errorCode,

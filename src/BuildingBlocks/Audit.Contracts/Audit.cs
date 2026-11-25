@@ -373,6 +373,7 @@ public static class AuditActions
     public const string ProcessVariablesChanged = "process.variables_changed";
     public const string ProcessMigrationExecuted = "process.migration_executed";
     public const string ProcessExternalTaskCompleted = "process.external_task_completed";
+    public const string ProcessAutonomyApproved = "process.autonomy_approved";
     public const string DecisionModelSaved = "decision.model_saved";
     public const string DecisionPublished = "decision.published";
 

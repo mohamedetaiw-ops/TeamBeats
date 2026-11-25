@@ -353,3 +353,24 @@ public interface IPersonalTaskSource
 {
     Task<IReadOnlyList<PersonalTask>> OpenForAsync(Guid userId, CancellationToken ct = default);
 }
+
+/// <summary>
+/// An agent task of a published process asks for an L4 agent run (spec 027 FR-024, R3). The process version is approved
+/// for autonomous agent steps by a process owner and a holder of <c>ai.policy_manage</c>. The run acts for
+/// <paramref name="OnBehalfOf"/> (who started the instance), may call only <paramref name="Tools"/>, and stops after
+/// <paramref name="MaxMinutes"/>. <paramref name="ServiceTaskId"/> is unique per step run, so a handler that sees it twice runs once.
+/// </summary>
+public sealed record AgentTaskRequested(Guid ServiceTaskId, Guid InstanceId, string DefinitionKey, int DefinitionVersion, string ElementId, Guid AgentId,
+    Guid OnBehalfOf, IReadOnlyList<string> Tools, int MaxMinutes, System.Text.Json.Nodes.JsonObject Inputs) : IIntegrationEvent;
+
+/// <summary>
+/// The end of an L4 agent run a process asked for. <paramref name="Outcome"/> is <c>completed</c> with the answer, or
+/// <c>failed</c> with the reason (a limit, a policy refusal, a suspension), which raises an incident on the step.
+/// </summary>
+public sealed record AgentTaskFinished(Guid ServiceTaskId, Guid InstanceId, string Outcome, string? Answer, string? Reason, Guid? RunId) : IIntegrationEvent;
+
+public static class AgentTaskOutcomes
+{
+    public const string Completed = "completed";
+    public const string Failed = "failed";
+}

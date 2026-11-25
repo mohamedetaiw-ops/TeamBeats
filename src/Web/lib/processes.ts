@@ -195,3 +195,20 @@ export type ExternalTask = {
 
 /** The outcomes the API accepts, sent to Camunda as the variable `outcome`. */
 export const EXTERNAL_TASK_OUTCOMES = ["completed", "approved", "rejected"] as const;
+
+/** An agent task of a published version, as its approvers see it (spec 027 FR-024). */
+export type AgentTaskView = { elementId: string; names: Record<string, string>; agentId: string; tools: string[]; maxMinutes: number };
+
+/** The dual approval of a version for autonomous agent steps: a process owner and an AI policy administrator, two people. */
+export type ProcessAutonomy = {
+  key: string;
+  version: number;
+  tasks: AgentTaskView[];
+  ownerBy: string | null;
+  ownerAt: string | null;
+  policyBy: string | null;
+  policyAt: string | null;
+  approved: boolean;
+  canApproveAs: ("owner" | "policy")[];
+};
+export const AUTONOMY_ROLES = ["owner", "policy"] as const;

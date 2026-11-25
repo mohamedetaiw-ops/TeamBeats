@@ -75,10 +75,14 @@ export type ModelElement = {
   assignee: string;
   fallbackUsers: string;
   dueWorkingDays: string;
-  serviceKind: "connector" | "webhook";
+  serviceKind: "connector" | "webhook" | "agent";
   connection: string;
   action: string;
   webhook: string;
+  /** An agent task (spec 027 FR-024): the agent, the tools it may call (space separated) and its limit in minutes. */
+  agent: string;
+  agentTools: string;
+  agentMinutes: string;
   retries: string;
   inputs: Mapping[];
   outputs: Mapping[];
@@ -148,6 +152,9 @@ export function blankElement(type: ElementKind, x: number, y: number): ModelElem
     connection: "",
     action: "",
     webhook: "",
+    agent: "",
+    agentTools: "",
+    agentMinutes: "",
     retries: "",
     inputs: [],
     outputs: [],
@@ -269,7 +276,11 @@ export function readProcess(xml: string): ReadResult {
     e.dueWorkingDays = attr(ext(child, "due")[0], "workingDays");
     const connector = ext(child, "connector")[0];
     const webhook = ext(child, "webhook")[0];
-    e.serviceKind = webhook ? "webhook" : "connector";
+    const agent = ext(child, "agent")[0];
+    e.serviceKind = agent ? "agent" : webhook ? "webhook" : "connector";
+    e.agent = attr(agent, "id");
+    e.agentTools = attr(agent, "tools");
+    e.agentMinutes = attr(agent, "minutes");
     e.connection = attr(connector, "connection");
     e.action = attr(connector, "action");
     e.webhook = attr(webhook, "id");
@@ -399,7 +410,8 @@ export function writeProcess(draft: ProcessDraft): string {
       if (e.dueWorkingDays.trim()) extensions.push(["due", { workingDays: e.dueWorkingDays.trim() }]);
     }
     if (e.type === "serviceTask") {
-      if (e.serviceKind === "webhook") extensions.push(["webhook", { id: e.webhook.trim(), retries: e.retries.trim() }]);
+      if (e.serviceKind === "agent") extensions.push(["agent", { id: e.agent.trim(), tools: e.agentTools.trim().split(/\s+/).join(" "), minutes: e.agentMinutes.trim() }]);
+      else if (e.serviceKind === "webhook") extensions.push(["webhook", { id: e.webhook.trim(), retries: e.retries.trim() }]);
       else extensions.push(["connector", { connection: e.connection.trim(), action: e.action.trim(), retries: e.retries.trim() }]);
     }
     if (e.type === "serviceTask" || e.type === "callActivity" || e.type === "sendTask") {

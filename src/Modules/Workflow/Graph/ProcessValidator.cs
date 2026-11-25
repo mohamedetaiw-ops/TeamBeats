@@ -232,7 +232,18 @@ public static class ProcessValidator
                     CheckMappings(e.Id, e.Outputs, Add, Feel);
                     break;
                 case ElementTypes.ServiceTask:
-                    if (e.Call is null || e.Call.Retries is < 0 or > 10
+                    if (e.Call is { Agent: { } agentStep })
+                    {
+                        // An agent task (spec 027 FR-024) has no connector, webhook or product action, names its tools and a limit up to an hour.
+                        if (e.Call.ConnectionId is not null || e.Call.WebhookId is not null || e.Call.Product is not null || agentStep.AgentId == Guid.Empty
+                            || agentStep.Tools.Count is 0 or > AgentStep.MaxTools || agentStep.Tools.Any(t => t.Length > 100)
+                            || agentStep.MaxMinutes is < 1 or > AgentStep.MaxAllowedMinutes)
+                        {
+                            Add(e.Id, "agent_binding");
+                            break;
+                        }
+                    }
+                    else if (e.Call is null || e.Call.Retries is < 0 or > 10
                         || (e.Call.Product is { } product
                             ? !ProductActions.All.Contains(product) || e.Call.ConnectionId is not null || e.Call.WebhookId is not null
                             : (e.Call.ConnectionId is null) == (e.Call.WebhookId is null) || e.Call.ConnectionId == Guid.Empty || e.Call.WebhookId == Guid.Empty

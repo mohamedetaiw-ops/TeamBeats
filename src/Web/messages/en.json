@@ -8310,7 +8310,8 @@
         "no_approver": "No approver named",
         "rule_changed": "The approval rule changed",
         "connector_disabled": "The connection is turned off",
-        "mcp_not_approved": "Tool not approved"
+        "mcp_not_approved": "Tool not approved",
+        "not_in_process": "Not a step of the process"
       }
     },
     "studio": {
@@ -8548,7 +8549,10 @@
         "closed": "Incident closed.",
         "closedAt": "Closed on",
         "evidence": "Export evidence",
-        "openAgent": "Open the agent"
+        "openAgent": "Open the agent",
+        "kinds": {
+          "l4_limit": "An AI agent task passed its limits"
+        }
       }
     }
   },
@@ -16708,13 +16712,20 @@
       "serviceKind": "Runs",
       "serviceKinds": {
         "connector": "A connector action",
-        "webhook": "A signed webhook"
+        "webhook": "A signed webhook",
+        "agent": "An AI agent (L4)"
       },
       "connection": "Connection ID",
       "connectionHint": "The connection set up under Connections.",
       "action": "Action",
       "webhook": "Webhook connection ID",
       "webhookHint": "An outbound webhook connection set up under Connections.",
+      "agent": "Agent ID",
+      "agentHint": "A published L4 agent. It runs for the person who started the instance, only after this version is approved for agent steps.",
+      "agentTools": "Tools the agent may call",
+      "agentToolsHint": "Tool names separated by spaces, such as test.note mcp.lookup. The agent gets only these, and only those it already holds.",
+      "agentMinutes": "Limit in minutes",
+      "agentMinutesHint": "From 1 to 60. The run stops at the limit and the step raises an incident. Its answer is the result answer.",
       "retries": "Retries",
       "decisionKey": "Decision table key",
       "resultVariable": "Result variable",
@@ -16981,6 +16992,25 @@
       "working": "Sending…",
       "complete": "Complete task",
       "tryAgain": "Try again"
+    },
+    "autonomy": {
+      "title": "Agent tasks of version {version}",
+      "intro": "This version has steps that an AI agent runs on its own. They run only after a process owner and an AI policy administrator, two different people, both approve this version.",
+      "taskFacts": "Tools: {tools}. Stops after {minutes} minutes.",
+      "state": "Approval",
+      "approved": "Approved for agent steps",
+      "waiting": "Waiting for approval",
+      "owner": "Process owner",
+      "policy": "AI policy administrator",
+      "signedAt": "Approved on {when}",
+      "notSigned": "Not approved yet",
+      "approveAs": {
+        "owner": "Approve as process owner",
+        "policy": "Approve as AI policy administrator"
+      },
+      "working": "Saving…",
+      "failed": "The approval could not be saved. Try again.",
+      "note": "Each new version needs both approvals again. A run that passes its limits stops, the step raises an incident, and a security incident is opened."
     }
   },
   "records": {

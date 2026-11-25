@@ -246,6 +246,11 @@ public sealed class ProcessModels(IDbSession session, ITenantContext context, IA
             {
                 found.Add(new ModelProblem("", "validation.process.advanced_package"));
             }
+            // Agent tasks are L4 bounded autonomy (spec 027 FR-024), in packages with ai.agents.autonomous.
+            if (graph.UsesAgents && !await entitlements.IsEnabledAsync(Capabilities.AiAgentsAutonomous, ct))
+            {
+                found.Add(new ModelProblem("", "validation.process.agent_package"));
+            }
         }
         if (found.Count > 0)
         {

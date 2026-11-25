@@ -31,6 +31,8 @@ public static class WorkflowModule
         services.AddScoped<ProcessModelTasks>();
         services.AddScoped<ITaskSource>(sp => sp.GetRequiredService<ProcessModelTasks>());
         services.AddScoped<ExternalTasks>();
+        services.AddScoped<ProcessAutonomy>();
+        services.AddMessageHandler<AgentTaskFinished, AgentStepFinished>("workflow.agent_step_finished");
         services.AddScoped<IPersonalTaskSource, ExternalTaskInbox>();
         services.AddMessageHandler<WorkingCalendarChanged, CalendarChangeHandler>("workflow.due_recalculation");
         services.AddMessageHandler<ConnectorActionCompleted, ConnectorStepFinished>("workflow.connector_step_finished");
@@ -78,6 +80,17 @@ public static class WorkflowModule
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });
+
+        group.MapGet("/processes/{key}/autonomy", async (string key, int? version, ProcessAutonomy autonomy, CancellationToken ct) =>
+            await autonomy.GetAsync(key, version, ct) is { } view ? Results.Ok(view) : Results.NoContent());
+
+        group.MapPost("/processes/{key}/versions/{version:int}/autonomy:approve", async (string key, int version, AutonomyApprovalRequest request, ProcessAutonomy autonomy,
+            IDbSession session, CancellationToken ct) =>
+        {
+            var view = await autonomy.ApproveAsync(key, version, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        }).RequireStepUp();
 
         group.MapPost("/processes/{key}:test", async (string key, ProcessTestRequest request, ProcessModels models, CancellationToken ct) =>
             Results.Ok(await models.TestRunAsync(key, request, ct)));
