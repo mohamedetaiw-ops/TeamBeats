@@ -135,6 +135,8 @@ export function NotificationBell({ initialUnread = null }: { initialUnread?: num
           ) : null
         }
         headBelow={
+          // Like the rows, the tabs render only while the panel is open, so a closed panel adds no labels to the page.
+          open ? (
           <div
             role="group"
             aria-label={t("tabs.label")}
@@ -153,6 +155,7 @@ export function NotificationBell({ initialUnread = null }: { initialUnread?: num
               </button>
             ))}
           </div>
+          ) : null
         }
         footer={
           <>
