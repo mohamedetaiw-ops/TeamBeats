@@ -15,6 +15,9 @@ public static class ProblemCodes
     public const string TenantSuspended = "tenant.suspended";
     public const string TenantClosed = "tenant.closed";
     public const string TenantUnavailable = "tenant.unavailable";
+
+    /// <summary>The tenant's customer-managed key is revoked (spec 026 US8): answered 503 until the key answers again.</summary>
+    public const string TenantKeyUnavailable = "tenant.key_unavailable";
     public const string ValidationFailed = "validation.failed";
     public const string Conflict = "conflict";
     public const string SignInRefused = "auth.sign_in_refused";

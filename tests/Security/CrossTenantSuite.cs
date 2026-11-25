@@ -23,6 +23,9 @@ public sealed class CrossTenantSuite(TenantWorld world, ITestOutputHelper output
     [
         "POST /api/v1/auth/signout",
         "GET /api/v1/tenant/branding/logo",
+        // Spec 026 FR-007: the sign-in page asks whether the tenant's encryption key answers before anyone is signed in; it
+        // answers only available or not, and SecurityCustomerKeysTests covers it.
+        "GET /api/v1/site/availability",
         "GET /api/v1/auth/signin/options",
         "GET /api/v1/auth/signin/sso",
         "GET /api/v1/auth/signin/sso/callback",

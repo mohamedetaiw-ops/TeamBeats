@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
 import { msg, type LaunchLocale } from "../support/messages";
 import { tenantApi } from "../support/pages";
@@ -241,6 +243,50 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expectAccessible(page, testInfo, `security-changes-approved-${locale}`);
       await page.goto(`${hostOrigin(held.key)}/admin/security`);
       await expect(page.getByLabel(msg(locale, "security.policy.sessions.idle"))).toHaveValue("45");
+    });
+  });
+}
+
+function apiText(locale: LaunchLocale, key: string): string {
+  const file = fileURLToPath(new URL(`../../../src/BuildingBlocks/Localization/catalogues/${locale}.json`, import.meta.url));
+  const value = (JSON.parse(readFileSync(file, "utf8")) as Record<string, string>)[key];
+  if (!value) throw new Error(`Missing API message ${locale}:${key}`);
+  return value;
+}
+
+/**
+ * Spec 026 US8 (R3): customer-managed keys. In the Enterprise and Government package the administrator opens the key
+ * page, sees that no key is connected, and tries a key whose secret reference has no value yet: the API refuses it
+ * before anything is stored, and the page says why, in English and Arabic with axe. A plan without the capability says so.
+ */
+for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
+  test.describe(`encryption key in ${locale}`, () => {
+    test.use({ locale: locale === "ar" ? "ar-AE" : "en-US" });
+
+    test("an administrator is told why a key cannot be connected (US8)", async ({ page }, testInfo) => {
+      const tenant = await createTenant(`ck-${locale}`, locale, "enterprise_gov");
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/admin/security`);
+      await page.getByRole("link", { name: msg(locale, "security.tabs.keys"), exact: true }).click();
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, "security.keys.title"));
+      await expect(page.getByTestId("keys-status").getByText(msg(locale, "security.keys.none"))).toBeVisible();
+      await expectAccessible(page, testInfo, `security-keys-empty-${locale}`);
+
+      await page.getByLabel(msg(locale, "security.keys.keyUri"), { exact: true }).fill("https://contoso-e2e.vault.azure.net/keys/teambeats");
+      await page.getByLabel(msg(locale, "security.keys.directoryId"), { exact: true }).fill("3f1c2b8e-4a6d-4c2e-9b1a-6d5e4f3a2b10");
+      await page.getByLabel(msg(locale, "security.keys.clientId"), { exact: true }).fill("8a7b6c5d-4e3f-4a2b-9c1d-0e9f8a7b6c5d");
+      await page.getByLabel(msg(locale, "security.keys.secretRefAzure"), { exact: true }).fill(`secret://tenants/${tenant.id}/kms-e2e`);
+      await page.getByRole("button", { name: msg(locale, "security.keys.connect") }).click();
+      await expect(page.getByText(apiText(locale, "validation.keys.credential_missing")).first()).toBeVisible();
+      await expect(page.getByTestId("keys-status").getByText(msg(locale, "security.keys.none"))).toBeVisible();
+      await expectAccessible(page, testInfo, `security-keys-refused-${locale}`);
+    });
+
+    test("a plan without customer-managed keys says so", async ({ page }) => {
+      const tenant = await createTenant(`ckw-${locale}`, locale, "workplace_plus");
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/admin/security/keys`);
+      await expect(page.getByText(msg(locale, "security.keys.unavailable"))).toBeVisible();
     });
   });
 }

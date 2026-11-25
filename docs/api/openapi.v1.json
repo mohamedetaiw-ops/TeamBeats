@@ -340,6 +340,18 @@
         }
       }
     },
+    "/api/v1/site/availability": {
+      "get": {
+        "tags": [
+          "Site"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/platform/tenants": {
       "post": {
         "tags": [
@@ -29926,6 +29938,50 @@
         }
       }
     },
+    "/api/v1/security/keys": {
+      "get": {
+        "tags": [
+          "Security"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Security"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TenantKeyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/security/keys:check": {
+      "post": {
+        "tags": [
+          "Security"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/security/changes": {
       "get": {
         "tags": [
@@ -48185,6 +48241,46 @@
               "string"
             ],
             "format": "int32"
+          }
+        }
+      },
+      "TenantKeyRequest": {
+        "required": [
+          "provider",
+          "keyUri",
+          "secretRef"
+        ],
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "keyUri": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "secretRef": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "directoryId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "clientId": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

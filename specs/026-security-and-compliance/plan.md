@@ -156,3 +156,25 @@ The spec names the critical settings (identity configuration, security policy, r
 - Audit entries for request, approval, rejection, withdrawal and expiry; notifications to the other holders and to the requester.
 - Cross-tenant: a pending change of another tenant is not found; a person without the permission cannot list or decide.
 - e2e: a held security policy change approved by a second administrator, in English and Arabic with axe.
+
+
+### Customer-managed keys
+The spec says the tenant connects a key in its key management service, its data keys are wrapped with it, a revocation makes the tenant unavailable within 15 minutes with a clear message and it comes back on restore, and rotation needs no downtime. It does not name the key services, what the data key protects, how often the key is checked, what an outage means, or whether a key can be removed. Defaults:
+- **Plan:** capability `security.customer_keys`, Enterprise and Government only (section 9 names the package).
+- **Key services:** Azure Key Vault or Managed HSM (an RSA key, RSA-OAEP-256, an Entra app with client credentials) and HashiCorp Vault or OpenBao transit (a token), for customer-hosted installs. Both are plain REST calls through the connector HTTP client and its address guard in an `IKeyManagement` adapter in Integrations; no SDK. Azure hosts must be `*.vault.azure.net` or `*.managedhsm.azure.net`; a Vault host must be on the tenant's host allowlist. The credential is a secret manager reference.
+- **Data key:** one 256-bit data key per tenant, made when the first key is connected and never changed. Only its wrapped form is stored (`security.tenant_key`). Before a key is used it must both wrap and unwrap. Changing the key moves the same data key (unwrapped with the old key, wrapped with the new), so nothing encrypted with it changes; it needs the old key to answer.
+- **What it protects in this slice:** AI debug log entries (spec 013 US8), the most sensitive content TeamBeats stores at rest, are encrypted with the tenant's data key instead of the platform key. Other stores stay on the database's encryption at rest; moving more stores onto the data key is a follow-up listed in the R3 notes.
+- **Check:** every 5 minutes per tenant (`TenantKeyWorker`), and on demand from the page. The check unwraps the data key, and wraps it onto a newer key version when the key service has one (rotation without downtime, audited). The plaintext data key is held in memory for at most 15 minutes.
+- **Revocation:** a refusal by the key service (401, 403, 404, or a disabled key) is a revocation. The tenant then answers 503 `tenant.key_unavailable` on every request except the availability notice and health checks; the sign-in page shows a clear message. A check that finds the key again restores it. Nothing is deleted. Revocation, restore and outages are audited and raise security alerts.
+- **Outage:** a key service that does not answer is not a revocation. The tenant stays available and an alert is raised; after 24 hours without an answer it counts as revoked.
+- **Removing a key:** not offered. A tenant can move to another key; going back to platform keys is an operations request.
+- **Four-eyes:** key changes are kind `security.keys` (`security.manage`).
+
+### Tests (R3 slice 2)
+- Connect a key: the data key is wrapped, only the wrapped form is stored, and the page shows the status and version.
+- Revocation: the next check makes the tenant unavailable with `tenant.key_unavailable`, the availability notice says why, an alert and an audit entry are written once; another tenant is not affected; restore brings it back with the same data key.
+- Rotation: a new key version is wrapped onto and audited, with the same data key; an outage keeps the tenant available until 24 hours have passed.
+- Changing the key is held under four-eyes and keeps the data key; it is refused while the current key does not answer.
+- Vault transit with the host allowlist; bad addresses, another tenant's secret reference, a missing secret and a disabled key are refused before anything is stored; the plan and permission checks.
+- Debug log entries use the tenant's data key and cannot be read once it is revoked.
+- e2e: the key page empty and with a refusal that says why, and the plan notice, in English and Arabic with axe.

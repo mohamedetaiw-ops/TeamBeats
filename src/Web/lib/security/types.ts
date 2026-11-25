@@ -153,7 +153,7 @@ export type DetectionSettings = {
 /** A critical setting change held for a second administrator (spec 026 FR-016). The API decides who may act on it. */
 export type PendingChange = {
   id: string;
-  kind: "security.policy" | "security.four_eyes" | "identity.provider" | "audit.retention" | string;
+  kind: "security.policy" | "security.four_eyes" | "identity.provider" | "audit.retention" | "security.keys" | string;
   status: "pending" | "approved" | "rejected" | "withdrawn" | "expired";
   fields: string[];
   requestedBy: string;
@@ -167,3 +167,23 @@ export type PendingChange = {
 };
 
 export type FourEyesSetting = { enabled: boolean; holders: number; pending: PendingChange | null };
+
+/** The tenant's customer-managed key (spec 026 US8): where it lives and what the last check found. Never a secret. */
+export type TenantKey = {
+  connected: boolean;
+  provider: "azure_key_vault" | "vault_transit" | null;
+  keyUri: string | null;
+  directoryId: string | null;
+  clientId: string | null;
+  secretRef: string | null;
+  keyVersion: string | null;
+  status: "active" | "unreachable" | "revoked" | null;
+  statusSince: string | null;
+  checkedAt: string | null;
+  lastOkAt: string | null;
+  lastError: string | null;
+  connectedAt: string | null;
+  rotatedAt: string | null;
+  canManage: boolean;
+  pendingChange: PendingChange | null;
+};

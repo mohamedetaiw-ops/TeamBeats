@@ -66,7 +66,7 @@ public sealed class UsageRecorder(IServiceScopeFactory scopes, ITenantContext co
                 CancellationToken.None);
             if (call.Denial is null && call.Messages is not null && call.Classification is { } level && call.Model is not null)
             {
-                await DebugWindows.CaptureAsync(session, protector, context.RequireTenant(), clock.UtcNow, call.UseCase, level, call.Model, call.Messages,
+                await DebugWindows.CaptureAsync(session, protector, scope.ServiceProvider.GetRequiredService<TeamBeats.Modules.Security.Contracts.ITenantDataKeys>(), context.RequireTenant(), clock.UtcNow, call.UseCase, level, call.Model, call.Messages,
                     call.Answer ?? string.Empty, CancellationToken.None);
             }
             await session.CommitAsync(CancellationToken.None);

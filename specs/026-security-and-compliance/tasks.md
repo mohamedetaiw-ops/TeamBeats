@@ -65,8 +65,8 @@ Depends on 001 (break-glass), 003 (sessions, Entra sign-in), 004 (conditions, ex
 - [x] T034 Endpoints, `/admin/security/changes` page and the notice on held settings pages; e2e
 
 ## R3 Phase 13: customer-managed keys (US8, FR-007)
-- [ ] T035 [P] Tests: key connection, wrapped data keys, revocation within 15 minutes, restore, rotation without downtime, four-eyes kind
-- [ ] T036 Key management adapter port, key status, wrapping, revocation check, rotation; key page
+- [x] T035 [P] Tests: key connection, wrapped data keys, revocation within 15 minutes, restore, rotation without downtime, four-eyes kind
+- [x] T036 Key management adapter port, key status, wrapping, revocation check, rotation; key page
 
 ## R3 Phase 14: on-prem hardening pack
 - [ ] T037 Hardening guide and shared responsibility matrix; posture self check for customer-hosted installs

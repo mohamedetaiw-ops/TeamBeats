@@ -19,6 +19,8 @@ const KINDS = [
   "api_denied_burst",
   "api_volume_spike",
   "platform_access",
+  "key_revoked",
+  "key_unreachable",
 ];
 
 /** The facts of an alert, as counts and references only (spec 026 FR-013). */
@@ -62,6 +64,10 @@ function Facts({ alert }: { alert: SecurityAlert }) {
       );
     case "platform_access":
       return <p>{t("facts.platformAccess", { minutes: num(f.minutes), reason: typeof f.reason === "string" ? f.reason : "" })}</p>;
+    case "key_revoked":
+      return <p>{t("facts.keyRevoked")}</p>;
+    case "key_unreachable":
+      return <p>{t("facts.keyUnreachable")}</p>;
     case "siem_failing":
       return <p>{t("facts.siemFailing", { name: typeof f.name === "string" ? f.name : "" })}</p>;
     default:

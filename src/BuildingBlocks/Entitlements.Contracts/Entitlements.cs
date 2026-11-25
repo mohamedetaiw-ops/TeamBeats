@@ -161,6 +161,9 @@ public static class Capabilities
     public const string SecurityAlerts = "security.alerts";
     public const string SecurityAlertsAdvanced = "security.alerts_advanced";
     public const string SecuritySiem = "security.siem";
+
+    /// <summary>Customer-managed encryption keys (spec 026 US8, FR-007).</summary>
+    public const string SecurityCustomerKeys = "security.customer_keys";
     public const string SecurityMaxGuestSpaces = "security.max_guest_spaces";
 
     /// <summary>Sensitive data detection on publish and upload (spec 026 US6).</summary>
