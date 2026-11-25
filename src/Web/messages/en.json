@@ -15099,7 +15099,22 @@
         "tentative": "tentative",
         "oof": "away",
         "working_elsewhere": "working elsewhere"
-      }
+      },
+      "previousMonth": "Previous month",
+      "nextMonth": "Next month",
+      "thisMonth": "This month",
+      "timeRange": "{start} to {end}",
+      "itemCount": "{count, plural, =0 {nothing planned} one {# item} other {# items}}",
+      "dayItems": "Items on this day",
+      "nothing": "Nothing on this day.",
+      "openTask": "Open task",
+      "layer": {
+        "event": "Event",
+        "milestone": "Milestone",
+        "task": "Task due",
+        "away": "Away"
+      },
+      "openTaskNamed": "Open task {title}"
     },
     "guests": {
       "title": "Guests",
