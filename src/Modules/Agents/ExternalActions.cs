@@ -42,8 +42,12 @@ public sealed record ExternalActionDecision(bool? Confirm, string? Hash);
 /// it; rejecting or letting it expire does nothing. The decision resolves the notification that asked for it.
 /// </summary>
 public sealed class ExternalActions(IDbSession session, ITenantContext context, ExternalToolGateway gateway, ToolRegistry tools,
-    INotificationSender notifications, IClock clock)
+    INotificationSender notifications, AgentPolicyService policies, IClock clock) : IExternalActionConfirmations
 {
+    /// <summary>Where the employee decided: on the TeamBeats card, or inside a verified AI client (spec 035 R3).</summary>
+    public const string DecidedInTeamBeats = "teambeats";
+    public const string DecidedInClient = "client";
+
     /// <summary>The notification template of a pending action (spec 015), in the approval waiting category.</summary>
     public const string Template = "agents.external_action";
 
@@ -109,7 +113,10 @@ public sealed class ExternalActions(IDbSession session, ITenantContext context, 
     /// Confirms or rejects a pending action. Confirming needs the hash on the card, so the decision covers exactly what
     /// the employee saw. A decided or expired action is refused with 409; the card then shows how it ended.
     /// </summary>
-    public async Task<ExternalActionView> DecideAsync(Guid id, ExternalActionDecision decision, CancellationToken ct)
+    public Task<ExternalActionView> DecideAsync(Guid id, ExternalActionDecision decision, CancellationToken ct) =>
+        DecideAsync(id, decision, DecidedInTeamBeats, ct);
+
+    private async Task<ExternalActionView> DecideAsync(Guid id, ExternalActionDecision decision, string decidedIn, CancellationToken ct)
     {
         if (decision.Confirm is not { } confirm)
         {
@@ -134,7 +141,8 @@ public sealed class ExternalActions(IDbSession session, ITenantContext context, 
         }
         if (!confirm)
         {
-            await session.ExecAsync("update agents.external_action set status = 'rejected', decided_at = @now where id = @id", new { id, now }, ct);
+            await session.ExecAsync("update agents.external_action set status = 'rejected', decided_at = @now, decided_in = @decidedIn where id = @id",
+                new { id, now, decidedIn }, ct);
         }
         else
         {
@@ -142,16 +150,38 @@ public sealed class ExternalActions(IDbSession session, ITenantContext context, 
             await session.ExecAsync(
                 """
                 update agents.external_action set status = @status, reason = @reason, result = @result, classification = @classification,
-                  sources = @sources::jsonb, decided_at = @now where id = @id
+                  sources = @sources::jsonb, decided_at = @now, decided_in = @decidedIn where id = @id
                 """, new
                 {
-                    id, now, status = outcome.Ok ? ExternalActionStatuses.Confirmed : ExternalActionStatuses.Failed, reason = outcome.ErrorKey,
+                    id, now, decidedIn, status = outcome.Ok ? ExternalActionStatuses.Confirmed : ExternalActionStatuses.Failed, reason = outcome.ErrorKey,
                     result = outcome.Ok ? outcome.Content : null, classification = outcome.Ok ? outcome.Classification : null,
                     sources = outcome.Ok ? JsonSerializer.Serialize(outcome.Sources, ToolArgs.Options) : null,
                 }, ct);
         }
         await notifications.ResolveAsync(NotificationCategories.ApprovalWaiting, Link(id), ct);
         return await GetAsync(id, ct);
+    }
+
+    public async Task<bool> InClientAsync(CancellationToken ct) => (await policies.CurrentAsync(ct)).Policy.ExternalPolicy.ConfirmInClient;
+
+    public async Task<bool> DecideInClientAsync(ExternalCaller caller, Guid actionId, string tool, JsonElement arguments, bool confirm, CancellationToken ct)
+    {
+        if (context.ActorType != ActorType.User || context.ActorId != caller.UserId || !await InClientAsync(ct)
+            || await gateway.RefusalAsync(caller.ClientId, ct) is not null)
+        {
+            return false;
+        }
+        var row = await session.QuerySingleOrDefaultAsync(
+            $"select {Columns} from agents.external_action where id = @actionId and user_id = @user and app_id = @app for update",
+            new { actionId, user = caller.UserId, app = caller.AppId }, Read, ct);
+        // The answer covers exactly the call the employee was asked about: same tool, same arguments, still waiting.
+        if (row is not { Status: ExternalActionStatuses.Pending } || row.ExpiresAt <= clock.UtcNow || row.Tool != tool
+            || !string.Equals(row.Hash, ExternalToolGateway.Hash(tool, arguments), StringComparison.Ordinal))
+        {
+            return false;
+        }
+        await DecideAsync(actionId, new ExternalActionDecision(confirm, row.Hash), DecidedInClient, ct);
+        return true;
     }
 }
 

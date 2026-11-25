@@ -79,3 +79,9 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - Defaults are in the spec 035 R3 plan. Migration 0010 of PublicApi adds `publicapi.gallery_app` (platform data, no tenant column) and `publicapi.app.gallery`; a gallery registration reads its name, publisher, description, scopes and redirect URIs from the gallery, as verified clients read theirs from the verified list, and shows as blocked once the entry is withdrawn.
 - `AppGallery` adds an app through `Apps.AddFromGalleryAsync` (package and app limit checks) and then `Consents.GrantAdminAsync`, so the admin consent is the same record an administrator would give by hand. Audit actions `api.gallery_app_changed` (platform) and `api.gallery_app_added` (tenant).
 - Gaps: no publisher self-service and no platform screen for the gallery.
+
+## Spec 035 R3 slice 6: confirmation inside verified AI clients (T026)
+
+- Defaults are in the spec 035 R3 plan. The external AI client policy gains `confirmInClient` (off). Agents migration 0025 adds `agents.external_action.decided_in`.
+- The MCP endpoint uses the SDK's multi round-trip requests: it throws `InputRequiredException` with one form elicitation and the action ID as request state, and reads the answer from `inputResponses` on the retry. It decides through the new Agents contract `IExternalActionConfirmations`, which checks employee, app, tool, argument hash and expiry before the same decision path as the TeamBeats card.
+- Clients on protocol revisions before `2026-07-28` (no multi round-trip requests) keep the TeamBeats card only; URL mode elicitation is not used.

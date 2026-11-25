@@ -42,6 +42,7 @@ public static class AgentsModule
         services.AddScoped<ExternalToolGateway>();
         services.AddScoped<Contracts.IExternalToolGateway>(sp => sp.GetRequiredService<ExternalToolGateway>());
         services.AddScoped<ExternalActions>();
+        services.AddScoped<Contracts.IExternalActionConfirmations>(sp => sp.GetRequiredService<ExternalActions>());
         services.AddScoped<Workflow.Contracts.IPersonalTaskSource, ExternalActionTasks>();
         services.AddScoped<ToolRegistry>();
         services.AddScoped<AgentPolicyService>();

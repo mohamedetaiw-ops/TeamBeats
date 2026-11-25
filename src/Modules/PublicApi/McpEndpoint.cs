@@ -7,9 +7,11 @@ using ModelContextProtocol;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using TeamBeats.Entitlements.Contracts;
+using TeamBeats.Localization;
 using TeamBeats.Modules.Agents.Contracts;
 using TeamBeats.Modules.PublicApi.Contracts;
 using TeamBeats.Persistence;
+using TeamBeats.Primitives;
 using TeamBeats.TenantContext;
 
 namespace TeamBeats.Modules.PublicApi;
@@ -41,7 +43,7 @@ public static class McpEndpoint
             })
             .WithHttpTransport(o => o.Stateless = true)
             .WithListToolsHandler((request, ct) => ListAsync(Http(request.Services), ct))
-            .WithCallToolHandler((request, ct) => CallAsync(Http(request.Services), request.Params, ct))
+            .WithCallToolHandler((request, ct) => CallAsync(Http(request.Services), request.Params, ct, request.Server))
             .WithListResourceTemplatesHandler((request, ct) => TemplatesAsync(Http(request.Services), ct))
             .WithListResourcesHandler((request, ct) => ResourcesAsync(Http(request.Services), ct))
             .WithReadResourceHandler((request, ct) => ReadAsync(Http(request.Services), request.Params?.Uri, ct))
@@ -214,20 +216,102 @@ public static class McpEndpoint
         };
     }
 
-    internal static async ValueTask<CallToolResult> CallAsync(HttpContext http, CallToolRequestParams? request, CancellationToken ct)
+    /// <summary>The key of the confirmation question in an input-required answer (spec 035 R3, MCP elicitation).</summary>
+    internal const string ConfirmInput = "confirm";
+
+    internal static async ValueTask<CallToolResult> CallAsync(HttpContext http, CallToolRequestParams? request, CancellationToken ct, McpServer? server = null)
     {
         var (caller, scoped) = await CallerAsync(http, ct);
         var arguments = JsonSerializer.SerializeToElement(request?.Arguments ?? new Dictionary<string, JsonElement>());
         var gateway = http.RequestServices.GetRequiredService<IExternalToolGateway>();
-        var outcome = await gateway.CallAsync(caller, scoped, request?.Name ?? string.Empty, arguments, ct);
+        var name = request?.Name ?? string.Empty;
+        var answered = await AnswerInClientAsync(http, caller, request, name, arguments, ct);
+        var outcome = await gateway.CallAsync(caller, scoped, name, arguments, ct);
+        var ask = !answered && outcome.PendingActionId is not null && await AsksInClientAsync(http, server, ct);
         // The execution record and anything the tool wrote are kept, whatever the client does with the answer.
         await http.RequestServices.GetRequiredService<IDbSession>().CommitAsync(ct);
+        if (ask && outcome.PendingActionId is { } action)
+        {
+            // A verified client that can ask the employee does so now; its answer comes back with the retried call.
+            throw new InputRequiredException(new Dictionary<string, InputRequest>
+            {
+                [ConfirmInput] = InputRequest.ForElicitation(ConfirmQuestion(http, caller, name, arguments)),
+            }, action.ToString("N"));
+        }
         var structured = JsonSerializer.SerializeToElement(Data(http, outcome), ToolArgs.Options);
         return new CallToolResult
         {
             IsError = !outcome.Ok,
             StructuredContent = structured,
             Content = [new TextContentBlock { Text = structured.GetRawText() }],
+        };
+    }
+
+    /// <summary>
+    /// Whether to ask inside the client (spec 035 R3, T026): the tenant turned it on, the app is a client from the
+    /// platform's verified list, and the client declared form elicitation and multi round-trip requests on this call.
+    /// </summary>
+    private static async Task<bool> AsksInClientAsync(HttpContext http, McpServer? server, CancellationToken ct) =>
+        server is { IsMrtrSupported: true, ClientCapabilities.Elicitation: { } elicitation } && (elicitation.Form is not null || elicitation.Url is null)
+        && http.Features.Get<AppRecord>() is { Verified: true }
+        && await http.RequestServices.GetRequiredService<IExternalActionConfirmations>().InClientAsync(ct);
+
+    /// <summary>
+    /// The employee's answer in the client to an earlier question, if this call carries one: accept with confirm true
+    /// confirms, decline or confirm false rejects, cancel leaves the action waiting on the TeamBeats card. True when an
+    /// answer was given, so the call is not asked again.
+    /// </summary>
+    private static async Task<bool> AnswerInClientAsync(HttpContext http, ExternalCaller caller, CallToolRequestParams? request, string tool, JsonElement arguments,
+        CancellationToken ct)
+    {
+        if (request?.InputResponses is not { } responses || !responses.TryGetValue(ConfirmInput, out var response))
+        {
+            return false;
+        }
+        if (!Guid.TryParseExact(request.RequestState, "N", out var action) || http.Features.Get<AppRecord>() is not { Verified: true })
+        {
+            return true;
+        }
+        var answer = response.Deserialize(InputResponse.ElicitResultJsonTypeInfo);
+        bool? confirm = answer?.Action switch
+        {
+            "accept" => answer.Content is { } content && content.TryGetValue(ConfirmInput, out var value) && value.ValueKind == JsonValueKind.True,
+            "decline" => false,
+            _ => null,
+        };
+        if (confirm is { } decided)
+        {
+            await http.RequestServices.GetRequiredService<IExternalActionConfirmations>().DecideInClientAsync(caller, action, tool, arguments, decided, ct);
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// The question the client shows: which app asks to run what, with every argument as the client sent it, in the
+    /// employee's language; one yes or no field. It says the values come from the AI client, as the TeamBeats card does.
+    /// </summary>
+    private static ElicitRequestParams ConfirmQuestion(HttpContext http, ExternalCaller caller, string tool, JsonElement arguments)
+    {
+        var localizer = http.RequestServices.GetRequiredService<ILocalizer>();
+        var locale = http.RequestServices.GetService<RequestLocale>()?.Locale ?? Locales.Fallback;
+        var message = localizer.Get("mcp.confirm.message", locale)
+            .Replace("{app}", caller.AppName, StringComparison.Ordinal)
+            .Replace("{tool}", tool, StringComparison.Ordinal)
+            .Replace("{arguments}", arguments.GetRawText(), StringComparison.Ordinal);
+        return new ElicitRequestParams
+        {
+            Message = message,
+            RequestedSchema = new ElicitRequestParams.RequestSchema
+            {
+                Properties = new Dictionary<string, ElicitRequestParams.PrimitiveSchemaDefinition>
+                {
+                    [ConfirmInput] = new ElicitRequestParams.BooleanSchema
+                    {
+                        Title = localizer.Get("mcp.confirm.field", locale), Description = localizer.Get("mcp.confirm.field_hint", locale), Default = false,
+                    },
+                },
+                Required = [ConfirmInput],
+            },
         };
     }
 

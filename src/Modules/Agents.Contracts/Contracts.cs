@@ -353,7 +353,8 @@ public sealed record ExternalTool(string Name, int Version, string SideEffect, s
 /// What an external tool call gave back. <paramref name="Content"/> is data, never instructions; each source carries its
 /// reference and classification (spec 035 FR-024). <paramref name="ErrorKey"/> is a short, safe reason when refused.
 /// </summary>
-public sealed record ExternalToolOutcome(bool Ok, string Content, string Classification, IReadOnlyList<ToolSource> Sources, string? ErrorKey = null)
+public sealed record ExternalToolOutcome(bool Ok, string Content, string Classification, IReadOnlyList<ToolSource> Sources, string? ErrorKey = null,
+    Guid? PendingActionId = null)
 {
     public static ExternalToolOutcome Refused(string errorKey) => new(false, string.Empty, "public", [], errorKey);
 }
@@ -372,6 +373,21 @@ public interface IExternalToolGateway
     Task<IReadOnlyList<ExternalTool>> ToolsAsync(ExternalCaller caller, IReadOnlySet<string> scoped, CancellationToken ct);
 
     Task<ExternalToolOutcome> CallAsync(ExternalCaller caller, IReadOnlySet<string> scoped, string tool, System.Text.Json.JsonElement arguments, CancellationToken ct);
+}
+
+/// <summary>
+/// Confirmation of a write action inside the AI client (spec 035 R3, T026): when the tenant's external AI client policy
+/// allows it, an employee answers a pending action in a verified client that can ask them, and the answer counts as if
+/// given on the TeamBeats card. The answer is bound to the employee, the app, the tool and the exact arguments of the
+/// pending action; anything else changes nothing.
+/// </summary>
+public interface IExternalActionConfirmations
+{
+    /// <summary>Whether the tenant lets AI clients ask the employee to confirm write actions.</summary>
+    Task<bool> InClientAsync(CancellationToken ct);
+
+    /// <summary>Confirms or rejects the caller's pending action; false when it does not match or is no longer pending.</summary>
+    Task<bool> DecideInClientAsync(ExternalCaller caller, Guid actionId, string tool, System.Text.Json.JsonElement arguments, bool confirm, CancellationToken ct);
 }
 
 /// <summary>Why an external tool call or the whole MCP surface is refused (spec 035 US3), as short safe keys.</summary>

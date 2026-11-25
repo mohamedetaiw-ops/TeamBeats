@@ -100,8 +100,11 @@ public sealed record ExternalAiClient(string ClientId, string MaxClassification 
 /// The external AI client policy (spec 035 FR-021, spec 027 US8 scenario 1): whether external AI access is on (turning
 /// it off is an emergency control of spec 027 FR-020), the allowed MCP clients, the allowed tools (null means every
 /// exposable tool) and whether write tools are allowed, off by default. No client is allowed until one is added.
+/// <paramref name="ConfirmInClient"/> (spec 035 R3, off by default) lets an employee confirm a write action inside a
+/// client from the platform's verified list that can ask them, instead of only inside TeamBeats.
 /// </summary>
-public sealed record ExternalAiPolicy(bool Enabled = true, List<ExternalAiClient>? Clients = null, List<string>? AllowedTools = null, bool WriteTools = false)
+public sealed record ExternalAiPolicy(bool Enabled = true, List<ExternalAiClient>? Clients = null, List<string>? AllowedTools = null, bool WriteTools = false,
+    bool ConfirmInClient = false)
 {
     public static readonly ExternalAiPolicy Default = new();
 

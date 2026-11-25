@@ -3019,5 +3019,8 @@
   "validation.api.gallery_description": "أدخل وصفًا من 1 إلى 500 حرف.",
   "validation.api.gallery_homepage": "أدخل الصفحة الرئيسية للتطبيق بعنوان HTTPS لا يزيد على 300 حرف.",
   "validation.api.gallery_status": "يجب أن تكون الحالة منشورًا أو مسحوبًا.",
-  "conflict.api.gallery_client_taken": "يستخدم تطبيق مسجّل هنا معرّف العميل هذا بالفعل."
+  "conflict.api.gallery_client_taken": "يستخدم تطبيق مسجّل هنا معرّف العميل هذا بالفعل.",
+  "mcp.confirm.message": "يطلب {app} تنفيذ {tool} نيابةً عنك في TeamBeats بهذه القيم، وهي واردة من عميل الذكاء الاصطناعي: {arguments}. لن يُنفَّذ شيء ما لم تؤكد.",
+  "mcp.confirm.field": "تأكيد هذا الإجراء",
+  "mcp.confirm.field_hint": "فعّله لتنفّذه TeamBeats الآن. ارفض لإيقافه."
 }

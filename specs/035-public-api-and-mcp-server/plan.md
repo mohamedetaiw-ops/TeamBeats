@@ -136,6 +136,15 @@ R3 slices, in order:
 ### Tests (R3 slice 5)
 - An administrator adds a published app, gets the registration with admin consent for its scopes, and an employee connects it at once; employees cannot see or add; the tenant cannot rename it; another tenant sees it unadded and refuses the token; withdrawing blocks it and its tokens; only platform operators publish; a verified AI client ID, a plain name or an unknown status is refused; scopes outside the package are shown and refused.
 
+### Confirmation inside verified AI clients
+- **Opt in per tenant:** a new switch in the external AI client policy, "let verified AI clients ask the employee", off by default and only with write tools on. The TeamBeats card stays; this adds a second place to answer.
+- **Who is asked:** only a client from the platform's verified list, and only when the call itself declares form elicitation and multi round-trip requests (MCP `2026-07-28`, so the stateless server needs no session). A client the tenant registered itself, or one that cannot ask, gets the pending answer as before.
+- **How:** the write tool call stores the pending action as today, then answers "input required" with one yes or no question that names the app, the tool and every argument as the client sent it, in the employee's language, and says the values come from the AI client. The client retries the call with the answer. Accept with yes confirms and runs the action once, decline or no rejects it, cancel leaves it waiting on the card.
+- **Bound to the call:** the answer decides only a pending action of the same employee and app, for the same tool and the same arguments (the stored hash), before it expires, with the gateway checks run again. Anything else decides nothing. The action records where it was decided (`teambeats` or `client`).
+
+### Tests (R3 slice 6)
+- Accept runs the action once and resolves the notification; decline and an unticked yes reject it; cancel leaves it pending; with the setting off, without an elicitation handler or for a tenant-registered client nobody is asked; an answer with other arguments or for an unknown action decides nothing; another tenant refuses the token.
+
 ### Tests (R3 slice 1)
 - A client credentials token with a proof is bound; calls succeed with matching proofs and fail without one, with another key, a reused `jti`, a wrong `htm` or `htu`, an old `iat` or a wrong `ath`; a bound token sent as `Bearer` is refused.
 - An app that requires DPoP gets no token without a proof; an app that does not still gets bearer tokens.
