@@ -14,6 +14,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { Button } from "@/components/ui/Button";
+import { DataTable } from "@/components/ui/DataTable";
 import { FileUpload, type UploadItem } from "@/components/ui/FileUpload";
 import { FormField } from "@/components/ui/FormField";
 import { Icon } from "@/components/ui/Icon";
@@ -199,68 +200,75 @@ export function ConnectedLibraryBrowser({ library, path, trail }: { library: Lib
             {t("degraded", { age: answer.syncedAt && now !== null ? relativeTime(answer.syncedAt, locale, now) : "" })}
           </p>
         ) : null}
-        <div className="documents-table">
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">{t("name")}</th>
-                <th scope="col">{t("size")}</th>
-                <th scope="col">{t("updated")}</th>
-                <th scope="col">
-                  <span className="visually-hidden">{t("actions")}</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {answer.items.map((item) => (
-                <tr key={item.id}>
-                  <td>
-                    {renaming?.id === item.id ? (
-                      <form
-                        className="documents-form"
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          void rename();
-                        }}
-                      >
-                        <FormField
-                          label={t("write.newName", { name: item.name })}
-                          name="connected-rename"
-                          value={renaming.name}
-                          maxLength={200}
-                          onChange={(e) => setRenaming({ ...renaming, name: e.target.value })}
-                        />
-                        <Button type="submit" variant="primary" busy={renaming.busy} busyLabel={t("loading")}>
-                          {t("write.save")}
-                        </Button>
-                        <Button onClick={() => setRenaming(null)}>{t("write.cancel")}</Button>
-                      </form>
-                    ) : item.folder ? (
-                      <Link className="documents-name" href={trailHref(path, [...trail, { id: item.id, name: item.name }])}>
-                        <Icon name="folder" size={18} />
-                        <bdi>{item.name}</bdi>
-                      </Link>
-                    ) : answer.state === "degraded" ? (
-                      <span className="documents-name">
-                        <Icon name="files" size={18} />
-                        <bdi>{item.name}</bdi>
-                      </span>
-                    ) : (
-                      <a className="documents-name" href={connectedContentHref(library.id, item.id)} download>
-                        <Icon name="files" size={18} />
-                        <bdi>{item.name}</bdi>
-                      </a>
-                    )}
-                  </td>
-                  <td>{item.folder ? "" : size(item.size)}</td>
-                  <td>
-                    {item.modifiedAt && now !== null ? (
-                      <time dateTime={item.modifiedAt} title={dateTimeFull(item.modifiedAt, locale)}>
-                        {relativeTime(item.modifiedAt, locale, now)}
-                      </time>
-                    ) : null}
-                  </td>
-                  <td>
+        <DataTable
+          caption={t("listCaption")}
+          captionHidden
+          rows={answer.items}
+          rowKey={(item) => item.id}
+          columns={[
+            {
+              key: "name",
+              header: t("name"),
+              rowHeader: true,
+              cell: (item) => (
+                <>
+                {renaming?.id === item.id ? (
+                  <form
+                    className="documents-form"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      void rename();
+                    }}
+                  >
+                    <FormField
+                      label={t("write.newName", { name: item.name })}
+                      name="connected-rename"
+                      value={renaming.name}
+                      maxLength={200}
+                      onChange={(e) => setRenaming({ ...renaming, name: e.target.value })}
+                    />
+                    <Button type="submit" variant="primary" busy={renaming.busy} busyLabel={t("loading")}>
+                      {t("write.save")}
+                    </Button>
+                    <Button onClick={() => setRenaming(null)}>{t("write.cancel")}</Button>
+                  </form>
+                ) : item.folder ? (
+                  <Link className="documents-name" href={trailHref(path, [...trail, { id: item.id, name: item.name }])}>
+                    <Icon name="folder" size={18} />
+                    <bdi>{item.name}</bdi>
+                  </Link>
+                ) : answer.state === "degraded" ? (
+                  <span className="documents-name">
+                    <Icon name="files" size={18} />
+                    <bdi>{item.name}</bdi>
+                  </span>
+                ) : (
+                  <a className="documents-name" href={connectedContentHref(library.id, item.id)} download>
+                    <Icon name="files" size={18} />
+                    <bdi>{item.name}</bdi>
+                  </a>
+                )}
+                </>
+              ),
+            },
+            { key: "size", header: t("size"), nowrap: true, cell: (item) => (item.folder ? null : size(item.size)) },
+            {
+              key: "updated",
+              header: t("updated"),
+              nowrap: true,
+              cell: (item) =>
+                item.modifiedAt && now !== null ? (
+                  <time dateTime={item.modifiedAt} title={dateTimeFull(item.modifiedAt, locale)}>
+                    {relativeTime(item.modifiedAt, locale, now)}
+                  </time>
+                ) : null,
+            },
+            {
+              key: "actions",
+              header: t("actions"),
+              cell: (item) =>
+                item.webLink || (writable && answer.state === "ok" && renaming?.id !== item.id) ? (
+                  <span className="ui-table-actions">
                     {item.webLink ? (
                       <a href={item.webLink} target="_blank" rel="noreferrer" aria-label={t("openInSharePoint", { name: item.name })}>
                         {t("openInSharePointShort")}
@@ -271,12 +279,11 @@ export function ConnectedLibraryBrowser({ library, path, trail }: { library: Lib
                         {t("write.renameShort")}
                       </Button>
                     ) : null}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </span>
+                ) : null,
+            },
+          ]}
+        />
         {answer.nextCursor ? (
           <Button
             busy={more}

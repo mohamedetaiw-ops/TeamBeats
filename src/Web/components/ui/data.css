@@ -191,6 +191,13 @@
   border: 0;
 }
 
+/* Several row actions in one cell wrap instead of widening the column. */
+.ui-table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs);
+}
+
 .ui-table-footer {
   display: flex;
   flex-wrap: wrap;

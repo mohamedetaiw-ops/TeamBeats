@@ -211,53 +211,6 @@
   gap: var(--tb-space-sm);
 }
 
-.documents-table {
-  overflow-x: auto;
-  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
-  border-radius: var(--tb-radius-lg);
-  background: var(--tb-color-surface-raised);
-  box-shadow: var(--tb-shadow-sm);
-}
-
-.documents-table table {
-  inline-size: 100%;
-  border-collapse: collapse;
-}
-
-.documents-table th,
-.documents-table td {
-  padding: var(--tb-space-xs) var(--tb-space-md);
-  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
-  text-align: start;
-}
-
-.documents-table thead th {
-  block-size: 2.25rem;
-  background: var(--tb-color-surface-sunken);
-  color: var(--tb-color-text-secondary);
-  font-size: var(--tb-font-size-xs);
-  font-weight: var(--tb-font-weight-medium);
-}
-
-.documents-table tbody tr:hover {
-  background: var(--tb-color-surface-sunken);
-}
-
-.documents-table td {
-  block-size: 3rem;
-  color: var(--tb-color-text-secondary);
-}
-
-.documents-table tbody tr:last-child td {
-  border-block-end: 0;
-}
-
-.documents-row-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--tb-space-xs);
-}
-
 .documents-facts {
   display: grid;
   grid-template-columns: max-content 1fr;

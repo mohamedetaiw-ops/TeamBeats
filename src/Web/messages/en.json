@@ -5626,6 +5626,7 @@
       "clear": "Clear search"
     },
     "browser": {
+      "listCaption": "Documents in this library",
       "filters": "Find documents",
       "savedViews": "Saved view",
       "noView": "No saved view",
@@ -5960,6 +5961,7 @@
       }
     },
     "connected": {
+      "listCaption": "Files and folders in this library",
       "badge": "SharePoint",
       "intro": "The files of this library stay in SharePoint. You see the ones you can open there, read live with your Microsoft 365 account.",
       "path": "Folder path",

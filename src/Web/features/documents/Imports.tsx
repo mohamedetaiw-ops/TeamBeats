@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useFormatter, useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { DataTable } from "@/components/ui/DataTable";
 import { FileUpload, type UploadItem } from "@/components/ui/FileUpload";
 import { SelectField, FormPanel } from "@/components/ui/FormField";
 import { Progress } from "@/components/ui/Status";
@@ -275,61 +276,52 @@ export function ImportReport({
         {page.rows.length === 0 ? (
           <p className="documents-meta">{t("noRows")}</p>
         ) : (
-          <div className="documents-table">
-            <table>
-              <caption className="visually-hidden">{t("rowsCaption")}</caption>
-              <thead>
-                <tr>
-                  <th scope="col">{t("row")}</th>
-                  <th scope="col">{t("file")}</th>
-                  <th scope="col">{t("resultLabel")}</th>
-                  <th scope="col">{t("details")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {page.rows.map((r) => (
-                  <tr key={r.row} data-testid="import-row">
-                    <td>{r.row}</td>
-                    <td>
-                      {r.documentId ? (
-                        <Link href={documentHref(r.documentId)}>
-                          <bdi>{r.path}</bdi>
-                        </Link>
-                      ) : (
-                        <bdi>{r.path}</bdi>
-                      )}
-                    </td>
-                    <td>
-                      <Badge tone={tones[r.status]}>
-                        {t(`result.${r.status}`)}
-                      </Badge>
-                    </td>
-                    <td>
+          <DataTable
+            caption={t("rowsCaption")}
+            captionHidden
+            rows={page.rows}
+            rowKey={(r) => String(r.row)}
+            rowTestId={() => "import-row"}
+            columns={[
+              { key: "row", header: t("row"), cell: (r) => r.row, nowrap: true },
+              {
+                key: "file",
+                header: t("file"),
+                rowHeader: true,
+                cell: (r) =>
+                  r.documentId ? (
+                    <Link href={documentHref(r.documentId)}>
+                      <bdi>{r.path}</bdi>
+                    </Link>
+                  ) : (
+                    <bdi>{r.path}</bdi>
+                  ),
+              },
+              {
+                key: "result",
+                header: t("resultLabel"),
+                nowrap: true,
+                cell: (r) => <Badge tone={tones[r.status]}>{t(`result.${r.status}`)}</Badge>,
+              },
+              {
+                key: "details",
+                header: t("details"),
+                cell: (r) =>
+                  r.problemText || r.authorMatched === false || (r.versions && r.versions > 1) || r.permissionsDiffer ? (
+                    <>
                       {r.problemText ? <p>{r.problemText}</p> : null}
-                      {r.authorMatched === false ? (
-                        <p className="documents-meta">
-                          {t("authorNotMatched")}
-                        </p>
-                      ) : null}
-                      {r.versions && r.versions > 1 ? (
-                        <p className="documents-meta">
-                          {t("versions", { count: r.versions })}
-                        </p>
-                      ) : null}
+                      {r.authorMatched === false ? <p className="documents-meta">{t("authorNotMatched")}</p> : null}
+                      {r.versions && r.versions > 1 ? <p className="documents-meta">{t("versions", { count: r.versions })}</p> : null}
                       {r.permissionsDiffer ? (
-                        <p
-                          className="documents-meta"
-                          data-testid="permissions-differ"
-                        >
+                        <p className="documents-meta" data-testid="permissions-differ">
                           {t("permissionsDiffer")}
                         </p>
                       ) : null}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </>
+                  ) : null,
+              },
+            ]}
+          />
         )}
         {page.total > page.rows.length ? (
           <p className="documents-meta">
