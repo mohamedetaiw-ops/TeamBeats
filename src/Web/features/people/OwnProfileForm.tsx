@@ -7,6 +7,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { FormField, SelectField } from "@/components/ui/FormField";
 import { Icon } from "@/components/ui/Icon";
+import { ProfileHead } from "@/components/ui/Patterns";
 import { Widget } from "@/components/ui/Widget";
 import { dateLong, joinMeta, languageName, timeZoneLabel, timeZones } from "@/lib/format";
 import { problemMessages } from "@/lib/notifications/types";
@@ -156,56 +157,52 @@ export function OwnProfileForm({ initial }: { initial: OwnProfile }) {
       <h2 id="own-profile-title" className="visually-hidden">
         {t("me.title")}
       </h2>
-      <section className="people-identity" aria-label={name}>
-        <Avatar name={name} size="lg" src={photoAt(photo, 64)} />
-        <div className="people-identity-text">
-          <p className="people-identity-name">
-            <bdi>{name}</bdi>
-          </p>
-          {title ? (
-            <p className="people-identity-title">
-              <bdi>{title}</bdi>
-            </p>
+      <ProfileHead
+        level={3}
+        title={name}
+        media={<Avatar name={name} size="lg" src={photoAt(photo, 64)} />}
+        description={title ? <bdi>{title}</bdi> : undefined}
+        actions={
+          <Link className="button button-secondary" href={`/people/${person.id}`}>
+            <Icon name="eye" size={16} />
+            {t("me.view")}
+          </Link>
+        }
+      >
+        <p className="people-meta">
+          {joinMeta([person.unit ? localName(person.unit.names, locale) : null, person.location ? locationName(person.location, locale) : null])}
+        </p>
+        <div className="people-photo-actions">
+          <label className="button button-secondary" data-size="sm" aria-disabled={photoBusy || undefined}>
+            <Icon name="upload" size={16} />
+            <span>{photo ? t("me.photo.change") : t("me.photo.add")}</span>
+            <input
+              type="file"
+              className="visually-hidden"
+              accept="image/png,image/jpeg"
+              disabled={photoBusy}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (file) void changePhoto("PUT", file);
+              }}
+            />
+          </label>
+          {photo ? (
+            <Button type="button" variant="quiet" size="sm" icon="trash" busy={photoBusy} onClick={() => void changePhoto("DELETE")}>
+              {t("me.photo.remove")}
+            </Button>
           ) : null}
-          <p className="people-meta">
-            {joinMeta([person.unit ? localName(person.unit.names, locale) : null, person.location ? locationName(person.location, locale) : null])}
-          </p>
-          <div className="people-photo-actions">
-            <label className="button button-secondary" data-size="sm" aria-disabled={photoBusy || undefined}>
-              <Icon name="upload" size={16} />
-              <span>{photo ? t("me.photo.change") : t("me.photo.add")}</span>
-              <input
-                type="file"
-                className="visually-hidden"
-                accept="image/png,image/jpeg"
-                disabled={photoBusy}
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  e.target.value = "";
-                  if (file) void changePhoto("PUT", file);
-                }}
-              />
-            </label>
-            {photo ? (
-              <Button type="button" variant="quiet" size="sm" icon="trash" busy={photoBusy} onClick={() => void changePhoto("DELETE")}>
-                {t("me.photo.remove")}
-              </Button>
-            ) : null}
-            <span className="field-hint">{t("me.photo.hint")}</span>
-          </div>
-          <p aria-live="polite" className="people-photo-result">
-            {photoResult ? (
-              <span className={photoResult.ok ? undefined : "field-error"} role={photoResult.ok ? undefined : "alert"}>
-                {photoResult.messages.join(" ")}
-              </span>
-            ) : null}
-          </p>
+          <span className="field-hint">{t("me.photo.hint")}</span>
         </div>
-        <Link className="button button-secondary" href={`/people/${person.id}`}>
-          <Icon name="eye" size={16} />
-          {t("me.view")}
-        </Link>
-      </section>
+        <p aria-live="polite" className="people-photo-result">
+          {photoResult ? (
+            <span className={photoResult.ok ? undefined : "field-error"} role={photoResult.ok ? undefined : "alert"}>
+              {photoResult.messages.join(" ")}
+            </span>
+          ) : null}
+        </p>
+      </ProfileHead>
 
       {groups.map((g) => {
         const fields = profile.fields.filter((f) => (g.key === "other" ? !listed.has(f.key) : g.fields.includes(f.key)));

@@ -172,6 +172,58 @@ export function ChatTranscript({
 export type ProfileFact = { key: string; label: string; value: ReactNode };
 
 /**
+ * Profile head (spec 032 template T09): who or what this is, with its media, status, a description, key facts and
+ * actions. The top of a profile layout, and on its own where a page shows one identity, such as editing your profile.
+ * Extra lines such as a meta line or photo controls go in as children, under the description.
+ */
+export function ProfileHead({
+  title,
+  level = 1,
+  media,
+  eyebrow,
+  status,
+  description,
+  facts,
+  actions,
+  children,
+}: {
+  title: string;
+  level?: 1 | 2 | 3;
+  /** An avatar, or an icon tile through `ProfileIcon`. */
+  media?: ReactNode;
+  eyebrow?: ReactNode;
+  status?: { text: string; tone?: BadgeTone; icon?: IconName };
+  description?: ReactNode;
+  facts?: readonly ProfileFact[];
+  actions?: ReactNode;
+  children?: ReactNode;
+}) {
+  const Heading = `h${level}` as const;
+  return (
+    <header className="ui-profile-head">
+      {media ? <div className="ui-profile-media">{media}</div> : null}
+      <div className="ui-profile-text">
+        {eyebrow ? <p className="ui-profile-eyebrow">{eyebrow}</p> : null}
+        <div className="ui-profile-title">
+          <Heading>
+            <bdi>{title}</bdi>
+          </Heading>
+          {status ? (
+            <Badge tone={status.tone} icon={status.icon}>
+              {status.text}
+            </Badge>
+          ) : null}
+        </div>
+        {description ? <p className="ui-profile-description">{description}</p> : null}
+        {facts?.length ? <FactList facts={facts} inline /> : null}
+        {children}
+      </div>
+      {actions ? <div className="ui-profile-actions">{actions}</div> : null}
+    </header>
+  );
+}
+
+/**
  * Profile layout (spec 032 template T09 with layout L03): who or what this is at the top, with its status, key facts
  * and actions; the details in the main column and supporting blocks beside it. Used for agents, people and records.
  */
@@ -199,30 +251,9 @@ export function ProfileLayout({
   aside?: ReactNode;
   children: ReactNode;
 }) {
-  const Heading = `h${level}` as const;
   return (
     <div className="ui-profile">
-      <header className="ui-profile-head">
-        {media ? <div className="ui-profile-media">{media}</div> : null}
-        <div className="ui-profile-text">
-          {eyebrow ? <p className="ui-profile-eyebrow">{eyebrow}</p> : null}
-          <div className="ui-profile-title">
-            <Heading>
-              <bdi>{title}</bdi>
-            </Heading>
-            {status ? (
-              <Badge tone={status.tone} icon={status.icon}>
-                {status.text}
-              </Badge>
-            ) : null}
-          </div>
-          {description ? (
-            <p className="ui-profile-description">{description}</p>
-          ) : null}
-          {facts?.length ? <FactList facts={facts} inline /> : null}
-        </div>
-        {actions ? <div className="ui-profile-actions">{actions}</div> : null}
-      </header>
+      <ProfileHead title={title} level={level} media={media} eyebrow={eyebrow} status={status} description={description} facts={facts} actions={actions} />
       <div className="ui-profile-body" data-aside={aside ? true : undefined}>
         <div className="ui-profile-main">{children}</div>
         {aside ? <div className="ui-profile-aside">{aside}</div> : null}
