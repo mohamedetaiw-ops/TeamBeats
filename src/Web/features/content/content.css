@@ -5,7 +5,6 @@
   max-inline-size: 48rem;
 }
 
-.content-article,
 .content-social,
 .content-card {
   display: grid;
@@ -17,7 +16,6 @@
   color: var(--tb-color-text-primary);
 }
 
-.content-article h1,
 .content-social h2,
 .content-card h2,
 .content-card h3 {

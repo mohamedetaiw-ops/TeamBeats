@@ -4,6 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
 import { topicHref, type Inline, type ReaderView } from "@/lib/content/types";
 import { Badge } from "@/components/ui/Badge";
+import { ReadingArticle } from "@/components/ui/Card";
 import { Header } from "@/components/shell/Header";
 import { BodyView } from "@/features/content/BodyView";
 import { ContentSocial } from "@/features/content/ContentSocial";
@@ -45,7 +46,7 @@ export default async function ReadPage({ params }: { params: Promise<{ id: strin
     <>
       <Header me={me.data} breadcrumbs={[{ label: t("crumb"), href: `/content/read/${v.id}` }]} />
       <main id="main" className="page content-read">
-        <article lang={v.locale} className="content-article">
+        <ReadingArticle lang={v.locale}>
           <header className="content-head">
             {kind && kind !== "page" ? <Badge tone="accent">{tk(kind)}</Badge> : null}
             <h1>
@@ -85,7 +86,7 @@ export default async function ReadPage({ params }: { params: Promise<{ id: strin
               ))}
             </ul>
           ) : null}
-        </article>
+        </ReadingArticle>
         <ViewBeacon source="content" itemId={v.id} contentType={v.type} siteId={v.siteId} />
         <ContentSocial itemId={v.id} />
       </main>
