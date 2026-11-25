@@ -311,6 +311,8 @@ public static class AuditActions
     public const string ApiSettingsChanged = "api.tenant_switch_changed";
     public const string ApiRoleAssignedToApp = "api.role_assigned_to_app";
     public const string ApiVerifiedClientChanged = "api.verified_client_changed";
+    public const string ApiGalleryAppChanged = "api.gallery_app_changed";
+    public const string ApiGalleryAppAdded = "api.gallery_app_added";
     public const string ApiClientBlocked = "api.client_blocked";
     public const string ApiClientUnblocked = "api.client_unblocked";
     public const string ApiTokensRevoked = "api.tokens_revoked";
@@ -720,7 +722,7 @@ public static class AuditActions
         SecurityChangeExpired, SecurityKeyConnected, SecurityKeyRotated, SecurityKeyRevoked, SecurityKeyRestored, SecurityKeyUnreachable,
         MobileOfflinePolicyChanged, DeviceKioskEnrolled, DeviceKioskChanged, DeviceKioskRevoked, DeviceKioskSignIn, DeviceKioskLockout,
         ApiAppRegistered, ApiAppChanged, ApiAppDisabled, ApiCredentialAdded, ApiCredentialRevoked, ApiConsentGranted, ApiConsentRevoked,
-        ApiTokenFamilyRevoked, ApiTokenRefused, ApiSettingsChanged, ApiRoleAssignedToApp, ApiVerifiedClientChanged, ApiClientBlocked, ApiClientUnblocked, ApiTokensRevoked,
+        ApiTokenFamilyRevoked, ApiTokenRefused, ApiSettingsChanged, ApiRoleAssignedToApp, ApiVerifiedClientChanged, ApiGalleryAppChanged, ApiGalleryAppAdded, ApiClientBlocked, ApiClientUnblocked, ApiTokensRevoked,
         DeviceBadgeIssued, DeviceBadgePinReset, SecurityRequestBlockedNetwork, SecurityMfaMissing, SecurityStepUpCompleted, SecurityStepUpFailed, SecurityAlertRaised, SecurityAlertHandled,
         WorkflowDefinitionPublished, WorkflowTaskCompleted, WorkflowInstanceWithdrawn,
         ServiceCreated, ServiceChanged, ServicePublished, ServiceRetired, ServiceCategoryChanged, RequestSubmitted, RequestCancelled, RequestResubmitted,

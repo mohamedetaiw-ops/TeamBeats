@@ -127,6 +127,15 @@ R3 slices, in order:
 ### Tests (R3 slice 4)
 - A sandbox gets the lower limits, shows its end date on the developer page and in the platform list, is suspended after the date and closed 14 days later; a live tenant is left alone; 0 or 31 days are refused; a tenant administrator cannot create one.
 
+### Public app gallery
+- **Platform list, like the verified MCP clients:** the platform operator publishes an app after reviewing its publisher's client ID metadata document, recording name, publisher, description, home page, redirect URIs and scopes. A client ID is either a verified AI client or a gallery app, never both. Withdrawing an entry disables every tenant's registration of it at once, tokens included. There is no publisher self-service in R3, and no platform screen yet (API only, as the verified list).
+- **Delegated apps with PKCE only:** gallery apps keep no secret, so no tenant hands a credential to a publisher. Application apps stay registered by each tenant.
+- **Added by an API administrator** on a new "App gallery" tab of the API page. Adding registers the app (the gallery owns its name, publisher, scopes and redirect URIs; the tenant keeps its switches and limits) and gives the admin consent for all its scopes, so employees connect it without asking. Adding needs the API manage right, a package that includes every scope (shown on the tab) and room under the app limit. Adding it again changes nothing. Removing consent, disabling and revoking work as for any app.
+- **The consent screen** shows the publisher as verified, as for verified AI clients.
+
+### Tests (R3 slice 5)
+- An administrator adds a published app, gets the registration with admin consent for its scopes, and an employee connects it at once; employees cannot see or add; the tenant cannot rename it; another tenant sees it unadded and refuses the token; withdrawing blocks it and its tokens; only platform operators publish; a verified AI client ID, a plain name or an unknown status is refused; scopes outside the package are shown and refused.
+
 ### Tests (R3 slice 1)
 - A client credentials token with a proof is bound; calls succeed with matching proofs and fail without one, with another key, a reused `jti`, a wrong `htm` or `htu`, an old `iat` or a wrong `ath`; a bound token sent as `Bearer` is refused.
 - An app that requires DPoP gets no token without a proof; an app that does not still gets bearer tokens.

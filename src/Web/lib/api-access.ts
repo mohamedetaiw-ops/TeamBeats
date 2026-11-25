@@ -27,6 +27,20 @@ export type ApiApp = {
   selfRegistered?: boolean;
   /** Tokens are given only with a DPoP proof and work only with one (spec 035 R3, RFC 9449). */
   requireDpop?: boolean;
+  /** Added from the public app gallery: its name, publisher, scopes and redirect URIs come from the gallery (spec 035 R3). */
+  gallery?: boolean;
+};
+
+/** A published app of the platform's public app gallery, and this tenant's registration of it if it was added (spec 035 R3, T025). */
+export type GalleryApp = {
+  clientId: string;
+  name: string;
+  publisher: string;
+  description: string;
+  homepage: string;
+  scopes: string[];
+  appId: string | null;
+  inPackage: boolean;
 };
 
 export type ApiCredential = {

@@ -12,7 +12,7 @@ namespace TeamBeats.Modules.PublicApi;
 /// <summary>An app registration as the authorization server reads it.</summary>
 public sealed record AppRecord(Guid Id, string ClientId, string Kind, string Name, string? Description, string? Publisher, string[] Scopes,
     string[] RedirectUris, bool AllowGuests, string Status, DateTimeOffset? TokensRevokedAt, DateTimeOffset CreatedAt, DateTimeOffset? LastUsedAt, int Version,
-    string[] IpRanges, int? CallsPerMinute, bool Verified = false, bool SelfRegistered = false, bool RequireDpop = false)
+    string[] IpRanges, int? CallsPerMinute, bool Verified = false, bool SelfRegistered = false, bool RequireDpop = false, bool Gallery = false)
 {
     public bool Active => Status == "active";
 
@@ -23,7 +23,7 @@ public sealed record AppRecord(Guid Id, string ClientId, string Kind, string Nam
     public int Limit => CallsPerMinute ?? ApiRules.DefaultCallsPerMinute(Kind);
 
     public AppView View => new(Id, ClientId, Kind, Name, Description, Publisher, Scopes, RedirectUris, AllowGuests, Status, CreatedAt, LastUsedAt, Version,
-        IpRanges, Limit, CallsPerMinute is not null, Verified, SelfRegistered, RequireDpop);
+        IpRanges, Limit, CallsPerMinute is not null, Verified, SelfRegistered, RequireDpop, Gallery);
 }
 
 /// <summary>
@@ -47,20 +47,28 @@ public sealed class Apps(
     // blocked and works nowhere (FR-028).
     private const string Columns =
         """
-        a.id, a.client_id, a.kind, case when a.verified then coalesce(v.name, a.name) else a.name end, a.description,
-        case when a.verified then coalesce(v.publisher, a.publisher) else a.publisher end, case when a.verified then coalesce(v.scopes, '{}') else a.scopes end,
-        case when a.verified then coalesce(v.redirect_uris, '{}') else a.redirect_uris end, a.allow_guests,
-        case when b.client_id is not null or (a.verified and v.status is distinct from 'active') then 'blocked' else a.status end, a.tokens_revoked_at, a.created_at, a.last_used_at,
-        a.version, a.ip_ranges, a.calls_per_minute, a.verified, a.self_registered, a.require_dpop
+        a.id, a.client_id, a.kind,
+        case when a.verified then coalesce(v.name, a.name) when a.gallery then coalesce(g.name, a.name) else a.name end,
+        case when a.gallery then coalesce(g.description, a.description) else a.description end,
+        case when a.verified then coalesce(v.publisher, a.publisher) when a.gallery then coalesce(g.publisher, a.publisher) else a.publisher end,
+        case when a.verified then coalesce(v.scopes, '{}') when a.gallery then coalesce(g.scopes, '{}') else a.scopes end,
+        case when a.verified then coalesce(v.redirect_uris, '{}') when a.gallery then coalesce(g.redirect_uris, '{}') else a.redirect_uris end, a.allow_guests,
+        case when b.client_id is not null or (a.verified and v.status is distinct from 'active') or (a.gallery and g.status is distinct from 'published') then 'blocked'
+          else a.status end, a.tokens_revoked_at, a.created_at, a.last_used_at,
+        a.version, a.ip_ranges, a.calls_per_minute, a.verified, a.self_registered, a.require_dpop, a.gallery
         """;
 
     private const string From =
-        "publicapi.app a left join publicapi.verified_mcp_client v on a.verified and v.client_id = a.client_id left join publicapi.platform_block b on b.client_id = a.client_id";
+        """
+        publicapi.app a left join publicapi.verified_mcp_client v on a.verified and v.client_id = a.client_id
+          left join publicapi.gallery_app g on a.gallery and g.client_id = a.client_id
+          left join publicapi.platform_block b on b.client_id = a.client_id
+        """;
 
     internal static AppRecord Read(Npgsql.NpgsqlDataReader r) => new(r.GetGuid(0), r.GetString(1), r.GetString(2), r.GetString(3),
         r.IsDBNull(4) ? null : r.GetString(4), r.IsDBNull(5) ? null : r.GetString(5), r.GetFieldValue<string[]>(6), r.GetFieldValue<string[]>(7),
         r.GetBoolean(8), r.GetString(9), r.IsDBNull(10) ? null : r.GetFieldValue<DateTimeOffset>(10), r.GetFieldValue<DateTimeOffset>(11),
-        r.IsDBNull(12) ? null : r.GetFieldValue<DateTimeOffset>(12), r.GetInt32(13), r.GetFieldValue<string[]>(14), r.IsDBNull(15) ? null : r.GetInt32(15), r.GetBoolean(16), r.GetBoolean(17), r.GetBoolean(18));
+        r.IsDBNull(12) ? null : r.GetFieldValue<DateTimeOffset>(12), r.GetInt32(13), r.GetFieldValue<string[]>(14), r.IsDBNull(15) ? null : r.GetInt32(15), r.GetBoolean(16), r.GetBoolean(17), r.GetBoolean(18), r.GetBoolean(19));
 
     private static CredentialView ReadCredential(Npgsql.NpgsqlDataReader r) => new(r.GetGuid(0), r.GetString(1), r.IsDBNull(2) ? null : r.GetString(2),
         r.GetFieldValue<DateTimeOffset>(3), r.GetFieldValue<DateTimeOffset>(4), r.IsDBNull(5) ? null : r.GetFieldValue<DateTimeOffset>(5),
@@ -137,9 +145,9 @@ public sealed class Apps(
             throw AppException.Validation("kind", "validation.api.kind_fixed");
         }
         var errors = ApiRules.Check(request, create: false);
-        if (app.Verified)
+        if (app.Verified || app.Gallery)
         {
-            // The platform's verified list owns what the client is (FR-023); the tenant keeps its switches and limits.
+            // The platform's verified list or gallery owns what the client is (FR-023); the tenant keeps its switches and limits.
             VerifiedFixed(errors, "name", request.Name is { } name && name.Trim() != app.Name);
             VerifiedFixed(errors, "publisher", request.Publisher is { } publisher && Blank(publisher) != app.Publisher);
             VerifiedFixed(errors, "scopes", request.Scopes is { } scopes && !scopes.ToHashSet(StringComparer.Ordinal).SetEquals(app.Scopes));
@@ -382,6 +390,46 @@ public sealed class Apps(
         return app;
     }
 
+
+    /// <summary>
+    /// Registers a published gallery app for the tenant (spec 035 R3, T025): an API administrator adds it, its scopes must
+    /// be in the package and it counts against the app limit. Adding an app the tenant already has returns that one.
+    /// </summary>
+    public async Task<(AppRecord App, bool Added)> AddFromGalleryAsync(GalleryApp entry, CancellationToken ct)
+    {
+        await DemandAsync(Permissions.ApiManage, ct);
+        var errors = new ValidationErrors();
+        await CheckPackageAsync(entry.Scopes, errors, ct);
+        errors.ThrowIfAny();
+        await session.ExecAsync("select pg_advisory_xact_lock(hashtextextended(platform.current_tenant_id()::text || ':publicapi.apps', 0))", null, ct);
+        if (await FindByClientIdAsync(entry.ClientId, ct) is { } existing)
+        {
+            return existing.Gallery ? (existing, false) : throw AppException.Conflict("conflict.api.gallery_client_taken");
+        }
+        var count = await session.ScalarAsync<long>("select count(*) from publicapi.app", null, ct);
+        if (await entitlements.GetLimitAsync(Capabilities.ApiMaxApps, ct) is { } max && count >= max)
+        {
+            throw new AppException(ProblemCodes.EntitlementQuotaExhausted, 403, "validation.api.app_limit", null,
+                new Dictionary<string, object?> { ["capability"] = Capabilities.ApiMaxApps, ["limit"] = max });
+        }
+        var id = Ids.New();
+        // The values are kept as a record of what was added; the gallery stays the authority.
+        await session.ExecAsync(
+            """
+            insert into publicapi.app (tenant_id, id, client_id, kind, name, description, publisher, scopes, redirect_uris, gallery, created_by)
+            values (platform.current_tenant_id(), @id, @client, @kind, @name, @description, @publisher, @scopes, @redirects, true, @by)
+            """,
+            new
+            {
+                id, client = entry.ClientId, kind = GalleryApp.Kind, name = entry.Name, description = entry.Description, publisher = entry.Publisher,
+                scopes = entry.Scopes, redirects = entry.RedirectUris, by = context.RequireUser(),
+            }, ct);
+        var app = (await FindAsync(id, ct))!;
+        await audit.WriteAsync(new AuditEntry(AuditActions.ApiAppRegistered, "api_app", id.ToString(),
+            Changes: new { app.Name, app.Kind, app.ClientId, app.Scopes, app.RedirectUris, gallery = true }), ct);
+        await outbox.EnqueueAsync(new AppRegistered(id, app.Kind), ct);
+        return (app, true);
+    }
 
     public Task<AppRecord?> FindByClientIdAsync(string clientId, CancellationToken ct) =>
         session.QuerySingleOrDefaultAsync($"select {Columns} from {From} where a.client_id = @clientId", new { clientId }, Read, ct);

@@ -34,6 +34,7 @@ public static class PublicApiModule
         services.AddScoped<DpopProofs>();
         services.AddScoped<ApiSettings>();
         services.AddScoped<Consents>();
+        services.AddScoped<AppGallery>();
         services.AddScoped<IAppPrincipalDirectory, AppPrincipalDirectory>();
         services.AddScoped<PublicApiMaintenance>();
         services.AddScoped<PublicApiLeavers>();
@@ -77,6 +78,10 @@ public static class PublicApiModule
         // The platform's verified MCP clients a tenant may allow in its external AI client policy (FR-023). Platform data only.
         admin.MapGet("/verified-mcp-clients", async (VerifiedMcpClients verified, CancellationToken ct) =>
             Results.Ok(new { items = await verified.ActiveAsync(ct) }));
+        // The public app gallery (R3, T025): published apps an API administrator adds with admin consent for their scopes.
+        admin.MapGet("/gallery", async (AppGallery gallery, CancellationToken ct) => Results.Ok(new { items = await gallery.PublishedAsync(ct) }));
+        admin.MapPost("/gallery:add", async (GalleryAddRequest body, AppGallery gallery, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await gallery.AddAsync(body, ct), ct));
         admin.MapPost("/apps", async (AppRequest body, Apps apps, IDbSession session, CancellationToken ct) =>
         {
             var view = await apps.CreateAsync(body, ct);
@@ -149,6 +154,9 @@ public static class PublicApiModule
             Results.Ok(new { items = await verified.ListAsync(ct) }));
         platform.MapPut("/verified-mcp-clients", async (VerifiedMcpClientRequest body, VerifiedMcpClients verified, IDbSession session, CancellationToken ct) =>
             await CommitAsync(session, await verified.PutAsync(body, ct), ct));
+        platform.MapGet("/gallery", async (AppGallery gallery, CancellationToken ct) => Results.Ok(new { items = await gallery.ListAsync(ct) }));
+        platform.MapPut("/gallery", async (GalleryAppRequest body, AppGallery gallery, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await gallery.PutAsync(body, ct), ct));
         platform.MapGet("/blocked-clients", async (PlatformBlocks blocks, CancellationToken ct) => Results.Ok(new { items = await blocks.ListAsync(ct) }));
         platform.MapPost("/blocked-clients", async (PlatformBlockRequest body, PlatformBlocks blocks, IDbSession session, CancellationToken ct) =>
             await CommitAsync(session, await blocks.BlockAsync(body, ct), ct));

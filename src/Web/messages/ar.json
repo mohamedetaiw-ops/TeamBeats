@@ -16079,7 +16079,19 @@
         "tool": "أداة قراءة",
         "write_tool": "أداة كتابة تُؤكَّد في TeamBeats",
         "resource": "مورد"
-      }
+      },
+      "galleryTab": "معرض التطبيقات",
+      "galleryTitle": "معرض التطبيقات",
+      "galleryIntro": "تطبيقات راجعتها TeamBeats ونشرتها. إضافة تطبيق تسجّله هنا وتمنح موافقتك على نطاقاته، فيتمكن الموظفون من ربطه دون طلب موافقة مسؤول.",
+      "galleryEmpty": "لا توجد تطبيقات في المعرض بعد",
+      "galleryEmptyHint": "تظهر التطبيقات هنا بعد أن تنشرها TeamBeats.",
+      "galleryBy": "من {publisher}",
+      "galleryAction": "الإجراء",
+      "galleryAdd": "إضافة",
+      "galleryOpen": "فتح التطبيق",
+      "galleryAdded": "تمت إضافة {name}.",
+      "galleryNotInPackage": "غير مشمول في باقتك",
+      "fromGallery": "المعرض"
     },
     "connected": {
       "title": "التطبيقات المتصلة",
