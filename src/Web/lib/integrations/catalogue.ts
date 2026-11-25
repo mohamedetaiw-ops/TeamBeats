@@ -28,6 +28,8 @@ const LOOKS: Record<ConnectionType, Look> = {
   clock_import: { group: "people_time", icon: "clock" },
   lms_rest: { group: "learning", icon: "book" },
   finance_rest: { group: "finance", icon: "files" },
+  finance_oracle_fusion: { group: "finance", icon: "files" },
+  finance_sap_s4: { group: "finance", icon: "files" },
   custom_rest: { group: "custom", icon: "globe" },
   webhook: { group: "custom", icon: "link" },
   mcp_server: { group: "custom", icon: "spark" },

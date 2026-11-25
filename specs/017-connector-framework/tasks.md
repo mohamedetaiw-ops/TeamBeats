@@ -35,3 +35,9 @@ Depends on 004, 005, 006, 015, 024, 026, 027. R2.
 
 ## Final phase
 - [x] T020 Connector-down suite in CI; performance tests; OpenAPI; R2 implementation notes; spec evidence
+
+## R3
+- [x] T022 Oracle Fusion and SAP S/4HANA finance packs behind the finance hand-off contract (INT-005, INT-006), setup pages, tests
+- [ ] T023 Connector marketplace page and the platform switch that turns a pack off for all tenants
+- [ ] T024 KPI tiles on location dashboards (with spec 021 R3), R3 notes, OpenAPI, e2e, evidence
+- [x] MCP server registration for agents: met by spec 027 R3 T022

@@ -49,7 +49,7 @@ public sealed class FinanceHandOffs(IDbSession session, IConnectorRuntime runtim
             return null;
         }
         return await session.ScalarAsync<Guid?>(
-            "select id from integrations.connection where kind = @kind and enabled order by created_at, id limit 1", new { kind = FinancePack.KindName }, ct);
+            "select id from integrations.connection where kind = any(@kinds) and enabled order by created_at, id limit 1", new { kinds = FinancePack.Kinds }, ct);
     }
 
     private Task<FinanceHandOffRow?> RowAsync(string sourceType, Guid sourceId, CancellationToken ct) =>

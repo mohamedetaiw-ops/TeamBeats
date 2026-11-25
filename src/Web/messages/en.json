@@ -10496,6 +10496,8 @@
       "sms": "SMS gateway",
       "clock_import": "Clock data import",
       "finance_rest": "Finance hand-off",
+      "finance_oracle_fusion": "Oracle Fusion finance",
+      "finance_sap_s4": "SAP S/4HANA finance",
       "google_workspace": "Google Workspace",
       "hr_rest": "HR system (REST API)",
       "hr_sftp": "HR system (SFTP and CSV)",
@@ -10527,6 +10529,8 @@
       "sms": "Sends mandatory notifications as text messages to people who have no work email and no app, to the mobile number in the directory.",
       "clock_import": "Reads clock data files from an SFTP server every day, or takes CSV files you upload, and matches each row to a person by employee number.",
       "finance_rest": "Sends approved expense claims to your finance system over REST and reads back their payment status.",
+      "finance_oracle_fusion": "Sends approved expense claims to Oracle Fusion Payables as supplier invoices and reads back whether they are approved and paid.",
+      "finance_sap_s4": "Sends approved expense claims to SAP S/4HANA as supplier invoices and reads back whether they are parked or posted.",
       "google_workspace": "Reads users and groups for directory sync, and files in chosen shared drives, through a service account with domain-wide delegation.",
       "hr_rest": "Reads the full employee list from an HR system's REST API every night.",
       "hr_sftp": "Reads the newest full employee export that an HR system drops on an SFTP server every night.",
@@ -11498,6 +11502,51 @@
         "learner_email": "Learner work email",
         "completed_at": "Completion time",
         "score": "Score in percent"
+      }
+    },
+    "erpFinance": {
+      "accountsTitle": "Accounts",
+      "defaultAccount": "Default account",
+      "category": "Expense category",
+      "categoryHint": "The category key as it appears on expense lines, for example travel.",
+      "account": "Account",
+      "addAccount": "Add a category account",
+      "removeAccount": "Remove",
+      "statusesTitle": "Payment status words (optional)",
+      "statuses": {
+        "submitted": "Words for submitted",
+        "approved": "Words for approved",
+        "paid": "Words for paid",
+        "rejected": "Words for rejected"
+      },
+      "wordsHint": "Values that mean this, separated by commas. Leave empty to use the standard values.",
+      "finance_oracle_fusion": {
+        "formLabel": "Oracle Fusion finance settings",
+        "addTitle": "Add Oracle Fusion finance",
+        "addIntro": "Send approved expense claims to Oracle Fusion Payables as supplier invoices for each employee's supplier record, and read back their approval and payment. Add your Oracle Cloud host to the allowlist and store the integration user's password or client secret in your secret manager.",
+        "valuesTitle": "Oracle values",
+        "businessUnit": "Business unit",
+        "businessUnitHint": "The Payables business unit that receives the invoices, as named in Oracle.",
+        "supplierSite": "Supplier site (optional)",
+        "supplierSiteHint": "The site of each employee's supplier record, if your suppliers have more than one.",
+        "invoiceGroup": "Invoice group (optional)",
+        "invoiceGroupHint": "A group to collect TeamBeats invoices in, for example TEAMBEATS.",
+        "accountsHint": "The distribution combination each line is charged to, for example 101.10.61100.000. Lines of other categories go to the default account.",
+        "statusesHint": "TeamBeats reads paid from the paid status, and approved or rejected from the approval status."
+      },
+      "finance_sap_s4": {
+        "formLabel": "SAP S/4HANA finance settings",
+        "addTitle": "Add SAP S/4HANA finance",
+        "addIntro": "Send approved expense claims to SAP S/4HANA as supplier invoices for each employee's supplier account, through the Supplier Invoice API. Add your SAP host to the allowlist and store the communication user's password or client secret in your secret manager.",
+        "valuesTitle": "SAP values",
+        "companyCode": "Company code",
+        "companyCodeHint": "The company code that receives the invoices, for example 1010.",
+        "client": "Client (optional)",
+        "clientHint": "The three digit SAP client, if your system needs it in each call.",
+        "taxCode": "Tax code (optional)",
+        "taxCodeHint": "The tax code put on each line, if your claims carry tax.",
+        "accountsHint": "The G/L account each line is posted to, digits only. Lines of other categories go to the default account.",
+        "statusesHint": "SAP reports whether an invoice is parked or posted, not whether it is paid. Posted counts as approved unless you map its value differently."
       }
     }
   },

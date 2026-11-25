@@ -6,9 +6,10 @@ import { useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { ConfirmAction } from "@/components/ui/ConfirmAction";
-import { TICKETING_KINDS, isTicketing, type PackCheck, type PackConnection, type PackTestResult, type WebhookEventChoice } from "@/lib/integrations/types";
+import { TICKETING_KINDS, isErpFinance, isTicketing, type PackCheck, type PackConnection, type PackTestResult, type WebhookEventChoice } from "@/lib/integrations/types";
 import { ClockSettingsForm, type ClockBody } from "./ClockSettingsForm";
 import { ConnectionSettingsForm, type SettingsBody } from "./ConnectionSettingsForm";
+import { ErpFinanceSettingsForm } from "./ErpFinanceSettingsForm";
 import { FinanceSettingsForm } from "./FinanceSettingsForm";
 import { LmsSettingsForm } from "./LmsSettingsForm";
 import { HrRestSettingsForm, HrSftpSettingsForm, type HrSftpBody } from "./HrSettingsForm";
@@ -199,6 +200,20 @@ export function ConnectionDetail({ initial, webhookEvents = [] }: { initial: Pac
               </div>
             </>
           ) : null}
+        </section>
+      ) : null}
+
+      {isErpFinance(view.kind) ? (
+        <section className="connections-section" aria-labelledby="settings-heading">
+          <h2 id="settings-heading">{t("detail.settings")}</h2>
+          <ErpFinanceSettingsForm
+            key={JSON.stringify(view.settings)}
+            kind={view.kind}
+            initial={view}
+            submitLabel={t("detail.save")}
+            busy={busy === "save"}
+            onSubmit={(body: SettingsBody) => void run<PackConnection>("save", "PATCH", base, body, (v) => (setView(v), t("detail.saved")))}
+          />
         </section>
       ) : null}
 

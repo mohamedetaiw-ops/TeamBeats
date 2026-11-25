@@ -14,6 +14,7 @@ import {
   M365_PERMISSION_REASONS,
   TICKETING_KINDS,
   checkResult,
+  isErpFinance,
   isTicketing,
   known,
   type AllowlistEntry,
@@ -29,6 +30,7 @@ import {
 import { Allowlist } from "./Allowlist";
 import { ClockSettingsForm, type ClockBody } from "./ClockSettingsForm";
 import { ConnectionSettingsForm, type SettingsBody } from "./ConnectionSettingsForm";
+import { ErpFinanceSettingsForm } from "./ErpFinanceSettingsForm";
 import { FinanceSettingsForm } from "./FinanceSettingsForm";
 import { LmsSettingsForm } from "./LmsSettingsForm";
 import { GoogleSettingsForm, type GoogleBody } from "./GoogleSettingsForm";
@@ -201,6 +203,9 @@ function setupHeading(kind: ConnectionType): { title: string; intro: string } {
       return { title: "google.addTitle", intro: "google.addIntro" };
     case "finance_rest":
       return { title: "finance.addTitle", intro: "finance.addIntro" };
+    case "finance_oracle_fusion":
+    case "finance_sap_s4":
+      return { title: `erpFinance.${kind}.addTitle`, intro: `erpFinance.${kind}.addIntro` };
     case "lms_rest":
       return { title: "lms.addTitle", intro: "lms.addIntro" };
     case "slack":
@@ -247,6 +252,7 @@ export function SetupStep({ kind, catalogue, webhookEvents }: { kind: Connection
   else if (kind === "clock_import") form = <ClockSettingsForm submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;
   else if (kind === "google_workspace") form = <GoogleSettingsForm submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;
   else if (kind === "finance_rest") form = <FinanceSettingsForm submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;
+  else if (isErpFinance(kind)) form = <ErpFinanceSettingsForm kind={kind} submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;
   else if (kind === "lms_rest") form = <LmsSettingsForm submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;
   else if (kind === "hr_rest") form = <HrRestSettingsForm submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;
   else if (kind === "hr_sftp") form = <HrSftpSettingsForm submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;
