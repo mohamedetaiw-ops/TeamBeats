@@ -30,6 +30,7 @@ public static class SecurityModule
         services.AddScoped<IFourEyesApplier, TenantKeyApplier>();
         services.AddScoped<AlertService>();
         services.AddScoped<PostureService>();
+        services.AddSingleton<InstallationPosture>();
         services.AddScoped<ISecurityTrendFigures, SecurityTrendFigures>();
         services.AddScoped<ISecurityAlertSummary, AlertSummary>();
         services.AddMessageHandler<SecurityAlertRaised, AlertNotifier>("security.alert_notifier");

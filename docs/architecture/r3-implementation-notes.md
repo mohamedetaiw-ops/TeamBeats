@@ -22,3 +22,10 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - Background jobs of a tenant whose key is revoked keep running on content that is not under the data key; only requests are refused. A follow-up can pause tenant jobs while revoked.
 - Pages: Security > Encryption key (`/admin/security/keys`) with the status, a check now button and the connect or change form; Security > Approvals lists held key changes. Alerts `key_revoked` and `key_unreachable` join the alert list.
 
+
+## Spec 026 R3 slice 3: on-prem hardening pack (T037)
+
+- Defaults are in the spec 026 R3 plan: `Platform:Hosting=customer` turns on four installation checks on the posture page (production mode, database TLS, durable messaging, private addresses blocked). They are read from configuration by `InstallationPosture` (Security) and appended after the tenant checks; they carry no fix link.
+- The guide (`docs/security/hardening-guide.md`) and the matrix (`docs/security/shared-responsibility.md`) cover what the product cannot see: patching, backups, volume encryption, network segmentation, secret management.
+- Gap: the checks cover the settings the API process can read. Settings of other containers (RabbitMQ users, ClamAV signatures, proxy TLS) are left to the operator's own checks.
+- With this slice spec 026 R3 is built except FR-019 (tenant export and deletion certificate), which stays a known gap in the evidence.
