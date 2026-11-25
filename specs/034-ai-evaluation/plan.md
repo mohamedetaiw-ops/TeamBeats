@@ -13,6 +13,27 @@ R1 slices, in order:
 4. **Scoring and gates:** per-locale results, weighted score, severity, noise margin, minimum sample size; `EvaluationGateRequested` and `EvaluationGateDecided`; overrides for blocking failures.
 5. **Dashboard and pages:** suite editor, dataset editor, run view, compare view with table views, settings, in English and Arabic, RTL.
 
+## R3 plan
+**Date:** 2026-11-25. R3 adds the evaluation of L4 process runs end to end and cross-version trend benchmarks across a tenant's whole agent estate (section header, target release R3). It builds on spec 027 R3 (L4 agent tasks of approved processes) and the R1 dashboard (US6).
+
+R3 slices, in order:
+1. **L4 process runs (end to end):** every agent task run of an approved process is evaluated, not sampled, because L4 acts without a person confirming. When an agent task finishes, Agents publishes `AgentTaskRunRecorded` (Agents.Contracts) with the run's facts: process key, version and element, the agent and its version, outcome and reason, tool calls, refused calls, calls outside the step's tools (`tool.not_in_process`), calls that needed an approver (`tool.approval_not_available`), duration and the step's minute limit. Evaluation keeps one row per step run and scores deterministic trajectory checks: step completed, scope held (no call outside the step's tools), no approval needed, within the time limit, no denial. Any scope or approval attempt is a critical failure of the step, even though the gateway refused it (US3 scenario 6). `ProcessInstanceCompleted` and `ProcessInstanceWithdrawn` close the instance with its outcome, so a process version shows instances, completion rate, step success and critical failures. Results follow the viewer's scope through the agent's organization unit.
+2. **Estate trends:** for every agent the viewer may read, the headline metrics of each version from its latest completed evaluation run (as on the agent dashboard), the change from the previous version beyond the noise margin marked as a regression, and estate benchmarks per metric and locale: the mean over agents of their latest run in each month for the last 12 months. Locales are never averaged together. Under `ai.evals.advanced`.
+3. **Pages:** the estate trends page with a table view, the L4 process evaluation panel on the process model page, OpenAPI, R3 notes, e2e with axe, evidence.
+
+Defaults (spec silent):
+- L4 runs are evaluated in full and always, with deterministic metrics only, and no content is read or stored, so the logging policy and opt-outs do not apply. Judged metrics on L4 answers wait for a process dataset.
+- Process evaluation needs no new capability: it exists where `ai.agents.autonomous` does. Estate trends sit under `ai.evals.advanced`.
+- The instance outcome comes from `ProcessInstanceCompleted` or `ProcessInstanceWithdrawn`, which the engine sends after the step facts; an instance without an agent task is not recorded.
+
+### R3 data model (schema `evaluation`, forced RLS)
+- `process_step_eval`: run, instance, process key, version and element, agent, agent version, organization unit, outcome, reason, counts, duration, limit, metrics, critical flag, recorded time.
+- `process_instance_eval`: instance, process key and version, outcome, closed time.
+
+### R3 tests
+- An L4 step that stays in scope passes; one that tried a tool outside the step or one needing an approver fails as critical; a limit breach fails; the instance outcome closes the process view; scope by organization unit; another tenant sees nothing.
+- Estate trends list only readable agents, mark a regression beyond the noise margin, keep locales apart, need `ai.evals.advanced`, and stay in the tenant.
+
 ## Constitution check
 | Principle | Pass | Evidence |
 |---|---|---|

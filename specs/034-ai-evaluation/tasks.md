@@ -43,3 +43,12 @@ R2 covers User Stories 7 and 9, US8 scenarios 2 and 3, US10 organization level, 
 - [x] T023 [US10] Organization level settings: business-specific datasets and stricter thresholds for a unit and below, the strictest rule applied
 - [x] T024 [US1 scenario 6] French, Urdu and Hindi datasets and platform cases for tenants with those locales (with spec 007 R2)
 - [x] T025 Pages for production results, drift alerts, the review queue, comparisons and outcomes, in `ar` and `en`, RTL; OpenAPI, R2 implementation notes, e2e with axe, spec evidence
+
+## R3: L4 process runs and estate trends
+
+R3 covers the R3 part of the target release: evaluation of L4 process runs end to end (with spec 027 R3) and cross-version trend benchmarks across the agent estate (US6 at estate level).
+
+- [x] T026 L4 process runs: `AgentTaskRunRecorded` from Agents, deterministic trajectory checks per step (scope, approval, limit, denials, completion), critical failures, instance outcome from process events, results per process version in scope; tests including cross-tenant
+- [ ] T027 Estate trends under `ai.evals.advanced`: per agent and version headline metrics, regressions beyond the noise margin, monthly estate benchmarks per metric and locale; tests including scope, package and cross-tenant
+- [ ] T028 Pages (estate trends with a table view, L4 panel on the process page), OpenAPI, R3 implementation notes, e2e with axe, spec evidence
+

@@ -374,3 +374,13 @@ public static class AgentTaskOutcomes
     public const string Completed = "completed";
     public const string Failed = "failed";
 }
+
+/// <summary>
+/// Definition keys of modeled processes (spec 024) carry this prefix in events and contracts, so they never collide with
+/// the definitions of service routes; the process pages use the key without it.
+/// </summary>
+public static class ProcessKeys
+{
+    public const string ModelPrefix = "process:";
+}
+
