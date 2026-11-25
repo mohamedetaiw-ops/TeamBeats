@@ -184,7 +184,7 @@
 
 /*
  * The panel frame (DLS-045 to DLS-047): a fixed head and footer and a body that alone scrolls, 8px inside the window,
- * and a bottom sheet under 40rem. The shell bar's quick preferences, favourites and notifications use it.
+ * and a bottom sheet under 40rem. The shell bar's quick preferences, favourites, notifications and account menu use it.
  */
 .ui-popover[data-frame="panel"] {
   inline-size: min(21rem, calc(100vw - 1rem));

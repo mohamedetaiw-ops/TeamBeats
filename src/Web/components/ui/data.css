@@ -1029,6 +1029,11 @@ a.ui-event:hover {
   color: var(--tb-color-tint-cool-text);
 }
 
+.ui-person-avatar[data-tone="solid"] {
+  background: var(--tb-color-accent-base);
+  color: var(--tb-color-accent-text);
+}
+
 .ui-people[data-layout="cards"] {
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
   gap: var(--tb-space-md);

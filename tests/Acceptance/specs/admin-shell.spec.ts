@@ -25,7 +25,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       // Every page also offers Administration in the account menu to people with a section (spec 008 FR-062).
       await page.goto(`${hostOrigin(tenant.key)}/settings`);
       await page.getByRole("button", { name: msg(locale, "shell.account", { name: tenant.adminEmail }) }).click();
-      await page.locator(".shell-account-panel").getByRole("link", { name: msg(locale, "shell.administration") }).click();
+      await page.getByTestId("shell-account-panel").getByRole("link", { name: msg(locale, "shell.administration") }).click();
       await expect(page).toHaveURL(`${hostOrigin(tenant.key)}/admin`);
       await expect(page.getByRole("heading", { level: 1, name: msg(locale, "admin.title") })).toBeVisible();
 

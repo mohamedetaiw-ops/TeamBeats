@@ -401,20 +401,6 @@
   padding: var(--tb-space-sm);
 }
 
-.shell-avatar {
-  display: inline-grid;
-  place-items: center;
-  inline-size: 2.75rem;
-  block-size: 2.75rem;
-  border: 0;
-  border-radius: var(--tb-radius-full);
-  background: var(--tb-color-accent-base);
-  color: var(--tb-color-accent-text);
-  font: inherit;
-  font-weight: var(--tb-font-weight-bold);
-  cursor: pointer;
-}
-
 .shell-rail {
   padding-inline: var(--tb-space-md);
   border-block-start: var(--tb-border-width-thin) solid var(--tb-color-border-default);
@@ -853,53 +839,6 @@
   margin: 0;
 }
 
-/* The account menu: who is signed in, their own pages, then Sign out after a divider. */
-.shell-account-panel {
-  --xp-popover-width: 17.5rem;
-}
-
-.shell-account-panel .shell-popover-body {
-  padding: var(--tb-space-xs);
-}
-
-.shell-account-head {
-  display: flex;
-  align-items: center;
-  gap: var(--tb-space-sm);
-  padding: var(--tb-space-sm);
-}
-
-.shell-account-avatar {
-  display: inline-grid;
-  flex: none;
-  place-items: center;
-  inline-size: 2.5rem;
-  block-size: 2.5rem;
-  border-radius: var(--tb-radius-full);
-  background: var(--tb-color-accent-base);
-  color: var(--tb-color-accent-text);
-  font-weight: var(--tb-font-weight-semibold);
-}
-
-.shell-account-who {
-  display: grid;
-  min-inline-size: 0;
-  line-height: var(--tb-font-line-height-heading);
-}
-
-.shell-account-who .shell-user {
-  font-weight: var(--tb-font-weight-semibold);
-}
-
-.shell-account-who small {
-  overflow: hidden;
-  color: var(--tb-color-text-secondary);
-  font-size: var(--tb-font-size-xs);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-
 /*
  * On a phone the bar of the home holds six controls (ask, notifications, tasks, edit, settings, account). Each keeps
  * its 44 px target and gives up its side padding, so the account menu stays on the screen (DLS-085, WCAG 1.4.10).
@@ -1163,10 +1102,6 @@
 /* Help and tours (spec 008 FR-020): hints and the tour panel sit below the bar in the page flow, never over the page. */
 .shell-help {
   position: relative;
-}
-
-.shell-help-panel {
-  --xp-popover-width: 20rem;
 }
 
 .shell-help-none {
