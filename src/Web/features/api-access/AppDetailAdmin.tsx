@@ -200,6 +200,7 @@ function EditApp({ detail, scopes, action, onSaved }: { detail: ApiAppDetail; sc
   const [chosen, setChosen] = useState(app.scopes);
   const [redirects, setRedirects] = useState(app.redirectUris.join("\n"));
   const [guests, setGuests] = useState(app.allowGuests);
+  const [dpop, setDpop] = useState(app.requireDpop ?? false);
   const [ranges, setRanges] = useState(app.ipRanges.join("\n"));
   const [limit, setLimit] = useState<number | null>(app.callsPerMinuteLowered ? app.callsPerMinute : null);
 
@@ -215,6 +216,7 @@ function EditApp({ detail, scopes, action, onSaved }: { detail: ApiAppDetail; sc
         scopes: chosen,
         redirectUris: isDelegated(app.kind) ? redirects.split(/\s+/).filter(Boolean) : [],
         allowGuests: guests,
+        requireDpop: dpop,
         ipRanges: ranges.split(/[\s,]+/).filter(Boolean),
         callsPerMinute: limit ?? 0,
         version: app.version,
@@ -250,6 +252,7 @@ function EditApp({ detail, scopes, action, onSaved }: { detail: ApiAppDetail; sc
             <Checkbox name="allowGuests" label={t("allowGuests")} hint={t("allowGuestsHint")} checked={guests} onChange={(e) => setGuests(e.target.checked)} />
           </>
         ) : null}
+        <Checkbox name="requireDpop" label={t("requireDpop")} hint={t("requireDpopHint")} checked={dpop} onChange={(e) => setDpop(e.target.checked)} />
         <TextAreaField label={t("ipRanges")} hint={t("ipRangesHint")} name="ipRanges" dir="ltr" rows={3} value={ranges} onChange={(e) => setRanges(e.target.value)} />
         <NumberField
           label={t(isDelegated(app.kind) ? "callsPerMinuteDelegated" : "callsPerMinute")}

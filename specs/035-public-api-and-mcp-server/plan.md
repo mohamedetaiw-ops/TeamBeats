@@ -85,3 +85,28 @@ A new `PublicApi` module owns app registrations, credentials, consents, token fa
 | Deviation | Why | Simpler option rejected |
 |---|---|---|
 | Two new libraries | OAuth 2.1 server and MCP transport are security-critical protocols | Writing our own: higher risk and more code to audit (ADR-0018) |
+
+## R3 plan
+
+R3 adds sender-constrained tokens, MCP prompts, confirmation inside verified AI clients, admin APIs beside SCIM, a developer sandbox tenant and a public app gallery. The spec names them in the release line and the open questions; the defaults below are the smallest that keep the R2 security model (scopes only narrow, admin rights never reach an app by accident, every write confirmed by a person).
+
+R3 slices, in order:
+1. **Sender-constrained tokens (DPoP):** proof of possession for access and refresh tokens.
+2. **MCP prompts:** a small, localized prompt catalogue built on the existing tools.
+3. **Admin APIs beside SCIM:** read and narrow write endpoints for directory and access administration, for application apps only.
+4. **Developer sandbox tenant:** a short-lived tenant with demo data for building against the API.
+5. **Public app gallery:** platform-published apps a tenant adds with admin consent.
+6. **Confirmation inside verified AI clients (MCP elicitation):** opt-in per tenant, for verified clients that support it.
+
+### Sender-constrained tokens
+- **DPoP (RFC 9449) only.** Mutual TLS needs client certificates passed through the customer's proxy and is not offered; the notes record it.
+- **Per app:** a setting "require DPoP", off by default so R2 clients keep working, set by API administrators on the app page. With it on, tokens issued earlier without a binding are refused too. A token request with a valid `DPoP` header always gets a bound token (`cnf.jkt`, `token_type` `DPoP`), whatever the setting; with the setting on, a request without one is refused (`invalid_dpop_proof`).
+- **Proofs:** `typ` `dpop+jwt`, `ES256` (EC P-256), `RS256` or `PS256` (RSA of at least 2048 bits), the same keys as private key JWT, with a public `jwk` and no private parts; `htm` and `htu` (scheme, host and path, no query) match the request; `iat` at most 5 minutes old and at most 60 seconds ahead; `jti` used once per tenant and key within that window; on resource calls `ath` is the hash of the access token, and at the token endpoint there is none. No server nonce in this slice.
+- **Resource calls** with a bound token need `Authorization: DPoP <token>` and a matching proof on `/api/public` and `/mcp`; a bound token sent as `Bearer` is refused. A refresh token issued with a binding only refreshes with a proof from the same key, and one issued without stays without. The authorization server metadata lists `dpop_signing_alg_values_supported`.
+- **Errors** follow RFC 9449: `invalid_dpop_proof` at the token endpoint, `WWW-Authenticate: DPoP error="invalid_dpop_proof"` on resource calls. Refusals are audited as `api.token_refused` with reason `dpop`.
+
+### Tests (R3 slice 1)
+- A client credentials token with a proof is bound; calls succeed with matching proofs and fail without one, with another key, a reused `jti`, a wrong `htm` or `htu`, an old `iat` or a wrong `ath`; a bound token sent as `Bearer` is refused.
+- An app that requires DPoP gets no token without a proof; an app that does not still gets bearer tokens.
+- Refresh with the bound key works, with another key it fails; the MCP endpoint follows the same rules.
+- Cross-tenant: a proof and token of another tenant are refused as before.

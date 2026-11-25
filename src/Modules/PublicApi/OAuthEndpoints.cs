@@ -177,16 +177,18 @@ public static class OAuthEndpoints
         var current = await settings.CurrentAsync(ct);
         var accessLifetime = TimeSpan.FromMinutes(current.AccessTokenMinutes);
         var refreshLifetime = TimeSpan.FromDays(current.RefreshTokenDays);
+        var transaction = http.Features.Get<OpenIddictServerAspNetCoreFeature>()!.Transaction!;
+        var thumbprint = transaction.Properties.TryGetValue(OAuthServer.ThumbprintProperty, out var jkt) ? jkt as string : null;
         await apps.TouchAsync(app.Id, ct);
 
         if (request.IsClientCredentialsGrantType())
         {
             // An application app acts as itself (US1); its credential is its token family, so revoking the credential
             // refuses its tokens. Application tokens are only for the REST API (FR-019).
-            var credential = (Guid)http.Features.Get<OpenIddictServerAspNetCoreFeature>()!.Transaction!.Properties[OAuthServer.CredentialProperty]!;
+            var credential = (Guid)transaction.Properties[OAuthServer.CredentialProperty]!;
             var scopes = request.GetScopes() is { Length: > 0 } asked ? asked.ToList() : app.Scopes.ToList();
             await session.CommitAsync(ct);
-            var principal = Principal(app.Id.ToString(), tenant, app.Id, credential, OAuthServer.Application, scopes, ApiRules.ApiResource(OAuthServer.Origin(http.Request)));
+            var principal = Principal(app.Id.ToString(), tenant, app.Id, credential, OAuthServer.Application, scopes, ApiRules.ApiResource(OAuthServer.Origin(http.Request)), thumbprint);
             principal.SetAccessTokenLifetime(accessLifetime);
             return Results.SignIn(principal, null, OAuthServer.Scheme);
         }
@@ -214,6 +216,11 @@ public static class OAuthEndpoints
             await session.CommitAsync(ct);
             return Refuse(Errors.InvalidGrant, "The consent for this app has ended.");
         }
+        // A refresh token bound to a key is used only with a proof of that key, and an unbound one stays unbound (RFC 9449 section 5).
+        if (request.IsRefreshTokenGrantType() && presented.FindFirst(DpopProofs.ThumbprintClaim)?.Value != thumbprint)
+        {
+            return Refuse(Errors.InvalidGrant, "The refresh token is bound to another key.");
+        }
         // A refresh may ask for fewer scopes, never more.
         var scopesNow = request.GetScopes() is { Length: > 0 } narrower ? narrower.ToList() : granted;
         if (scopesNow.Any(s => !granted.Contains(s, StringComparer.Ordinal)))
@@ -231,7 +238,7 @@ public static class OAuthEndpoints
         {
             return Refuse(Errors.InvalidGrant, outcome == Redemption.Reused ? "The grant was already used; the sign-in is revoked." : "The grant is no longer valid.");
         }
-        var next = Principal(user.ToString(), tenant, app.Id, familyId, OAuthServer.Delegated, scopesNow, resource);
+        var next = Principal(user.ToString(), tenant, app.Id, familyId, OAuthServer.Delegated, scopesNow, resource, thumbprint);
         next.SetClaim(OAuthServer.GenerationClaim, generation);
         next.SetAccessTokenLifetime(accessLifetime);
         next.SetRefreshTokenLifetime(refreshLifetime);
@@ -296,7 +303,8 @@ public static class OAuthEndpoints
         return (form["client_id"].ToString(), form["client_secret"].ToString());
     }
 
-    private static ClaimsPrincipal Principal(string subject, Guid tenant, Guid app, Guid family, string kind, IReadOnlyList<string> scopes, string resource)
+    private static ClaimsPrincipal Principal(string subject, Guid tenant, Guid app, Guid family, string kind, IReadOnlyList<string> scopes, string resource,
+        string? thumbprint = null)
     {
         var identity = new ClaimsIdentity(OAuthServer.Scheme, Claims.Name, Claims.Role);
         identity.SetClaim(Claims.Subject, subject);
@@ -304,12 +312,21 @@ public static class OAuthEndpoints
         identity.SetClaim(OAuthServer.AppClaim, app.ToString());
         identity.SetClaim(OAuthServer.FamilyClaim, family.ToString());
         identity.SetClaim(OAuthServer.KindClaim, kind);
+        if (thumbprint is not null)
+        {
+            // The refresh token keeps the key thumbprint privately; the access token gets cnf.jkt as it is made (OAuthServer).
+            identity.SetClaim(DpopProofs.ThumbprintClaim, thumbprint);
+        }
         var principal = new ClaimsPrincipal(identity);
         principal.SetScopes(scopes);
         principal.SetResources(resource);
-        // The access token carries the tenant, app, principal, scopes and family (FR-006); the refresh generation stays
-        // inside the encrypted refresh token.
-        principal.SetDestinations(claim => claim.Type == OAuthServer.GenerationClaim ? [] : [Destinations.AccessToken]);
+        // The access token carries the tenant, app, principal, scopes and family (FR-006); the refresh generation and
+        // key thumbprint stay inside the encrypted refresh token.
+        principal.SetDestinations(claim => claim.Type switch
+        {
+            OAuthServer.GenerationClaim or DpopProofs.ThumbprintClaim => [],
+            _ => [Destinations.AccessToken],
+        });
         return principal;
     }
 

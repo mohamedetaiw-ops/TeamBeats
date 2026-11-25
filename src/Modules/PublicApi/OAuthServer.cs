@@ -38,6 +38,9 @@ public static class OAuthServer
     /// <summary>The credential a confidential client authenticated with, kept for the passthrough token endpoint.</summary>
     internal const string CredentialProperty = ".tb_credential";
 
+    /// <summary>The thumbprint of the key a token request proved it holds (DPoP, RFC 9449), kept for the token endpoint.</summary>
+    internal const string ThumbprintProperty = ".tb_jkt";
+
     public static IServiceCollection AddOAuthServer(this IServiceCollection services)
     {
         services.AddAuthentication();
@@ -86,6 +89,9 @@ public static class OAuthServer
                 .SetOrder(OpenIddictServerHandlers.EvaluateValidatedTokens.Descriptor.Order + 1));
             o.AddEventHandler<HandleJsonWebKeySetRequestContext>(b => b.UseInlineHandler(TenantJwks).SetOrder(int.MaxValue));
             o.AddEventHandler<HandleConfigurationRequestContext>(b => b.UseInlineHandler(RegistrationEndpoint).SetOrder(int.MaxValue));
+            o.AddEventHandler<ApplyTokenResponseContext>(b => b.UseInlineHandler(DpopTokenType).SetOrder(int.MinValue));
+            o.AddEventHandler<ProcessSignInContext>(b => b.UseInlineHandler(DpopConfirmation)
+                .SetOrder(OpenIddictServerHandlers.PrepareAccessTokenPrincipal.Descriptor.Order + 1));
             o.AddEventHandler<ProcessSignInContext>(b => b.UseInlineHandler(RefreshTokensForDelegatedApps)
                 .SetOrder(OpenIddictServerHandlers.EvaluateGeneratedTokens.Descriptor.Order + 1));
         });
@@ -111,10 +117,14 @@ public static class OAuthServer
         return default;
     }
 
-    /// <summary>The metadata names the registration endpoint only where the tenant turned dynamic registration on (FR-023).</summary>
+    /// <summary>
+    /// The metadata names the registration endpoint only where the tenant turned dynamic registration on (FR-023), and
+    /// the algorithms of DPoP proofs the server accepts (RFC 9449 section 5.1).
+    /// </summary>
     private static async ValueTask RegistrationEndpoint(HandleConfigurationRequestContext context)
     {
         var http = Http(context);
+        context.Metadata["dpop_signing_alg_values_supported"] = new OpenIddictParameter(System.Text.Json.JsonSerializer.SerializeToElement(ClientKeys.Algorithms));
         if ((await http.RequestServices.GetRequiredService<ApiSettings>().CurrentAsync(http.RequestAborted)).DynamicRegistration)
         {
             context.Metadata["registration_endpoint"] = Origin(http.Request) + "/oauth/register";
@@ -183,6 +193,30 @@ public static class OAuthServer
         foreach (var key in keys.ValidationKeys(HostTenant(context)))
         {
             context.Keys.Add(TenantKeys.PublicJwk(key));
+        }
+        return default;
+    }
+
+    /// <summary>
+    /// A DPoP-bound access token names its key as <c>cnf.jkt</c> (RFC 9449 section 6). It is added to the access token
+    /// principal OpenIddict prepared, as OpenIddict keeps the confirmation claim for its own certificate binding.
+    /// </summary>
+    private static ValueTask DpopConfirmation(ProcessSignInContext context)
+    {
+        if (context.AccessTokenPrincipal?.Identity is System.Security.Claims.ClaimsIdentity identity
+            && context.Transaction.Properties.TryGetValue(ThumbprintProperty, out var value) && value is string thumbprint)
+        {
+            identity.AddClaim(Claims.Confirmation, System.Text.Json.JsonSerializer.SerializeToElement(new Dictionary<string, string> { ["jkt"] = thumbprint }));
+        }
+        return default;
+    }
+
+    /// <summary>A token bound to a DPoP key is of type DPoP, so the client sends it with a proof (RFC 9449 section 5).</summary>
+    private static ValueTask DpopTokenType(ApplyTokenResponseContext context)
+    {
+        if (context.Response.AccessToken is not null && context.Transaction.Properties.ContainsKey(ThumbprintProperty))
+        {
+            context.Response.TokenType = DpopProofs.TokenType;
         }
         return default;
     }
@@ -259,9 +293,10 @@ internal sealed class AuthorizationRequestCheck(Apps apps, IServiceProvider serv
 /// <summary>
 /// Authenticates the client at the token endpoint (FR-004, FR-005): confidential apps with a live secret or a client
 /// assertion signed with a registered public key (private key JWT, never both), public ones with neither; client
-/// credentials only for application apps, codes and refresh tokens only for delegated ones.
+/// credentials only for application apps, codes and refresh tokens only for delegated ones; a DPoP proof when one is
+/// sent or the app requires it.
 /// </summary>
-internal sealed class TokenRequestCheck(Apps apps, IServiceProvider services) : IOpenIddictServerHandler<ValidateTokenRequestContext>
+internal sealed class TokenRequestCheck(Apps apps, DpopProofs dpop, IServiceProvider services) : IOpenIddictServerHandler<ValidateTokenRequestContext>
 {
     public async ValueTask HandleAsync(ValidateTokenRequestContext context)
     {
@@ -309,6 +344,18 @@ internal sealed class TokenRequestCheck(Apps apps, IServiceProvider services) : 
         {
             context.Reject(Errors.InvalidClient, "A public client has no credential.");
             return;
+        }
+
+        // A DPoP proof binds the tokens to the client's key (RFC 9449); an app that requires it gets no token without one.
+        var proof = DpopProofs.HeaderOf(http.Request);
+        if (proof is not null || app.RequireDpop)
+        {
+            if (await dpop.VerifyAsync(proof, HttpMethods.Post, DpopProofs.TargetOf(http.Request), null, ct) is not { } thumbprint)
+            {
+                context.Reject(DpopProofs.InvalidProof, proof is null ? "The client must send a DPoP proof." : "The DPoP proof is not valid.");
+                return;
+            }
+            context.Transaction.Properties[OAuthServer.ThumbprintProperty] = thumbprint;
         }
 
         var request = context.Request;

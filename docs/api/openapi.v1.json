@@ -33981,6 +33981,12 @@
               "string"
             ],
             "format": "int32"
+          },
+          "requireDpop": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },

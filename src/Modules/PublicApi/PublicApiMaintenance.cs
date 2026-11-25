@@ -51,6 +51,7 @@ public sealed class PublicApiMaintenance(IDbSession session, IAuthorizationProvi
             }
         }
         var cleared = await session.ExecAsync("delete from publicapi.client_assertion where expires_at < @now", new { now }, ct);
+        await session.ExecAsync("delete from publicapi.dpop_proof where expires_at < @now", new { now }, ct);
         // The call log keeps 90 days (section 6).
         var pruned = await calls.PruneAsync(now, ct);
         await idempotency.PruneAsync(now, ct);

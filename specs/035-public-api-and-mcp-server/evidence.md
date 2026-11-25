@@ -46,3 +46,12 @@ The spec stays Approved, not Implemented. Everything in its R2 scope is built: t
 | SC-004 no MCP write tool acts without a recorded confirmation | Met | `PublicMcpTests.A_write_tool_acts_only_once_the_employee_confirms_the_exact_parameters_in_TeamBeats`; the spec 034 unsafe action suite |
 | Open question: static API keys | Default kept | No static keys; client credentials with a secret or private key |
 | Cross-tenant, org boundary and package denial | Met | Every class above has a case for another tenant and for the package |
+
+## R3
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| Sender-constrained tokens (DPoP, RFC 9449): bound tokens, proofs checked for key, method, URL, time, token hash and one use | Met | `PublicApiDpopTests.A_token_bound_to_a_key_works_only_with_a_fresh_proof_of_that_key` |
+| App setting "require DPoP": no token without a proof, no call with an unbound token | Met | `PublicApiDpopTests.An_app_that_requires_dpop_gets_no_token_and_no_call_without_a_proof` |
+| Bound refresh tokens and the MCP server | Met | `PublicApiDpopTests.Refresh_tokens_and_mcp_calls_stay_on_the_key_they_were_bound_to` |
+| Mutual TLS bound tokens | Not offered | DPoP only (R3 plan) |
