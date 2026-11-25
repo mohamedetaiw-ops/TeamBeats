@@ -136,9 +136,10 @@ jobs:
       - name: Playwright
         run: npx playwright test --project=chromium --shard=${{ matrix.shard }}/3
         working-directory: tests/Acceptance
-      # Uploaded only on failure, and kept briefly, to stay inside the artifact storage budget.
+      # Uploaded only on failure or a timeout (so changed baselines can be taken from it), and kept briefly, to stay
+      # inside the artifact storage budget.
       - name: Playwright report
-        if: failure()
+        if: failure() || cancelled()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report-${{ matrix.shard }}

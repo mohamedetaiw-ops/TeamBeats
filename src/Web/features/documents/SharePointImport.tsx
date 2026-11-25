@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
-import { SelectField } from "@/components/ui/FormField";
+import { SelectField, FormPanel } from "@/components/ui/FormField";
 import { Switch } from "@/components/ui/Switch";
 import { problemMessages } from "@/lib/notifications/types";
 import {
@@ -174,8 +174,7 @@ export function SharePointImportStart({
   ];
 
   return (
-    <form
-      className="documents-card"
+    <FormPanel as="form"
       noValidate
       aria-labelledby="sharepoint-import-title"
       onSubmit={(e) => {
@@ -292,6 +291,6 @@ export function SharePointImportStart({
       >
         {t("start")}
       </Button>
-    </form>
+    </FormPanel>
   );
 }

@@ -7,7 +7,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { ConfirmAction } from "@/components/ui/ConfirmAction";
-import { FormField, SelectField } from "@/components/ui/FormField";
+import { FormField, SelectField, FormPanel } from "@/components/ui/FormField";
 import { problemMessages } from "@/lib/notifications/types";
 import { pickName, siteTemplates, type ContentAudience, type SiteView } from "@/lib/content/types";
 import type { OrgUnit } from "@/lib/experience/builder-types";
@@ -249,7 +249,7 @@ export function SiteSettings({ site, units, locales }: { site: SiteView; units: 
         </form>
       </Widget>
       {site.isDefault ? null : (
-        <section className="content-card" aria-label={archived ? t("restore") : t("archive")}>
+        <FormPanel as="section" aria-label={archived ? t("restore") : t("archive")}>
           {archived ? (
             <Button busy={busy} busyLabel={t("saving")} onClick={() => void send(`/api/v1/content/sites/${encodeURIComponent(site.id)}/restore`)}>
               {t("restore")}
@@ -263,7 +263,7 @@ export function SiteSettings({ site, units, locales }: { site: SiteView; units: 
               onConfirm={() => send(`/api/v1/content/sites/${encodeURIComponent(site.id)}/archive`)}
             />
           )}
-        </section>
+        </FormPanel>
       )}
     </>
   );

@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import "./documents.css";
 import { Widget } from "@/components/ui/Widget";
+import { FormPanel } from "@/components/ui/FormField";
 
 const base = (id: string) => `/api/v1/documents/${encodeURIComponent(id)}`;
 
@@ -467,8 +468,7 @@ export function DocumentPanel({
       ) : null}
 
       {editing && office?.editUrl ? (
-        <form
-          className="documents-card"
+        <FormPanel as="form"
           onSubmit={officeCheckIn}
           noValidate
           aria-labelledby={`${ids}-office-title`}
@@ -523,11 +523,11 @@ export function DocumentPanel({
               {t("officeDiscard")}
             </Button>
           </div>
-        </form>
+        </FormPanel>
       ) : null}
 
       {mine && !editing ? (
-        <form className="documents-card" onSubmit={checkIn} noValidate>
+        <FormPanel as="form" onSubmit={checkIn} noValidate>
           <h2>{t("checkInTitle")}</h2>
           <div className="field">
             <label htmlFor={`${ids}-file`}>{t("newFile")}</label>
@@ -576,7 +576,7 @@ export function DocumentPanel({
               {t("discard")}
             </Button>
           </div>
-        </form>
+        </FormPanel>
       ) : null}
 
       {controlled &&
@@ -586,7 +586,7 @@ export function DocumentPanel({
       controlled.release === "none" &&
       doc.current &&
       doc.current.minor > 0 ? (
-        <form className="documents-card" onSubmit={release} noValidate>
+        <FormPanel as="form" onSubmit={release} noValidate>
           <h2>{t("releaseTitle")}</h2>
           <div className="field">
             <label htmlFor={`${ids}-effective`}>{t("effectiveOn")}</label>
@@ -614,7 +614,7 @@ export function DocumentPanel({
           >
             {t("submitRelease")}
           </Button>
-        </form>
+        </FormPanel>
       ) : null}
 
       <Widget title={t("versions")}>
