@@ -273,4 +273,17 @@ public interface ISubscriptionProvisioning
 
     /// <summary>Subscribes the current-context tenant to the latest published version of the package.</summary>
     Task AssignInitialPackageAsync(string packageKey, CancellationToken ct = default);
+
+    /// <summary>
+    /// The developer sandbox limits of the current-context tenant (spec 035 R3, T024): API calls and apps lowered until the
+    /// sandbox ends, as contract overrides, so they lapse on their own.
+    /// </summary>
+    Task ApplySandboxLimitsAsync(DateTimeOffset until, CancellationToken ct = default);
+}
+
+/// <summary>The limits of a developer sandbox tenant (spec 035 R3 plan).</summary>
+public static class SandboxLimits
+{
+    public const long MonthlyCalls = 10_000;
+    public const long MaxApps = 5;
 }

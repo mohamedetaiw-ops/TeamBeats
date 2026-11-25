@@ -46,6 +46,7 @@ public sealed class WorkerProgram
         builder.Services.AddHostedService<TeamBeats.Modules.Content.ContentScheduleWorker>();
         builder.Services.AddHostedService<TeamBeats.Modules.Experience.Pages.PageScheduleWorker>();
         builder.Services.AddHostedService<TeamBeats.Modules.Tenancy.Domains.DomainCheckWorker>();
+        builder.Services.AddHostedService<TeamBeats.Modules.Tenancy.SandboxWorker>();
         builder.Services.AddHostedService<TeamBeats.Modules.Documents.DocumentMaintenanceWorker>();
         builder.Services.AddHostedService<TeamBeats.Modules.Policies.PolicyMaintenanceWorker>();
         builder.Services.AddHostedService<TeamBeats.Modules.Learning.LearningMaintenanceWorker>();

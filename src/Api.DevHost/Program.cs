@@ -69,6 +69,10 @@ public sealed class DevHostProgram
         {
             builder.Services.AddHostedService<TeamBeats.Modules.Tenancy.Domains.DomainCheckWorker>();
         }
+        if (builder.Configuration.GetValue<bool>(TeamBeats.Modules.Tenancy.SandboxWorker.InProcessKey))
+        {
+            builder.Services.AddHostedService<TeamBeats.Modules.Tenancy.SandboxWorker>();
+        }
         if (builder.Configuration.GetValue<bool>(TeamBeats.Modules.Experience.Pages.PageScheduleWorker.InProcessKey))
         {
             builder.Services.AddHostedService<TeamBeats.Modules.Experience.Pages.PageScheduleWorker>();

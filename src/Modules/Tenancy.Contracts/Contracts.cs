@@ -125,6 +125,9 @@ public interface ITenantSettingsReader
 
     /// <summary>The tenant's hosting region (spec 026 FR-008); a tenant created before regions has the platform default.</summary>
     Task<string> GetRegionAsync(CancellationToken ct = default);
+
+    /// <summary>When the tenant, a developer sandbox, is suspended (spec 035 R3); null for any other tenant.</summary>
+    Task<DateTimeOffset?> GetSandboxUntilAsync(CancellationToken ct = default);
 }
 
 /// <summary>The hosting regions this installation serves (spec 026 FR-008) and the default one.</summary>

@@ -7,6 +7,10 @@ namespace TeamBeats.Modules.Tenancy;
 /// <summary>Business and validation rules from spec 001 section 6.</summary>
 public static partial class TenantRules
 {
+    /// <summary>The longest a developer sandbox lasts, and how long it stays suspended before it is closed (spec 035 R3).</summary>
+    public const int MaxSandboxDays = 30;
+    public const int SandboxGraceDays = 14;
+
     public static readonly IReadOnlySet<string> ReservedKeys = new HashSet<string>(StringComparer.Ordinal)
     {
         "admin", "api", "www", "platform", "app", "auth", "login", "signin", "static", "assets", "cdn", "mail", "smtp",

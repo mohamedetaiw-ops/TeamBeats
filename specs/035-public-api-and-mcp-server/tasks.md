@@ -40,6 +40,6 @@ Depends on 003, 004, 005, 006, 014, 015, 016, 017 (outbound webhook runtime), 02
 - [x] T023 Admin APIs beside SCIM: read-only role administration for delegated apps (FR-012), scope behind admin consent; tests for scope narrowing, org boundary and cross-tenant
 
 ## R3 Phase 8: sandbox, gallery and client confirmation
-- [ ] T024 Developer sandbox tenant with demo data, limits and expiry
+- [x] T024 Developer sandbox tenant with demo data, limits and expiry
 - [ ] T025 Public app gallery: platform-published apps added with admin consent
 - [ ] T026 Confirmation inside verified AI clients through MCP elicitation, opt-in per tenant
