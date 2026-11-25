@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useFormatter, useTranslations } from "next-intl";
 import { Alert } from "@/components/ui/Alert";
@@ -8,7 +9,8 @@ import { Button } from "@/components/ui/Button";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { FormField, TextAreaField } from "@/components/ui/FormField";
 import { IconButton } from "@/components/ui/IconButton";
-import { MonthView, type CalendarEvent } from "@/components/ui/CalendarViews";
+import { AgendaRow, CalendarHeader, DayPanel, RangeMonth, type MonthBar, type Swatch } from "@/components/ui/CalendarParts";
+import type { IconName } from "@/components/ui/Icon";
 import { addDays } from "@/components/ui/dates";
 import { call, send, spaceCalendarHref, spacesApi, taskHref, type SpaceAvailability, type SpaceCalendarData, type SpaceEvent } from "@/lib/spaces";
 import "./spaces.css";
@@ -27,6 +29,14 @@ function days(start: string, end: string) {
   const list: string[] = [];
   for (let d = start; d < end && list.length < 62; d = addDays(d, 1)) list.push(d);
   return list;
+}
+
+type DayItem = { id: string; swatch: Swatch; icon: IconName; layer: "event" | "milestone" | "task" | "away"; title: string; time: string | null; href?: string };
+
+/** The month after or before a "YYYY-MM" month. */
+function shiftMonth(month: string, by: number) {
+  const [y, m] = month.split("-").map(Number) as [number, number];
+  return new Date(Date.UTC(y, m - 1 + by, 1)).toISOString().slice(0, 7);
 }
 
 /**
@@ -50,24 +60,44 @@ export function TeamCalendar({ spaceId, initial, today }: { spaceId: string; ini
   const [busyDay, setBusyDay] = useState(today);
   const [availability, setAvailability] = useState<SpaceAvailability | null>(null);
   const [loading, setLoading] = useState(false);
+  const [panelDay, setPanelDay] = useState<string | null>(null);
   const zone = data.timeZone;
+  const month = data.from.slice(0, 7);
 
-  const events = useMemo<CalendarEvent[]>(() => {
-    const list: CalendarEvent[] = [];
+  // Multi-day events and leave run as bars across the weeks (DLS-072); single-day items are markers named in the cell,
+  // and every item of a day is a row in the day panel (DLS-071, DLS-073).
+  const { bars, markers, named, byDay } = useMemo(() => {
+    const bars: MonthBar[] = [];
+    const markers: Record<string, Swatch[]> = {};
+    const named: Record<string, { id: string; label: string; swatch: Swatch }[]> = {};
+    const byDay: Record<string, DayItem[]> = {};
+    const add = (day: string, item: DayItem, marker: boolean) => {
+      (byDay[day] ??= []).push(item);
+      if (marker) {
+        (markers[day] ??= []).push(item.swatch);
+        (named[day] ??= []).push({ id: item.id, label: item.title, swatch: item.swatch });
+      }
+    };
     for (const e of data.events) {
       const from = local(e.startsAt, zone);
       const to = local(e.endsAt, zone);
       const spans = days(from.day, addDays(to.day, 1));
+      const multi = spans.length > 1;
+      if (multi) bars.push({ id: `e:${e.id}`, start: from.day, end: addDays(to.day, 1), label: e.title, swatch: 1, kind: "event" });
       for (const day of spans) {
-        list.push({ id: `${e.id}:${day}`, title: e.title, day, swatch: 1, ...(e.allDay || spans.length > 1 ? {} : { start: from.time, end: to.time }) });
+        add(day, { id: `e:${e.id}:${day}`, swatch: 1, icon: "calendar", layer: "event", title: e.title, time: e.allDay || multi ? null : t("timeRange", { start: from.time, end: to.time }) }, !multi);
       }
     }
-    for (const m of data.milestones) list.push({ id: `m:${m.id}`, title: t("milestoneItem", { name: m.name }), day: m.dueOn, swatch: 3 });
-    for (const task of data.tasks) list.push({ id: `t:${task.id}`, title: t("dueItem", { title: task.title }), day: task.dueOn, swatch: 5, href: taskHref(spaceId, task.id) });
-    for (const a of data.away) {
-      for (const day of days(a.start, a.end)) list.push({ id: `a:${a.person.userId}:${day}`, title: t("awayItem", { name: a.person.displayName }), day, swatch: 7 });
+    for (const m of data.milestones) add(m.dueOn, { id: `m:${m.id}`, swatch: 3, icon: "star", layer: "milestone", title: t("milestoneItem", { name: m.name }), time: null }, true);
+    for (const task of data.tasks) {
+      add(task.dueOn, { id: `t:${task.id}`, swatch: 5, icon: "tasks", layer: "task", title: t("dueItem", { title: task.title }), time: null, href: taskHref(spaceId, task.id) }, true);
     }
-    return list;
+    for (const a of data.away) {
+      const name = t("awayItem", { name: a.person.displayName });
+      bars.push({ id: `a:${a.person.userId}:${a.start}`, start: a.start, end: a.end, label: name, swatch: 7, kind: "leave" });
+      for (const day of days(a.start, a.end)) add(day, { id: `a:${a.person.userId}:${day}`, swatch: 7, icon: "leave", layer: "away", title: name, time: null }, false);
+    }
+    return { bars, markers, named, byDay };
   }, [data, zone, spaceId, t]);
 
   async function addEvent() {
@@ -121,10 +151,45 @@ export function TeamCalendar({ spaceId, initial, today }: { spaceId: string; ini
           {notice}
         </p>
       ) : null}
-      <section className="spaces-section" aria-label={t("monthLabel")}>
-        <MonthView month={data.from} today={today} events={events} onMonthChange={(month) => router.push(spaceCalendarHref(spaceId, month.slice(0, 7)))} />
+      <Widget
+        title={t("monthLabel")}
+        head={
+          <CalendarHeader
+            title={t("monthLabel")}
+            period={format.dateTime(new Date(`${data.from}T00:00`), { month: "long", year: "numeric" })}
+            onPrevious={() => router.push(spaceCalendarHref(spaceId, shiftMonth(month, -1)))}
+            onToday={() => router.push(spaceCalendarHref(spaceId))}
+            onNext={() => router.push(spaceCalendarHref(spaceId, shiftMonth(month, 1)))}
+            previousLabel={t("previousMonth")}
+            nextLabel={t("nextMonth")}
+            todayLabel={t("thisMonth")}
+          />
+        }
+      >
+        <div className="spaces-month" data-panel={panelDay ? "open" : undefined}>
+          <RangeMonth month={data.from} today={today} selected={panelDay} bars={bars} markers={markers} items={named} onSelect={(d) => setPanelDay(d)} countLabel={(n) => t("itemCount", { count: n })} />
+          <DayPanel open={panelDay !== null} onClose={() => setPanelDay(null)} title={panelDay ? format.dateTime(new Date(`${panelDay}T00:00`), { dateStyle: "full" }) : ""}>
+            {panelDay && (byDay[panelDay]?.length ?? 0) > 0 ? (
+              <ul className="ui-cal-agenda" aria-label={t("dayItems")}>
+                {byDay[panelDay]!.map((i) => (
+                  <AgendaRow
+                    key={i.id}
+                    swatch={i.swatch}
+                    icon={i.icon}
+                    layerLabel={t(`layer.${i.layer}`)}
+                    time={i.time ?? t("allDay")}
+                    title={i.title}
+                    primary={i.href ? <Link href={i.href} aria-label={t("openTaskNamed", { title: i.title })}>{t("openTask")}</Link> : undefined}
+                  />
+                ))}
+              </ul>
+            ) : (
+              <p className="spaces-meta">{t("nothing")}</p>
+            )}
+          </DayPanel>
+        </div>
         <p className="spaces-meta">{t("legend")}</p>
-      </section>
+      </Widget>
 
       <div className="spaces-grid">
         <Widget title={t("eventsTitle")}>

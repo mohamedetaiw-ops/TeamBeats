@@ -15099,7 +15099,22 @@
         "tentative": "مبدئي",
         "oof": "خارج المكتب",
         "working_elsewhere": "يعمل من مكان آخر"
-      }
+      },
+      "previousMonth": "الشهر السابق",
+      "nextMonth": "الشهر التالي",
+      "thisMonth": "هذا الشهر",
+      "timeRange": "{start} إلى {end}",
+      "itemCount": "{count, plural, =0 {لا شيء مخطط} one {# عنصر} two {# عنصران} few {# عناصر} many {# عنصرًا} other {# عنصر}}",
+      "dayItems": "عناصر هذا اليوم",
+      "nothing": "لا شيء في هذا اليوم.",
+      "openTask": "فتح المهمة",
+      "layer": {
+        "event": "فعالية",
+        "milestone": "مرحلة",
+        "task": "مهمة مستحقة",
+        "away": "غائب"
+      },
+      "openTaskNamed": "فتح المهمة {title}"
     },
     "guests": {
       "title": "الضيوف",

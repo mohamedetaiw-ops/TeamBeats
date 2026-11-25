@@ -197,3 +197,17 @@ fieldset.spaces-card legend {
   padding-inline: var(--tb-space-xs);
   font-weight: var(--tb-font-weight-semibold);
 }
+
+/* The month and its day panel (spec 036 T037a): the panel sits beside the month on wide screens. */
+.spaces-month {
+  display: grid;
+  gap: var(--tb-space-md);
+  min-inline-size: 0;
+}
+
+@media (width >= 56.25rem) {
+  .spaces-month[data-panel="open"] {
+    grid-template-columns: minmax(0, 1fr) 22rem;
+    align-items: start;
+  }
+}
