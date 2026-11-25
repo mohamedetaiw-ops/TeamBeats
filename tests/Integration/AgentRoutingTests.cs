@@ -228,4 +228,59 @@ public sealed class AgentRoutingTests(TenantWorld world)
         Assert.Equal("not_found", await ProblemAsync(other["emp"].Client.PostAsJsonAsync($"{Agents}/{otherAgent}/runs",
             new { message = "Explain", itemSource = "content", itemId = item }), HttpStatusCode.NotFound));
     }
+
+    [Fact]
+    public async Task Contextual_actions_follow_the_tenant_rule_per_kind_of_item_in_the_list_and_at_run_time()
+    {
+        var t = await FreshAsync();
+        var first = await PublishedAsync(t, "enterprise_knowledge", ["knowledge.search"], "L0");
+        var second = await PublishedAsync(t, "hr_assistant", ["knowledge.search"], "L2");
+        var variants = new Dictionary<string, object>
+        {
+            ["en"] = new { title = "Parking policy", body = new { blocks = new object[] { new { type = "paragraph", children = new object[] { new { text = "Visitors park on level two." } } } } } },
+        };
+        var item = (await OkAsync(t["pia"].Client.PostAsJsonAsync("/api/v1/content/items", new { type = "news", variants }), HttpStatusCode.Created)).GetProperty("id").GetGuid();
+        await OkAsync(t["pia"].Client.PostAsJsonAsync($"/api/v1/content/items/{item}/publish", new { }));
+        await DispatchAsync();
+
+        // Without a rule every kind offers every agent the person may use, as before; an unknown kind offers none.
+        Assert.Equal(2, (await OkAsync(t["emp"].Client.GetAsync($"{Agents}/available?kind=content"))).GetProperty("agents").GetArrayLength());
+        Assert.Equal(0, (await OkAsync(t["emp"].Client.GetAsync($"{Agents}/available?kind=payslip"))).GetProperty("agents").GetArrayLength());
+
+        // Content offers only the first agent, documents offer none.
+        var current = await OkAsync(t["aip"].Client.GetAsync($"{Agents}/policy"));
+        var policy = JsonSerializer.Deserialize<Dictionary<string, object?>>(current.GetProperty("policy").GetRawText())!;
+        policy["contextualActions"] = new Dictionary<string, object>
+        {
+            ["content"] = new { enabled = true, agents = new[] { first } },
+            ["document"] = new { enabled = false },
+        };
+        var saved = await OkAsync(t["aip"].Client.PutAsJsonAsync($"{Agents}/policy", new { version = current.GetProperty("version").GetInt32(), policy }));
+        Assert.False(saved.GetProperty("policy").GetProperty("contextualActions").GetProperty("document").GetProperty("enabled").GetBoolean());
+        var offered = (await OkAsync(t["emp"].Client.GetAsync($"{Agents}/available?kind=content"))).GetProperty("agents");
+        Assert.Equal(first, Assert.Single(offered.EnumerateArray()).GetProperty("id").GetGuid());
+        Assert.Equal(0, (await OkAsync(t["emp"].Client.GetAsync($"{Agents}/available?kind=document"))).GetProperty("agents").GetArrayLength());
+        Assert.Equal(2, (await OkAsync(t["emp"].Client.GetAsync($"{Agents}/available?kind=policy"))).GetProperty("agents").GetArrayLength());
+        Assert.Equal(2, (await OkAsync(t["emp"].Client.GetAsync($"{Agents}/available"))).GetProperty("agents").GetArrayLength());
+
+        // The runtime checks the rule on the kind Search holds, so a typed request with the other agent is refused.
+        Assert.Equal(RunStatuses.Completed, (await OkAsync(t["emp"].Client.PostAsJsonAsync($"{Agents}/{first}/runs",
+            new { message = "Explain this", itemSource = "content", itemId = item }))).GetProperty("status").GetString());
+        Assert.Equal("validation.agent_run.contextual_off", await ProblemAsync(t["emp"].Client.PostAsJsonAsync($"{Agents}/{second}/runs",
+            new { message = "Explain this", itemSource = "content", itemId = item }), HttpStatusCode.BadRequest));
+        // Without an item the second agent still answers.
+        Assert.Equal(RunStatuses.Completed, (await OkAsync(t["emp"].Client.PostAsJsonAsync($"{Agents}/{second}/runs",
+            new { message = "Where do visitors park?" }))).GetProperty("status").GetString());
+
+        // An unknown kind or a repeated agent is refused, and only the AI policy administrator changes the rule.
+        current = await OkAsync(t["aip"].Client.GetAsync($"{Agents}/policy"));
+        policy = JsonSerializer.Deserialize<Dictionary<string, object?>>(current.GetProperty("policy").GetRawText())!;
+        policy["contextualActions"] = new Dictionary<string, object> { ["payslip"] = new { enabled = true } };
+        Assert.Equal("validation.agent_policy.contextual_actions", await ProblemAsync(t["aip"].Client.PutAsJsonAsync($"{Agents}/policy", new { version = current.GetProperty("version").GetInt32(), policy }),
+            HttpStatusCode.BadRequest));
+        policy["contextualActions"] = new Dictionary<string, object> { ["content"] = new { enabled = true, agents = new[] { first, first } } };
+        Assert.Equal("validation.agent_policy.contextual_actions", await ProblemAsync(t["aip"].Client.PutAsJsonAsync($"{Agents}/policy", new { version = current.GetProperty("version").GetInt32(), policy }),
+            HttpStatusCode.BadRequest));
+        await OkAsync(t["sara"].Client.PutAsJsonAsync($"{Agents}/policy", new { version = current.GetProperty("version").GetInt32(), policy }), HttpStatusCode.Forbidden);
+    }
 }

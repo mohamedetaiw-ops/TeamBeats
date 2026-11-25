@@ -338,7 +338,9 @@ public static class AgentsModule
         });
 
         // Routing (020 T012, 014 T004): the agents the person may use, and a routing decision for a message.
-        agents.MapGet("/available", async (AgentRouter router, CancellationToken ct) => Results.Ok(new { agents = await router.AvailableAsync(ct) }));
+        // With ?kind= the list is the one "Ask an agent" offers on that kind of item (spec 020 FR-012).
+        agents.MapGet("/available", async (string? kind, AgentRouter router, CancellationToken ct) =>
+            Results.Ok(new { agents = kind is null ? await router.AvailableAsync(ct) : await router.AvailableForAsync(kind, ct) }));
 
         agents.MapPost("/route", async (RouteRequest request, AgentRouter router, IDbSession session, CancellationToken ct) =>
         {

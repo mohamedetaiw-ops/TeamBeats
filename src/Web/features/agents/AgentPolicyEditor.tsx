@@ -8,12 +8,16 @@ import { problemMessages } from "@/lib/notifications/types";
 import {
   AUTONOMY_BUILT,
   CLASSIFICATIONS,
+  CONTEXTUAL_KINDS,
   EXTERNAL_CLASSIFICATIONS,
   type AgentPolicy,
+  type AgentSummary,
+  type ContextualActionRule,
   type AgentPolicyView,
   type ExternalAiPolicy,
   type ToolView,
   type VerifiedAiClient,
+  pickText,
   tenantToolTitle,
 } from "@/lib/agents/types";
 
@@ -27,7 +31,17 @@ const RISK_CLASSES = ["low", "medium", "high"] as const;
  * agents may hold and stricter approval rules per tool, and the per-run limits. Saving suspends published agents that
  * break the new policy; the API checks every value and the person's permission.
  */
-export function AgentPolicyEditor({ initial, tools, verified = [] }: { initial: AgentPolicyView; tools: ToolView[]; verified?: VerifiedAiClient[] }) {
+export function AgentPolicyEditor({
+  initial,
+  tools,
+  verified = [],
+  agents = [],
+}: {
+  initial: AgentPolicyView;
+  tools: ToolView[];
+  verified?: VerifiedAiClient[];
+  agents?: AgentSummary[];
+}) {
   const t = useTranslations("agents.policy");
   const ts = useTranslations("agents");
   const locale = useLocale();
@@ -46,6 +60,8 @@ export function AgentPolicyEditor({ initial, tools, verified = [] }: { initial: 
   const [newClient, setNewClient] = useState("");
   const addable = verified.filter((v) => !clients.some((c) => c.clientId === v.clientId));
   const [pick, setPick] = useState("");
+  const contextual = (kind: string): ContextualActionRule => policy.contextualActions?.[kind] ?? { enabled: true, agents: null };
+  const setContextual = (kind: string, rule: ContextualActionRule) => set({ contextualActions: { ...(policy.contextualActions ?? {}), [kind]: rule } });
   const addClient = (clientId: string) => setExternal({ clients: [...clients, { clientId, maxClassification: "internal" }] });
 
   async function save() {
@@ -159,6 +175,48 @@ export function AgentPolicyEditor({ initial, tools, verified = [] }: { initial: 
           {t("persistentMemory")}
         </label>
         <p className="field-hint">{t("persistentMemoryHint")}</p>
+      </fieldset>
+      <fieldset className="agents-checks" data-testid="agent-policy-contextual">
+        <legend>{t("contextual.title")}</legend>
+        <p className="field-hint">{t("contextual.hint")}</p>
+        {CONTEXTUAL_KINDS.map((kind) => {
+          const rule = contextual(kind);
+          const label = t(`contextual.kinds.${kind}`);
+          return (
+            <div key={kind} className="agents-checks">
+              <label>
+                <input type="checkbox" checked={rule.enabled} onChange={(e) => setContextual(kind, { ...rule, enabled: e.target.checked })} />
+                {t("contextual.show", { kind: label })}
+              </label>
+              {rule.enabled ? (
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={rule.agents == null}
+                    onChange={(e) => setContextual(kind, { ...rule, agents: e.target.checked ? null : agents.map((a) => a.id) })}
+                  />
+                  {t("contextual.anyAgent", { kind: label })}
+                </label>
+              ) : null}
+              {rule.enabled && rule.agents != null
+                ? agents.map((a) => {
+                    const chosen = rule.agents ?? [];
+                    const name = pickText(a.name, locale);
+                    return (
+                      <label key={a.id}>
+                        <input
+                          type="checkbox"
+                          checked={chosen.includes(a.id)}
+                          onChange={(e) => setContextual(kind, { ...rule, agents: e.target.checked ? [...chosen, a.id] : chosen.filter((x) => x !== a.id) })}
+                        />
+                        <bdi>{t("contextual.offer", { agent: name, kind: label })}</bdi>
+                      </label>
+                    );
+                  })
+                : null}
+            </div>
+          );
+        })}
       </fieldset>
       <fieldset className="agents-checks">
         <legend>{t("tools")}</legend>

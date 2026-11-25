@@ -26099,6 +26099,15 @@
         "tags": [
           "Agents"
         ],
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -33027,6 +33036,15 @@
             "additionalProperties": {
               "$ref": "#/components/schemas/ToolApprover"
             }
+          },
+          "contextualActions": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ContextualActionRule"
+            }
           }
         }
       },
@@ -36090,6 +36108,25 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "ContextualActionRule": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "agents": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         }
       },

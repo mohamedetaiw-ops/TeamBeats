@@ -1932,6 +1932,13 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - Tool success counts executed, confirmed and approved calls; failure counts refused ones (by the gateway or at execution). Calls in test mode or waiting for confirmation count as calls only.
 - Everything stays in the Agents module and the AI Gateway cost contract; the counts name no person. Test panel and evaluation runs are left out as before.
 
+## Spec 020 R2 slice 8: contextual actions per kind of item (FR-012)
+
+- The spec says contextual actions are configurable per content type but not who configures them or how. Default: the tenant agent policy gains `contextualActions`, one rule per Search kind (`content`, `knowledge`, `policy`, `document`) with `enabled` and an optional list of up to 20 agents. A kind with no rule shows "Ask an agent" with any agent the person may use, as before. An unknown kind, more than 20 agents, a repeated agent or an empty id is `validation.agent_policy.contextual_actions`.
+- `GET /agents/available?kind=` lists only the agents the rule allows for that kind; an unknown kind or a rule that is off lists none, so the link does not show. The item pages pass their kind (news and pages pass `content`, knowledge articles `knowledge`).
+- The rule is checked again at run time on the server: the kind comes from what Search holds for the item, not from the link, and a run on an item whose kind does not allow the agent is `validation.agent_run.contextual_off`.
+- The editor is on Agents > Policy and offers only published agents. Unit policies do not narrow this rule yet; the tenant rule applies everywhere.
+
 ## Spec 027 R2 slice 1: L3 governed execution with approvals (T015, US1 L3, US4, FR-010)
 
 - L3 is built. The default policy still caps autonomy at L2. The AI Policy Administrator raises it, and raising it to L3 needs `ai.agents.write_tools` (Workplace Plus and above); the gateway checks the same key at run time for every L3 call, so a downgraded package refuses them (`tool.not_in_package`).

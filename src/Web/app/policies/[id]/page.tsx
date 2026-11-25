@@ -85,7 +85,7 @@ export default async function PolicyPage({ params, searchParams }: { params: Pro
             </Link>
           </p>
         ) : null}
-        {reading?.ok ? <AskAgentLink source="policies" itemId={p.id} /> : null}
+        {reading?.ok ? <AskAgentLink source="policies" kind="policy" itemId={p.id} /> : null}
         {p.scheduled ? <p className="policies-banner">{tm("scheduled", { number: p.scheduled.number, date: format.dateTime(new Date(p.scheduled.effectiveFrom), { dateStyle: "long" }) })}</p> : null}
         {reading?.ok ? <ViewBeacon source="policies" itemId={p.id} /> : null}
         {reading?.ok ? (

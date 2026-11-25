@@ -52,6 +52,8 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
     });
 
     test("design, review, use and switch off an agent", async ({ page }, testInfo) => {
+      // One journey through the whole agent lifecycle, the gate wait and the policy page; it runs close to a minute in each language.
+      test.setTimeout(150_000);
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.goto(`${hostOrigin(tenant.key)}/admin`);
       await page.getByRole("navigation", { name: m("admin.navLabel") }).getByRole("link", { name: m("admin.nav.agents"), exact: true }).click();
@@ -139,6 +141,16 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.getByLabel(m("agents.use.message"), { exact: true }).fill(locale === "ar" ? "لخص هذا الخبر" : "Summarize this news");
       await page.getByRole("button", { name: m("agents.use.send") }).click();
       await expect(page.getByTestId("agent-answer")).toBeVisible();
+
+      // The tenant can turn the contextual action off for news and pages; the link then goes from the item (020 FR-012).
+      await page.goto(`${hostOrigin(tenant.key)}/admin/agents/policy`);
+      const contextual = page.getByTestId("agent-policy-contextual");
+      await contextual.getByLabel(m("agents.policy.contextual.show", { kind: m("agents.policy.contextual.kinds.content") }), { exact: true }).uncheck();
+      await page.getByRole("button", { name: m("agents.policy.save") }).click();
+      await expect(page.getByText(m("agents.policy.saved"))).toBeVisible();
+      await page.goto(`${hostOrigin(tenant.key)}/content/read/${news}`);
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+      await expect(page.getByRole("link", { name: m("agents.use.ask") })).toHaveCount(0);
 
       // The runs list holds the test run and the two real ones; the timeline shows the steps.
       await page.goto(`${hostOrigin(tenant.key)}/admin/agents/runs`);

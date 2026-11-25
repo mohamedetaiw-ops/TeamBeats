@@ -61,7 +61,7 @@ export default async function ReadPage({ params }: { params: Promise<{ id: strin
             </p>
             <div className="content-ai">
               <ItemActions source="content" itemId={v.id} itemLocale={v.locale} uiLocale={locale} />
-              <AskAgentLink source="content" itemId={v.id} />
+              <AskAgentLink source="content" kind={v.type === "knowledge" ? "knowledge" : "content"} itemId={v.id} />
             </div>
           </header>
           {v.fallback ? (

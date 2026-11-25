@@ -2621,6 +2621,8 @@
   "notifications.template.agents.action_expired.title": "تم إلغاء إجراء وكيلك",
   "notifications.template.agents.action_expired.body": "تم إلغاء الإجراء الذي طلبه {agent} نيابة عنك لأن أحدًا لم يوافق عليه في الوقت المحدد أو لأن القواعد تغيرت. لم يُنفّذ شيء.",
   "validation.agent_policy.approver": "حدد معتمدين لأداة مسجلة: صلاحية معروفة أو ما يصل إلى 20 شخصًا أو كليهما.",
+  "validation.agent_policy.contextual_actions": "اضبط الإجراءات السياقية للمحتوى أو المعرفة أو السياسات أو المستندات فقط، وبما لا يزيد على 20 وكيلًا مختلفًا لكل منها.",
+  "validation.agent_run.contextual_off": "لا تُعرض الوكلاء لهذا النوع من العناصر، أو لا يُعرض هذا الوكيل. افتح الوكيل من صفحة الوكلاء بدلًا من ذلك.",
   "validation.people.photo_size": "اختر صورة لا يتجاوز حجمها 2 ميغابايت ولا يتجاوز كل جانب منها 8000 بكسل.",
   "validation.people.photo_type": "اختر صورة بصيغة PNG أو JPEG.",
   "conflict.people.photo_processing": "تعذرت معالجة صورتك الآن. لم يتغير ملفك الشخصي؛ حاول مرة أخرى لاحقا.",

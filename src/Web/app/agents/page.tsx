@@ -10,8 +10,8 @@ import { Badge } from "@/components/ui/Badge";
 import "@/features/agents/agents.css";
 
 /** The agents a person may use (spec 020 US6, US7): published agents whose audience holds them, from the API. From a contextual action it passes the item on to the agent the person picks. */
-export default async function MyAgentsPage({ searchParams }: { searchParams: Promise<{ itemSource?: string; itemId?: string }> }) {
-  const { itemSource, itemId } = await searchParams;
+export default async function MyAgentsPage({ searchParams }: { searchParams: Promise<{ itemSource?: string; itemId?: string; kind?: string }> }) {
+  const { itemSource, itemId, kind } = await searchParams;
   // A contextual action passes the item on to the chosen agent; its page checks the values again.
   const forward = itemSource && itemId ? `?${new URLSearchParams({ itemSource, itemId }).toString()}` : "";
   const me = await apiGet<Me>("/api/v1/me");
@@ -20,7 +20,8 @@ export default async function MyAgentsPage({ searchParams }: { searchParams: Pro
   const tm = await getTranslations("agents.marketplace");
   const locale = await getLocale();
   const [available, memory] = await Promise.all([
-    apiGet<{ agents: AgentChoice[] }>("/api/v1/agents/available"),
+    // From a contextual action only the agents the tenant offers on that kind of item are listed (spec 020 FR-012).
+    apiGet<{ agents: AgentChoice[] }>(forward && kind ? `/api/v1/agents/available?${new URLSearchParams({ kind }).toString()}` : "/api/v1/agents/available"),
     apiGet<MyMemoryView>("/api/v1/agents/memory"),
   ]);
   const remembered = memory.ok ? memory.data.agents : [];
