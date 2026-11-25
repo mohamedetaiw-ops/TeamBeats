@@ -10532,7 +10532,9 @@
       "hr_rest": "HR system (REST API)",
       "hr_sftp": "HR system (SFTP and CSV)",
       "microsoft365": "Microsoft 365",
-      "lms_rest": "Learning management system (LMS)"
+      "lms_rest": "Learning management system (LMS)",
+      "hr_oracle_hcm": "Oracle HCM Cloud",
+      "hr_sap_successfactors": "SAP SuccessFactors"
     },
     "status": {
       "healthy": "Healthy",
@@ -10569,7 +10571,9 @@
       "jira_service_management": "Services and agents create requests in Jira Service Management and read their status.",
       "camunda8": "Camunda user tasks assigned to TeamBeats people appear in their task inbox and are completed from TeamBeats.",
       "mcp_server": "Agents use the tools of an external MCP server after an integration administrator approves each one.",
-      "lms_rest": "Brings your LMS courses into the catalogue, sends assignments of them to the LMS and reads completions back."
+      "lms_rest": "Brings your LMS courses into the catalogue, sends assignments of them to the LMS and reads completions back.",
+      "hr_oracle_hcm": "Reads Oracle HCM workers, their assignments and managers every night, with the mapping already filled.",
+      "hr_sap_successfactors": "Reads SAP SuccessFactors users and their managers every night, leavers included, with the mapping already filled."
     },
     "add": {
       "title": "Add a custom REST connection",
@@ -11346,7 +11350,8 @@
       "pagings": {
         "none": "One answer holds every employee",
         "page": "Page numbers",
-        "next": "A link to the next page"
+        "next": "A link to the next page",
+        "offset": "Offset and limit"
       },
       "pageParam": "Page number parameter",
       "pageSizeParam": "Page size parameter",
@@ -11422,7 +11427,24 @@
       "dataChangeTitle": "Employee data changes (optional)",
       "dataChangePath": "Data change address",
       "dataChangePathHint": "Approved changes to an employee's details are sent here, for example /data-changes.",
-      "dataChangeReferencePathHint": "For example $.id. HR must answer with a reference for the change to show as recorded."
+      "dataChangeReferencePathHint": "For example $.id. HR must answer with a reference for the change to show as recorded.",
+      "named": {
+        "scheduleTitle": "Nightly sync",
+        "hr_oracle_hcm": {
+          "addTitle": "Add Oracle HCM Cloud",
+          "addIntro": "Give the address of your Oracle HCM Cloud service and how TeamBeats signs in. The paths, paging and field mapping are set for Oracle HCM.",
+          "formLabel": "Oracle HCM Cloud settings",
+          "presetHint": "Workers are read with their names, emails, work relationships, assignments and managers. After saving you can change any one field.",
+          "fieldsHint": "Where each field is in an Oracle HCM worker. Change one to use your own field, or empty it to leave it out."
+        },
+        "hr_sap_successfactors": {
+          "addTitle": "Add SAP SuccessFactors",
+          "addIntro": "Give the address of your SuccessFactors API server and how TeamBeats signs in. The paths, paging and field mapping are set for SuccessFactors.",
+          "formLabel": "SAP SuccessFactors settings",
+          "presetHint": "Users are read with their managers, inactive users included so leavers are seen. After saving you can change any one field.",
+          "fieldsHint": "Where each field is in a SuccessFactors user. Change one to use your own field, or empty it to leave it out."
+        }
+      }
     },
     "overview": {
       "add": "Add connection",
@@ -12538,7 +12560,9 @@
     "none": "None",
     "kinds": {
       "hr_rest": "REST API",
-      "hr_sftp": "SFTP file"
+      "hr_sftp": "SFTP file",
+      "hr_oracle_hcm": "Oracle HCM Cloud",
+      "hr_sap_successfactors": "SAP SuccessFactors"
     },
     "status": {
       "title": "Status",

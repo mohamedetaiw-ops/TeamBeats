@@ -10532,7 +10532,9 @@
       "hr_rest": "نظام الموارد البشرية (واجهة REST)",
       "hr_sftp": "نظام الموارد البشرية (SFTP وملفات CSV)",
       "microsoft365": "Microsoft 365",
-      "lms_rest": "نظام إدارة التعلم (LMS)"
+      "lms_rest": "نظام إدارة التعلم (LMS)",
+      "hr_oracle_hcm": "Oracle HCM Cloud",
+      "hr_sap_successfactors": "SAP SuccessFactors"
     },
     "status": {
       "healthy": "سليم",
@@ -10569,7 +10571,9 @@
       "jira_service_management": "تنشئ الخدمات والوكلاء طلبات في Jira Service Management وتقرأ حالتها.",
       "camunda8": "تظهر مهام المستخدم في Camunda المسندة إلى أشخاص في TeamBeats في صندوق مهامهم وتُنجز من TeamBeats.",
       "mcp_server": "يستخدم الوكلاء أدوات خادم MCP خارجي بعد أن يوافق مسؤول التكامل على كل أداة.",
-      "lms_rest": "يجلب دورات نظام إدارة التعلم إلى الفهرس ويرسل تكليفاتها إليه ويقرأ الإكمالات منه."
+      "lms_rest": "يجلب دورات نظام إدارة التعلم إلى الفهرس ويرسل تكليفاتها إليه ويقرأ الإكمالات منه.",
+      "hr_oracle_hcm": "يقرأ الموظفين من Oracle HCM مع تعييناتهم ومديريهم كل ليلة، والربط بين الحقول جاهز.",
+      "hr_sap_successfactors": "يقرأ مستخدمي SAP SuccessFactors ومديريهم كل ليلة، ومنهم من غادر، والربط بين الحقول جاهز."
     },
     "add": {
       "title": "إضافة اتصال REST مخصص",
@@ -11346,7 +11350,8 @@
       "pagings": {
         "none": "رد واحد يضم جميع الموظفين",
         "page": "أرقام الصفحات",
-        "next": "رابط إلى الصفحة التالية"
+        "next": "رابط إلى الصفحة التالية",
+        "offset": "الإزاحة والحد"
       },
       "pageParam": "معامل رقم الصفحة",
       "pageSizeParam": "معامل حجم الصفحة",
@@ -11422,7 +11427,24 @@
       "dataChangeTitle": "تغيير بيانات الموظفين (اختياري)",
       "dataChangePath": "عنوان تغيير البيانات",
       "dataChangePathHint": "تُرسل إليه التغييرات المعتمدة على بيانات الموظف، مثل /data-changes.",
-      "dataChangeReferencePathHint": "مثل $.id. يجب أن ترد الموارد البشرية بمرجع حتى يظهر التغيير مسجلًا."
+      "dataChangeReferencePathHint": "مثل $.id. يجب أن ترد الموارد البشرية بمرجع حتى يظهر التغيير مسجلًا.",
+      "named": {
+        "scheduleTitle": "المزامنة الليلية",
+        "hr_oracle_hcm": {
+          "addTitle": "إضافة Oracle HCM Cloud",
+          "addIntro": "أدخل عنوان خدمة Oracle HCM Cloud وطريقة دخول TeamBeats إليها. المسارات وتقسيم الصفحات وربط الحقول مضبوطة لـ Oracle HCM.",
+          "formLabel": "إعدادات Oracle HCM Cloud",
+          "presetHint": "يُقرأ الموظفون مع أسمائهم وبريدهم وعلاقات العمل والتعيينات والمديرين. بعد الحفظ يمكنك تغيير أي حقل بمفرده.",
+          "fieldsHint": "موضع كل حقل في سجل الموظف في Oracle HCM. غيّر حقلًا لاستخدام حقلك الخاص، أو اتركه فارغًا لاستبعاده."
+        },
+        "hr_sap_successfactors": {
+          "addTitle": "إضافة SAP SuccessFactors",
+          "addIntro": "أدخل عنوان خادم واجهة SuccessFactors وطريقة دخول TeamBeats إليه. المسارات وتقسيم الصفحات وربط الحقول مضبوطة لـ SuccessFactors.",
+          "formLabel": "إعدادات SAP SuccessFactors",
+          "presetHint": "يُقرأ المستخدمون مع مديريهم، ومنهم غير النشطين حتى يظهر من غادر. بعد الحفظ يمكنك تغيير أي حقل بمفرده.",
+          "fieldsHint": "موضع كل حقل في سجل المستخدم في SuccessFactors. غيّر حقلًا لاستخدام حقلك الخاص، أو اتركه فارغًا لاستبعاده."
+        }
+      }
     },
     "overview": {
       "add": "إضافة اتصال",
@@ -12538,7 +12560,9 @@
     "none": "لا يوجد",
     "kinds": {
       "hr_rest": "واجهة REST",
-      "hr_sftp": "ملف SFTP"
+      "hr_sftp": "ملف SFTP",
+      "hr_oracle_hcm": "Oracle HCM Cloud",
+      "hr_sap_successfactors": "SAP SuccessFactors"
     },
     "status": {
       "title": "الحالة",

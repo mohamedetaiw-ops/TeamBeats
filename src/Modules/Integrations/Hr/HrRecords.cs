@@ -32,7 +32,7 @@ public sealed class HrRecords(IDbSession session, ITenantContext context, IEntit
         {
             return null;
         }
-        return new Link(row.Record, row.Kind == HrRestPack.KindName
+        return new Link(row.Record, HrNamedPack.IsRest(row.Kind)
             ? new PackConnection(context.RequireTenant(), row.Id, row.Kind, 1, null, JsonDocument.Parse(row.Settings).RootElement)
             : null);
     }

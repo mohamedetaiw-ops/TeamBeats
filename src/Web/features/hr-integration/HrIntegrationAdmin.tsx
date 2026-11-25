@@ -9,7 +9,7 @@ import { ConfirmAction } from "@/components/ui/ConfirmAction";
 import { FormField } from "@/components/ui/FormField";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { PersonPicker } from "@/features/services/PersonPicker";
-import { HR_PROBLEMS, HR_STATES, known, type HrOverview, type HrRecord, type HrRecordPage, type HrRun } from "@/lib/integrations/types";
+import { HR_PROBLEMS, HR_STATES, isHrPack, known, type HrOverview, type HrRecord, type HrRecordPage, type HrRun } from "@/lib/integrations/types";
 import { problemMessages } from "@/lib/notifications/types";
 import "./hr-integration.css";
 
@@ -110,7 +110,7 @@ export function HrIntegrationAdmin({ initial, initialRuns, initialRecords }: { i
             <Link href={`/admin/connections/${overview.connection.id}`}>
               <bdi>{overview.connection.displayName}</bdi>
             </Link>{" "}
-            <span className="hr-integration-meta">{t(`kinds.${overview.connection.kind === "hr_sftp" ? "hr_sftp" : "hr_rest"}`)}</span>
+            <span className="hr-integration-meta">{t(`kinds.${isHrPack(overview.connection.kind) ? overview.connection.kind : "hr_rest"}`)}</span>
           </p>
         ) : (
           <p className="notice">

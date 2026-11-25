@@ -25,6 +25,8 @@ const LOOKS: Record<ConnectionType, Look> = {
   camunda8: { group: "service_desk", icon: "tasks" },
   hr_rest: { group: "people_time", icon: "people" },
   hr_sftp: { group: "people_time", icon: "folder" },
+  hr_oracle_hcm: { group: "people_time", icon: "people" },
+  hr_sap_successfactors: { group: "people_time", icon: "people" },
   clock_import: { group: "people_time", icon: "clock" },
   lms_rest: { group: "learning", icon: "book" },
   finance_rest: { group: "finance", icon: "files" },

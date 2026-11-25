@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { apiGet } from "@/lib/api";
-import { isErpFinance } from "@/lib/integrations/types";
+import { isErpFinance, isHrPack } from "@/lib/integrations/types";
 import type { AgentJob, CaptureView, ClockFilePage, FinanceHandOff, ConnectorTool, InboundCounts, McpTool, PackConnection, RestActionView, RunPage, SyncAgent, WebhookEventChoice } from "@/lib/integrations/types";
 import { ActionBuilder } from "@/features/connections/ActionBuilder";
 import { ClockFilesPanel } from "@/features/connections/ClockFilesPanel";
@@ -31,7 +31,7 @@ export default async function ConnectionPage({ params }: { params: Promise<{ id:
   const finance = connection.data.kind === "finance_rest" || isErpFinance(connection.data.kind);
   const lms = connection.data.kind === "lms_rest";
   const google = connection.data.kind === "google_workspace";
-  const hr = connection.data.kind === "hr_rest" || connection.data.kind === "hr_sftp";
+  const hr = isHrPack(connection.data.kind);
   const mcp = connection.data.kind === "mcp_server";
   const toolable = !webhook && !onprem && !clock && !finance && !lms && !google && !hr && !mcp;
   const capturable = !onprem && !clock && !finance && !lms && !google && !hr;

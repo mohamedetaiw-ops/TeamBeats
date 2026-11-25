@@ -166,3 +166,7 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - The admin page is `/admin/analytics/kpi-tiles`; the permission picker offers the permissions the workspace's roles grant.
 - Gaps: a location dashboard e2e with readings is not possible yet, since locations come only from directory sync; the integration suite covers the tiles on the dashboard. Tiles show the latest value only, without a trend.
 
+## Spec 019 R3 slice 1: Oracle HCM and SAP SuccessFactors packs (T015)
+- The named packs are presets, not new adapters: the stored settings are HR REST settings, so every HR path (sync, live read, payslips, leave, data change) keeps one implementation. The preset decides the paths and paging; a tenant may override single fields. Recorded default: the first entry of each Oracle list (names, emails, work relationships, assignments, managers) is used, as Oracle lists the primary first; a suspended assignment counts as active.
+- SuccessFactors returns active users only unless asked, so the preset filters on `status in 't','f','T','F'` to see leavers (FR-020). Its `/Date(ms)/` values are read by `HrMapping` for every HR pack.
+- The generic REST pack gained offset paging and list addresses with a fixed query (characters limited, percent encoded); the record ID stays escaped wherever it is placed.

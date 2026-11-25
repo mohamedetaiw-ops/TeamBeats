@@ -85,7 +85,7 @@ public sealed partial class HrRestPack(ITenantContext context, RestSignIn signIn
     public const int MaxPages = 500;
     public const int DefaultPageSize = 200;
 
-    public static readonly IReadOnlyList<string> PagingModes = ["none", "page", "next"];
+    public static readonly IReadOnlyList<string> PagingModes = ["none", "page", "offset", "next"];
     private static readonly string[] AuthTypes = ["api_key", "bearer", "basic", "oauth_client_credentials"];
 
     public string Kind => KindName;
@@ -144,8 +144,12 @@ public sealed partial class HrRestPack(ITenantContext context, RestSignIn signIn
     [GeneratedRegex(@"^/[A-Za-z0-9._~/-]{0,300}$")]
     private static partial Regex PathShape();
 
-    [GeneratedRegex(@"^/[A-Za-z0-9._~/-]{0,150}\{record_id\}[A-Za-z0-9._~/-]{0,150}$")]
-    private static partial Regex OnePathShape();
+    /// <summary>
+    /// An address with an optional fixed query, such as the OData <c>$select</c> or the expand list a named pack needs
+    /// (spec 019 FR-019). Spaces and other characters are written percent encoded.
+    /// </summary>
+    [GeneratedRegex(@"^/[A-Za-z0-9._~/'()-]{0,300}(\?[A-Za-z0-9._~$=&,'()/:*%-]{1,600})?$")]
+    private static partial Regex ListPathShape();
 
     [GeneratedRegex(@"^/[A-Za-z0-9._~/{}-]{1,300}$")]
     private static partial Regex TemplateShape();
@@ -235,7 +239,7 @@ public sealed partial class HrRestPack(ITenantContext context, RestSignIn signIn
             }
             next = (s.Paging ?? "none") switch
             {
-                "page" => list.GetArrayLength() < size || list.GetArrayLength() == 0 ? null : s.EmployeesPath,
+                "page" or "offset" => list.GetArrayLength() < size || list.GetArrayLength() == 0 ? null : s.EmployeesPath,
                 "next" => s.NextPath is { } p && Text(RestDefinitions.Select(answer, p)) is { Length: > 0 } link ? link : null,
                 _ => null,
             };
@@ -589,6 +593,13 @@ public sealed partial class HrRestPack(ITenantContext context, RestSignIn signIn
             uri = new Uri(uri.AbsoluteUri + join + Uri.EscapeDataString(s.PageParam ?? "page") + "=" + page.ToString(CultureInfo.InvariantCulture)
                 + (s.PageSizeParam is { } sp ? "&" + Uri.EscapeDataString(sp) + "=" + size.ToString(CultureInfo.InvariantCulture) : ""));
         }
+        else if (s.Paging == "offset")
+        {
+            // Oracle style: the number of records to skip and the page size.
+            var join = string.IsNullOrEmpty(uri.Query) ? "?" : "&";
+            uri = new Uri(uri.AbsoluteUri + join + Uri.EscapeDataString(s.PageParam ?? "offset") + "=" + ((page - 1) * size).ToString(CultureInfo.InvariantCulture)
+                + "&" + Uri.EscapeDataString(s.PageSizeParam ?? "limit") + "=" + size.ToString(CultureInfo.InvariantCulture));
+        }
         return uri;
     }
 
@@ -621,7 +632,7 @@ public sealed partial class HrRestPack(ITenantContext context, RestSignIn signIn
         var s = Parse(settings) ?? throw AppException.Validation("settings", "validation.custom_rest.settings");
         var errors = new ValidationErrors();
         var rest = await signIn.ValidateAsync(tenantId, s.BaseUrl, s.Auth, AuthTypes, errors, ct);
-        if (s.EmployeesPath is null || !PathShape().IsMatch(s.EmployeesPath) || s.EmployeesPath.Contains("..", StringComparison.Ordinal))
+        if (s.EmployeesPath is null || !ListPathShape().IsMatch(s.EmployeesPath) || s.EmployeesPath.Contains("..", StringComparison.Ordinal))
         {
             errors.Add("employeesPath", "validation.hr.employees_path");
         }
@@ -634,7 +645,7 @@ public sealed partial class HrRestPack(ITenantContext context, RestSignIn signIn
         {
             errors.Add("paging", "validation.hr.paging");
         }
-        if (paging == "page")
+        if (paging is "page" or "offset")
         {
             if (s.PageParam is not null && !ParamName().IsMatch(s.PageParam))
             {
@@ -653,8 +664,7 @@ public sealed partial class HrRestPack(ITenantContext context, RestSignIn signIn
         {
             errors.Add("nextPath", "validation.hr.record_path");
         }
-        if (Blank(s.EmployeePath) is { } one && (!OnePathShape().IsMatch(one) || one.Contains("..", StringComparison.Ordinal)
-            || one.Split("{record_id}").Length != 2))
+        if (Blank(s.EmployeePath) is { } one && !OnePath(one))
         {
             errors.Add("employeePath", "validation.hr.employee_path");
         }
@@ -761,8 +771,8 @@ public sealed partial class HrRestPack(ITenantContext context, RestSignIn signIn
         var statuses = HrMapping.CheckStatusValues(s.StatusValues, errors);
         CheckSchedule(s.DateFormat, s.SyncAt, s.TimeZone, errors);
         errors.ThrowIfAny();
-        var stored = new HrRestSettings(rest!.BaseUrl, rest.Auth, s.EmployeesPath, s.RecordsPath ?? "$", paging, paging == "page" ? s.PageParam ?? "page" : null,
-            paging == "page" ? s.PageSizeParam : null, paging == "page" ? s.PageSize ?? DefaultPageSize : null, paging == "next" ? s.NextPath : null,
+        var stored = new HrRestSettings(rest!.BaseUrl, rest.Auth, s.EmployeesPath, s.RecordsPath ?? "$", paging, paging switch { "page" => s.PageParam ?? "page", "offset" => s.PageParam ?? "offset", _ => null },
+            paging switch { "page" => s.PageSizeParam, "offset" => s.PageSizeParam ?? "limit", _ => null }, paging is "page" or "offset" ? s.PageSize ?? DefaultPageSize : null, paging == "next" ? s.NextPath : null,
             fields, statuses, Blank(s.DateFormat), s.SyncAt ?? "01:00", s.TimeZone ?? "UTC",
             Blank(s.EmployeePath), Blank(s.EmployeePath) is null ? null : s.EmployeeRecordPath ?? "$",
             payslipsPath, payslipsPath is null ? null : s.PayslipRecordsPath ?? "$", payslipsPath is null ? null : payslipFields, payslipsPath is null ? null : pdfPath,
@@ -770,6 +780,13 @@ public sealed partial class HrRestPack(ITenantContext context, RestSignIn signIn
             submitPath, submitPath is null ? null : s.LeaveReferencePath ?? "$.id", submitPath is null ? null : idempotency, typeCodes.Count == 0 ? null : typeCodes,
             changePath, changePath is null ? null : s.DataChangeReferencePath ?? "$.id", changePath is null ? null : changeHeader);
         return JsonSerializer.SerializeToElement(stored, JsonDefaults.Options);
+    }
+
+    /// <summary>The address of one employee: <c>{record_id}</c> exactly once, in the path or the query, and nothing else in braces.</summary>
+    internal static bool OnePath(string path)
+    {
+        var filled = path.Replace("{record_id}", "x", StringComparison.Ordinal);
+        return path.Split("{record_id}").Length == 2 && ListPathShape().IsMatch(filled) && !path.Contains("..", StringComparison.Ordinal);
     }
 
     /// <summary>A path with each placeholder exactly once and nothing else in braces.</summary>

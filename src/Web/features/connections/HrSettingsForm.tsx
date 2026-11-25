@@ -16,6 +16,7 @@ import {
   HR_STATUSES,
   type HrMappingSettings,
   type HrRestSettings,
+  type HrNamedKind,
   type HrSftpSettings,
   type PackConnection,
 } from "@/lib/integrations/types";
@@ -151,7 +152,7 @@ export function HrRestSettingsForm({
               ))}
             </select>
           </div>
-          {paging === "page" ? (
+          {paging === "page" || paging === "offset" ? (
             <>
               <FormField label={t("pageParam")} name="pageParam" dir="ltr" required value={pageParam} onChange={(e) => setPageParam(e.target.value)} />
               <FormField label={t("pageSizeParam")} name="pageSizeParam" dir="ltr" value={pageSizeParam} onChange={(e) => setPageSizeParam(e.target.value)} />
@@ -271,9 +272,9 @@ export function HrRestSettingsForm({
       dataChangeIdempotencyHeader: blank(dataChangePath) ? blank(dataChangeIdempotencyHeader) : null,
       recordsPath: blank(recordsPath),
       paging,
-      pageParam: paging === "page" ? blank(pageParam) : null,
-      pageSizeParam: paging === "page" ? blank(pageSizeParam) : null,
-      pageSize: paging === "page" ? Number(pageSize) || null : null,
+      pageParam: paging === "page" || paging === "offset" ? blank(pageParam) : null,
+      pageSizeParam: paging === "page" || paging === "offset" ? blank(pageSizeParam) : null,
+      pageSize: paging === "page" || paging === "offset" ? Number(pageSize) || null : null,
       nextPath: paging === "next" ? blank(nextPath) : null,
       ...mapping.values(),
     }),
@@ -384,4 +385,53 @@ export function HrSftpSettingsForm({
       </div>
     </form>
   );
+}
+
+/**
+ * An Oracle HCM or SAP SuccessFactors connection (spec 019 R3 US8): the HR system's address, sign-in and nightly time.
+ * The API fills the paths, paging, status words and field mapping from its preset. Once saved, the mapping is shown and
+ * one field at a time can be changed or emptied to drop it; the API checks every value.
+ */
+export function HrNamedSettingsForm({
+  kind,
+  initial,
+  submitLabel,
+  busy,
+  onSubmit,
+}: {
+  kind: HrNamedKind;
+  initial?: PackConnection;
+  submitLabel: string;
+  busy: boolean;
+  onSubmit: (body: SettingsBody) => void;
+}) {
+  const t = useTranslations("connections.hr");
+  const s = initial?.settings as Partial<HrRestSettings> | undefined;
+  const mapping = useMapping(s);
+  const [syncAt, setSyncAt] = useState(s?.syncAt ?? "01:00");
+  const [timeZone, setTimeZone] = useState(s?.timeZone ?? "UTC");
+
+  const extra = initial
+    ? {
+        fields: mapping.render(t, t(`named.${kind}.fieldsHint`)),
+        values: (): Partial<HrRestSettings> => {
+          const values = mapping.values();
+          // An emptied field is sent empty, so the API drops it instead of keeping the preset's source.
+          const fields = Object.fromEntries(HR_FIELDS.map((f) => [f, values.fields?.[f] ?? (s?.fields?.[f] ? "" : null)]).filter(([, v]) => v !== null));
+          return { ...values, fields };
+        },
+      }
+    : {
+        fields: (
+          <fieldset className="connections-fieldset">
+            <legend>{t("named.scheduleTitle")}</legend>
+            <p className="field-hint">{t(`named.${kind}.presetHint`)}</p>
+            <FormField label={t("syncAt")} hint={t("syncAtHint")} name="syncAt" type="time" value={syncAt} onChange={(e) => setSyncAt(e.target.value)} />
+            <FormField label={t("timeZone")} hint={t("timeZoneHint")} name="timeZone" dir="ltr" required value={timeZone} onChange={(e) => setTimeZone(e.target.value)} />
+          </fieldset>
+        ),
+        values: (): Partial<HrRestSettings> => ({ syncAt: syncAt || null, timeZone: timeZone.trim() }),
+      };
+
+  return <ConnectionSettingsForm initial={initial} submitLabel={submitLabel} busy={busy} onSubmit={onSubmit} authTypes={HR_AUTH} extra={extra} formLabel={t(`named.${kind}.formLabel`)} />;
 }

@@ -44,4 +44,24 @@ public sealed class HrMappingTests
         Assert.False(visible.ContainsKey(HrFields.PersonalEmail));
         Assert.Contains(HrFields.PersonalEmail, HrFields.All);
     }
+
+    /// <summary>Spec 019 R3 US8 scenario 2: SuccessFactors OData dates, with or without an offset; anything else in that shape is a bad date.</summary>
+    [Theory]
+    [InlineData("/Date(1709251200000)/", "2024-03-01")]
+    [InlineData("/Date(1709251200000+0000)/", "2024-03-01")]
+    [InlineData("/Date(-86400000)/", "1969-12-31")]
+    [InlineData("/Date(abc)/", null)]
+    [InlineData("/Date(99999999999999999)/", null)]
+    public void OData_dates_are_read_as_dates(string hire, string? expected)
+    {
+        var (employee, problem) = HrMapping.Map(new Dictionary<string, string?> { [HrFields.RecordId] = "R1", [HrFields.Status] = "Active", [HrFields.HireDate] = hire }, Statuses, null);
+        if (expected is null)
+        {
+            Assert.Equal(HrProblemReasons.BadDate, problem!.Reason);
+        }
+        else
+        {
+            Assert.Equal(DateOnly.Parse(expected, System.Globalization.CultureInfo.InvariantCulture), employee!.HireDate);
+        }
+    }
 }

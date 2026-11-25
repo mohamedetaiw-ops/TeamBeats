@@ -117,6 +117,10 @@ public static class IntegrationsModule
         services.AddScoped<Hr.HrDataChange>();
         services.AddScoped<IHrDataChange>(sp => sp.GetRequiredService<Hr.HrDataChange>());
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Hr.HrRestPack>());
+        services.AddScoped<Hr.HrOracleHcmPack>();
+        services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Hr.HrOracleHcmPack>());
+        services.AddScoped<Hr.HrSuccessFactorsPack>();
+        services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Hr.HrSuccessFactorsPack>());
         services.AddScoped<Hr.HrSftpPack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Hr.HrSftpPack>());
         services.AddScoped<Webhooks.KpiFeed>();

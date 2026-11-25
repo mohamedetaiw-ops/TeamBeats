@@ -27,3 +27,8 @@ An HR capability contract in `Integrations.Contracts` (`IHrDirectory`: employees
 
 ## Tests
 Fake HR system in `DevFakes` with matching, conflict, manager loop, future-dated and mass termination fixtures; cross-tenant match denial; payslip access by manager and administrator denied; prefill tampering refused; connector failure paths.
+
+## R3 plan
+- Slice 1, named packs (US8, FR-019, FR-020): `HrNamedPack` in `Integrations/Hr/HrNamedPacks.cs` with `HrOracleHcmPack` (`hr_oracle_hcm`) and `HrSuccessFactorsPack` (`hr_sap_successfactors`), both gated by `hr.named_packs`. Each is a preset of the HR REST pack: validation lays the tenant's address, sign-in, schedule and single field overrides over the preset and stores a full HR REST settings document checked by the REST pack, so sync, live reads, payslips, leave and data changes share one code path. The REST pack gains offset paging and addresses with a fixed query; `HrMapping` reads OData `/Date(ms)/` dates. Oracle reads `workers` with names, emails, work relationships, assignments and managers expanded, by offset and limit; SuccessFactors reads OData `User` with the manager expanded, through `__next` links, with a status filter so inactive users come too.
+- Slice 2, letters from HR data (US9, FR-021, FR-022, FR-024): HR placeholders in spec 022 letter templates, filled at generation from `IHrRecords` and a live compensation read.
+- Slice 3, compensation statement (US10, FR-023): a live, self only, step-up read through the REST family, on the payslip rules.
