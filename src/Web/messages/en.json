@@ -926,6 +926,7 @@
         "security_alerts_advanced": "Advanced security alerts",
         "security_siem": "SIEM streaming",
         "security_customer_keys": "Customer-managed encryption keys",
+        "api_admin": "Admin APIs",
         "security_max_guest_spaces": "Spaces with guests",
         "content_core": "News and pages",
         "content_critical_ack": "Critical announcements with acknowledgement",
@@ -15844,7 +15845,8 @@
       "requests_read": "See requests you can see",
       "requests_submit": "Submit service requests for you",
       "tasks_read": "See the tasks in your inbox",
-      "events_subscribe": "Receive notifications of changes"
+      "events_subscribe": "Receive notifications of changes",
+      "roles_read": "See roles and who holds them, with your own rights"
     },
     "admin": {
       "title": "API and MCP access",

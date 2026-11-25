@@ -113,6 +113,9 @@ public static class Capabilities
     // Workplace Plus and above; limits on apps and monthly calls.
     public const string ApiPublic = "api.public";
     public const string ApiWriteScopes = "api.write_scopes";
+
+    /// <summary>Admin APIs beside SCIM (spec 035 R3): role administration through a delegated app.</summary>
+    public const string ApiAdmin = "api.admin";
     public const string ApiEventSubscriptions = "api.event_subscriptions";
     public const string ApiMcp = "api.mcp";
     public const string ApiMcpWriteTools = "api.mcp_write_tools";

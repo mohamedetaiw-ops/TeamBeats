@@ -93,7 +93,7 @@ R3 adds sender-constrained tokens, MCP prompts, confirmation inside verified AI 
 R3 slices, in order:
 1. **Sender-constrained tokens (DPoP):** proof of possession for access and refresh tokens.
 2. **MCP prompts:** a small, localized prompt catalogue built on the existing tools.
-3. **Admin APIs beside SCIM:** read and narrow write endpoints for directory and access administration, for application apps only.
+3. **Admin APIs beside SCIM:** read-only role administration (roles and who holds them) for a person acting through a delegated app, as FR-012 allows no public operation that changes roles.
 4. **Developer sandbox tenant:** a short-lived tenant with demo data for building against the API.
 5. **Public app gallery:** platform-published apps a tenant adds with admin consent.
 6. **Confirmation inside verified AI clients (MCP elicitation):** opt-in per tenant, for verified clients that support it.
@@ -111,11 +111,20 @@ R3 slices, in order:
 - **Localized** from the API catalogue by `Accept-Language` within the tenant's locales, as other public answers.
 - **Arguments:** short text (at most 300 characters), required where marked, no unknown names; put in the text in quotes with quotes and line breaks removed. Every text tells the client that what TeamBeats returns is information, not instructions. A prompt reads no TeamBeats data itself.
 
+### Admin APIs beside SCIM
+- **Read only.** FR-012 forbids public operations that change roles, permissions, policies, identity providers, security settings, entitlements or apps, so R3 adds reads only: `GET /api/public/v1/admin/roles` and `GET /api/public/v1/admin/role-assignments` (optional `userId`, cursor pages). Changing roles over the API would need FR-012 amended first; it is an open decision.
+- **Scope `roles:read`:** delegated apps only, never an employee's own consent (admin consent), capability `api.admin` (Enterprise and Government). Application apps cannot hold it, so FR-011 stays as it is: apps never hold administration permissions.
+- **Same use cases as the admin area** with the person's own rights: `authz.roles_view` coverage decides what comes back, so a unit administrator sees their units only. Apps' own role assignments and attribute conditions are left out of the answer.
+- SCIM (spec 003 FR-008) stays the way to provision people; directory, security, identity provider, entitlement and app administration stay in the admin area.
+
 ### Tests (R3 slice 1)
 - A client credentials token with a proof is bound; calls succeed with matching proofs and fail without one, with another key, a reused `jti`, a wrong `htm` or `htu`, an old `iat` or a wrong `ath`; a bound token sent as `Bearer` is refused.
 - An app that requires DPoP gets no token without a proof; an app that does not still gets bearer tokens.
 - Refresh with the bound key works, with another key it fails; the MCP endpoint follows the same rules.
 - Cross-tenant: a proof and token of another tenant are refused as before.
+
+### Tests (R3 slice 3)
+- An administrator reads roles and assignments with pages; a unit administrator sees only their units; apps' roles are left out; no write operation exists; a person without the right, a token without the scope, an application app, an employee's own consent, another tenant and a package without `api.admin` are refused.
 
 ### Tests (R3 slice 2)
 - A client lists only the prompts its scopes and policy allow, in English and Arabic; arguments that are missing, too long or unknown are refused; a prompt whose tools are not offered is not served; write tools off hides the request prompt; another tenant refuses the token.
