@@ -150,7 +150,7 @@
  * (variants.css), so a tenant on another design can pick them too. Only structure and the design's own tokens, so a
  * tenant accent and dark mode follow.
  */
-:root[data-design="studio"] :is(.ui-widget, .content-card, .content-side-item, .ui-card, .ui-tile, .ui-stat, .ui-form-panel, .ui-launch-tiles a),
+:root[data-design="studio"] :is(.ui-widget, .ui-card, .ui-tile, .ui-stat, .ui-form-panel, .ui-launch-tiles a),
 :root[data-design="studio"] :is(.ui-work-items, .ui-settings-section, .ui-reading),
 :root[data-design="studio"] :is(.ui-people[data-layout="cards"] .ui-person),
 :root[data-design="studio"] .ui-rows {
@@ -158,24 +158,49 @@
   box-shadow: var(--tb-shadow-sm);
 }
 
-:root[data-design="studio"] :is(.ui-widget, .content-card, .ui-card, .ui-form-panel, .ui-work-items, .ui-settings-section),
+:root[data-design="studio"] :is(.ui-widget, .ui-card, .ui-form-panel, .ui-work-items, .ui-settings-section),
 :root[data-design="studio"] .ui-reading {
   border-radius: var(--tb-radius-md);
 }
 
-:root[data-design="studio"] :is(.ui-tile, .ui-launch-tiles a, .content-side-item) {
+:root[data-design="studio"] :is(.ui-tile, .ui-launch-tiles a) {
   border-radius: var(--tb-radius-md);
   transition: border-color var(--tb-motion-duration-fast) var(--tb-motion-easing-standard),
     box-shadow var(--tb-motion-duration-fast) var(--tb-motion-easing-standard);
 }
 
-:root[data-design="studio"] :is(.ui-tile, .ui-launch-tiles a, .content-side-item):hover {
+:root[data-design="studio"] :is(.ui-tile, .ui-launch-tiles a):hover {
   border-color: var(--tb-color-border-strong);
   box-shadow: var(--tb-shadow-md);
 }
 
 :root[data-design="studio"] .ui-launch-tiles a {
   background: var(--tb-color-surface-raised);
+}
+
+/*
+ * The home content blocks that DLS-089 lists as exceptions to the widget frame (rich text, call to action, and the
+ * story rows of the news feed) take the same Studio surface. They stay feature parts because their content is
+ * authored: a rich text body keeps its own links, and the call to action has the campaign band.
+ */
+:root[data-design="studio"] :is(.content-card, .content-side-item) {
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  box-shadow: var(--tb-shadow-sm);
+}
+
+:root[data-design="studio"] .content-card {
+  border-radius: var(--tb-radius-md);
+}
+
+:root[data-design="studio"] .content-side-item {
+  border-radius: var(--tb-radius-md);
+  transition: border-color var(--tb-motion-duration-fast) var(--tb-motion-easing-standard),
+    box-shadow var(--tb-motion-duration-fast) var(--tb-motion-easing-standard);
+}
+
+:root[data-design="studio"] .content-side-item:hover {
+  border-color: var(--tb-color-border-strong);
+  box-shadow: var(--tb-shadow-md);
 }
 
 /* Card heads: a smaller, tighter title and a quiet link, as in a dashboard. */
