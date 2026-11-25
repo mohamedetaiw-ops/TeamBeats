@@ -113,7 +113,8 @@ export async function expectDetailConformant(page: Page, testInfo: TestInfo, ten
   expect(index, `${route} is a detail route with a reason in a11y/routes.ts`).toBeGreaterThanOrEqual(0);
   const html = page.locator("html");
   const lang = (await html.getAttribute("lang")) ?? "en";
-  const signedIn = (await html.getAttribute("data-design")) !== null;
+  // Signed-out pages (a signage screen, a pre-boarding link) keep the platform design whatever the tenant chose.
+  const signedIn = (await page.locator(".shell-bar").count()) > 0;
   // The other language starts half way round, so each route is seen in two designs.
   const design = designs[(index + (lang.startsWith("ar") ? 2 : 0)) % designs.length]!;
   const mode = Math.floor(index / designs.length) % 2 === 0 ? "light" : "dark";
