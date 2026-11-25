@@ -55,6 +55,9 @@ type Props<Row> = {
   emptyTitle?: string;
   emptyMessage?: string;
   density?: "comfortable" | "compact";
+  /** Test hooks for the table and for each row, so a suite can count or pick rows. */
+  testId?: string;
+  rowTestId?: (row: Row) => string | undefined;
   /** Below 640px each row is a stacked card of label and value pairs (DLS-079). Off for grids that must keep columns. */
   stack?: boolean;
 };
@@ -91,6 +94,8 @@ export function DataTable<Row>({
   emptyMessage,
   density = "comfortable",
   stack = true,
+  testId,
+  rowTestId,
 }: Props<Row>) {
   const t = useTranslations("ui.data");
   const id = useId();
@@ -164,7 +169,7 @@ export function DataTable<Row>({
       ) : null}
       {selection}
       <div className="ui-table-scroll" role="region" aria-labelledby={`${id}-caption`} tabIndex={0}>
-        <table data-stack={stack || undefined}>
+        <table data-stack={stack || undefined} data-testid={testId}>
           <caption id={`${id}-caption`} className={captionHidden ? "visually-hidden" : undefined}>
             {caption}
           </caption>
@@ -210,7 +215,7 @@ export function DataTable<Row>({
                 const key = rowKey(row);
                 const isSelected = selected.includes(key);
                 return (
-                  <tr key={key} data-selected={isSelected || undefined}>
+                  <tr key={key} data-selected={isSelected || undefined} data-testid={rowTestId?.(row)}>
                     {selectable && rowLabel ? (
                       <td className="ui-table-check">
                         <Checkbox label={<span className="visually-hidden">{rowLabel(row)}</span>} checked={isSelected} onChange={() => toggle(key)} />

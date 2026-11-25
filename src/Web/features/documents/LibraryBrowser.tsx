@@ -14,7 +14,9 @@ import {
   type LibraryView,
   type SavedView,
 } from "@/lib/documents/types";
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { DataTable } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
 import { StateView } from "@/components/ui/StateView";
 import { UploadDialog } from "./UploadDialog";
@@ -352,42 +354,40 @@ export function LibraryBrowser({
             <p className="documents-meta">
               {t("total", { count: answer.total })}
             </p>
-            <div className="documents-table">
-              <table>
-                <thead>
-                  <tr>
-                    <th scope="col">{t("name")}</th>
-                    <th scope="col">{t("version")}</th>
-                    <th scope="col">{t("state")}</th>
-                    <th scope="col">{t("updated")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {answer.items.map((d) => (
-                    <tr key={d.id}>
-                      <td>
-                        <Link href={documentHref(d.id)} className="documents-name">
-                          <Icon name="files" size={18} />
-                          <bdi>{d.name}</bdi>
-                        </Link>
-                        {d.checkedOutBy ? (
-                          <span className="ui-badge" data-tone="warning">
-                            {t("checkedOut")}
-                          </span>
-                        ) : null}
-                      </td>
-                      <td>{d.versionLabel ?? ""}</td>
-                      <td>{d.state ? t(`stateValue.${d.state}`) : ""}</td>
-                      <td>
-                        <time dateTime={d.updatedAt} title={dateTimeFull(d.updatedAt, locale)}>
-                          {relativeTime(d.updatedAt, locale, now)}
-                        </time>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              caption={t("listCaption")}
+              captionHidden
+              rows={answer.items}
+              rowKey={(d) => d.id}
+              columns={[
+                {
+                  key: "name",
+                  header: t("name"),
+                  rowHeader: true,
+                  cell: (d) => (
+                    <>
+                      <Link href={documentHref(d.id)} className="documents-name">
+                        <Icon name="files" size={18} />
+                        <bdi>{d.name}</bdi>
+                      </Link>
+                      {d.checkedOutBy ? <Badge tone="warning">{t("checkedOut")}</Badge> : null}
+                    </>
+                  ),
+                },
+                { key: "version", header: t("version"), nowrap: true, cell: (d) => d.versionLabel ?? null },
+                { key: "state", header: t("state"), nowrap: true, cell: (d) => (d.state ? t(`stateValue.${d.state}`) : null) },
+                {
+                  key: "updated",
+                  header: t("updated"),
+                  nowrap: true,
+                  cell: (d) => (
+                    <time dateTime={d.updatedAt} title={dateTimeFull(d.updatedAt, locale)}>
+                      {relativeTime(d.updatedAt, locale, now)}
+                    </time>
+                  ),
+                },
+              ]}
+            />
           </>
         )}
       </section>

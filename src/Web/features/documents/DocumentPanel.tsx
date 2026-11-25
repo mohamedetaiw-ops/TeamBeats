@@ -15,6 +15,7 @@ import {
   type VersionView,
 } from "@/lib/documents/types";
 import { Button } from "@/components/ui/Button";
+import { DataTable } from "@/components/ui/DataTable";
 import "./documents.css";
 import { Widget } from "@/components/ui/Widget";
 import { FormPanel } from "@/components/ui/FormField";
@@ -621,68 +622,46 @@ export function DocumentPanel({
         {versions.length === 0 ? (
           <p>{t("noVersions")}</p>
         ) : (
-          <div className="documents-table">
-            <table data-testid="version-list">
-              <thead>
-                <tr>
-                  <th scope="col">{t("version")}</th>
-                  <th scope="col">{t("state")}</th>
-                  <th scope="col">{t("created")}</th>
-                  <th scope="col">{t("note")}</th>
-                  <th scope="col">
-                    <span className="visually-hidden">{t("actions")}</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {versions.map((v) => (
-                  <tr key={v.id}>
-                    <td>{v.label}</td>
-                    <td>{t(`stateValue.${v.state}`)}</td>
-                    <td>
-                      <time dateTime={v.createdAt}>{date(v.createdAt)}</time>
-                    </td>
-                    <td>
-                      <bdi>{v.note ?? ""}</bdi>
-                    </td>
-                    <td className="documents-row-actions">
+          <DataTable
+            caption={t("versions")}
+            captionHidden
+            testId="version-list"
+            rows={versions}
+            rowKey={(v) => v.id}
+            columns={[
+              { key: "version", header: t("version"), rowHeader: true, nowrap: true, cell: (v) => v.label },
+              { key: "state", header: t("state"), nowrap: true, cell: (v) => t(`stateValue.${v.state}`) },
+              { key: "created", header: t("created"), nowrap: true, cell: (v) => <time dateTime={v.createdAt}>{date(v.createdAt)}</time> },
+              { key: "note", header: t("note"), cell: (v) => (v.note ? <bdi>{v.note}</bdi> : null) },
+              {
+                key: "actions",
+                header: t("actions"),
+                cell: (v) => {
+                  const restorable = doc.rights.contribute && doc.checkedIn && !doc.checkedOutBy && v.id !== (doc.current?.id ?? "");
+                  if (doc.downloadable === false && !restorable) return null;
+                  return (
+                    <span className="ui-table-actions">
                       {doc.downloadable !== false ? (
-                        <Button
-                          variant="quiet"
-                          onClick={() => void download(v.id)}
-                        >
+                        <Button variant="quiet" onClick={() => void download(v.id)}>
                           {t("downloadVersion", { version: v.label })}
                         </Button>
                       ) : null}
-                      {doc.rights.contribute &&
-                      doc.checkedIn &&
-                      !doc.checkedOutBy &&
-                      v.id !== (doc.current?.id ?? "") ? (
+                      {restorable ? (
                         <Button
                           variant="quiet"
                           busy={busy === `restore-${v.id}`}
                           busyLabel={t("busy")}
-                          onClick={() =>
-                            void run(
-                              `restore-${v.id}`,
-                              () =>
-                                post("/restore", {
-                                  versionId: v.id,
-                                  note: null,
-                                }),
-                              t("restored"),
-                            )
-                          }
+                          onClick={() => void run(`restore-${v.id}`, () => post("/restore", { versionId: v.id, note: null }), t("restored"))}
                         >
                           {t("restore", { version: v.label })}
                         </Button>
                       ) : null}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </span>
+                  );
+                },
+              },
+            ]}
+          />
         )}
       </Widget>
     </article>
