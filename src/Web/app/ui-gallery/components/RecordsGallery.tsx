@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { FormField, FormPanel, SettingsSection } from "@/components/ui/FormField";
+import { PeopleList, PersonEntry } from "@/components/ui/Person";
 import { LaunchTiles } from "@/components/ui/LaunchTiles";
 import { WorkItems } from "@/components/ui/WorkItems";
 
@@ -9,7 +10,7 @@ const changed = "2026-11-24T09:30:00Z";
 
 /**
  * Records and settings parts (spec 036 DLS-047, DLS-061): work item rows that each open a page, one with a long title
- * and no meta, launch tiles with one that opens another site, a settings section with its help beside the controls, and a form panel around a group of fields.
+ * and no meta, launch tiles with one that opens another site, person cards and a chip, a settings section with its help beside the controls, and a form panel around a group of fields.
  */
 export function RecordsGallery() {
   const t = useTranslations("components_gallery.records");
@@ -32,6 +33,20 @@ export function RecordsGallery() {
           { id: "t3", title: t("payroll"), href: "https://example.com", icon: "globe", tone: "info", external: { label: t("external") } },
         ]}
       />
+      <PeopleList layout="cards" testId="cg-people">
+        <li>
+          <PersonEntry
+            form="card"
+            person={{ name: t("personName"), href: "#cg-records", avatar: { tone: "highlight" }, title: { text: t("personTitle") }, meta: t("personMeta"), actions: [{ icon: "mail", label: t("emailPerson"), href: "mailto:someone@example.com" }] }}
+          />
+        </li>
+        <li>
+          <PersonEntry form="card" person={{ name: t("otherName"), href: "#cg-records", avatar: { tone: "info" }, title: { text: t("noTitle"), missing: true } }} />
+        </li>
+      </PeopleList>
+      <p>
+        <PersonEntry form="chip" person={{ name: t("personName"), href: "#cg-records", avatar: { tone: "highlight" } }} />
+      </p>
       <SettingsSection id="cg-settings-section" icon="bell" title={t("settingsTitle")} hint={t("settingsHint")}>
         <FormField label={t("digest")} name="cg-digest" />
       </SettingsSection>
