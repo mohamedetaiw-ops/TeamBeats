@@ -152,14 +152,14 @@
  */
 :root[data-design="studio"] :is(.ui-widget, .content-card, .content-side-item, .ui-card, .ui-tile, .ui-stat, .ui-form-panel, .ui-launch-tiles a),
 :root[data-design="studio"] :is(.ui-work-items, .ui-settings-section, .documents-table, .ui-reading),
-:root[data-design="studio"] :is(.ui-people[data-layout="cards"] .ui-person, .people-identity),
+:root[data-design="studio"] :is(.ui-people[data-layout="cards"] .ui-person),
 :root[data-design="studio"] .ui-rows {
   border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
   box-shadow: var(--tb-shadow-sm);
 }
 
 :root[data-design="studio"] :is(.ui-widget, .content-card, .ui-card, .ui-form-panel, .ui-work-items, .ui-settings-section),
-:root[data-design="studio"] :is(.documents-table, .ui-reading, .people-identity) {
+:root[data-design="studio"] :is(.documents-table, .ui-reading) {
   border-radius: var(--tb-radius-md);
 }
 

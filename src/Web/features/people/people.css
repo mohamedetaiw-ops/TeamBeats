@@ -190,39 +190,6 @@ ol.people-chart {
   max-inline-size: 60rem;
 }
 
-.people-identity {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--tb-space-md);
-  padding: var(--tb-space-lg);
-  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
-  border-radius: var(--tb-radius-lg);
-  background: var(--tb-color-surface-raised);
-  box-shadow: var(--tb-shadow-sm);
-}
-
-.people-identity-text {
-  display: grid;
-  flex: 1 1 14rem;
-  gap: calc(var(--tb-space-xs) / 2);
-  min-inline-size: 0;
-}
-
-.people-identity-text p {
-  margin: 0;
-}
-
-.people-identity-name {
-  font-family: var(--tb-font-family-heading);
-  font-size: var(--tb-font-size-lg);
-  font-weight: var(--tb-font-weight-semibold);
-}
-
-.people-identity-title {
-  color: var(--tb-color-text-primary);
-}
-
 .people-managed,
 .people-source,
 .people-visibility {
