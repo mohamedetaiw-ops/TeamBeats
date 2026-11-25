@@ -216,6 +216,9 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
     test("a held policy change waits for a second administrator, who approves it (FR-016)", async ({ page }, testInfo) => {
       // Its own tenant with two administrators, so four-eyes reaches no other test.
       const held = await createTenant(`fe-${locale}`, locale, "workplace_plus", ["rana"]);
+      // The second administrator signs in once, so their invitation is active and counts towards the two needed.
+      await signInWithDevForm(page, held.key, `rana@${held.key}.example`, locale);
+      await page.context().clearCookies();
       await signInWithDevForm(page, held.key, held.adminEmail, locale);
       await page.goto(`${hostOrigin(held.key)}/admin/security/changes`);
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, "security.changes.title"));
