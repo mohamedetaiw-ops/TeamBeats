@@ -6,6 +6,7 @@ import { reactionKinds, type CommentPage, type CommentView, type ContentPerson, 
 import { problemMessages } from "@/lib/notifications/types";
 import { Button } from "@/components/ui/Button";
 import { StateView } from "@/components/ui/StateView";
+import { FormPanel } from "@/components/ui/FormField";
 
 const base = (id: string) => `/api/v1/content/items/${encodeURIComponent(id)}`;
 
@@ -143,7 +144,7 @@ export function ContentSocial({ itemId }: { itemId: string }) {
   const when = (iso: string) => new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));
 
   return (
-    <section className="content-social" aria-labelledby="content-social-title">
+    <FormPanel as="section" aria-labelledby="content-social-title">
       {reactions ? (
         <div className="content-reactions" role="group" aria-label={t("reactions")}>
           {reactionKinds.map((k) => (
@@ -239,6 +240,6 @@ export function ContentSocial({ itemId }: { itemId: string }) {
           ))}
         </div>
       ) : null}
-    </section>
+    </FormPanel>
   );
 }
