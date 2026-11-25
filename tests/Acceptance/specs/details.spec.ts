@@ -60,8 +60,8 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       expect(box!.x).toBeGreaterThanOrEqual(0);
       expect(box!.x + box!.width).toBeLessThanOrEqual(width);
 
-      await page.locator(".shell-avatar").click();
-      const account = page.locator(".shell-account-panel");
+      await page.getByTestId("shell-account").click();
+      const account = page.getByTestId("shell-account-panel");
       await expect(account.getByRole("link", { name: msg(locale, "shell.preferences") })).toBeVisible();
       await expect(account.getByRole("button", { name: msg(locale, "shell.signOut") })).toBeVisible();
       await page.keyboard.press("Escape");

@@ -2,7 +2,8 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Icon, type IconName } from "./Icon";
 
-export type PersonTone = "accent" | "highlight" | "success" | "info";
+/** `solid` is the signed-in person in the shell bar and its account menu. */
+export type PersonTone = "accent" | "highlight" | "success" | "info" | "solid";
 
 /** Initials from the first letter of the first two words, in any script. */
 function initialsOf(name: string) {

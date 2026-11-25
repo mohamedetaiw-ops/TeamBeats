@@ -22,7 +22,7 @@
   fill: var(--tb-color-shell-background);
 }
 
-:root[data-design="atlas"] .shell-bar .shell-avatar {
+:root[data-design="atlas"] .ui-person-avatar[data-tone="solid"] {
   background: var(--tb-color-highlight-base);
   color: var(--tb-color-text-inverse);
 }

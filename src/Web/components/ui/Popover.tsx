@@ -19,6 +19,7 @@ export function Popover({
   label,
   title,
   icon,
+  face,
   iconOnly = false,
   badge,
   variant = "secondary",
@@ -40,6 +41,8 @@ export function Popover({
   /** A heading inside the panel. Without it the panel is named by the button. */
   title?: string;
   icon?: IconName;
+  /** Drawn in place of the icon on an icon only trigger, such as the signed-in person's avatar. */
+  face?: ReactNode;
   iconOnly?: boolean;
   /** A short count on the trigger, such as "3" or "99+". It is not read out, so the label says it in words. */
   badge?: string | null;
@@ -78,9 +81,9 @@ export function Popover({
   const triggerProps = { id: triggerId, "aria-expanded": open, "aria-controls": id, "data-testid": triggerTestId, onPointerDown, onClick } as const;
   return (
     <>
-      {iconOnly && icon ? (
+      {iconOnly && (icon || face) ? (
         <button ref={trigger} type="button" className="button button-quiet ui-icon-button ui-popover-trigger" data-variant="quiet" title={label} {...triggerProps}>
-          <Icon name={icon} size={20} />
+          {face ?? (icon ? <Icon name={icon} size={20} /> : null)}
           <span className="visually-hidden">{label}</span>
           {badge ? (
             <span className="ui-popover-badge" aria-hidden="true">
