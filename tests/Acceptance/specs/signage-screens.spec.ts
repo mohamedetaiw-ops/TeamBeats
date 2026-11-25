@@ -1,4 +1,5 @@
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
+import { expectDetailConformant } from "../support/a11y";
 import { msg, type LaunchLocale } from "../support/messages";
 import { tenantApi } from "../support/pages";
 import { createTenant, type TestTenant } from "../support/platform";
@@ -57,6 +58,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(screen.getByRole("heading", { level: 2, name: title })).toBeVisible();
       await expect(screen.locator("html")).toHaveAttribute("dir", locale === "ar" ? "rtl" : "ltr");
       await expectAccessible(screen, testInfo, `signage-screen-${locale}`);
+      await expectDetailConformant(screen, testInfo, tenant, "/screens/[token]");
 
       await page.getByRole("button", { name: m("notifications.signage.revoke", { name: "Dock 3" }) }).click();
       await page.getByRole("button", { name: m("notifications.signage.revokeConfirm"), exact: true }).click();

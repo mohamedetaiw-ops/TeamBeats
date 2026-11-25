@@ -1,5 +1,6 @@
 import type { APIRequestContext } from "@playwright/test";
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
+import { expectDetailConformant } from "../support/a11y";
 import { msg, type LaunchLocale } from "../support/messages";
 import { tenantApi, tenantApiAs } from "../support/pages";
 import { createTenant, type TestTenant } from "../support/platform";
@@ -73,6 +74,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(table).toContainText("AUP-01");
       await expect(table).toContainText(m("policies.controls.statuses.published"));
       await expectAccessible(page, testInfo, `policy-control-policies-${locale}`);
+      await expectDetailConformant(page, testInfo, tenant, "/policies/controls");
     });
   });
 }

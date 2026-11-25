@@ -1,5 +1,6 @@
 import { request, type APIRequestContext } from "@playwright/test";
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
+import { expectDetailConformant } from "../support/a11y";
 import { msg, type LaunchLocale } from "../support/messages";
 import { createTenant, type TestTenant } from "../support/platform";
 import { hostOrigin, stack } from "../support/stack";
@@ -80,6 +81,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       const steps = page.locator("section", { has: page.locator("#journey-steps") });
       await expect(steps.locator("table tbody tr")).toHaveCount(3);
       await expectAccessible(page, testInfo, `journey-person-${locale}`);
+      await expectDetailConformant(page, testInfo, tenant, "/hr/journeys/[id]");
       const row = steps.locator("table tbody tr").filter({ hasText: welcome });
       await row.getByRole("button", { name: m("journeys.detail.markDone") }).click();
       await expect(page.getByRole("status").filter({ hasText: m("journeys.detail.stepDone") })).toBeVisible();
@@ -193,6 +195,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.goto(`${hostOrigin(tenant.key)}/preboarding/${"A".repeat(43)}`);
       await expect(page.getByText(m("preboarding.unavailableTitle"))).toBeVisible();
       await expectAccessible(page, testInfo, `preboarding-unavailable-${locale}`);
+      await expectDetailConformant(page, testInfo, tenant, "/preboarding/[token]");
     });
   });
 }

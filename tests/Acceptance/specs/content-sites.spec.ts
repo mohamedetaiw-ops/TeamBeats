@@ -1,4 +1,5 @@
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
+import { expectDetailConformant } from "../support/a11y";
 import { msg, type LaunchLocale } from "../support/messages";
 import { tenantApi } from "../support/pages";
 import { createTenant, type TestTenant } from "../support/platform";
@@ -78,6 +79,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await lobby.goto(url);
       await expect(lobby.getByRole("heading", { level: 2, name: title })).toBeVisible();
       await expectAccessible(lobby, testInfo, `signage-${locale}`);
+      await expectDetailConformant(lobby, testInfo, tenant, "/signage/[token]");
       await screen.close();
     });
 
