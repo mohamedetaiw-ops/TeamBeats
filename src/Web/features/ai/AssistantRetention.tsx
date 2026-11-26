@@ -7,11 +7,15 @@ import { Checkbox } from "@/components/ui/Checkbox";
 import { problemMessages } from "@/lib/notifications/types";
 import type { AssistantSettings } from "@/lib/assistant/types";
 
-/** The conversation retention of the assistant (spec 014 section 3) and whether guests may use it (AST-022), set by the AI Policy Administrator. */
+/**
+ * The conversation retention of the assistant (spec 014 section 3), whether guests may use it (AST-022) and whether it
+ * suggests questions on pages (R3, FR-023), set by the AI Policy Administrator.
+ */
 export function AssistantRetention({ initial, canManage }: { initial: AssistantSettings; canManage: boolean }) {
   const t = useTranslations("assistant.admin");
   const [days, setDays] = useState(String(initial.retentionDays));
   const [guests, setGuests] = useState(initial.guestsAllowed);
+  const [suggestions, setSuggestions] = useState(initial.suggestionsEnabled);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ error: boolean; text: string } | null>(null);
   const id = useId();
@@ -24,7 +28,7 @@ export function AssistantRetention({ initial, canManage }: { initial: AssistantS
       const response = await fetch("/api/v1/assistant/settings", {
         method: "PUT",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ retentionDays: Number.parseInt(days, 10) || null, guestsAllowed: guests }),
+        body: JSON.stringify({ retentionDays: Number.parseInt(days, 10) || null, guestsAllowed: guests, suggestionsEnabled: suggestions }),
       });
       setMessage(response.ok ? { error: false, text: t("saved") } : { error: true, text: (await problemMessages(response)).join(" ") || t("failed") });
     } catch {
@@ -61,6 +65,14 @@ export function AssistantRetention({ initial, canManage }: { initial: AssistantS
         checked={guests}
         disabled={!canManage}
         onChange={(e) => setGuests(e.target.checked)}
+      />
+      <Checkbox
+        label={t("suggestions")}
+        hint={t("suggestionsHint")}
+        name="suggestions-enabled"
+        checked={suggestions}
+        disabled={!canManage}
+        onChange={(e) => setSuggestions(e.target.checked)}
       />
       {canManage ? (
         <div className="button-row">

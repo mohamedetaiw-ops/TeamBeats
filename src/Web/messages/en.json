@@ -1033,7 +1033,8 @@
         "learning_classroom": "Classroom sessions with attendance",
         "policy_regulator_feeds": "Regulator change feeds",
         "content_guest_sites": "Sites shared with guest spaces",
-        "content_campaign_automation": "Campaign follow-ups and goals"
+        "content_campaign_automation": "Campaign follow-ups and goals",
+        "ai_assistant_suggestions": "Assistant suggestions"
       },
       "searchLabel": "Search capabilities",
       "searchPlaceholder": "Search by name",
@@ -8036,7 +8037,9 @@
       "saved": "Saved.",
       "failed": "That did not work. Try again in a moment.",
       "guests": "Let guests use the assistant",
-      "guestsHint": "Guests see answers only from the spaces they were invited to. Off by default."
+      "guestsHint": "Guests see answers only from the spaces they were invited to. Off by default.",
+      "suggestions": "Suggest questions on pages",
+      "suggestionsHint": "On a news item, document or policy the assistant offers questions about it. Nothing is sent to a model until a person picks one."
     },
     "marker": "[{n}]",
     "tools": {
@@ -8105,6 +8108,21 @@
       "close": "Close the assistant",
       "fullPage": "Open the full page",
       "intro": "Ask about anything you can open in TeamBeats. Answers cite their sources. Press <key>Ctrl /</key>, or <key>⌘ /</key> on a Mac, to open this panel from any page."
+    },
+    "suggestions": {
+      "title": "Suggested for this page",
+      "turnOff": "Don't suggest questions",
+      "turnedOff": "Suggestions are off. You can turn them back on in your preferences.",
+      "label": {
+        "summarize": "Summarize this",
+        "key_points": "What are the key points?",
+        "explain_policy": "What does this policy mean for me?"
+      },
+      "question": {
+        "summarize": "Summarize “{title}”.",
+        "key_points": "What are the key points of “{title}”?",
+        "explain_policy": "What does the policy “{title}” mean for me?"
+      }
     }
   },
   "agents": {
@@ -12951,6 +12969,13 @@
       "useHintIn": "Nothing is counted until you agree. Turning it off deletes what was counted; your other settings stay.",
       "useHintOut": "It is on unless you decline. Turning it off deletes what was counted; your other settings stay.",
       "failed": "That did not work. Try again."
+    },
+    "assistantSuggestions": {
+      "title": "Assistant suggestions",
+      "title_hint": "Questions the assistant offers about the page you are on.",
+      "use": "Suggest questions about the page I am on",
+      "hint": "Nothing is asked until you pick a question.",
+      "failed": "Your choice could not be saved. Try again."
     }
   },
   "hr_integration": {

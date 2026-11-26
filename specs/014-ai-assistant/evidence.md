@@ -26,3 +26,11 @@ The spec stays Approved, not Implemented, until the assistant panel in the shell
 | FR-017 personal answers only from tools over the person's records, with source and time | Met | `AssistantPersonalToolsTests.My_HR_helper_reads_only_the_persons_own_leave_and_cites_it`; template suite `template.my_hr_helper` |
 | FR-018 Teams assistant on the same contracts | Met; answers draw on Internal content at most | `TeamsAssistantTests.The_answer_and_its_sources_come_back_to_the_chat_and_a_follow_up_continues_the_conversation`, `Teams_answers_draw_on_internal_content_at_most`, `Unknown_ambiguous_and_unentitled_people_get_a_short_answer_and_nothing_else`, `Forged_chat_messages_are_refused` |
 | FR-022 guests refused unless allowed, then only their spaces | Met | `AssistantGuestTests.Guests_are_refused_unless_allowed_and_then_cite_only_their_spaces` |
+
+## R3
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| FR-023 suggestions without a model call, only for readable items allowed by the AI policy, switches for the person and the tenant | Met | `AssistantSuggestionTests` (3: readable only, withheld, picked turn kept to the item, other tenant; person and tenant switches, audit, package; page rules) |
+| US9 panel, preferences and admin setting | Met | `assistant-suggestions.spec.ts` (en and ar, axe) |
+

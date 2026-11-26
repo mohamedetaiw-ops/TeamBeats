@@ -11,7 +11,7 @@
 | Target release | R1 (universal assistant panel, cited answers from permitted content, routing to agents, conversation history, feedback, Q&A, summarize, translate, rewrite and draft), R2 (AI summary of search results for spec 012, file upload in a conversation, voice input and read aloud, French, Urdu and Hindi, assistant in Microsoft Teams, personal context answers such as my leave balance and my open requests through agents), R3 (proactive suggestions across the intranet) |
 | Last updated | 2026-11-14 |
 | Approved | 2026-11-07 by Mohamed (standing approval to proceed) |
-| Requirement IDs | AI-005, AI-007, KNO-007, AST-001 to AST-022 (new) |
+| Requirement IDs | AI-005, AI-007, KNO-007, AST-001 to AST-023 (new) |
 | Use cases | UC-06 |
 | Depends on | 008 (shell), 012 (retrieval), 013 (AI Gateway), 020 (routing to agents), 027 (governance), 034 (gate on routing and RAG configuration), 007 |
 | Used by | 009, 011, 025 (contextual actions and policy Q&A), 012 (search summaries, R2), 015 (Teams, R2), 035 (the `ask_teambeats` MCP tool and the `assistant:ask` scope give cited answers to external AI clients, R2) |
@@ -39,10 +39,10 @@
 - R2: the assistant inside Microsoft Teams as a personal app, with the same rules.
 - R2: personal context answers ("how many leave days do I have") by routing to agents whose tools read the user's own records (022, 016).
 - R2: summary of search results for spec 012.
+- R3: proactive suggestions across the intranet: questions about the item on the page the person is on, in the assistant.
 
 **Out of scope:**
 - Tools of its own: the assistant holds none (spec 020); actions come from agents under spec 027.
-- Proactive suggestions (R3).
 - Answers from the open web.
 
 ## 3. Actors and permissions
@@ -112,6 +112,14 @@ Ahmed asks "Can I carry over unused leave?". The assistant answers in Arabic fro
 1. **Given** the TeamBeats Teams app (015 US5), **Then** the assistant is available as a personal chat with the same retrieval, citations, routing and history as in TeamBeats.
 2. **Given** an action confirmation, **Then** it opens in TeamBeats when step-up is required.
 
+### User Story 9: Questions suggested where I am (Priority: P3, R3)
+
+**Acceptance scenarios:**
+1. **Given** Ahmed opens the assistant on a news item, page, document or policy he may read, **Then** it suggests up to three questions about that item, such as "Summarize this", before he asks anything.
+2. **Given** he picks one, **Then** it is asked as his first turn kept to that item, with the usual retrieval, citations and quota.
+3. **Given** an item he may not read, one the AI policy keeps from the assistant, or a page that shows no item, **Then** nothing is suggested.
+4. **Given** he turns suggestions off, or the AI Policy Administrator turns them off for the tenant, **Then** none are shown; he can turn his back on from his preferences.
+
 ### Edge cases
 - A source changes between retrieval and display: the citation links to the version used and says if a newer one exists.
 - Very long conversations: older turns are summarized or dropped by the assistant before the context limit (spec 013 leaves trimming to the caller).
@@ -140,6 +148,7 @@ Ahmed asks "Can I carry over unused leave?". The assistant answers in Arabic fro
 - **AST-020 / FR-020**: Payslips (019) and anonymous engagement content (023) MUST never enter the assistant's context.
 - **AST-021 / FR-021**: Each answer MUST record the model, prompt version and retrieval configuration in the execution record for evaluation (034).
 - **AST-022 / FR-022**: Guests (026) MUST NOT use the assistant unless the tenant enables it for guests, and then only over spaces they were invited to.
+- **AST-023 / FR-023** (R3): Proactive suggestions MUST be built without a model call, only for an item the person may read now and the AI policy lets the assistant use, MUST be shown only in the assistant and never as notifications, and MUST be off for a person who turned them off or a tenant that turned them off. A picked suggestion MUST be an ordinary turn kept to the item.
 - **FR-023**: Deleting all conversations MUST be offered from a menu on the conversation list (or the assistant settings), styled as a destructive menu item, and confirmed in a dialog that states the number of conversations to delete (DLS-084). Acceptance: the assistant page shows no delete all button in the main view; the dialog says "Delete 12 conversations?" when there are 12.
 - **FR-024**: The assistant page MUST be one conversation workspace (spec 036 DLS-114): past conversations in a side list that can be searched, renamed and deleted within the retention policy; the transcript; one composer with Send, a visible hint for the keyboard, and attachments only where enabled. An empty conversation shows starter suggestions drawn from what the person can do (their services, policies and tasks).
 - **FR-025**: The text tools (rewrite, translate, summarize, explain, draft) MUST be modes of the same composer, chosen from a control beside it, with the instruction as an optional line, and their result MUST appear in the transcript with Copy and the "AI generated" label. There is no second form on the page.
@@ -172,6 +181,7 @@ Ahmed asks "Can I carry over unused leave?". The assistant answers in Arabic fro
 | `ai.assistant.file_upload` (R2) | off | on | on |
 | `ai.assistant.voice` (R2) | off | on | on |
 | `ai.assistant.teams` (R2) | on | on | on |
+| `ai.assistant.suggestions` (R3) | off | on | on |
 
 ## 10. UX, localization and accessibility
 - Panel opens from the shell with a keyboard shortcut; answers stream; citations are links with text, not only icons; RTL.
@@ -188,6 +198,7 @@ Publishes `AssistantAnswered` (IDs, agent, outcome) for analytics. Consumes noth
 |---|---|---|
 | assistant.history_deleted | audit | user, scope |
 | assistant.retention_changed | audit | old, new, actor |
+| assistant.suggestions_changed (R3) | audit | old, new, actor |
 
 ## 14. Security and abuse cases
 - Prompt injection through retrieved content: untrusted envelope and no tools.
@@ -213,3 +224,4 @@ Publishes `AssistantAnswered` (IDs, agent, outcome) for analytics. Consumes noth
 | KNO-007 | AST-003, US1 |
 | UC-06 | US1 to US4, US7 |
 | R2 additions | AST-015 to AST-022, US5 to US8 |
+| R3 additions | AST-023, US9 |

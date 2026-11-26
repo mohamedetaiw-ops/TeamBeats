@@ -79,6 +79,27 @@
   color: var(--tb-color-text-secondary);
 }
 
+.assistant-suggestions {
+  display: grid;
+  gap: var(--tb-space-sm);
+  justify-items: start;
+}
+
+.assistant-suggestions h3 {
+  margin: 0;
+  font-size: var(--tb-font-size-sm);
+  color: var(--tb-color-text-secondary);
+}
+
+.assistant-suggestions ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
 .assistant-turns {
   display: grid;
   gap: var(--tb-space-lg);

@@ -21,3 +21,8 @@ Depends on 008, 012, 013, 020, 027, 034. R1: US1 to US4. R2: US5 to US8.
 - [x] T015 [US6] Voice input and read aloud through gateway `transcribe` and `speak`; panel controls; tests
 - [x] T016 [US8] Assistant as a personal chat with the TeamBeats bot (one bot route for Teams, routing by directory and linked person, answer cards with sources, continued conversations); tests
 - [x] T017 OpenAPI; R2 implementation notes; spec evidence
+
+## R3
+- [x] T018 [US9] Proactive suggestions for the item on the page, content and document scopes, the tenant and person switches, capability; tests
+- [x] T019 [US9] Panel suggestions, preferences switch, admin setting; e2e in English and Arabic with axe; OpenAPI, notes and evidence
+
