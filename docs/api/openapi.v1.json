@@ -4882,6 +4882,41 @@
         }
       }
     },
+    "/api/v1/experience/template-recommendations": {
+      "get": {
+        "tags": [
+          "Experience: pages"
+        ],
+        "parameters": [
+          {
+            "name": "purpose",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "viewport",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "density",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/experience/templates": {
       "get": {
         "tags": [

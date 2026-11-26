@@ -3315,5 +3315,8 @@
   "validation.experience.experiment_unavailable": "Experiments are not part of your plan.",
   "validation.analytics.benchmarks_choice": "Choose whether your organization takes part in benchmarks.",
   "validation.analytics.benchmarks_package": "Benchmarks are not in your package.",
-  "capability.analytics.benchmarks": "Benchmarks with other organizations"
+  "capability.analytics.benchmarks": "Benchmarks with other organizations",
+  "validation.experience.recommendation_purpose": "Choose what the page is for from the list.",
+  "validation.experience.recommendation_viewport": "Choose the screen most readers use from the list.",
+  "validation.experience.recommendation_density": "Choose how much content the page holds from the list."
 }

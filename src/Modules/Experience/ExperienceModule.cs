@@ -41,6 +41,7 @@ public static class ExperienceModule
         services.AddScoped<PersonalizationService>();
         services.AddScoped<Templates.TemplateStore>();
         services.AddScoped<Templates.TemplateService>();
+        services.AddScoped<Templates.TemplateRecommendations>();
         services.AddScoped<PageService>();
         services.AddScoped<Pages.PageRoutes>();
         services.AddScoped<Pages.Fragments>();
@@ -101,6 +102,10 @@ public static class ExperienceModule
         });
 
         // Spec 032 US5: tenant templates, for template designers.
+        // Spec 032 R3 FR-023: advice only, from the page's purpose, viewport and density.
+        x.MapGet("/template-recommendations", async (string? purpose, string? viewport, string? density, Templates.TemplateRecommendations recommendations,
+            CancellationToken ct) => Results.Ok(await recommendations.RecommendAsync(purpose, viewport, density, ct)));
+
         x.MapGet("/templates", async (Templates.TemplateService templates, CancellationToken ct) => Results.Ok(await templates.ListAsync(ct)));
 
         x.MapGet("/templates/{id}", async (string id, Templates.TemplateService templates, CancellationToken ct) =>

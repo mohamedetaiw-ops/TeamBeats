@@ -1,6 +1,6 @@
 # Implementation Plan: Page Composition
 
-**Spec:** `specs/032-page-composition/spec.md` (v1.0, Approved for R1) | **Date:** 2026-11-06
+**Spec:** `specs/032-page-composition/spec.md` (v1.0, Approved for R1) | **Date:** 2026-11-06, R3 added 2026-11-26
 **Shared base:** ADR-0012 (composable experience), ADR-0013 (ports inside modules), ADR-0014 (frontend architecture), `docs/architecture/module-map.md` (`Experience` module)
 
 ## Summary
@@ -72,3 +72,21 @@ Audit `page.created`, `page.published`, `page.rolled_back`, `component.enabled`,
 ## Tests
 - Backend: validator unit tests per rule; page lifecycle (draft never visible, release immutable, rollback as a new release, conflict on stale `If-Match`); picker eligibility (not enabled, not entitled, wrong region, missing permission); cross-tenant and sibling scope denials as 404; executable content refused; architecture test that templates, layouts and the builder never name a concrete component ID (FR-014); manifest validation.
 - Frontend: renderer with both reference packs on all 12 templates (swap test S02), fault injection (throw, timeout, missing manifest), event channel drops undeclared events, axe in `ar` and `en`, Playwright at 320 and 1920 widths.
+
+## R3 (2026-11-26)
+R3 adds template recommendations (FR-023) and tenant-built components in a sandbox (FR-031, ADR-0012 point 6), in that order.
+
+R3 slice 1, **template recommendations (FR-023):**
+- `GET /api/v1/experience/template-recommendations?purpose=&viewport=&density=` for anyone who may edit pages somewhere (`page.edit` coverage), under `experience.page_builder`. Rules only on page metadata, no model call and no page content or user data (section 11): each purpose has three fitting platform templates in order, a phone viewport lifts one column layouts (L01, L06, L07), and density picks the variant (light spacious, medium balanced, heavy compact) and lifts templates with fitting region counts. Up to three results, each with its variant and reasons. Templates switched off for the tenant (feature controls) are never recommended.
+- The new page screen gains "Help me choose": three choices mark the fitting template cards with a Recommended badge and the reasons; every template stays on offer and nothing is chosen for the editor, picking a marked card takes its variant.
+
+Defaults (spec silent):
+- Purposes: general, news, department, project, knowledge, services, campaign, dashboard, onboarding. Viewports: desktop, tablet, phone. Density: a little, some, a lot.
+- Only platform page templates (T01 to T12) are scored, since a tenant template has no declared purpose; the employee home template is not a page template.
+
+R3 slice 2, **tenant-built components in a sandbox (FR-031):**
+- Under `experience.custom_components` (Enterprise and Government). A tenant administrator (`component.enable` for the whole tenant) submits a component: a manifest subset (id `tenant.<slug>`, version, names in English and Arabic, typed properties, declared hosts, context keys from the approved list of FR-028, events it publishes) and one HTML document of at most 256 KB with its script and style inline. Versions are immutable.
+- A platform operator reviews each version on the platform host (security review, ADR-0012) and approves or rejects it with a reason; only an approved version can be enabled, and only then does it appear in the picker. Audited on both sides.
+- The document is served by the API at `/api/v1/experience/sandbox/{id}/{version}` for signed in members of the tenant, with its own policy: `sandbox allow-scripts` (an opaque origin, so no cookies, session, storage or page DOM), `default-src 'none'`, inline script and style only, `connect-src` and `img-src` limited to the declared HTTPS hosts, `frame-ancestors 'self'`, no referrer. The page renders it in an `iframe sandbox="allow-scripts"` and talks to it only by `postMessage`: the host sends the declared context values, the theme tokens and the placement properties; the frame may send a height and its declared events, checked against the manifest and dropped otherwise.
+- At most three sandboxed placements per page (ADR-0012 consequence). Each placement keeps the error boundary and a size reserving placeholder.
+

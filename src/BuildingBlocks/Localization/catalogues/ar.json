@@ -3315,5 +3315,8 @@
   "validation.experience.experiment_unavailable": "التجارب ليست ضمن خطتك.",
   "validation.analytics.benchmarks_choice": "اختر ما إذا كانت مؤسستك تشارك في المقارنات المرجعية.",
   "validation.analytics.benchmarks_package": "المقارنات المرجعية غير متاحة في باقتك.",
-  "capability.analytics.benchmarks": "المقارنات المرجعية مع مؤسسات أخرى"
+  "capability.analytics.benchmarks": "المقارنات المرجعية مع مؤسسات أخرى",
+  "validation.experience.recommendation_purpose": "اختر الغرض من الصفحة من القائمة.",
+  "validation.experience.recommendation_viewport": "اختر الشاشة التي يستخدمها معظم القراء من القائمة.",
+  "validation.experience.recommendation_density": "اختر مقدار المحتوى في الصفحة من القائمة."
 }

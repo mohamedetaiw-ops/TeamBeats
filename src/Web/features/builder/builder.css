@@ -42,6 +42,38 @@
   font-weight: var(--tb-font-weight-bold);
 }
 
+.builder-recommend {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.builder-recommend legend {
+  margin-block-end: var(--tb-space-sm);
+  font-weight: var(--tb-font-weight-bold);
+}
+
+.builder-recommend-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr));
+  gap: var(--tb-space-sm);
+}
+
+.builder-template[data-recommended] {
+  border-color: var(--tb-color-border-strong);
+}
+
+.builder-template-advice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-xs);
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
 .builder-template-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
