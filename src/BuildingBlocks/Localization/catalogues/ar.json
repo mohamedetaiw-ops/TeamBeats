@@ -50,7 +50,7 @@
   "conflict.content.not_published": "هذا العنصر غير منشور.",
   "conflict.content.nothing_to_publish": "لا توجد تغييرات غير منشورة.",
   "conflict.content.remind_limit": "لا يمكنك تأجيل هذا الإعلان مرة أخرى. يرجى قراءته وتأكيده.",
-  "conflict.content.site_archived": "هذا الموقع مؤرشف.",
+  "conflict.content.site_archived": "هذا الموقع مؤرشف. استعده أولًا.",
   "conflict.content.share_not_published": "يمكن مشاركة المحتوى المنشور فقط.",
   "conflict.content.share_restricted": "يمكن مشاركة المحتوى العام أو الداخلي الموجه إلى الجميع فقط في Slack، لأن أعضاء القناة لا يتم التحقق منهم مقابل الجمهور.",
   "conflict.directory.no_connection": "فعّل مزامنة الدليل في اتصال Microsoft 365 أولاً",
@@ -3283,5 +3283,18 @@
   "validation.policies.regulator_status": "اختر جديد أو مستبعد أو تم التعامل معه.",
   "validation.policies.regulator_policies": "اختر من سياسة واحدة إلى 20 سياسة تديرها.",
   "validation.policies.regulator_note": "يمكن أن تصل الملاحظة إلى 2,000 حرف.",
-  "conflict.policies.regulator_decided": "اتخذ شخص آخر قرارًا بشأن هذا التحديث التنظيمي."
+  "conflict.policies.regulator_decided": "اتخذ شخص آخر قرارًا بشأن هذا التحديث التنظيمي.",
+  "capability.content.guest_sites": "مواقع مشاركة مع مساحات الضيوف",
+  "capability.content.campaign_automation": "متابعات الحملات وأهدافها",
+  "validation.content.share_days": "شارك لمدة من يوم إلى 365 يومًا.",
+  "validation.content.share_space": "اختر مساحة نشطة تملكها.",
+  "conflict.content.already_shared": "هذا الموقع مشارك بالفعل مع تلك المساحة.",
+  "conflict.content.share_revoked": "انتهت هذه المشاركة بالفعل.",
+  "validation.content.campaign_automation": "تحتاج خطوات المتابعة وأهداف الحملات إلى ميزة أتمتة الحملات.",
+  "validation.content.campaign_follows": "تأتي خطوة المتابعة بعد خطوة سابقة بمدة من 1 إلى 60 يومًا.",
+  "validation.content.campaign_goal": "الهدف عنصر من خطوات الحملة ونسبة من 1 إلى 100 بالمئة.",
+  "notifications.template.content.campaign.goal_reached.title": "بلغت الحملة هدفها",
+  "notifications.template.content.campaign.goal_reached.body": "بلغت حملة في موقعك هدفها. لن تُرسل خطواتها المتبقية.",
+  "validation.content.event": "اختر فعالية منشورة للشركة من التقويم.",
+  "validation.content.event_type": "عنصر الفعالية وحده يرتبط بفعالية في التقويم."
 }

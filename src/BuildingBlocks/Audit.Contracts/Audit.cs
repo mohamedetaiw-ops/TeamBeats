@@ -455,6 +455,9 @@ public static class AuditActions
     public const string SiteChanged = "site.changed";
     public const string SiteArchived = "site.archived";
     public const string SiteRestored = "site.restored";
+    public const string SiteSharedWithGuests = "site.shared_with_guests";
+    public const string SiteGuestShareRevoked = "site.guest_share_revoked";
+    public const string CampaignGoalReached = "campaign.goal_reached";
 
     // 011 (R1): libraries, files and permission breaks (section 13).
     public const string DocLibraryCreated = "doc.library_created";
@@ -784,7 +787,7 @@ public static class AuditActions
         ContentRetentionApplied, ContentScreenCreated, ContentScreenRotated, ContentScreenRemoved,
         ContentCriticalSent, ContentCriticalDenied, ContentAcknowledged, ContentAckReportExported,
         ContentReviewed, ContentOwnerReassigned, ContentVersionRestored, ContentCommentModerated,
-        SiteCreated, SiteChanged, SiteArchived, SiteRestored,
+        SiteCreated, SiteChanged, SiteArchived, SiteRestored, SiteSharedWithGuests, SiteGuestShareRevoked, CampaignGoalReached,
         DocLibraryCreated, DocLibraryChanged, DocTypeChanged, DocSettingsChanged, DocUploaded, DocMetadataChanged, DocDownloaded,
         DocPermissionsBroken, DocPermissionsChanged, DocCheckedOut, DocCheckedIn, DocForcedCheckIn, DocVersionCreated, DocRestored, DocDeleted,
         DocRestoredFromBin, DocPurged, DocReleaseSubmitted, DocReleaseWithdrawn, DocReleaseApproved, DocReleaseReturned, DocVersionEffective, DocReviewed,

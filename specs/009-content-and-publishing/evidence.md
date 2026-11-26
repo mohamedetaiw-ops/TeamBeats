@@ -40,3 +40,16 @@ Spec 009 R2 is built: sites, mentions and hashtags, follows, AI translation, mul
 | US3 scenario 5 health: ownerless sites, archived sites with live items | Met | `ContentRetentionSignageTests.Health_flags_ownerless_sites_...` |
 | Digital signage read-only feed (section 4 default) | Met | `ContentRetentionSignageTests.A_signage_address_shows_only_public_items_...`, `content-sites.spec.ts` (screen opens without signing in) |
 | Tenant boundaries and entitlements of R2 | Met | cross-tenant and plan cases in each class above (`content.ai_translation`, `content.multistep_approval`, `content.campaigns`) |
+
+## R3 evidence
+
+Spec 009 R3 is built: sites shared with guest spaces, campaign follow-ups and goals, and event items linked to calendar events. Defaults are in `docs/architecture/r3-implementation-notes.md`.
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| US10, FR-025 sites shared read-only with guest spaces | Met | `GuestSiteTests` (2), `content-guest-sites.spec.ts` (en and ar, axe) |
+| US11 scenario 1, FR-026 follow-up after a delay to people who have not acted | Met | `ContentCampaignTests.A_follow_up_goes_after_its_delay_...`, `ContentCampaignTests.A_follow_up_of_a_skipped_step_is_skipped_too`, `content-campaign-automation.spec.ts` |
+| US11 scenario 2, FR-027 goal skips pending steps, completes and tells publishers | Met | `ContentCampaignTests.Reaching_the_goal_skips_the_pending_steps_...` |
+| US11 scenario 3 fixed times only without the feature | Met | `ContentCampaignTests.Follow_ups_and_goals_are_refused_without_the_feature_...` |
+| FR-018 R3 event items are the calendar events of spec 037 | Met | `ContentEventItemTests`, `content-event-items.spec.ts` (en and ar, axe) |
+| Tenant boundaries and entitlements of R3 | Met | other tenant and plan cases in each class above (`content.guest_sites`, `content.campaign_automation`) |

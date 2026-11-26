@@ -211,3 +211,23 @@ fieldset.spaces-card legend {
     align-items: start;
   }
 }
+
+/* Spec 009 R3 US10: intranet sites shared with a space, and their items as guests read them. */
+.spaces-shared-sites {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.spaces-shared-sites > .spaces-shared-site {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm) var(--tb-space-md);
+  align-items: baseline;
+}
+
+.spaces-shared-item {
+  max-inline-size: 72ch;
+}

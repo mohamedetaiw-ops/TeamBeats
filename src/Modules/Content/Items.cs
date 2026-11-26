@@ -31,7 +31,8 @@ public sealed record ItemRequest(
     string? ChangeNote,
     int? Version,
     CriticalInput? Critical = null,
-    bool? Signage = null);
+    bool? Signage = null,
+    Guid? EventId = null);
 
 /// <summary>When to go live and when to expire, as local times in the site's time zone (US1 scenario 3).</summary>
 /// <summary>SensitiveReason confirms a sensitive data warning (spec 026 US6 scenario 1).</summary>
@@ -65,7 +66,8 @@ public sealed record ItemView(
     CriticalSettings? Critical,
     bool OwnerReviewOpen = false,
     bool RetirePending = false,
-    bool Signage = false);
+    bool Signage = false,
+    Guid? EventId = null);
 
 /// <summary>What a reader sees: the published version in their language, or the fallback with a note (US5 scenario 2).</summary>
 public sealed record ReaderView(
@@ -88,7 +90,8 @@ public sealed record ReaderView(
     IReadOnlyList<string>? Anchors = null,
     string Classification = "internal",
     bool SiteArchived = false,
-    IReadOnlyList<string>? Tags = null);
+    IReadOnlyList<string>? Tags = null,
+    TeamBeats.Modules.Calendar.Contracts.CalendarEventCard? Event = null);
 
 public sealed record VersionSummary(int Number, ContentPerson Author, ContentPerson? Approver, string? ChangeNote, bool Material, IReadOnlyList<string> Locales,
     DateTimeOffset CreatedAt, DateTimeOffset? PublishedAt, bool Current, bool Draft, int? RestoredFrom = null);
@@ -145,7 +148,8 @@ public sealed class Items(
     TeamBeats.Modules.Security.Contracts.ISensitiveDataScanner sensitiveData,
     IProfiles profiles,
     IAuthorizationProvisioning provisioning,
-    TeamBeats.Modules.Documents.Contracts.IAssetImages images)
+    TeamBeats.Modules.Documents.Contracts.IAssetImages images,
+    TeamBeats.Modules.Calendar.Contracts.ICalendarEventCards eventCards)
 {
     public static readonly IReadOnlySet<string> Classifications = new HashSet<string>(StringComparer.Ordinal) { "public", "internal", "confidential", "restricted" };
 
@@ -480,6 +484,7 @@ public sealed class Items(
         }
         ValidateSettings(request, errors);
         ValidateSignage(request.Signage, type, errors);
+        await ValidateEventAsync(type, request.EventId, required: true, errors, ct);
         await ValidatePeopleAsync(request, errors, ct);
         var critical = await CriticalAsync(request.Critical, null, type, site, errors, ct);
         var variants = await CleanVariantsAsync(request.Variants, primary, null, errors, ct);
@@ -502,6 +507,7 @@ public sealed class Items(
                 signage = request.Signage ?? false,
             }, ct);
         await InsertVersionAsync(id, 1, variants, request.ChangeNote, user, now, ct);
+        await LinkEventAsync(id, request.EventId, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.ContentCreated, "content_item", id.ToString(), TargetOrgUnitId: site.OrgUnitId,
             Changes: new { site = site.Id, type, version = 1 }), ct);
         return await ViewAsync((await RowAsync(id, false, ct))!, ct);
@@ -546,6 +552,7 @@ public sealed class Items(
         }
         ValidateSettings(request, errors);
         ValidateSignage(request.Signage, item.Type, errors);
+        await ValidateEventAsync(item.Type, request.EventId, required: false, errors, ct);
         await ValidatePeopleAsync(request, errors, ct);
         var critical = await CriticalAsync(request.Critical, item.Critical, item.Type, site, errors, ct);
         var basis = item.DraftVersion ?? item.PublishedVersion;
@@ -569,8 +576,49 @@ public sealed class Items(
                 featured = request.Featured ?? item.Featured, critical = critical is null ? null : new Jsonb(ContentJson.Write(critical)), draft, now,
                 signage = request.Signage ?? item.Signage,
             }, ct);
+        await LinkEventAsync(id, request.EventId, ct);
         return await ViewAsync((await RowAsync(id, false, ct))!, ct);
     }
+
+    /// <summary>An event item needs a published company event of the tenant; no other type takes one.</summary>
+    private async Task ValidateEventAsync(string type, Guid? eventId, bool required, ValidationErrors errors, CancellationToken ct)
+    {
+        if (type != ContentTypes.Event)
+        {
+            if (eventId is not null)
+            {
+                errors.Add("eventId", "validation.content.event_type");
+            }
+            return;
+        }
+        if ((eventId is null && required) || (eventId is { } e && !await eventCards.PublishedAsync(e, ct)))
+        {
+            errors.Add("eventId", "validation.content.event");
+        }
+    }
+
+    private async Task LinkEventAsync(Guid item, Guid? eventId, CancellationToken ct)
+    {
+        if (eventId is { } e)
+        {
+            await session.ExecAsync(
+                """
+                insert into content.item_calendar_event (tenant_id, item_id, event_id) values (platform.current_tenant_id(), @item, @e)
+                on conflict (tenant_id, item_id) do update set event_id = excluded.event_id
+                """, new { item, e }, ct);
+        }
+    }
+
+    public async Task<IReadOnlyList<TeamBeats.Modules.Calendar.Contracts.CalendarEventChoice>> EventChoicesAsync(CancellationToken ct)
+    {
+        await entitlements.DemandAsync(Capabilities.ContentCore, ct);
+        context.RequireUser();
+        return await eventCards.UpcomingAsync(ct);
+    }
+
+    internal async Task<Guid?> EventOfAsync(ItemRow item, CancellationToken ct) =>
+        item.Type != ContentTypes.Event ? null
+            : (await session.QueryAsync("select event_id from content.item_calendar_event where item_id = @id", new { id = item.Id }, r => r.GetGuid(0), ct)).Cast<Guid?>().FirstOrDefault();
 
     /// <summary>Writes the variants to the open draft, or starts the next version as the draft. Returns the draft number.</summary>
     internal async Task<int> SaveDraftAsync(ItemRow item, IReadOnlyDictionary<string, ContentVariant> variants, string? note, Guid user, DateTimeOffset now,
@@ -901,7 +949,7 @@ public sealed class Items(
             item.OwnerId is { } o ? await PersonAsync(o, ct) : null, item.BackupOwnerId is { } b ? await PersonAsync(b, ct) : null, item.ReviewDueAt,
             item.Pinned, item.Featured, item.PublishedVersion, item.DraftVersion, item.PublishAt, item.ExpiresAt, item.PublishedAt, item.ExpiredAt,
             version?.Variants ?? new Dictionary<string, ContentVariant>(), version?.ChangeNote, await PersonAsync(item.CreatedBy, ct), item.UpdatedAt, item.Version, item.InReview, item.Critical,
-            item.OwnerReviewInstanceId is not null, item.RetireInstanceId is not null, item.Signage);
+            item.OwnerReviewInstanceId is not null, item.RetireInstanceId is not null, item.Signage, await EventOfAsync(item, ct));
     }
 
     public async Task<ItemView> GetAsync(Guid id, CancellationToken ct) => await ViewAsync((await ManagedAsync(id, false, ct)).Item, ct);
@@ -960,7 +1008,8 @@ public sealed class Items(
             version.PublishedAt ?? version.CreatedAt, item.Status == ContentStatuses.Expired, item.Pinned, item.Featured,
             (await sites.TypeAsync(item.Type, ct))!.UnderReviewLabel && item.ReviewDueAt is { } due && due <= clock.UtcNow,
             BodyValidator.Sections(variant.Body).Select(s => s.Anchor).ToList(), item.Classification, !site.Active,
-            await session.QueryAsync("select tag from content.item_tag where item_id = @id order by tag", new { id }, r => r.GetString(0), ct));
+            await session.QueryAsync("select tag from content.item_tag where item_id = @id order by tag", new { id }, r => r.GetString(0), ct),
+            await EventOfAsync(item, ct) is { } eventId ? await eventCards.ForReaderAsync(eventId, ct) : null);
     }
 
     /// <summary>The reader's locale, else the tenant default, else the item's primary locale.</summary>

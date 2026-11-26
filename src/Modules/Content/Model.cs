@@ -44,12 +44,16 @@ public static class ContentTypes
     /// <summary>Knowledge articles (spec 009 content types, spec 011 US4), created from the knowledge base templates.</summary>
     public const string Knowledge = "knowledge";
 
+    /// <summary>An event item (spec 009 FR-018 R3): text about one company event of the calendar, linked by its ID.</summary>
+    public const string Event = "event";
+
     public static readonly IReadOnlyDictionary<string, ContentTypeSettings> Defaults = new Dictionary<string, ContentTypeSettings>(StringComparer.Ordinal)
     {
         [News] = new(News, RequiresOwner: false, ReviewMonths: null, ShowHistoryToReaders: false, UnderReviewLabel: true),
         [Announcement] = new(Announcement, RequiresOwner: false, ReviewMonths: null, ShowHistoryToReaders: false, UnderReviewLabel: true),
         [Page] = new(Page, RequiresOwner: true, ReviewMonths: 12, ShowHistoryToReaders: false, UnderReviewLabel: true),
         [Knowledge] = new(Knowledge, RequiresOwner: true, ReviewMonths: 12, ShowHistoryToReaders: false, UnderReviewLabel: true),
+        [Event] = new(Event, RequiresOwner: false, ReviewMonths: null, ShowHistoryToReaders: false, UnderReviewLabel: true),
     };
 }
 

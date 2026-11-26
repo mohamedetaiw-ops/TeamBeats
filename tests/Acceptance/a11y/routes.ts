@@ -304,6 +304,8 @@ export const routes: readonly Route[] = [
   { path: "/spaces/[id]/files", tier: "detail" },
   { path: "/spaces/[id]/members", tier: "detail" },
   { path: "/spaces/[id]/settings", tier: "detail" },
+  { path: "/spaces/[id]/sites/[siteId]", tier: "detail", reason: "needs a site shared with the space by a person who manages it; opened by the content guest sites suite" },
+  { path: "/spaces/[id]/sites/[siteId]/items/[itemId]", tier: "detail", reason: "needs a site shared with the space by a person who manages it; opened by the content guest sites suite" },
   { path: "/spaces/[id]/sync", tier: "detail" },
   { path: "/spaces/[id]/tasks", tier: "detail" },
   { path: "/spaces/[id]/tasks/[taskId]", tier: "detail" },

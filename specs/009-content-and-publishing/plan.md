@@ -101,3 +101,17 @@ R2 slices, in order:
 - Translation reviewer per locale is a content type setting, off by default; when off, publishing a machine translated variant still needs a human to open and approve it (the "machine translated" mark is cleared only by a human edit or approval).
 - Retention defaults: keep everything (no deletion) until a tenant sets a period.
 - Signage screen URLs carry a random token stored only as a hash; rotating the token revokes the old URL.
+
+## R3 plan (2026-11-26)
+R3 builds User Story 10 (sites shared with guest spaces, FR-025), User Story 11 (campaign follow-ups and goals, FR-026, FR-027) and the R3 part of FR-018 (event items of sites are the calendar events of spec 037).
+
+R3 slices, in order:
+1. **Guest sites (US10, FR-025):** capability `content.guest_sites`. `content.site_guest_share` (site, space, expiry, creator, revoked) like the document folder shares of spec 011. `GET/POST /api/v1/content/sites/{id}/guest-shares` and `POST /api/v1/content/site-guest-shares/{id}/revoke` for people with `site.manage` at the site who own the space (`ISpaceAccess`); 1 to 365 days, 30 by default; never for an archived site. Guests read through `GET /api/v1/content/shared-with-space/{spaceId}` (live shares of a space they read, with the sites' names), `GET /api/v1/content/shared-with-space/{spaceId}/sites/{siteId}/items` and `.../items/{itemId}` (published Public and Internal items of the site, plain reading view without comments, reactions or acknowledgement). Audit `site.shared_with_guests` and `site.guest_share_revoked`. The space page shows "Shared sites" next to shared folders; the site settings page has a Guests section.
+2. **Campaign automation (US11, FR-026, FR-027):** capability `content.campaign_automation`. A step may carry `follows` (the position of an earlier step) and `delayDays` (1 to 60) in place of a fixed time: it is due at the earlier step's send time plus the delay, and goes to the people the earlier step reached who have not acted on the earlier step's item. A campaign may carry a `goal` (an item of its steps and a percent from 1 to 100): the scheduler compares the share of the campaign audience that acted on the goal item, and when reached it skips the pending steps, completes the campaign, tells the people who publish at the site (`content.campaign.goal_reached`) and audits `campaign.goal_reached`. Without the capability, `follows` and `goal` are refused with a validation error. The campaign editor and dashboard show both.
+3. **Event items (FR-018 R3):** an item of the new type `event` links one Calendar event (spec 037) by ID through a Calendar contract that returns the event's times, place, online link and registration state for the reader; the item never copies them, so an event exists once. Reading an event item shows the event card and links to its registration.
+
+## R3 gaps and smallest safe defaults
+- A guest reads a shared site only inside the space; there is no guest feed, no search and no notification of new items (spec 026: guests do not get the home feed).
+- Guests never read Confidential items of a shared site, even where a space allows Confidential files.
+- A follow-up step's audience is the earlier step's recipients at send time, so people who joined the audience later do not get follow-ups.
+- The goal counts acted (confirmed when the item asks for confirmation, otherwise opened) over the campaign audience at the time of the check.

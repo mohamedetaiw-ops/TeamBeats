@@ -74,6 +74,7 @@ public sealed class ContentRetention(IDbSession session, Sites sites, ILegalHold
                 delete from content.audience_member where item_id = @id;
                 delete from content.item_tag where item_id = @id;
                 delete from content.item_event where item_id = @id;
+                delete from content.item_calendar_event where item_id = @id;
                 delete from content.content_version where item_id = @id;
                 delete from content.content_item where id = @id;
                 """, new { id }, ct);

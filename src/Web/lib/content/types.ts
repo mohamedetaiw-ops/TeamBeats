@@ -56,6 +56,8 @@ export type ReaderView = {
   siteArchived?: boolean;
   /** The hashtags of the live version (spec 009 US9 scenario 3), each opening its topic page. */
   tags?: string[] | null;
+  /** For an event item (spec 009 FR-018 R3): the calendar event as the reader sees it, null outside its audience. */
+  event?: EventCard | null;
 };
 
 export type CriticalNotice = {
@@ -222,7 +224,27 @@ export type ScreenWithAddress = { screen: ScreenView; path: string };
 export type SignageFeed = { name: string; siteNames: Record<string, string>; items: { id: string; locale: string; title: string; summary: string | null; publishedAt: string }[] };
 export type HealthItem = { id: string; siteId: string; type: string; status: string; title: string; ownerId: string | null; reviewDueAt: string | null; expiredAt: string | null };
 
-export const contentTypes = ["news", "announcement", "page"] as const;
+export const contentTypes = ["news", "announcement", "page", "event"] as const;
+
+/** A company event of the calendar shown on an event item; the event itself stays in the calendar (spec 037). */
+export type EventCard = {
+  id: string;
+  titles: Record<string, string>;
+  status: string;
+  allDay: boolean;
+  start: string | null;
+  end: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  timeZone: string;
+  location: string | null;
+  onlineUrl: string | null;
+  occurrenceKey: string;
+  registration: { state: string | null; position: number | null; seatsLeft: number; open: boolean; waitlist: boolean } | null;
+};
+
+/** The calendar, where the event's registration is. */
+export const eventCalendarHref = "/calendar";
 export const contentStatuses = ["draft", "in_review", "approved", "scheduled", "published", "expired", "archived"] as const;
 export const classifications = ["public", "internal", "confidential", "restricted"] as const;
 export const membershipTypes = ["employee", "contractor", "guest"] as const;
@@ -253,7 +275,12 @@ export type CampaignStepView = {
   status: "pending" | "sent" | "skipped" | "cancelled";
   sentAt: string | null;
   recipients: number | null;
+  /** The position of the step this one follows (spec 009 US11), and the days after it. */
+  follows?: number | null;
+  delayDays?: number | null;
 };
+
+export type CampaignGoalView = { itemId: string; percent: number; reachedAt: string | null };
 
 export type CampaignView = {
   id: string;
@@ -266,6 +293,9 @@ export type CampaignView = {
   createdAt: string;
   updatedAt: string;
   version: number;
+  goal?: CampaignGoalView | null;
+  /** Whether follow-ups and goals are available on the tenant's plan; the API refuses them otherwise. */
+  automation?: boolean;
 };
 
 /** What people did is null below the minimum group size. */
@@ -278,6 +308,7 @@ export type CampaignDashboard = {
   steps: { stepId: string; position: number; status: string; counts: CampaignCounts }[];
   byUnit: CampaignBreakdownRow[];
   byLocation: CampaignBreakdownRow[];
+  goal?: { itemId: string; percent: number; actedPercent: number | null; reachedAt: string | null } | null;
 };
 
 export const campaignHref = (id: string) => `/content/campaigns/${encodeURIComponent(id)}`;
@@ -286,3 +317,35 @@ export const campaignHref = (id: string) => `/content/campaigns/${encodeURICompo
 export type ChannelReport = { channel: string; delivered: number; read: number | null; pending: number; failed: number; bounced: number | null; dropped: number };
 
 export type DeliveryReport = { recipients: number; notifications: number; channels: ChannelReport[] };
+
+/** Sites shared read-only with guest spaces (spec 009 R3 US10). */
+export type SiteGuestShare = {
+  id: string;
+  siteId: string;
+  spaceId: string;
+  spaceName: string;
+  expiresAt: string;
+  createdAt: string;
+  createdBy: { id: string; displayName: string };
+  revokedAt: string | null;
+  live: boolean;
+};
+
+export type SharedSite = { shareId: string; siteId: string; names: Record<string, string>; expiresAt: string };
+
+export type GuestItemSummary = { id: string; type: string; locale: string; title: string; summary: string | null; publishedAt: string };
+
+export type GuestItemView = {
+  id: string;
+  siteId: string;
+  siteNames: Record<string, string>;
+  type: string;
+  locale: string;
+  title: string;
+  summary: string | null;
+  body: BodyDocument;
+  publishedAt: string;
+};
+
+export const sharedSiteHref = (spaceId: string, siteId: string) => `/spaces/${encodeURIComponent(spaceId)}/sites/${encodeURIComponent(siteId)}`;
+export const sharedItemHref = (spaceId: string, siteId: string, itemId: string) => `${sharedSiteHref(spaceId, siteId)}/items/${encodeURIComponent(itemId)}`;

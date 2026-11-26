@@ -47,6 +47,7 @@ public static class ContentModule
         services.AddScoped<ContentFollows>();
         services.AddScoped<ContentTranslations>();
         services.AddScoped<ContentCampaigns>();
+        services.AddScoped<GuestSites>();
         services.AddScoped<ContentRetention>();
         services.AddScoped<ContentSignage>();
         services.AddScoped<SignageAnnouncements>();
@@ -108,6 +109,32 @@ public static class ContentModule
             await session.CommitAsync(ct);
             return Results.Ok(site);
         });
+
+        sites.MapGet("/{id:guid}/guest-shares", async (Guid id, GuestSites shares, CancellationToken ct) => Results.Ok(await shares.ListAsync(id, ct)));
+
+        sites.MapPost("/{id:guid}/guest-shares", async (Guid id, SiteGuestShareRequest request, GuestSites shares, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await shares.CreateAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/content/sites/{id}/guest-shares/{view.Id}", view);
+        });
+
+        var guestSites = app.MapGroup("/api/v1/content").RequireTenantUser().WithTags("Content: guest sites");
+
+        guestSites.MapPost("/site-guest-shares/{id:guid}/revoke", async (Guid id, GuestSites shares, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await shares.RevokeAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        guestSites.MapGet("/shared-with-space/{spaceId:guid}", async (Guid spaceId, GuestSites shares, CancellationToken ct) => Results.Ok(await shares.ForSpaceAsync(spaceId, ct)));
+
+        guestSites.MapGet("/shared-with-space/{spaceId:guid}/sites/{siteId:guid}/items", async (Guid spaceId, Guid siteId, GuestSites shares, CancellationToken ct) =>
+            Results.Ok(await shares.ItemsAsync(spaceId, siteId, ct)));
+
+        guestSites.MapGet("/shared-with-space/{spaceId:guid}/sites/{siteId:guid}/items/{itemId:guid}", async (Guid spaceId, Guid siteId, Guid itemId, GuestSites shares,
+            CancellationToken ct) => Results.Ok(await shares.ItemAsync(spaceId, siteId, itemId, ct)));
 
         var settings = app.MapGroup("/api/v1/content/settings").RequireTenantUser().WithTags("Content: settings");
 
@@ -233,6 +260,9 @@ public static class ContentModule
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });
+
+        // Coming company events the author sees, for an event item to link (FR-018 R3).
+        items.MapGet("/event-choices", async (Items service, CancellationToken ct) => Results.Ok(await service.EventChoicesAsync(ct)));
 
         items.MapGet("/{id:guid}/view", async (Guid id, string? campaign, Items service, ContentCampaigns campaigns, IDbSession session, CancellationToken ct) =>
         {

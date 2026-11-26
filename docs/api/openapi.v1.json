@@ -12201,6 +12201,60 @@
         }
       }
     },
+    "/api/v1/content/sites/{id}/guest-shares": {
+      "get": {
+        "tags": [
+          "Content: sites"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Content: sites"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteGuestShareRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/content/sites/{id}/screens": {
       "get": {
         "tags": [
@@ -12248,6 +12302,125 @@
           },
           "required": true
         },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/site-guest-shares/{id}/revoke": {
+      "post": {
+        "tags": [
+          "Content: guest sites"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/shared-with-space/{spaceId}": {
+      "get": {
+        "tags": [
+          "Content: guest sites"
+        ],
+        "parameters": [
+          {
+            "name": "spaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/shared-with-space/{spaceId}/sites/{siteId}/items": {
+      "get": {
+        "tags": [
+          "Content: guest sites"
+        ],
+        "parameters": [
+          {
+            "name": "spaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/shared-with-space/{spaceId}/sites/{siteId}/items/{itemId}": {
+      "get": {
+        "tags": [
+          "Content: guest sites"
+        ],
+        "parameters": [
+          {
+            "name": "spaceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -12842,6 +13015,18 @@
       }
     },
     "/api/v1/content/items/slack-channels": {
+      "get": {
+        "tags": [
+          "Content: items"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/items/event-choices": {
       "get": {
         "tags": [
           "Content: items"
@@ -38955,6 +39140,27 @@
           }
         }
       },
+      "CampaignGoal": {
+        "required": [
+          "itemId",
+          "percent"
+        ],
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "percent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "CampaignRequest": {
         "required": [
           "name",
@@ -39004,6 +39210,16 @@
               "string"
             ],
             "format": "int32"
+          },
+          "goal": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CampaignGoal"
+              }
+            ]
           }
         }
       },
@@ -39029,6 +39245,24 @@
           "onlyNotActed": {
             "type": "boolean",
             "default": false
+          },
+          "follows": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "delayDays": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -44417,6 +44651,13 @@
               "null",
               "boolean"
             ]
+          },
+          "eventId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
           }
         }
       },
@@ -51491,6 +51732,31 @@
           }
         }
       },
+      "SiteGuestShareRequest": {
+        "required": [
+          "spaceId",
+          "days"
+        ],
+        "type": "object",
+        "properties": {
+          "spaceId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "days": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "SiteRequest": {
         "required": [
           "names",
@@ -54552,6 +54818,9 @@
     },
     {
       "name": "Services: builder"
+    },
+    {
+      "name": "Content: guest sites"
     },
     {
       "name": "Content: settings"

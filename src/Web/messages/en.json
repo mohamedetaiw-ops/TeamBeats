@@ -1031,7 +1031,9 @@
         "ai_assistant_teams": "Assistant in Microsoft Teams",
         "people_skills": "Skills and Find an expert",
         "learning_classroom": "Classroom sessions with attendance",
-        "policy_regulator_feeds": "Regulator change feeds"
+        "policy_regulator_feeds": "Regulator change feeds",
+        "content_guest_sites": "Sites shared with guest spaces",
+        "content_campaign_automation": "Campaign follow-ups and goals"
       },
       "searchLabel": "Search capabilities",
       "searchPlaceholder": "Search by name",
@@ -5369,7 +5371,21 @@
       "tags": "Topics",
       "tag": "#{tag}",
       "published": "Published {date}",
-      "readTime": "{minutes} min read"
+      "readTime": "{minutes} min read",
+      "event": {
+        "when": "When",
+        "where": "Where",
+        "online": "Online",
+        "join": "Join online",
+        "registration": "Registration",
+        "registered": "You are registered",
+        "waiting": "You are on the waiting list, number {position}",
+        "seats": "{count, plural, =0 {No seats left} one {# seat left} other {# seats left}}",
+        "closed": "Registration is closed",
+        "cancelled": "Cancelled",
+        "register": "Register in the calendar",
+        "inCalendar": "See it in the calendar"
+      }
     },
     "social": {
       "title": "Reactions and comments",
@@ -5503,7 +5519,8 @@
       "typeValue": {
         "news": "News",
         "announcement": "Announcement",
-        "page": "Page"
+        "page": "Page",
+        "event": "Event"
       },
       "language": {
         "en": "English",
@@ -5606,7 +5623,10 @@
       "machineTranslatedNote": "Machine translated. A person must edit or approve this language before the item can be published.",
       "approveTranslation": "Approve translation",
       "translationApproved": "Translation approved.",
-      "campaignsLink": "Campaigns"
+      "campaignsLink": "Campaigns",
+      "event": "Calendar event",
+      "eventHint": "The item shows the event's time, place and registration from the calendar.",
+      "noEvents": "There are no coming company events. Create the event in the calendar first."
     },
     "history": {
       "title": "History",
@@ -5818,6 +5838,25 @@
         "removeQuestion": "Remove {name}? Its address stops working.",
         "removeConfirm": "Remove",
         "cancel": "Cancel"
+      },
+      "guests": {
+        "title": "Guests",
+        "intro": "Share this site read-only with a guest space you own. The space's guests read the site's published Public and Internal items in the space until the share ends.",
+        "none": "This site is not shared with any guest space.",
+        "until": "Until {date}",
+        "ended": "Ended",
+        "revoke": "Stop sharing with {name}",
+        "revokeQuestion": "Stop sharing this site with {name}? Its guests can no longer read it.",
+        "revokeConfirm": "Stop sharing",
+        "cancel": "Cancel",
+        "space": "Guest space",
+        "days": "Days",
+        "daysHint": "1 to 365 days.",
+        "share": "Share with the space",
+        "working": "Saving…",
+        "failed": "That did not work. Try again.",
+        "archived": "An archived site cannot be shared.",
+        "noSpaces": "You do not own an active space to share with."
       }
     },
     "topics": {
@@ -5851,7 +5890,7 @@
       "stepStatus": {
         "pending": "Waiting",
         "sent": "Sent",
-        "skipped": "Skipped, the item was not live",
+        "skipped": "Skipped",
         "cancelled": "Cancelled"
       },
       "stepCount": "{count, plural, one {# step} other {# steps}}",
@@ -5894,7 +5933,21 @@
       "byUnit": "By part of the organization",
       "byLocation": "By location",
       "group": "Group",
-      "other": "Other"
+      "other": "Other",
+      "when": "When",
+      "whenAt": "At a set time",
+      "whenAfter": "After step {step}",
+      "delayDays": "Days after",
+      "delayHint": "Sent this many days, 1 to 60, after step {step} went, only to the people it reached who have not acted on it.",
+      "followsLabel": "{days, plural, one {# day} other {# days}} after step {step}",
+      "goal": "Goal",
+      "goalOn": "Stop when a goal is reached",
+      "goalHint": "When enough of the audience has acted on the chosen item, steps not sent yet are skipped and the campaign completes.",
+      "goalItem": "Item to act on",
+      "goalPercent": "Share of the audience, in percent",
+      "goalSummary": "Goal: {percent}% of the audience act on",
+      "goalProgress": "Goal: {percent}% of the audience. So far: {acted}.",
+      "goalReached": "Goal reached on {date}. Steps not sent were skipped."
     },
     "signage": {
       "items": "News",
@@ -16364,6 +16417,17 @@
       "noEstimate": "No estimate",
       "ofEstimate": "{duration} of {estimate}",
       "duration": "{hours} h {minutes} min"
+    },
+    "sharedSites": {
+      "title": "Shared intranet sites",
+      "intro": "Sites shared with this space. You can read their published news and pages.",
+      "until": "Shared until {date}",
+      "spaces": "Spaces",
+      "siteIntro": "Published items of this site, shared with the space.",
+      "items": "Items",
+      "empty": "Nothing is published on this site yet",
+      "published": "Published {date}",
+      "embed": "Embedded content"
     }
   },
   "booking": {

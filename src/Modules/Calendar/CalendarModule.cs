@@ -16,6 +16,7 @@ public static class CalendarModule
     {
         services.AddScoped<CalendarSettings>();
         services.AddScoped<CompanyEvents>();
+        services.AddScoped<TeamBeats.Modules.Calendar.Contracts.ICalendarEventCards>(sp => sp.GetRequiredService<CompanyEvents>());
         services.AddScoped<UnifiedCalendar>();
         services.AddScoped<CalendarMaintenance>();
         services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IComponentRegistration, CalendarComponents>();
