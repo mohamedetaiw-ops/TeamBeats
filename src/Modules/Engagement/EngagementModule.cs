@@ -23,6 +23,8 @@ public static class EngagementModule
         services.AddScoped<Communities>();
         services.AddScoped<TeamBeats.Modules.Analytics.Contracts.IAnalyticsTextSource, CommunityTextSource>();
         services.AddScoped<TeamBeats.Modules.Analytics.Contracts.IAnalyticsTextSource, SurveyTextSource>();
+        services.AddScoped<TeamBeats.Modules.Analytics.Contracts.IAnalyticsTextSource, RoomTextSource>();
+        services.AddScoped<TeamBeats.Modules.Analytics.Contracts.IAnalyticsTextSource, SpeakUpTextSource>();
         services.AddScoped<Contracts.ISpaceChannels, SpaceChannels>();
         services.AddScoped<Posts>();
         services.AddScoped<KeywordFilters>();
@@ -39,6 +41,7 @@ public static class EngagementModule
         services.AddSingleton<RoomStream>();
         services.AddScoped<EngagementAiSettings>();
         services.AddScoped<ThreadSummaries>();
+        services.AddScoped<CommunitySentiment>();
         services.AddMessageHandler<Contracts.PostPublished, Points>("engagement.points_post");
         services.AddMessageHandler<Contracts.PostPublished, Mirrors>("engagement.mirror_post");
         services.AddScoped<Search.Contracts.ISearchSource, EngagementSearchSource>();
@@ -773,6 +776,8 @@ public static class EngagementModule
         root.MapPost("/posts/{id:guid}:summarize", async (Guid id, ThreadSummaries summaries, CancellationToken ct) => Results.Ok(await summaries.PostAsync(id, ct)));
 
         root.MapPost("/rooms/{id:guid}:summarize", async (Guid id, ThreadSummaries summaries, CancellationToken ct) => Results.Ok(await summaries.RoomAsync(id, ct)));
+
+        root.MapGet("/communities/{id:guid}/sentiment", async (Guid id, CommunitySentiment sentiment, CancellationToken ct) => Results.Ok(await sentiment.GetAsync(id, ct)));
 
         root.MapGet("/settings/ai", async (EngagementAiSettings settings, HttpResponse response, CancellationToken ct) =>
         {

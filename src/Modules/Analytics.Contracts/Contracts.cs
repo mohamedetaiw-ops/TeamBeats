@@ -402,6 +402,8 @@ public static class AnalyticsTextSources
     public const string ContentComment = "content_comment";
     public const string CommunityComment = "community_comment";
     public const string SurveyAnswer = "survey_answer";
+    public const string CommunityRoom = "community_room";
+    public const string SpeakUp = "speak_up";
 }
 
 /// <summary>Where a source left off: the time and id of the last text read. Texts come in that order.</summary>
@@ -411,9 +413,27 @@ public sealed record AnalyticsTextCursor(DateTimeOffset At, Guid Id);
 /// One free text for sentiment (spec 021 US8, FR-013). <see cref="AuthorId"/> is set only when the text is not anonymous,
 /// so Analytics can count it in the author's unit and location and then drops it; an anonymous survey answer carries
 /// only the group unit it already counts in and the day its survey closed. <see cref="Classification"/> is the source's
-/// data classification (public, internal, confidential, restricted) for the AI Gateway. The text is never stored.
+/// data classification (public, internal, confidential, restricted) for the AI Gateway. <see cref="TopicKey"/> is the
+/// source module's own stable key for the topic (a community id), so it can ask for that topic's trend later through
+/// <see cref="IAnalyticsSentimentTrends"/>. The text is never stored.
 /// </summary>
-public sealed record AnalyticsText(AnalyticsTextCursor Cursor, string Text, DateOnly Day, Guid? AuthorId, Guid? GroupUnitId, string Topic, string Classification);
+public sealed record AnalyticsText(AnalyticsTextCursor Cursor, string Text, DateOnly Day, Guid? AuthorId, Guid? GroupUnitId, string Topic, string Classification,
+    string? TopicKey = null);
+
+/// <summary>One week of a topic's sentiment; the counts are null when fewer than the minimum group size of people stand behind them.</summary>
+public sealed record SentimentTrendWeek(DateOnly Week, int? Texts, int? Positive, int? Neutral, int? Negative, double? Score);
+
+public sealed record SentimentTrend(int MinGroupSize, IReadOnlyList<SentimentTrendWeek> Weeks);
+
+/// <summary>
+/// The weekly sentiment of one topic key (spec 023 R3 FR-033), for the module that owns the topic to show its own
+/// people. Null when the package has no <c>analytics.sentiment</c> or the tenant has not turned sentiment on. The caller
+/// decides who may see it; weeks below the tenant's minimum group size come without counts.
+/// </summary>
+public interface IAnalyticsSentimentTrends
+{
+    Task<SentimentTrend?> WeeksAsync(string topicKey, DateOnly from, DateOnly to, CancellationToken ct = default);
+}
 
 /// <summary>
 /// A module's free text for sentiment, oldest first after a cursor. The module decides what counts: visible comments,

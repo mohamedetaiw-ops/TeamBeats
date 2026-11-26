@@ -153,6 +153,7 @@ export const communityHref = (id: string) => `/communities/${encodeURIComponent(
 export const postHref = (communityId: string, postId: string) => `/communities/${encodeURIComponent(communityId)}/posts/${encodeURIComponent(postId)}`;
 export const roomsHref = (communityId: string) => `/communities/${encodeURIComponent(communityId)}/rooms`;
 export const roomHref = (communityId: string, roomId: string) => `/communities/${encodeURIComponent(communityId)}/rooms/${encodeURIComponent(roomId)}`;
+export const sentimentHref = (communityId: string) => `/communities/${encodeURIComponent(communityId)}/sentiment`;
 export const mirrorsHref = (communityId: string) => `/communities/${encodeURIComponent(communityId)}/mirrors`;
 export const hashtagHref = (tag: string) => `/communities/hashtags/${encodeURIComponent(tag)}`;
 
@@ -408,3 +409,7 @@ export type ThreadSummaryView = { outcome: "summarized" | "policy_blocked" | "un
 
 /** Whether AI may read anonymous content, a versioned tenant setting (spec 023 R3 FR-032). */
 export type EngagementAiSettingView = { anonymousContent: boolean; version: number };
+
+/** One week of a community's sentiment; counts are null below the tenant's minimum group size (spec 023 R3 FR-033). */
+export type CommunitySentimentWeek = { week: string; texts: number | null; positive: number | null; neutral: number | null; negative: number | null; score: number | null };
+export type CommunitySentimentView = { enabled: boolean; minGroupSize: number; from: string; to: string; weeks: CommunitySentimentWeek[] };

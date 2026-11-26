@@ -4,6 +4,7 @@ using TeamBeats.Authorization.Contracts;
 using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Localization;
 using TeamBeats.Modules.AiGateway.Contracts;
+using TeamBeats.Modules.Analytics.Contracts;
 using TeamBeats.Modules.Identity.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
@@ -186,4 +187,31 @@ public sealed class ThreadSummaries(
 
     private string Name(IReadOnlyDictionary<string, string> names) =>
         names.GetValueOrDefault(locale.Locale) ?? names.GetValueOrDefault("en") ?? names.Values.FirstOrDefault() ?? string.Empty;
+}
+
+public sealed record CommunitySentimentView(bool Enabled, int MinGroupSize, DateOnly From, DateOnly To, IReadOnlyList<SentimentTrendWeek> Weeks);
+
+/// <summary>
+/// A community's sentiment by week (spec 023 R3 US11 scenario 3, FR-033): the share of positive, neutral and negative
+/// comments, room messages and, with the AI setting, anonymous Speak Up posts, from spec 021 sentiment. Only the
+/// community's moderators and owners see it; weeks below the tenant's minimum group size come without counts.
+/// <see cref="CommunitySentimentView.Enabled"/> is false when the package or the tenant has sentiment off.
+/// </summary>
+public sealed class CommunitySentiment(Communities communities, IAnalyticsSentimentTrends trends, IClock clock)
+{
+    public const int Weeks = 12;
+
+    public async Task<CommunitySentimentView> GetAsync(Guid communityId, CancellationToken ct)
+    {
+        await communities.RequireAsync(ct);
+        var s = await communities.ReadableAsync(communityId, ct);
+        if (!s.Moderates)
+        {
+            throw AppException.Denied();
+        }
+        var to = DateOnly.FromDateTime(clock.UtcNow.UtcDateTime);
+        var from = to.AddDays(-(Weeks * 7 - 1));
+        var trend = await trends.WeeksAsync(communityId.ToString("N"), from, to, ct);
+        return trend is null ? new CommunitySentimentView(false, 0, from, to, []) : new CommunitySentimentView(true, trend.MinGroupSize, from, to, trend.Weeks);
+    }
 }

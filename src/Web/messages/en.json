@@ -9907,7 +9907,9 @@
       "source": {
         "content_comment": "News and page comments",
         "community_comment": "Community comments",
-        "survey_answer": "Survey answers"
+        "survey_answer": "Survey answers",
+        "community_room": "Community room messages",
+        "speak_up": "Anonymous Speak Up posts"
       },
       "paused": "{source} is paused",
       "denial": {
@@ -14864,6 +14866,26 @@
       "failed": "No summary",
       "blocked": "Your organization's AI policy does not allow this content to be summarized.",
       "unavailable": "The AI service is not available right now. Try again later."
+    },
+    "sentiment": {
+      "link": "Sentiment",
+      "pageTitle": "Sentiment by week",
+      "deniedTitle": "Only for moderators",
+      "denied": "Only the community's moderators and owners see its sentiment.",
+      "offTitle": "Sentiment is off",
+      "off": "Your organization has not turned on sentiment analytics.",
+      "emptyTitle": "Nothing labelled yet",
+      "empty": "Comments and room messages of the last twelve weeks are labelled a few minutes after they are written.",
+      "tooFewTitle": "Too few people",
+      "tooFew": "Each week needs at least {size} people before it is shown.",
+      "trend": "Share of positive, neutral and negative texts",
+      "trendHint": "Comments, room messages and, when allowed, anonymous Speak Up posts of the last twelve weeks. No text is shown.",
+      "hiddenWeeks": "{count, plural, one {# week is} other {# weeks are}} left out because fewer than {size} people wrote.",
+      "trendSummary": "{weeks, plural, one {# week} other {# weeks}} of sentiment",
+      "week": "Week",
+      "positive": "Positive",
+      "neutral": "Neutral",
+      "negative": "Negative"
     }
   },
   "learning": {

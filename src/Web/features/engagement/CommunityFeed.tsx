@@ -18,6 +18,7 @@ import {
   engagementApi,
   localName,
   mirrorsHref,
+  sentimentHref,
   roomsHref,
   send,
   speakUpReplyPath,
@@ -134,6 +135,11 @@ export function CommunityFeed({ initial, feed, locales }: { initial: CommunityVi
         {r.canMirror ? (
           <ButtonLink size="sm" variant="quiet" icon="link" href={mirrorsHref(community.id)}>
             {t("mirrors.link")}
+          </ButtonLink>
+        ) : null}
+        {r.canModerate ? (
+          <ButtonLink size="sm" variant="quiet" icon="trend-up" href={sentimentHref(community.id)}>
+            {t("sentiment.link")}
           </ButtonLink>
         ) : null}
         {r.canModerate ? (
