@@ -25,6 +25,7 @@ public static class AgentsModule
         services.AddScoped<AssistantService>();
         services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IShellCommands, AssistantCommands>();
         services.AddScoped<AssistantGuests>();
+        services.AddScoped<AssistantSuggestions>();
         services.AddScoped<AssistantFiles>();
         services.AddScoped<AssistantVoice>();
         services.AddScoped<AgentMarketplace>();
@@ -155,6 +156,17 @@ public static class AgentsModule
             var result = await actions.RunAsync(request, ct);
             await session.CommitAsync(ct);
             return Results.Ok(result);
+        });
+
+        // Proactive suggestions for the page the person is on (spec 014 R3, US9, FR-023), and their own on or off.
+        root.MapGet("/suggestions", async (string? path, AssistantSuggestions suggestions, CancellationToken ct) =>
+            Results.Ok(await suggestions.ForPageAsync(path, ct)));
+        root.MapPut("/suggestions/preference", async (AssistantSuggestionPreference request, AssistantSuggestions suggestions, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var view = await suggestions.SetAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
         });
 
         root.MapPost("/turns/{id:guid}/feedback", async (Guid id, FeedbackRequest request, AssistantHistory history, IDbSession session, CancellationToken ct) =>

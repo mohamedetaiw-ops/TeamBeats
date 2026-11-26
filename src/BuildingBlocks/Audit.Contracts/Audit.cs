@@ -591,6 +591,7 @@ public static class AuditActions
     public const string AssistantHistoryDeleted = "assistant.history_deleted";
     public const string AssistantRetentionChanged = "assistant.retention_changed";
     public const string AssistantGuestsChanged = "assistant.guests_changed";
+    public const string AssistantSuggestionsChanged = "assistant.suggestions_changed";
     public const string AssistantFileAdded = "assistant.file_added";
     public const string AssistantFileRefused = "assistant.file_refused";
 
@@ -805,7 +806,7 @@ public static class AuditActions
         AiPolicyChanged, AiRouteChangeProposed, AiRouteChangeOverridden, AiRouteChangeApplied, AiRouteChangeRejected, AiCatalogueChanged, AiLoggingWindowOpened, AiLoggingWindowClosed,
         SearchBestBetChanged, SearchSynonymsChanged, SearchRetrievalChangeProposed, SearchRetrievalChangeDecided, SearchRetrievalChangeOverridden,
         SearchRetrievalChangeCancelled, SearchFederatedChanged, SearchAiSummaryChanged, SearchQueryTextChanged,
-        AssistantHistoryDeleted, AssistantRetentionChanged, AssistantGuestsChanged, AssistantFileAdded, AssistantFileRefused,
+        AssistantHistoryDeleted, AssistantRetentionChanged, AssistantGuestsChanged, AssistantSuggestionsChanged, AssistantFileAdded, AssistantFileRefused,
         AgentInstalledFromTemplate, AgentCreated, AgentCloned, AgentAccessRequested, AgentAccessGranted, AgentAccessDenied, AgentMemoryAccepted, AgentMemoryDeleted, AgentTemplateUpdateApplied, AgentTemplateSecurityApplied, AgentAudienceChanged, AgentOwnerChanged, AgentPolicyChanged, AgentToolCalled, AgentExternalCallRefused, AgentToolDenied, AgentInjectionDetected, AgentActionConfirmed, AgentActionRejected, AgentActionApproved, AgentActionExpired,
         AgentVersionSubmitted, AgentVersionApproved, AgentVersionRejected, AgentVersionPublished, AgentRolledBack, AgentSuspended, AgentResumed, AgentAlertRaised, AgentAlertDismissed, AgentIncidentOpened, AgentIncidentUpdated, AgentIncidentClosed, AgentEvidenceExported,
         AgentRetired, AgentKillSwitch, AgentTokensRevoked,

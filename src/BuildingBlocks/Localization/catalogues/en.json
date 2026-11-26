@@ -567,7 +567,7 @@
   "validation.assistant.item": "Choose an item to summarize, explain or translate, or paste text instead.",
   "validation.assistant.language": "Choose Arabic or English.",
   "validation.assistant.question": "Ask a question of up to 2,000 characters.",
-  "validation.assistant.scope": "Questions can be kept to a policy only.",
+  "validation.assistant.scope": "Questions can be kept to a policy, a news item or page, or a document only.",
   "validation.assistant.retention": "Choose a retention period from 1 to 365 days.",
   "validation.assistant.text": "Paste text of up to 20,000 characters.",
   "validation.audience.attribute": "Use an attribute your organization offers, with at least one value",
@@ -3299,5 +3299,8 @@
   "validation.content.event_type": "Only an event item links a calendar event.",
   "validation.experience.behavior_consent_mode": "Choose opt-in or opt-out.",
   "validation.experience.behavior_unavailable": "Personalization from use is not part of your plan.",
-  "validation.experience.behavior_choice": "Say whether you agree or decline."
+  "validation.experience.behavior_choice": "Say whether you agree or decline.",
+  "validation.assistant.suggestions_choice": "Choose whether the assistant suggests questions.",
+  "validation.assistant.suggestions_unavailable": "Suggestions are not offered in your organization.",
+  "capability.ai.assistant.suggestions": "Assistant suggestions"
 }

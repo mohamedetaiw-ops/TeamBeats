@@ -10,6 +10,7 @@ public static class Capabilities
 
     /// <summary>Spec 014 US8: the assistant as a personal chat with the TeamBeats bot in Microsoft Teams.</summary>
     public const string AiAssistantTeams = "ai.assistant.teams";
+    public const string AiAssistantSuggestions = "ai.assistant.suggestions";
     public const string AiAgentsBasic = "ai.agents.basic";
     public const string AiAgentsWriteTools = "ai.agents.write_tools";
     public const string AiAgentsMaxPublished = "ai.agents.max_published";

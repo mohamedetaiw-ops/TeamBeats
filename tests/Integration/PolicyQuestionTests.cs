@@ -202,7 +202,7 @@ public sealed class PolicyQuestionTests(TenantWorld world)
         Assert.Equal(HttpStatusCode.NotFound, (await t["cai"].Client.PostAsJsonAsync(Turns,
             new { question = "Must a gift be declared?", scope = new { source = "policies", itemId = Guid.NewGuid() } })).StatusCode);
         Assert.Equal("validation.assistant.scope", await ProblemKeyAsync(t["ali"].Client.PostAsJsonAsync(Turns,
-            new { question = "What is new?", scope = new { source = "content", itemId = group } }), HttpStatusCode.BadRequest));
+            new { question = "What is new?", scope = new { source = "people", itemId = group } }), HttpStatusCode.BadRequest));
 
         // Another tenant can neither scope to this tenant's policy nor reach the conversation.
         var other = await world.CreateTenantAsync("pq-x-" + Guid.NewGuid().ToString("N")[..6], "workplace_plus");

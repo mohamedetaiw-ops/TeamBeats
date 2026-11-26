@@ -28,13 +28,15 @@ public sealed record TurnRequest(Guid? ConversationId, string? Question, Guid? A
 
 /// <summary>
 /// The item a conversation is kept to: <paramref name="Source"/> is its search source and <paramref name="ItemId"/> the
-/// item. In R1 only policies offer it ("Ask about this policy").
+/// item. In R1 only policies offer it ("Ask about this policy"); R3 suggestions add news and pages, and documents (spec 014 US9).
 /// </summary>
 public sealed record AssistantScope(string Source, Guid ItemId)
 {
     public const string Policies = "policies";
+    public const string Content = "content";
+    public const string Documents = "documents";
 
-    public static readonly IReadOnlyList<string> Sources = [Policies];
+    public static readonly IReadOnlyList<string> Sources = [Policies, Content, Documents];
 }
 
 /// <summary>A cited passage: <paramref name="N"/> is the marker used in the answer, <paramref name="Anchor"/> opens the item at the passage.</summary>

@@ -28331,6 +28331,49 @@
         }
       }
     },
+    "/api/v1/assistant/suggestions": {
+      "get": {
+        "tags": [
+          "Assistant"
+        ],
+        "parameters": [
+          {
+            "name": "path",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/assistant/suggestions/preference": {
+      "put": {
+        "tags": [
+          "Assistant"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssistantSuggestionPreference"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/assistant/turns/{id}/feedback": {
       "post": {
         "tags": [
@@ -38263,6 +38306,12 @@
               "null",
               "boolean"
             ]
+          },
+          "suggestionsEnabled": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },
@@ -38281,6 +38330,20 @@
               "type": "string",
               "format": "uuid"
             }
+          }
+        }
+      },
+      "AssistantSuggestionPreference": {
+        "required": [
+          "on"
+        ],
+        "type": "object",
+        "properties": {
+          "on": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },
