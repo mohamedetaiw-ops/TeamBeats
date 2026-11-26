@@ -282,7 +282,16 @@ public interface IDelegations
 {
     /// <summary>People who have handed their tasks to <paramref name="delegateId"/> at <paramref name="at"/>, each on their own calendar day.</summary>
     Task<IReadOnlyList<Guid>> DelegatorsOfAsync(Guid delegateId, DateTimeOffset at, CancellationToken ct = default);
+
+    /// <summary>
+    /// The delegate the person has handed their tasks to today on their own calendar, and the last day, for the profile
+    /// (spec 010 R2 FR-030). Never what is delegated. Null when no delegation is active.
+    /// </summary>
+    Task<ActiveDelegation?> ActiveForAsync(Guid userId, CancellationToken ct = default);
 }
+
+/// <summary>A delegation in force today: who acts and until which day (inclusive).</summary>
+public sealed record ActiveDelegation(Guid DelegateId, DateOnly EndsOn);
 
 public sealed record UserTaskCreated(Guid TaskId, Guid InstanceId, string DefinitionKey, string BusinessKey, string ElementId, DateTimeOffset? DueAt) : IIntegrationEvent;
 

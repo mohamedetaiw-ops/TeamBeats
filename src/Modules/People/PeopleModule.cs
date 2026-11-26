@@ -193,6 +193,20 @@ public static class PeopleModule
             return Results.Ok(profile);
         });
 
+        people.MapPut("/{id:guid}/assistants", async (Guid id, AssistantsRequest request, PeopleService service, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await service.SetAssistantsAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        me.MapPost("/profile/completeness:dismiss", async (PeopleService service, IDbSession session, CancellationToken ct) =>
+        {
+            var profile = await service.DismissCompletenessAsync(ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(profile);
+        });
+
         // Skills and Find an expert (spec 010 R2 US6).
         people.MapGet("/skills", async (Skills skills, IDbSession session, HttpResponse response, CancellationToken ct) =>
         {

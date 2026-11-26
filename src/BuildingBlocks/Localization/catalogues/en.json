@@ -3163,5 +3163,8 @@
   "validation.people.skills_per_person": "You can add at most 30 skills.",
   "validation.people.proficiency": "Choose basic, good or expert.",
   "validation.people.skill_unknown": "Choose a skill from the list.",
-  "validation.people.skill_free_text": "Your organization only allows skills from its list."
+  "validation.people.skill_free_text": "Your organization only allows skills from its list.",
+  "validation.people.assistants_count": "A person can have at most three assistants.",
+  "validation.people.assistant_self": "Nobody can be their own assistant.",
+  "validation.people.assistant_unknown": "Choose active people as assistants."
 }

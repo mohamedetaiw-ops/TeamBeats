@@ -3924,6 +3924,28 @@
       "off": "Your organization has not turned on skills.",
       "failedTitle": "Find an expert is not available",
       "failed": "Try again in a moment."
+    },
+    "relations": {
+      "title": "Works with",
+      "assistants": "Assistants",
+      "assistantOf": "Assistant to",
+      "edit": "Change assistants",
+      "assistantN": "Assistant {n}",
+      "save": "Save assistants",
+      "cancel": "Cancel",
+      "working": "Saving…",
+      "failed": "The assistants were not saved",
+      "delegation": "Approvals go to",
+      "until": "until {date}"
+    },
+    "completeness": {
+      "title": "Your profile is {percent}% complete",
+      "progress": "Profile {percent}% complete",
+      "intro": "Colleagues find you more easily when your profile is complete. Still missing:",
+      "photo": "A photo",
+      "skills": "Your skills",
+      "dismiss": "Not now",
+      "working": "Hiding…"
     }
   },
   "security": {

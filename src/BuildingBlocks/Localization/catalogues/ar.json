@@ -3163,5 +3163,8 @@
   "validation.people.skills_per_person": "يمكنك إضافة 30 مهارة على الأكثر.",
   "validation.people.proficiency": "اختر أساسي أو جيد أو خبير.",
   "validation.people.skill_unknown": "اختر مهارة من القائمة.",
-  "validation.people.skill_free_text": "تسمح مؤسستك بالمهارات من قائمتها فقط."
+  "validation.people.skill_free_text": "تسمح مؤسستك بالمهارات من قائمتها فقط.",
+  "validation.people.assistants_count": "يمكن أن يكون للشخص ثلاثة مساعدين على الأكثر.",
+  "validation.people.assistant_self": "لا يمكن لأحد أن يكون مساعدًا لنفسه.",
+  "validation.people.assistant_unknown": "اختر أشخاصًا نشطين كمساعدين."
 }

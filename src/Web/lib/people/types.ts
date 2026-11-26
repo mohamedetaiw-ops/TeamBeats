@@ -34,14 +34,21 @@ export type PersonView = {
   /** Approved leave covering today (spec 022 FR-005): dates only. */
   away?: { from: string; to: string } | null;
   photo?: string | null;
+  /** Spec 010 R2 US8: the person's assistants, whom they assist, and an active delegation (the delegate and last day only). */
+  assistants?: PersonCard[] | null;
+  assistantOf?: PersonCard[] | null;
+  delegation?: { delegate: PersonCard; until: string } | null;
 };
+
+/** How complete the own profile is (spec 010 R2 FR-028); missing holds field keys, "photo" and "skills". */
+export type Completeness = { percent: number; missing: string[]; show: boolean; dismissedUntil: string | null };
 
 export type SearchPage = { items: PersonCard[]; next: number | null };
 export type OrgChart = { person: PersonCard; chain: PersonCard[]; peers: PersonCard[]; peerCount: number; reports: PersonCard[]; reportCount: number };
 export type TeamPage = { items: PersonCard[]; total: number; next: number | null };
 
 export type OwnField = { key: string; value: string | null; source: string; visibility: string; editable: boolean; names: Names | null };
-export type OwnProfile = { profile: PersonView; fields: OwnField[]; newcomerOptOut: boolean; allowNewcomerOptOut: boolean };
+export type OwnProfile = { profile: PersonView; fields: OwnField[]; newcomerOptOut: boolean; allowNewcomerOptOut: boolean; completeness?: Completeness | null };
 
 export type PolicyField = { key: string; source: string; visibility: string; sources: string[]; custom: boolean; names: Names };
 export type Policy = {

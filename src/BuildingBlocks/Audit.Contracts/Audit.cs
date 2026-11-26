@@ -286,6 +286,7 @@ public static class AuditActions
     public const string PeopleSettingsChanged = "people.settings_changed";
     public const string PeoplePhotoRemoved = "people.photo_removed";
     public const string PeopleSkillListChanged = "people.skill_list_changed";
+    public const string PeopleAssistantSet = "people.assistant_set";
 
     // Spec 026 (R1): security policy and network refusals.
     public const string SecurityPolicyChanged = "security.policy_changed";
@@ -751,7 +752,7 @@ public static class AuditActions
         HrLeaveRecounted, HrLeaveSourceChanged, HrLeaveHandOffRetried,
         HrJourneyTemplateChanged, HrJourneyStarted, HrJourneyRescheduled, HrJourneyStepCompleted, HrJourneyCancelled, HrAccessRemovalConfirmed, HrAccessRemovalEscalated, HrExitInterviewRecorded, HrJourneySettingsChanged, HrPreboardingSent, HrAttendanceSettingsChanged, HrWorkRuleChanged, HrAttendanceExported, HrAttendanceRequested, HrAttendanceCorrected, HrCompensationCredited, HrAttendanceRequestRejected, HrLetterTypeChanged, HrLetterSettingsChanged, HrLetterRequested, HrLetterIssued, HrLetterRejected, HrLetterVerified, HrDataChangeSettingsChanged, HrDataChangeRequested, HrDataChangeApproved, HrDataChangeRejected, HrDataChangeWrittenBack, HrDataChangeWriteFailed, HrExpensePolicyChanged, HrExpenseRatesChanged, HrExpenseSubmitted, HrExpenseApproved, HrExpenseRejected, HrExpenseHandedOff, HrMilestoneSet, HrMilestoneReviewed, HrMilestoneWrittenBack, HrRosterPublished, HrRosterChanged,
         CalendarEventCreated, CalendarEventChanged, CalendarEventCancelled, CalendarEventDeleted, CalendarSettingsChanged, CalendarTeamViewed,
-        PeopleVisibilityChanged, PeopleFieldSourceChanged, PeopleManagerSetManually, PeopleProfileUpdated, PeopleReportingCycleDetected, PeopleSettingsChanged, PeoplePhotoRemoved, PeopleSkillListChanged,
+        PeopleVisibilityChanged, PeopleFieldSourceChanged, PeopleManagerSetManually, PeopleProfileUpdated, PeopleReportingCycleDetected, PeopleSettingsChanged, PeoplePhotoRemoved, PeopleSkillListChanged, PeopleAssistantSet,
         SecurityPolicyChanged, SecurityFourEyesChanged, SecurityChangeRequested, SecurityChangeApproved, SecurityChangeRejected, SecurityChangeWithdrawn,
         SecurityChangeExpired, SecurityKeyConnected, SecurityKeyRotated, SecurityKeyRevoked, SecurityKeyRestored, SecurityKeyUnreachable,
         MobileOfflinePolicyChanged, DeviceKioskEnrolled, DeviceKioskChanged, DeviceKioskRevoked, DeviceKioskSignIn, DeviceKioskLockout,

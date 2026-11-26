@@ -6,6 +6,7 @@ import { isPhoneField, photoAt, localName, locationName, personName, type OrgCha
 import type { RecognitionView } from "@/lib/engagement";
 import type { PersonSkillsView } from "@/lib/people/skills";
 import { PersonSkills } from "@/features/people/Skills";
+import { Relationships } from "@/features/people/Relationships";
 import { Header } from "@/components/shell/Header";
 import { RecognitionCard } from "@/features/engagement/RecognitionWall";
 import { OrgChartView } from "@/features/people/OrgChartView";
@@ -129,10 +130,23 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
             <dd>{p.manager ? <PersonItem person={p.manager} locale={locale} /> : t("profile.noManager")}</dd>
             <dt>{t("org.reports")}</dt>
             <dd>{t("profile.reports", { count: p.directReports })}</dd>
+            {p.delegation ? (
+              <>
+                <dt>{t("relations.delegation")}</dt>
+                <dd data-testid="person-delegation">
+                  <PersonItem person={p.delegation.delegate} locale={locale} />
+                  <span className="people-meta">
+                    {t("relations.until", { date: format.dateTime(new Date(`${p.delegation.until}T00:00:00Z`), { dateStyle: "medium", timeZone: "UTC" }) })}
+                  </span>
+                </dd>
+              </>
+            ) : null}
           </dl>
         </Widget>
 
         {skills.ok ? <PersonSkills personId={p.id} initial={skills.data} /> : null}
+
+        <Relationships person={p} />
 
         {recognitions.ok && recognitions.data.length > 0 ? (
           <Widget title={t("profile.recognition")}>

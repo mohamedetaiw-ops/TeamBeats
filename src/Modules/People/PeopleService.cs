@@ -22,7 +22,19 @@ public sealed record PersonCard(Guid Id, string DisplayName, IReadOnlyDictionary
 /// <summary>A profile as the viewer may see it. <paramref name="Away"/> is approved leave covering today (spec 022 FR-005), dates only.</summary>
 public sealed record PersonView(Guid Id, string DisplayName, IReadOnlyDictionary<string, string> Names, UnitRef? Unit, IReadOnlyList<UnitRef> Units,
     LocationRef? Location, IReadOnlyList<FieldView> Fields, PersonCard? Manager, int DirectReports, bool IsSelf, bool CanSetManager, bool CanEditAdminFields,
-    TeamBeats.Modules.Hr.Contracts.LeaveAway? Away = null, string? Photo = null);
+    TeamBeats.Modules.Hr.Contracts.LeaveAway? Away = null, string? Photo = null, IReadOnlyList<PersonCard>? Assistants = null,
+    IReadOnlyList<PersonCard>? AssistantOf = null, DelegationNote? Delegation = null);
+
+/// <summary>While the person's approvals go to a delegate (spec 016), who and until which day; never what is delegated (FR-030).</summary>
+public sealed record DelegationNote(PersonCard Delegate, DateOnly Until);
+
+/// <summary>
+/// How complete the own profile is (FR-028): the share of the items the person can fill that are filled, and the
+/// missing ones (field keys, <c>photo</c>, <c>skills</c>). <see cref="Show"/> is false once complete or while dismissed.
+/// </summary>
+public sealed record Completeness(int Percent, IReadOnlyList<string> Missing, bool Show, DateTimeOffset? DismissedUntil);
+
+public sealed record AssistantsRequest(IReadOnlyList<Guid>? AssistantIds);
 
 public sealed record SearchPage(IReadOnlyList<PersonCard> Items, int? Next);
 
@@ -33,7 +45,7 @@ public sealed record TeamPage(IReadOnlyList<PersonCard> Items, int Total, int? N
 
 public sealed record OwnField(string Key, string? Value, string Source, string Visibility, bool Editable, IReadOnlyDictionary<string, string>? Names);
 
-public sealed record OwnProfile(PersonView Profile, IReadOnlyList<OwnField> Fields, bool NewcomerOptOut, bool AllowNewcomerOptOut);
+public sealed record OwnProfile(PersonView Profile, IReadOnlyList<OwnField> Fields, bool NewcomerOptOut, bool AllowNewcomerOptOut, Completeness? Completeness = null);
 
 public sealed record OwnProfileRequest(IReadOnlyDictionary<string, string?>? Values, bool? NewcomerOptOut);
 
@@ -72,7 +84,9 @@ public sealed class PeopleService(
     ProfileStore store,
     ReportingLine lines,
     VisibilityResolver visibility,
-    IEnumerable<TeamBeats.Modules.Hr.Contracts.ILeave> leave)
+    IEnumerable<TeamBeats.Modules.Hr.Contracts.ILeave> leave,
+    IEnumerable<TeamBeats.Modules.Workflow.Contracts.IDelegations> delegations,
+    IClock clock)
 {
     public const int MaxPageSize = 50;
     public const int MaxChain = 15;
@@ -207,11 +221,105 @@ public sealed class PeopleService(
         var reports = (await store.GetManyAsync(await lines.DirectReportsAsync(row.UserId, ct), ct)).Count(r => r.Active && Reaches(r));
         var unitRefs = await UnitsAsync(row.UnitIds, ct);
         var canSetManager = (await authz.CheckAsync(Permissions.PeopleManage, AuthzTarget.Tenant, ct)).Allowed;
+        var (assistants, assistantOf, delegation) = context.ActorType == ActorType.App ? ([], [], null) : await RelationsAsync(viewer, policies, row.UserId, ct);
         return new PersonView(row.UserId, row.DisplayName, row.Names, row.PrimaryUnitId is { } p ? unitRefs.FirstOrDefault(u => u.Id == p) : null, unitRefs,
             // An app reading as itself is not told who is on leave (spec 022 shows it to employees only).
             await LocationAsync(row.LocationKey, ct), fields, manager, reports, row.UserId == viewer.Id, canSetManager,
             CanCorrect(viewer, row), context.ActorType != ActorType.App && leave.FirstOrDefault() is { } l ? await l.AwayAsync(row.UserId, ct) : null,
-            ProfilePhotos.Url(row.UserId, row.PhotoVersion));
+            ProfilePhotos.Url(row.UserId, row.PhotoVersion), assistants, assistantOf, delegation);
+    }
+
+    /// <summary>The person's assistants, whom they assist, and an active delegation (US8 scenarios 2 and 3), as cards the viewer may see.</summary>
+    private async Task<(IReadOnlyList<PersonCard>, IReadOnlyList<PersonCard>, DelegationNote?)> RelationsAsync(Viewer viewer, IReadOnlyList<FieldPolicy> policies,
+        Guid userId, CancellationToken ct)
+    {
+        var pairs = await session.QueryAsync("select user_id, assistant_id from people.assistant where user_id = @userId or assistant_id = @userId order by set_at",
+            new { userId }, r => (User: r.GetGuid(0), Assistant: r.GetGuid(1)), ct);
+        var ids = pairs.Select(p => p.User == userId ? p.Assistant : p.User).ToList();
+        DelegationNote? note = null;
+        var active = delegations.FirstOrDefault() is { } d ? await d.ActiveForAsync(userId, ct) : null;
+        if (active is not null)
+        {
+            ids.Add(active.DelegateId);
+        }
+        var rows = (await store.GetManyAsync(ids.Distinct(), ct)).Where(r => r.Active && Reaches(r)).ToList();
+        var cards = (await CardsAsync(viewer, policies, rows, ct)).ToDictionary(c => c.Id);
+        if (active is not null && cards.TryGetValue(active.DelegateId, out var delegateCard))
+        {
+            note = new DelegationNote(delegateCard, active.EndsOn);
+        }
+        return (pairs.Where(p => p.User == userId && cards.ContainsKey(p.Assistant)).Select(p => cards[p.Assistant]).ToList(),
+            pairs.Where(p => p.Assistant == userId && cards.ContainsKey(p.User)).Select(p => cards[p.User]).ToList(), note);
+    }
+
+    public const int MaxAssistants = 3;
+
+    /// <summary>People administrators record a person's assistants (FR-029); replaces the list, audited.</summary>
+    public async Task<PersonView> SetAssistantsAsync(Guid userId, AssistantsRequest request, CancellationToken ct)
+    {
+        var (viewer, policies) = await BeginAsync(ct);
+        if (!(await authz.CheckAsync(Permissions.PeopleManage, AuthzTarget.Tenant, ct)).Allowed)
+        {
+            throw AppException.Denied();
+        }
+        var row = await store.GetAsync(userId, ct) is { Active: true } found ? found : throw AppException.NotFound();
+        var wanted = (request.AssistantIds ?? []).Distinct().ToList();
+        if (wanted.Count > MaxAssistants)
+        {
+            throw AppException.Validation("assistantIds", "validation.people.assistants_count");
+        }
+        if (wanted.Contains(userId))
+        {
+            throw AppException.Validation("assistantIds", "validation.people.assistant_self");
+        }
+        var known = (await store.GetManyAsync(wanted, ct)).Where(r => r.Active).Select(r => r.UserId).ToHashSet();
+        if (wanted.Any(id => !known.Contains(id)))
+        {
+            throw AppException.Validation("assistantIds", "validation.people.assistant_unknown");
+        }
+        await session.ExecAsync("delete from people.assistant where user_id = @userId", new { userId }, ct);
+        foreach (var assistant in wanted)
+        {
+            await session.ExecAsync(
+                "insert into people.assistant (tenant_id, user_id, assistant_id, set_by, set_at) values (platform.current_tenant_id(), @userId, @assistant, @by, @now)",
+                new { userId, assistant, by = viewer.Id, now = clock.UtcNow }, ct);
+        }
+        await audit.WriteAsync(new AuditEntry(AuditActions.PeopleAssistantSet, "person", userId.ToString(), Changes: new { assistants = wanted }), ct);
+        return await ViewAsync(viewer, policies, row, ct);
+    }
+
+    public static readonly TimeSpan CompletenessDismissal = TimeSpan.FromDays(90);
+
+    /// <summary>The own profile's completeness (FR-028): fields the person may fill, the photo, and skills when the tenant has them.</summary>
+    private async Task<Completeness> CompletenessAsync(ProfileRow row, IReadOnlyList<FieldPolicy> policies, CancellationToken ct)
+    {
+        var items = new List<(string Key, bool Filled)>();
+        foreach (var p in policies.Where(p => p.EmployeeEditable))
+        {
+            items.Add((p.Key, !string.IsNullOrWhiteSpace(row.Value(p))));
+        }
+        items.Add(("photo", row.PhotoVersion is not null));
+        var skillsOn = await entitlements.IsEnabledAsync(Capabilities.PeopleSkills, ct)
+            && (await session.QuerySingleOrDefaultAsync("select enabled from people.skill_setting", null, r => (bool?)r.GetBoolean(0), ct) ?? true);
+        if (skillsOn)
+        {
+            var count = await session.QuerySingleOrDefaultAsync("select count(*)::int from people.person_skill where user_id = @id", new { id = row.UserId }, r => r.GetInt32(0), ct);
+            items.Add(("skills", count > 0));
+        }
+        var dismissed = await session.QuerySingleOrDefaultAsync("select completeness_dismissed_until from people.profile where user_id = @id", new { id = row.UserId },
+            r => r.Get<DateTimeOffset?>("completeness_dismissed_until"), ct);
+        var percent = items.Count == 0 ? 100 : (int)Math.Round(100.0 * items.Count(i => i.Filled) / items.Count);
+        var missing = items.Where(i => !i.Filled).Select(i => i.Key).ToList();
+        var active = dismissed is { } until && until > clock.UtcNow ? dismissed : null;
+        return new Completeness(percent, missing, missing.Count > 0 && active is null, active);
+    }
+
+    public async Task<OwnProfile> DismissCompletenessAsync(CancellationToken ct)
+    {
+        var (viewer, _) = await BeginAsync(ct);
+        await session.ExecAsync("update people.profile set completeness_dismissed_until = @until where user_id = @id",
+            new { id = viewer.Id, until = clock.UtcNow + CompletenessDismissal }, ct);
+        return await OwnAsync(ct);
     }
 
     /// <summary>
@@ -356,7 +464,7 @@ public sealed class PeopleService(
         var settings = await store.SettingsAsync(ct);
         return new OwnProfile(await ViewAsync(viewer, policies, row, ct),
             policies.Select(p => new OwnField(p.Key, row.Value(p), p.Source, p.Visibility, p.EmployeeEditable, p.Custom ? p.Names : null)).ToList(),
-            row.NewcomerOptOut, settings.AllowNewcomerOptOut);
+            row.NewcomerOptOut, settings.AllowNewcomerOptOut, await CompletenessAsync(row, policies, ct));
     }
 
     public async Task<OwnProfile> UpdateOwnAsync(OwnProfileRequest request, CancellationToken ct)

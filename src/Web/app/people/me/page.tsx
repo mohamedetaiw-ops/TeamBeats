@@ -4,6 +4,9 @@ import { apiGet, type Me } from "@/lib/api";
 import type { OwnProfile } from "@/lib/people/types";
 import type { OwnSkillsView } from "@/lib/people/skills";
 import { OwnSkillsEditor } from "@/features/people/Skills";
+import { CompletenessPrompt } from "@/features/people/Completeness";
+import { localName } from "@/lib/people/types";
+import { getLocale } from "next-intl/server";
 import { Header } from "@/components/shell/Header";
 import { OwnProfileForm } from "@/features/people/OwnProfileForm";
 import { PeopleNav } from "@/features/people/PeopleNav";
@@ -20,6 +23,7 @@ export default async function OwnProfilePage() {
     notFound();
   }
   const t = await getTranslations("people");
+  const locale = await getLocale();
   return (
     <>
       <Header
@@ -31,6 +35,12 @@ export default async function OwnProfilePage() {
       />
       <main id="main" className="page people">
         <PageHeader title={t("me.title")} description={t("me.intro")} icon="people" nav={<PeopleNav current="me" />} />
+        {own.data.completeness ? (
+          <CompletenessPrompt
+            initial={own.data.completeness}
+            fieldLabel={Object.fromEntries(own.data.fields.map((f) => [f.key, f.names ? localName(f.names, locale, f.key) : t(`field.${f.key}` as "field.email")]))}
+          />
+        ) : null}
         <OwnProfileForm initial={own.data} />
         {skills.ok ? <OwnSkillsEditor initial={skills.data} /> : null}
       </main>

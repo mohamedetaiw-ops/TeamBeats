@@ -307,3 +307,28 @@ ol.people-chart {
   display: grid;
   gap: var(--tb-space-xs);
 }
+
+/* Who the person works with and how complete the own profile is (spec 010 R2 US8). */
+.people-relations,
+.people-completeness-list {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.people-relations-head {
+  margin-block: var(--tb-space-sm) var(--tb-space-xs);
+  font-size: var(--tb-font-size-sm);
+}
+
+.people-completeness {
+  display: grid;
+  gap: var(--tb-space-sm);
+}
+
+.people-completeness progress {
+  inline-size: 100%;
+  accent-color: var(--tb-color-accent-base);
+}
