@@ -64,3 +64,34 @@ The frontend gets a calendar workspace page at `/calendar` and a home card compo
 ## Risks
 - Two threads touch `Hr` contracts: the feed is a new contract file and a new class, no edit to existing leave code.
 - Graph `iCalUId` is added to the `$select` list; the fake must return it.
+
+## R3 plan (2026-11-26)
+
+Covers User Stories 8 to 11, FR-028 to FR-036 (CAL-027 to CAL-031). CAL-032 (background sync) is not built: it waits on spec 018 section 6.
+
+### Data model additions (Calendar migration 0002)
+- `calendar.event` gains `answers` (`none`, `rsvp`, `registration`; existing rows map from `rsvp`), `capacity int null` (1 to 10,000), `waitlist bool`, `registration_closes_at timestamptz null`, `reminder text` (`none`, `15m`, `1h`, `1d`). The `rsvp` column stays as the read of `answers = 'rsvp'` until callers move.
+- `calendar.registration`: `tenant_id`, `event_id`, `occurrence_key`, `user_id`, `state` (`registered`, `waiting`), `joined_at`. Primary key `(tenant_id, event_id, occurrence_key, user_id)`. Seats are taken under `select ... for update` of the event row, so parallel registrations never pass the capacity.
+- `calendar.reminder_sent`: `tenant_id`, `event_id`, `occurrence_key`, `user_id`, `kind` (`reminder`, `cancelled`), `sent_at`. Primary key on all but `sent_at`; the job inserts with `on conflict do nothing` before sending.
+- `calendar.attachment`: `tenant_id`, `id`, `event_id`, `name`, `content_type`, `size`, `object_key`, `created_by`, `created_at`. Files under `calendar/events/{event}/{id}` in `TenantObjectStorage`, scanned by `IMalwareScanner`.
+
+### Hr contract additions
+- `HolidayEntry` gains `Provisional` and `ObservedFor` (Hr migration: `hr.calendar_holiday.provisional bool default false`, `observed_for date null`; the holidays admin page edits both).
+- `IHrCalendarFeed.ShiftsAsync(userIds, from, to)` returns published shifts (`ShiftEntry(UserId, Date, Start, End, Names, DayOff)`) from the rosters of spec 022 FR-029; empty when `hr.rosters` is off. Only the viewer's own shifts, or reports' shifts for the manager, are returned.
+
+### API additions (`/api/v1/calendar`)
+- `POST /events/{id}/registration` (body: occurrence) registers or joins the waiting list; `DELETE /events/{id}/registration?occurrence` cancels.
+- `GET /events/{id}/occurrences/{key}.ics` the calendar file.
+- `GET /events/{id}/attachments/{attachmentId}` the file, audience checked.
+- Admin: event body gains `answers`, `capacity`, `waitlist`, `registrationClosesAt`, `reminder`; `GET /admin-events/{id}/registrations`; `POST /admin-events/{id}/attachments` (multipart), `DELETE /admin-events/{id}/attachments/{attachmentId}`.
+- Items carry `registration` (`state`, `position`, `seatsLeft`, `open`) and `attachments`; holidays carry `provisional` and `observedFor`.
+
+### Jobs and notifications
+- `CalendarMaintenance.RunDueAsync(now)` per tenant every minute from the existing scheduler: sends due reminders (`calendar.event_reminder`) and cancellation notices (`calendar.event_cancelled`) through `INotifications`; promotions are notified at once (`calendar.registration_promoted`).
+
+### Frontend
+- Event details gain Register, Join the waiting list, Cancel registration, the waiting position, seats left, Download calendar file and the attachment list. Manage events gains the answers choice, capacity, waiting list, closing time, reminder and an attachments section with upload. `my_shifts` is a new layer chip; holidays show a Provisional tag and an Observed for line. All from existing design system parts.
+
+### Tests
+- Integration: capacity under parallel requests, waiting list order and promotion, capacity raise and lowering refused, closing time, audience and cross-tenant denial for registration, calendar file and attachments, malware refusal, reminder once and not for Not going, cancellation notice once, shifts layer with drafts hidden and `hr.rosters` off, team availability with roster days off, provisional and observed holidays.
+- Acceptance: register and cancel en and ar with axe; manage an event with capacity and an attachment.
