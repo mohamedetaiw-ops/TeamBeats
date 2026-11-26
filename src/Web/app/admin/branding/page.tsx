@@ -60,6 +60,9 @@ export default async function BrandingPage({ searchParams }: { searchParams: Pro
             <ButtonLink href={`/admin/branding/governance?brand=${encodeURIComponent(brand.data.id)}`} variant="secondary" icon="policy">
               {t("governance.open")}
             </ButtonLink>
+            <ButtonLink href="/admin/branding/designs" variant="secondary" icon="spark">
+              {t("designs.open")}
+            </ButtonLink>
             <ButtonLink href="/admin/branding/organizations" variant="secondary" icon="building">
               {t("organizations.open")}
             </ButtonLink>

@@ -37,6 +37,14 @@ Delivery is eight pull requests: Studio and the specs; actions, selection and st
 - A gallery page per group (`/ui-gallery/components`) keeps the first gallery page and its baselines stable.
 - The lint keeps refusing color functions; shaded fills are layers at the state opacities.
 
+## R3: tenant designs (DLS-120 to DLS-122)
+- Data: `experience.tenant_design` (migration 0025) under row level security, keyed by tenant and id with a unique key per tenant: base design, token values as JSON, names in English and Arabic, description, state (`draft`, `proposed`, `approved`, `rejected`, `retired`), who proposed and reviewed and when, and the review note.
+- Domain: `ThemeService.Designs.cs`, beside the reviewed token extensions. Values go through `TokenSchema.Validate`; the contrast check resolves the base design with the values as one brand layer (`ThemeEngine.Resolve`, `ThemeEngine.Check`) in every mode. Review follows the extension review: `theme.publish` at tenant scope, not the proposer.
+- Applying writes into the brand draft through `SaveDraftAsync`, so the spec 033 lifecycle (approval routes, schedule, rollback, impact) applies unchanged and the engine needs no new layer.
+- API: `GET/POST /api/v1/experience/designs`, `PUT /designs/{id}`, `POST /designs/{id}/propose`, `/review`, `/retire`, `/apply`. Capability `experience.token_extensions`.
+- Web: Brand section page `/admin/branding/designs` with the list, an editor (base design, names, token rows with light and dark values), review and apply to a brand.
+- Audit: `theme.design_saved`, `theme.design_proposed`, `theme.design_approved`, `theme.design_rejected`, `theme.design_retired`, `theme.design_applied`.
+
 ## Risks
 - Hand-built comboboxes, menus and calendars can miss keyboard or screen reader cases that a library covers. Mitigation: native elements carry most behavior, each component follows its WAI-ARIA pattern and has a keyboard test and axe run in both directions.
 - Visual baselines can differ between machines. Mitigation: self-hosted fonts, a fixed viewport, 2 percent tolerance, Chromium version pinned with the suite.
