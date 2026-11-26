@@ -3211,5 +3211,17 @@
   "conflict.spaces.sync_unavailable": "لم يستجب نظام المهام. حاول مرة أخرى لاحقًا.",
   "conflict.spaces.sync_linked": "هذه القائمة أو هذه الخطة مرتبطة بالفعل. ألغِ الربط أولًا.",
   "validation.tasks.planner_group": "أدخل معرّف مجموعة Microsoft 365 التي تملك الخطط.",
-  "capability.spaces.task_sync": "مزامنة قوائم المهام مع Planner وJira"
+  "capability.spaces.task_sync": "مزامنة قوائم المهام مع Planner وJira",
+  "validation.booking.plan_size": "يجب أن يكون مخطط الطابق صورة لا يتجاوز حجمها 5 ميغابايت.",
+  "validation.booking.plan_type": "ارفع مخطط الطابق كصورة PNG أو JPEG أو WebP.",
+  "validation.booking.plan_dimensions": "يمكن أن يصل مخطط الطابق إلى 8000 بكسل في كل جانب.",
+  "validation.booking.plan_infected": "رُفض الملف لأن فحص البرمجيات الضارة وجد تهديدًا.",
+  "validation.booking.plan_scan_failed": "تعذّر فحص الملف بحثًا عن البرمجيات الضارة. حاول مرة أخرى لاحقًا.",
+  "validation.booking.plan_positions": "أرسل ما بين موضع واحد و2000 موضع.",
+  "validation.booking.plan_resource": "اختر موردًا من هذا الطابق.",
+  "validation.booking.plan_position": "يحتاج الموضع إلى القيمتين، كل منهما من 0 إلى 100.",
+  "conflict.booking.plan_missing": "ارفع مخطط الطابق قبل وضع الموارد عليه.",
+  "capability.booking.floor_plans": "خرائط مخططات الطوابق",
+  "capability.booking.visitors": "حجز الزوار",
+  "capability.booking.sensors": "الإشغال عبر أجهزة الاستشعار"
 }

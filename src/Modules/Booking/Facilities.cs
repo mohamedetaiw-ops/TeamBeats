@@ -396,7 +396,8 @@ public sealed partial class Facilities(
         var (names, attributes, mailbox, approvers) = await ValidateResourceAsync(resource.SiteId, resource.Kind, request, id, ct);
         await session.ExecAsync(
             """
-            update booking.resource set floor_id = @floor, zone_id = @zone, names = @names, capacity = @capacity, attributes = @attributes, fixed_user_id = @fixedUser,
+            update booking.resource set floor_id = @floor, zone_id = @zone, names = @names,
+              plan_x = case when floor_id is distinct from @floor then null else plan_x end, plan_y = case when floor_id is distinct from @floor then null else plan_y end, capacity = @capacity, attributes = @attributes, fixed_user_id = @fixedUser,
               mailbox = @mailbox, check_in = @checkIn, needs_approval = @needsApproval, approver_ids = @approvers, updated_at = @now, row_version = row_version + 1
             where id = @id
             """, new

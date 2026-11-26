@@ -128,6 +128,9 @@ public static class Capabilities
     public const string BookingDesks = "booking.desks";
     public const string BookingResources = "booking.resources";
     public const string BookingReports = "booking.reports";
+    public const string BookingFloorPlans = "booking.floor_plans";
+    public const string BookingVisitors = "booking.visitors";
+    public const string BookingSensors = "booking.sensors";
 
     // Spec 030 section 9: the app and push everywhere, offline and kiosk Workplace Plus and above, native shell (R3) Enterprise.
     public const string MobilePwa = "mobile.pwa";

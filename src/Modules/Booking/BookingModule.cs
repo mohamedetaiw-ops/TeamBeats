@@ -30,6 +30,7 @@ public static class BookingModule
         services.AddScoped<BookingReports>();
         services.AddScoped<BookingClosures>();
         services.AddScoped<BookingActivity>();
+        services.AddScoped<FloorPlans>();
         services.AddMessageHandler<TenantMembershipDisabled, BookingLeavers>("booking.leaver");
         services.AddScoped<BookingHolidayHandler>();
         services.AddMessageHandler<Hr.Contracts.WorkingCalendarChanged, BookingHolidayHandler>("booking.holiday");
@@ -84,6 +85,16 @@ public static class BookingModule
 
         root.MapPost("/scan/{code}:check-in", async (string code, Bookings bookings, IDbSession session, CancellationToken ct) =>
             await CommitAsync(session, await bookings.ScanCheckInAsync(code, ct), ct));
+
+        root.MapGet("/floors/{id:guid}/map", async (Guid id, DateOnly? date, TimeOnly? start, TimeOnly? end, FloorPlans plans, CancellationToken ct) =>
+            Results.Ok(await plans.MapAsync(id, date, start, end, ct)));
+        root.MapGet("/floors/{id:guid}/plan", async (Guid id, FloorPlans plans, HttpContext http, CancellationToken ct) =>
+        {
+            var (content, type) = await plans.ImageAsync(id, ct);
+            http.Response.Headers.CacheControl = "private, max-age=3600";
+            http.Response.Headers["X-Content-Type-Options"] = "nosniff";
+            return Results.Stream(content, type);
+        });
 
         root.MapGet("/sites/{id:guid}/kiosk", async (Guid id, Bookings bookings, CancellationToken ct) => Results.Ok(await bookings.KioskAsync(id, ct)));
 
@@ -153,6 +164,30 @@ public static class BookingModule
             await session.CommitAsync(ct);
             return Results.Created($"/api/v1/booking/manage/sites/{id}", view);
         });
+
+        // R3 US7: floor plan images and resource positions.
+        manage.MapPut("/floors/{id:guid}/plan", async (Guid id, HttpRequest http, FloorPlans plans, IDbSession session, CancellationToken ct) =>
+        {
+            var buffer = new byte[FloorPlans.MaxBytes + 1];
+            int read, total = 0;
+            while ((read = await http.Body.ReadAsync(buffer.AsMemory(total, buffer.Length - total), ct)) > 0)
+            {
+                total += read;
+                if (total > FloorPlans.MaxBytes)
+                {
+                    throw Primitives.AppException.Validation("file", "validation.booking.plan_size");
+                }
+            }
+            return await CommitAsync(session, await plans.UploadAsync(id, http.ContentType, buffer[..total], ct), ct);
+        }).DisableAntiforgery();
+        manage.MapDelete("/floors/{id:guid}/plan", async (Guid id, FloorPlans plans, IDbSession session, CancellationToken ct) =>
+        {
+            await plans.RemoveAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+        manage.MapPut("/floors/{id:guid}/positions", async (Guid id, PositionsRequest request, FloorPlans plans, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await plans.PlaceAsync(id, request, ct), ct));
 
         manage.MapGet("/sites/{id:guid}/labels", async (Guid id, Facilities facilities, CancellationToken ct) => Results.Ok(await facilities.LabelsAsync(id, ct)));
 

@@ -3211,5 +3211,17 @@
   "conflict.spaces.sync_unavailable": "The tracker did not answer. Try again later.",
   "conflict.spaces.sync_linked": "This list or this plan is already linked. Unlink it first.",
   "validation.tasks.planner_group": "Enter the Microsoft 365 group ID that owns the plans.",
-  "capability.spaces.task_sync": "Planner and Jira sync of task lists"
+  "capability.spaces.task_sync": "Planner and Jira sync of task lists",
+  "validation.booking.plan_size": "The floor plan must be an image of up to 5 MB.",
+  "validation.booking.plan_type": "Upload the floor plan as a PNG, JPEG or WebP image.",
+  "validation.booking.plan_dimensions": "The floor plan can be up to 8,000 pixels on each side.",
+  "validation.booking.plan_infected": "The file was refused because the malware scan found a threat.",
+  "validation.booking.plan_scan_failed": "The file could not be checked for malware. Try again later.",
+  "validation.booking.plan_positions": "Send between 1 and 2,000 positions.",
+  "validation.booking.plan_resource": "Choose a resource of this floor.",
+  "validation.booking.plan_position": "A position needs both values, each from 0 to 100.",
+  "conflict.booking.plan_missing": "Upload a floor plan before placing resources on it.",
+  "capability.booking.floor_plans": "Floor plan maps",
+  "capability.booking.visitors": "Visitor booking",
+  "capability.booking.sensors": "Sensor occupancy"
 }
