@@ -28,6 +28,32 @@
       "message": "We will tell you when something needs you, such as an approval or a reply. You can change this any time in notification preferences.",
       "turnOn": "Turn on",
       "notNow": "Not now"
+    },
+    "lock": {
+      "title": "TeamBeats is locked",
+      "message": "Unlock with your face, fingerprint or phone passcode to carry on.",
+      "failed": "The phone did not confirm it was you. Try again.",
+      "reason": "Unlock TeamBeats",
+      "cancel": "Cancel",
+      "unlock": "Unlock",
+      "settingsTitle": "App lock",
+      "settingsHint": "Ask for your face, fingerprint or phone passcode when the app comes back after {minutes} minutes.",
+      "choice": "Lock the app on this phone",
+      "required": "Your organization requires the app lock on this phone."
+    },
+    "start": {
+      "title": "Open your workspace",
+      "intro": "Type the address your organization gave you for TeamBeats.",
+      "workspace": "Workspace address",
+      "workspaceHint": "For example contoso.teambeats.app",
+      "open": "Open",
+      "invalid": "Type an address like contoso.teambeats.app.",
+      "problems": {
+        "not_available": "This workspace does not offer the TeamBeats app. Ask your administrator, or open it in the browser.",
+        "unreachable": "The workspace did not answer. Check the address and your connection, then try again.",
+        "managed_invalid": "Your phone management set a workspace address that is not valid. Ask your IT team."
+      },
+      "problemTitle": "The app could not open that workspace"
     }
   },
   "home": {

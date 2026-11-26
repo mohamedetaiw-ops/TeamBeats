@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
-import { declinedRecently, meaningfulActionEvent, pushSupported, rememberDecline, turnOnPush, type PushStatus } from "@/lib/push";
+import { declinedRecently, meaningfulActionEvent, pushAskedBefore, pushOffered, rememberDecline, turnOnPush, type PushStatus } from "@/lib/push";
 import "./app.css";
 
 /**
@@ -20,13 +20,13 @@ export function PushOffer({ owner }: { owner: string }) {
 
   useEffect(() => {
     let asked = false;
-    const offer = () => {
-      if (asked || !pushSupported() || Notification.permission !== "default" || declinedRecently(owner)) return;
+    const offer = async () => {
+      if (asked || declinedRecently(owner) || (await pushAskedBefore())) return;
       asked = true;
       void fetch("/api/v1/me/push")
         .then((r) => (r.ok ? (r.json() as Promise<PushStatus>) : r.text().then(() => null)))
         .then((s) => {
-          if (s?.available && s.publicKey) setStatus(s);
+          if (s && pushOffered(s)) setStatus(s);
         })
         .catch(() => undefined);
     };
@@ -59,7 +59,7 @@ export function PushOffer({ owner }: { owner: string }) {
           busy={busy}
           onClick={async () => {
             setBusy(true);
-            const outcome = await turnOnPush(status.publicKey!);
+            const outcome = await turnOnPush(status.publicKey);
             // A browser refusal is the browser's to remember; a failed request may be offered again later.
             if (outcome === "denied") rememberDecline(owner);
             setBusy(false);

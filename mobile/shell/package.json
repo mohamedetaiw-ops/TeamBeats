@@ -1,0 +1,27 @@
+{
+  "name": "teambeats-shell",
+  "private": true,
+  "version": "0.1.0",
+  "description": "TeamBeats store app: a Capacitor shell around the tenant's PWA (spec 030 R3, ADR-0023).",
+  "license": "UNLICENSED",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test --experimental-strip-types test/rules.test.ts",
+    "sync": "npm run build && cap sync"
+  },
+  "dependencies": {
+    "@aparajita/capacitor-biometric-auth": "10.0.0",
+    "@capacitor/android": "8.6.3",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/core": "8.6.3",
+    "@capacitor/ios": "8.6.3",
+    "@capacitor/preferences": "8.0.1",
+    "@capacitor/push-notifications": "8.1.3",
+    "@capawesome/capacitor-managed-configurations": "8.0.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.6.3",
+    "typescript": "6.0.3"
+  }
+}

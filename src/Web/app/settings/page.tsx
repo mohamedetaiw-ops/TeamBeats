@@ -11,6 +11,7 @@ import { PagesReset } from "@/features/shell/PagesReset";
 import { PreferencesData } from "@/features/shell/PreferencesData";
 import { PreferenceControls } from "@/features/shell/SettingsPanel";
 import { KioskBadgeSettings } from "@/features/kiosk/KioskBadgeSettings";
+import { AppLockChoice } from "@/features/app/AppLock";
 import { ProductionOptOut } from "@/features/evaluation/ProductionOptOut";
 import type { ProductionOptOutView } from "@/lib/evaluation/types";
 import type { BehaviorChoice as BehaviorChoiceView } from "@/lib/shell/types";
@@ -102,6 +103,7 @@ export default async function PreferencesPage() {
             <ExperimentChoice initial={experiments.data} />
           </SettingsSection>
         ) : null}
+        <AppLockChoice />
         <SettingsSection id="pref-pages" icon="home" title={t("pages.title")} hint={t("pages.hint")}>
           <PagesReset />
         </SettingsSection>

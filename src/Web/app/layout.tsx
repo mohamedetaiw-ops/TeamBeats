@@ -52,6 +52,7 @@ import { MessagesProvider } from "@/components/ui/Messages";
 import { designAttributes, designOf } from "@/lib/experience/design";
 import { ShellFooter } from "@/features/shell/Footer";
 import { AppUpdate } from "@/features/app/AppUpdate";
+import { AppLock } from "@/features/app/AppLock";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("app");
@@ -88,6 +89,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           {/* The update offer docks in the page flow above the shell, so it never covers content (spec 036 DLS-078). */}
           <AppUpdate release={process.env.NEXT_PUBLIC_TEAMBEATS_RELEASE ?? "dev"} />
           <MessagesProvider>{children}</MessagesProvider>
+          {/* The store app's lock (spec 030 R3 MOB-023): nothing in a browser. */}
+          <AppLock />
         </IntlProvider>
         <ShellFooter />
       </body>
