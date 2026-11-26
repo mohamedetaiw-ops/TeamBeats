@@ -229,6 +229,8 @@ export const routes: readonly Route[] = [
   { path: "/learning/manage/paths/[id]", tier: "detail" },
   { path: "/learning/paths/[id]", tier: "detail" },
   { path: "/learning/reports", tier: "other" },
+  { path: "/learning/sessions", tier: "other" },
+  { path: "/learning/sessions/[id]", tier: "detail" },
   { path: "/learning/reports/[id]", tier: "detail" },
   { path: "/learning/team", tier: "other" },
   { path: "/leave", tier: "primary" },

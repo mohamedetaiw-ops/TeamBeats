@@ -5,7 +5,7 @@ export const learningApi = "/api/v1/learning";
 
 export type Texts = Record<string, string>;
 
-export type LessonKind = "page" | "document" | "video" | "quiz" | "package";
+export type LessonKind = "page" | "document" | "video" | "quiz" | "package" | "classroom";
 export type QuestionKind = "single" | "multiple" | "true_false";
 export type LearnerStateKind = "none" | "open" | "completed" | "retraining";
 export type AssignmentSource = "self" | "rule" | "manager" | "onboarding" | "policy";
@@ -263,3 +263,30 @@ export async function call<T>(request: () => Promise<Response>, failed: string):
     return { ok: false, messages: [failed] };
   }
 }
+
+/** A classroom session (spec 028 R3 US10). The viewer's seat, and what they may do, come from the API. */
+export type SessionView = {
+  id: string;
+  courseId: string;
+  lessonKey: string;
+  startsAt: string;
+  endsAt: string;
+  place: string | null;
+  link: string | null;
+  capacity: number;
+  facilitator: { id: string; name: string };
+  status: "scheduled" | "cancelled";
+  booked: number;
+  waiting: number;
+  mySeat: "booked" | "waiting" | "attended" | "absent" | null;
+  myPosition: number | null;
+  canManage: boolean;
+  canTakeAttendance: boolean;
+  courseTitles?: Texts | null;
+};
+
+export type RosterView = { session: SessionView; seats: { learnerId: string; name: string; status: "booked" | "waiting" | "attended" | "absent" }[] };
+
+export const sessionsHref = "/learning/sessions";
+export const sessionHref = (id: string) => `/learning/sessions/${encodeURIComponent(id)}`;
+

@@ -27,9 +27,10 @@ import {
   type LearnerQuestion,
 } from "@/lib/learning";
 import { StateBadge, useDue } from "./parts";
+import { SessionBooking } from "./Sessions";
 import "./learning.css";
 
-const lessonIcons = { page: "news", document: "files", video: "video", quiz: "tasks", package: "folder" } as const;
+const lessonIcons = { page: "news", document: "files", video: "video", quiz: "tasks", package: "folder", classroom: "calendar" } as const;
 
 /**
  * The course player (spec 028 US3): enrol where the course is open, take the lessons in order or in any order, resume at
@@ -207,7 +208,9 @@ function Lesson({
         {lesson.minutes ? <Badge icon="clock">{t("minutes", { count: lesson.minutes })}</Badge> : null}
         {lesson.done ? <Badge tone="success" icon="check">{t("done")}</Badge> : null}
       </div>
-      {lesson.kind === "package" ? (
+      {lesson.kind === "classroom" ? (
+        <SessionBooking courseId={courseId} lessonKey={lesson.key} open={open} done={lesson.done} />
+      ) : lesson.kind === "package" ? (
         <PackageFrame courseId={courseId} lesson={lesson} reading={reading} open={open} busy={busy} onRefresh={onRefresh} />
       ) : lesson.quiz ? (
         <Quiz courseId={courseId} lesson={lesson} reading={reading} open={open} onAttempt={onAttempt} />

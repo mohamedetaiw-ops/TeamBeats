@@ -32,6 +32,7 @@ import {
 import { statusTones } from "./ManageHome";
 import { toggle, useUnits } from "./parts";
 import { Rules } from "./Rules";
+import { SessionsEditor } from "./Sessions";
 import "./learning.css";
 
 type EditOption = { uid: string; key: string; labels: Texts; correct: boolean };
@@ -176,7 +177,7 @@ function CourseForm({ initial, locales, packages }: { initial: CourseDetail; loc
           kind: l.kind,
           titles: only(l.titles, langs),
           sources:
-            l.kind === "quiz"
+            l.kind === "quiz" || l.kind === "classroom"
               ? null
               : Object.fromEntries(langs.map((g) => [g, guidIn(l.sources[g] ?? "")]).filter((pair): pair is [string, string] => pair[1] !== null)),
           minutes: l.minutes ? Number(l.minutes) : null,
@@ -449,7 +450,7 @@ function CourseForm({ initial, locales, packages }: { initial: CourseDetail; loc
             name="lesson-kind"
             value={addKind}
             onChange={(e) => setAddKind(e.target.value as LessonKind)}
-            options={(packages ? (["page", "document", "video", "quiz", "package"] as const) : (["page", "document", "video", "quiz"] as const)).map((k) => ({
+            options={(packages ? (["page", "document", "video", "quiz", "classroom", "package"] as const) : (["page", "document", "video", "quiz", "classroom"] as const)).map((k) => ({
               value: k,
               label: t(`kind.${k}`),
             }))}
@@ -549,7 +550,7 @@ function LessonEditor({
               packageId={lesson.sources[l] ?? ""}
               onImported={(p) => onChange((x) => ({ ...x, sources: { ...x.sources, [l]: p.id } }))}
             />
-          ) : lesson.kind !== "quiz" ? (
+          ) : lesson.kind !== "quiz" && lesson.kind !== "classroom" ? (
             <FormField
               label={t(lesson.kind === "page" ? "pageIn" : "fileIn", { language: languageName(l, locale) })}
               name={`${id}-source-${l}`}
@@ -573,6 +574,9 @@ function LessonEditor({
         onChange={(e) => onChange((x) => ({ ...x, minutes: e.target.value }))}
       />
       {lesson.quiz ? <QuizEditor quiz={lesson.quiz} id={id} langs={langs} onChange={(quiz) => onChange((x) => ({ ...x, quiz }))} /> : null}
+      {lesson.kind === "classroom" ? (
+        lesson.key ? <SessionsEditor courseId={courseId} lessonKey={lesson.key} /> : <p className="learning-meta">{t("classroomSaveFirst")}</p>
+      ) : null}
     </div>
   );
 }

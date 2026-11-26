@@ -36,7 +36,7 @@ Depends on 010 (skills), 013 (AI Gateway), 015. R3 covers User Stories 8 to 10 a
 
 ### Phase 7: User Story 10, classroom sessions (P2)
 - [x] T015 [US10] Classroom lesson kind, capability `learning.classroom`, sessions, seats, waiting list, reminders, attendance completing the lesson; integration tests
-- [ ] T016 [US10] Sessions in the builder, seat booking in the player, facilitator roster page; e2e
+- [x] T016 [US10] Sessions in the builder, seat booking in the player, facilitator roster page; e2e
 
 ### Final phase (R3)
 - [ ] T017 OpenAPI; R3 implementation notes; spec evidence

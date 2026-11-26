@@ -385,13 +385,13 @@ public sealed class Sessions(
     private async Task<RosterView> RosterOfAsync(Row row, CancellationToken ct)
     {
         var seats = await session.QueryAsync(
-            $"select {SeatColumns} from learning.seat where session_id = @id and status <> 'cancelled' order by status <> 'waiting', created_at, id",
+            // Seats first, then the waiting list in the order people joined it.
+            $"select {SeatColumns} from learning.seat where session_id = @id and status <> 'cancelled' order by status = 'waiting', created_at, id",
             new { id = row.Id }, ReadSeat, ct);
         var names = await users.GetManyAsync(seats.Select(s => s.LearnerId).Distinct().ToList(), ct);
         var view = (await ViewsAsync([row], false, ct))[0];
         return new RosterView(view, seats
-            .Select(s => new RosterSeat(s.LearnerId, names.TryGetValue(s.LearnerId, out var u) ? u.DisplayName : "", s.Status))
-            .OrderBy(s => s.Status == SeatStatuses.Waiting).ThenBy(s => s.Name, StringComparer.CurrentCultureIgnoreCase).ToList());
+            .Select(s => new RosterSeat(s.LearnerId, names.TryGetValue(s.LearnerId, out var u) ? u.DisplayName : "", s.Status)).ToList());
     }
 
     /// <summary>

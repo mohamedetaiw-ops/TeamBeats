@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
-import { catalogueHref, learningHref, manageHref, reportsHref, teamHref, type LearningRights, type MyLearning as Mine, type PathSummary, type RecommendationsView } from "@/lib/learning";
+import { catalogueHref, learningHref, manageHref, reportsHref, teamHref, type LearningRights, type MyLearning as Mine, type PathSummary, type RecommendationsView, sessionsHref, type SessionView } from "@/lib/learning";
 import { Header } from "@/components/shell/Header";
 import { ButtonLink } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -16,11 +16,12 @@ export default async function LearningPage() {
     redirect("/signin");
   }
   const t = await getTranslations("learning");
-  const [mine, paths, rights, recommended] = await Promise.all([
+  const [mine, paths, rights, recommended, facilitating] = await Promise.all([
     apiGet<Mine>("/api/v1/learning/me"),
     apiGet<PathSummary[]>("/api/v1/learning/paths"),
     apiGet<LearningRights>("/api/v1/learning/rights"),
     apiGet<RecommendationsView>("/api/v1/learning/recommendations"),
+    apiGet<SessionView[]>("/api/v1/learning/sessions/facilitating"),
   ]);
   return (
     <>
@@ -43,6 +44,11 @@ export default async function LearningPage() {
               {rights.ok && rights.data.report ? (
                 <ButtonLink href={reportsHref} icon="policy">
                   {t("reports.pageTitle")}
+                </ButtonLink>
+              ) : null}
+              {facilitating.ok && facilitating.data.length > 0 ? (
+                <ButtonLink href={sessionsHref} icon="calendar">
+                  {t("sessions.facilitatingTitle")}
                 </ButtonLink>
               ) : null}
               {rights.ok && rights.data.team ? (
