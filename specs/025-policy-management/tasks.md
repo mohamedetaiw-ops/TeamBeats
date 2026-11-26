@@ -51,5 +51,5 @@ R2 covers User Stories 5 to 8, FR-014 to FR-017, the AI change summary for appro
 
 - [x] T024 [US9] Change impact facts and the AI impact assessment (FR-022, FR-023); integration tests
 - [x] T025 [US10] Regulator feed connector pack, reading job, Regulator changes with dismiss, link and review start (FR-024, FR-025); integration tests
-- [ ] T026 Pages: impact on the compare page, Regulator changes page; e2e with axe in `ar` and `en`
-- [ ] T027 OpenAPI, R3 implementation notes, spec evidence
+- [x] T026 Pages: impact on the compare page, Regulator changes page; e2e with axe in `ar` and `en`
+- [x] T027 OpenAPI, R3 implementation notes, spec evidence

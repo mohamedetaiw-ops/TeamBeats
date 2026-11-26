@@ -17488,6 +17488,52 @@
         }
       }
     },
+    "/api/v1/policies/{id}/impact": {
+      "get": {
+        "tags": [
+          "Policies"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/policies/{id}/impact/assessment": {
+      "post": {
+        "tags": [
+          "Policies"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/policies/{id}/drafts/{versionId}/comments": {
       "get": {
         "tags": [
@@ -18184,6 +18230,99 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/EvidenceShareRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/policies/regulator-changes": {
+      "get": {
+        "tags": [
+          "Policies"
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/policies/regulator-changes/{changeId}:dismiss": {
+      "post": {
+        "tags": [
+          "Policies"
+        ],
+        "parameters": [
+          {
+            "name": "changeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RegulatorDecisionRequest"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/policies/regulator-changes/{changeId}:link": {
+      "post": {
+        "tags": [
+          "Policies"
+        ],
+        "parameters": [
+          {
+            "name": "changeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegulatorLinkRequest"
               }
             }
           },
@@ -48693,6 +48832,52 @@
         "type": "object",
         "properties": {
           "occurrenceKey": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "RegulatorDecisionRequest": {
+        "required": [
+          "note"
+        ],
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "RegulatorLinkRequest": {
+        "required": [
+          "policyIds",
+          "startReviews",
+          "note"
+        ],
+        "type": "object",
+        "properties": {
+          "policyIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "startReviews": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "note": {
             "type": [
               "null",
               "string"
