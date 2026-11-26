@@ -155,7 +155,11 @@ public sealed class NotificationSender(
         bool? teamsAvailable = null;
         // One read for the batch: who has a device with push. The channel itself checks the package at delivery.
         var pushUsers = (await session.QueryAsync(
-            "select distinct user_id from notifications.push_subscription where user_id = any(@userIds)",
+            """
+            select user_id from notifications.push_subscription where user_id = any(@userIds)
+            union
+            select user_id from notifications.native_push_device where user_id = any(@userIds)
+            """,
             new { userIds = rows.Select(r => r.UserId).ToArray() }, r => r.GetGuid(0), ct)).ToHashSet();
         // SMS (US6 scenario 2, FR-020): mandatory messages only, for people with neither email nor a device with push.
         var smsCandidates = mandatory

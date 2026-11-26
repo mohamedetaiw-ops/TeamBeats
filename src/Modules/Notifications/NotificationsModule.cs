@@ -102,6 +102,21 @@ public static class NotificationsModule
             return Results.Ok(status);
         });
 
+        // Native push for the store apps (spec 030 R3 MOB-022): the registration token from the messaging service.
+        me.MapPost("/push/native", async (NativePushRequest request, ITenantContext context, PushSubscriptions push, IDbSession session, CancellationToken ct) =>
+        {
+            var status = await push.RegisterNativeAsync(context.RequireUser(), request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(status);
+        });
+
+        me.MapPost("/push/native:remove", async (NativePushRequest request, ITenantContext context, PushSubscriptions push, IDbSession session, CancellationToken ct) =>
+        {
+            var status = await push.RemoveNativeAsync(context.RequireUser(), request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(status);
+        });
+
         me.MapGet("/notifications/count", async (ITenantContext context, NotificationCentre centre, HttpResponse response, CancellationToken ct) =>
         {
             response.Headers.CacheControl = "private, no-store";

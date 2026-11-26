@@ -11,7 +11,7 @@
 | Target release | R2 (installable progressive web app with tenant branding, mobile layouts for every R1 and R2 page, web push notifications, offline reading of critical items, mobile sign-in with session rules, kiosk and shared device mode for frontline staff), R3 (store-published native shell apps for iOS and Android wrapping the PWA, native push, biometric unlock, managed app configuration for MDM) |
 | Last updated | 2026-11-07 |
 | Approved | 2026-11-07 by Mohamed (standing approval to proceed) |
-| Requirement IDs | EXP-009, MOB-001 to MOB-020 (new) |
+| Requirement IDs | EXP-009, MOB-001 to MOB-025 (new) |
 | Use cases | UC-01, UC-03 |
 | Depends on | 003 (sessions, sign-in), 007 (localization, accessibility), 008 (shell, home), 009 (critical content), 015 (push channel), 025 (critical policies), 026 (device and session policy), 033 (branding) |
 | Used by | Every user-facing spec, which must work at mobile widths |
@@ -34,10 +34,11 @@
 - Kiosk and shared device mode: a device enrolled by an administrator signs users in by badge code or QR plus PIN, signs them out after inactivity, keeps no personal data between users, and hides Confidential features.
 - Deep links from notifications and emails open the right page in the installed app.
 
+**R3 scope:** store-published native shell apps for iOS and Android that wrap the PWA (MOB-020, MOB-021), native push (MOB-022), an app lock with biometrics or the device passcode (MOB-023), managed app configuration from MDM (MOB-024) and a leave request draft queued while offline (MOB-025).
+
 **Out of scope:**
-- Store-published native apps, native push and biometrics (R3).
-- Offline writing (forms, posts) except queueing a leave request draft (R3).
-- MDM app configuration (R3).
+- Offline writing (forms, posts) other than the leave request draft.
+- Features that exist only in the native apps.
 
 ## 3. Actors and permissions
 
@@ -95,6 +96,15 @@ Omar drives between sites with weak coverage.
 1. **Given** any R1 or R2 page, **When** opened at 360 px in Arabic and English, **Then** there is no horizontal page scroll, no clipped text, and every action is reachable.
 2. **Given** bottom navigation configured by the experience administrator, **Then** it shows up to 5 items with labels, and "More" holds the rest.
 
+### User Story 6: Use the store app with my company's phone management (Priority: P2, R3)
+
+**Acceptance scenarios:**
+1. **Given** a phone without management, **When** the person installs the TeamBeats app and enters their workspace address, **Then** the app opens that workspace's sign-in and from then on the same pages as the PWA.
+2. **Given** a managed phone whose MDM sets the workspace and locks it, **When** the app starts, **Then** it opens that workspace only and offers no other.
+3. **Given** a tenant whose policy requires the app lock, **When** the app returns from the background after the set minutes, **Then** it asks for the device biometrics or passcode before showing anything; the session still ends by the spec 026 rules.
+4. **Given** push allowed in the app, **When** a notification is sent, **Then** it arrives as a native push with the same words and rules as web push, and stops after sign-out.
+5. **Given** no connection, **When** the person fills a leave request, **Then** it is kept as a draft on the device and sent only when they confirm it online.
+
 ### Edge cases and exception flows
 - iOS versions without web push: the app explains push is not available on this device and offers email.
 - Low storage: the cache drops oldest items first and never blocks the app.
@@ -123,11 +133,19 @@ Omar drives between sites with weak coverage.
 - **MOB-018 / FR-018**: Deep links MUST open the target page in the installed app.
 - **MOB-019 / FR-019**: The service worker MUST NOT cache API responses across users or tenants; cache keys MUST include tenant and user.
 - **MOB-020 / FR-020**: Native shell apps (R3) MUST wrap the same PWA without separate features.
+- **MOB-021 / FR-021** (R3): The native shell MUST open only the workspace host the person entered or MDM set, and the sign-in hosts that workspace uses; any other address opens in the system browser. It keeps no tenant data of its own beyond what the PWA keeps, and the workspace's `mobile.native_shell` capability decides whether the shell may be used with it.
+- **MOB-022 / FR-022** (R3): Native push MUST be the spec 015 push channel with the same preferences, words (title up to 60, body up to 120 characters, no Confidential content), deep link and removal on sign-out, session revocation, deprovisioning and an unregistered device. Android and iOS tokens go through Firebase Cloud Messaging, which reaches iOS through APNs. Web and native devices together count towards the limit of 10 per person.
+- **MOB-023 / FR-023** (R3): The tenant security policy (spec 026) MUST set the app lock: off, optional (the person turns it on) or required, after 0 to 60 minutes in the background (default optional, 5 minutes). Unlocking uses the device biometrics or passcode; it never signs in, never extends a session and is never sent to the server.
+- **MOB-024 / FR-024** (R3): Managed app configuration (AppConfig on iOS, managed configurations on Android) MUST accept `workspaceHost`, `lockWorkspace` and `appLock`; a managed `appLock` can only make the tenant's policy stricter.
+- **MOB-025 / FR-025** (R3): A leave request MAY be kept as a draft while offline, encrypted with the offline cache key and wiped with it (MOB-011); it is sent only when the person confirms it online, and the server checks it as any new request.
 
 ## 6. Business and validation rules
 - Offline cache default 50 items and 50 MB; expiry 7 days; tenant range 0 to 200 items.
 - Kiosk inactivity default 2 minutes; PIN 4 to 8 digits, set by the user on first kiosk use or from a reset service.
 - Push payload title up to 60 characters, body up to 120.
+
+- Native push tokens are kept like web push subscriptions: one person, the session that made them, at most 10 devices with web push, removed on sign-out.
+- App lock minutes 0 to 60; a managed configuration may lower them or require the lock, never relax them.
 
 ## 7. Tenant and organization scope
 - Tenant-owned data: manifests, kiosk devices, push subscriptions, offline policy.
@@ -140,6 +158,8 @@ Omar drives between sites with weak coverage.
 | Entity | System of record | Classification | Retention | Personal data? |
 |---|---|---|---|---|
 | Push subscriptions | Product | Internal | Until sign-out or revocation | Yes |
+| Native push tokens (R3) | Product | Internal | Until sign-out or revocation | Yes |
+| Offline leave draft (R3) | Device, encrypted | Up to Internal | Until sent, discarded or wiped | Yes |
 | Kiosk devices | Product | Internal | Until revoked | No |
 | Badge PIN hash | Product | Restricted | Until changed | Yes |
 | Offline cache | Device, encrypted | Up to Internal | 7 days default | Yes |
@@ -163,6 +183,7 @@ None specific. The assistant (014) is reachable on mobile with the same rules.
 
 ## 12. Integrations and events
 - Push delivery through a Web Push adapter behind the 015 channel port (VAPID keys in the secret manager).
+- Native push (R3) through a Firebase Cloud Messaging HTTP v1 adapter behind the same channel; the service account key is in the secret manager and the adapter signs its own OAuth token.
 - Publishes `DeviceEnrolled`, `DeviceRevoked`, `PushSubscriptionCreated`, `PushSubscriptionRemoved`.
 
 ## 13. Audit, telemetry and analytics

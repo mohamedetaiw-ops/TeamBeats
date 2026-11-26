@@ -65,6 +65,8 @@ public static class IntegrationsModule
         // Web Push (spec 030 US2): one key pair per installation, so the client is a singleton.
         services.AddHttpClient(WebPush.WebPushClient.ClientName, c => c.Timeout = TimeSpan.FromSeconds(10));
         services.AddSingleton<IWebPush, WebPush.WebPushClient>();
+        services.AddHttpClient(NativePush.FcmPushClient.ClientName, c => c.Timeout = TimeSpan.FromSeconds(10));
+        services.AddSingleton<INativePush, NativePush.FcmPushClient>();
         services.AddSingleton<ConnectorRateLimits>();
         services.AddScoped<ConnectorRuntime>();
         services.AddScoped<IConnectorRuntime>(sp => sp.GetRequiredService<ConnectorRuntime>());
