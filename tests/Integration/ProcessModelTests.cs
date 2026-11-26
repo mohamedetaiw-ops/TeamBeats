@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.Extensions.DependencyInjection;
 using TeamBeats.Audit.Contracts;
+using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Modules.Integrations.Contracts;
 using TeamBeats.Modules.Integrations.Webhooks;
@@ -228,6 +229,47 @@ public sealed class ProcessModelTests(TenantWorld world)
         var other = await FreshAsync();
         Assert.Null(await InstanceAsync(other.T, africa));
         Assert.Equal(1, await world.Database.AuditCountAsync(t.Id, AuditActions.ProcessInstanceStarted, approved.ToString()));
+    }
+
+    [Fact]
+    public async Task Compensation_needs_the_advanced_package_and_undoes_completed_steps_newest_first()
+    {
+        var o = await FreshAsync();
+        var t = o.T;
+        string Undoable(string id, string handler) => $"""
+            {UserTask(id, $"users=\"{t["amal"].Id}\"", id)}
+            <bpmn:boundaryEvent id="{id}_c" attachedToRef="{id}"><bpmn:compensateEventDefinition/></bpmn:boundaryEvent>
+            <bpmn:userTask id="{handler}" name="{handler}" isForCompensation="true"><bpmn:extensionElements><tb:assignment users="{t["amal"].Id}"/></bpmn:extensionElements></bpmn:userTask>
+            <bpmn:association id="{id}_a" sourceRef="{id}_c" targetRef="{handler}"/>
+            """;
+        var model = Model($"""
+            <bpmn:startEvent id="s"/>{Undoable("reserve", "release")}{Undoable("order", "cancel")}
+            <bpmn:endEvent id="undo"><bpmn:compensateEventDefinition/></bpmn:endEvent>
+            {Flow("f1", "s", "reserve")}{Flow("f2", "reserve", "order")}{Flow("f3", "order", "undo")}
+            """);
+
+        // Workplace Plus saves the draft but does not publish compensation: it is part of the advanced process package.
+        await SaveAsync(t, "owner", "undo-purchase", model);
+        var refused = await OkAsync(t["owner"].Client.PostAsync($"{Api}/undo-purchase:publish", null), HttpStatusCode.BadRequest);
+        Assert.Equal("validation.process.advanced_package", refused.GetProperty("errors").GetProperty("bpmnXml")[0].GetProperty("key").GetString());
+
+        await world.SetCapabilityAsync(t, Capabilities.WorkflowBpmnAdvanced, new { enabled = true });
+        await PublishAsync(t, "owner", "undo-purchase");
+        var instance = await StartAsync(t, "undo-purchase", null, o.Gulf, "PO-9");
+        await CompleteAsync(t, "amal", Assert.Single(await TasksAsync(t, "amal")).Id);
+        await CompleteAsync(t, "amal", Assert.Single(await TasksAsync(t, "amal")).Id);
+
+        // The order is cancelled before the budget is released, then the instance ends.
+        var cancel = Assert.Single(await TasksAsync(t, "amal"));
+        Assert.Equal("cancel", cancel.ElementId);
+        await CompleteAsync(t, "amal", cancel.Id);
+        var release = Assert.Single(await TasksAsync(t, "amal"));
+        Assert.Equal("release", release.ElementId);
+        Assert.Equal("active", (await InstanceAsync(t, instance))!.Status);
+        await CompleteAsync(t, "amal", release.Id);
+        Assert.Equal("completed", (await InstanceAsync(t, instance))!.Status);
+        var history = await AsAsync(t, null, sp => sp.GetRequiredService<IProcessEngine>().HistoryAsync(instance));
+        Assert.Equal(["order", "reserve"], history.Where(h => h.Event == "compensated").Select(h => h.ElementId));
     }
 
     private async Task<HttpStatusCode> AssertDeniedAsync(TestTenant t, string user, Guid task)

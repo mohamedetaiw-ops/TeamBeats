@@ -27,6 +27,7 @@ import { unitName, type OrgUnit } from "@/lib/experience/builder-types";
 import { problemMessages } from "@/lib/notifications/types";
 import {
   EVENTS_FOR,
+  HANDLER_TYPES,
   PALETTE,
   TIMER_KINDS,
   blankElement,
@@ -515,8 +516,37 @@ export function Modeler({ processKey, initial, units }: { processKey: string | n
               onChange={(ev) => set({ attachedTo: ev.target.value })}
               options={[{ value: "", label: t("choose") }, ...draft.elements.filter((x) => isActivity(x.type)).map((x) => ({ value: x.id, label: nameOf(x.id) }))]}
             />
-            <Checkbox label={t("interrupting")} hint={t("interruptingHint")} checked={e.interrupting} onChange={(ev) => set({ interrupting: ev.target.checked })} />
+            {e.event === "compensation" ? (
+              <SelectField
+                label={t("handler")}
+                hint={t("handlerHint")}
+                name={`${e.id}-handler`}
+                value={e.handler}
+                onChange={(ev) => set({ handler: ev.target.value })}
+                options={[{ value: "", label: t("choose") }, ...draft.elements.filter((x) => x.forCompensation).map((x) => ({ value: x.id, label: nameOf(x.id) }))]}
+              />
+            ) : (
+              <Checkbox label={t("interrupting")} hint={t("interruptingHint")} checked={e.interrupting} onChange={(ev) => set({ interrupting: ev.target.checked })} />
+            )}
           </>
+        ) : null}
+        {e.event === "compensation" && e.type !== "boundaryEvent" ? (
+          <SelectField
+            label={t("activityRef")}
+            hint={t("activityRefHint")}
+            name={`${e.id}-activityRef`}
+            value={e.activityRef}
+            onChange={(ev) => set({ activityRef: ev.target.value })}
+            options={[
+              { value: "", label: t("allActivities") },
+              ...draft.elements
+                .filter((x) => draft.elements.some((b) => b.type === "boundaryEvent" && b.event === "compensation" && b.attachedTo === x.id))
+                .map((x) => ({ value: x.id, label: nameOf(x.id) })),
+            ]}
+          />
+        ) : null}
+        {HANDLER_TYPES.includes(e.type) ? (
+          <Checkbox label={t("forCompensation")} hint={t("forCompensationHint")} checked={e.forCompensation} onChange={(ev) => set({ forCompensation: ev.target.checked })} />
         ) : null}
         {e.type === "userTask" ? (
           <>

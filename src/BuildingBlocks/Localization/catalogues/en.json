@@ -3022,5 +3022,9 @@
   "conflict.api.gallery_client_taken": "An app registered here already uses this client ID.",
   "mcp.confirm.message": "{app} asks to run {tool} for you in TeamBeats with these values, which come from the AI client: {arguments}. Nothing is done unless you confirm.",
   "mcp.confirm.field": "Confirm this action",
-  "mcp.confirm.field_hint": "Turn on to let TeamBeats do it now. Decline to stop it."
+  "mcp.confirm.field_hint": "Turn on to let TeamBeats do it now. Decline to stop it.",
+  "validation.process.compensation_handler": "A compensation handler must be a user, service, manual, send or business rule task with no flows, loop or boundary events, named by exactly one compensation boundary event.",
+  "validation.process.compensation_boundary": "A compensation boundary event needs one association to a compensation handler in the same scope, no outgoing flow, and an activity that is not a sub-process or a multi-instance activity. An activity has at most one.",
+  "validation.process.compensation_activity": "The activity to compensate must be in the same scope and have a compensation boundary event.",
+  "validation.process.advanced_package": "Compensation needs the advanced process features of your plan."
 }

@@ -999,6 +999,7 @@
         "compliance_projects": "مشاريع الامتثال",
         "deployment_region_choice": "اختيار منطقة الاستضافة",
         "workflow_bpmn": "نماذج العمليات والقرارات",
+        "workflow_bpmn_advanced": "تعويض العمليات وترحيل النسخ الجارية واستيراد BPMN",
         "workflow_max_active_instances": "مثيلات العمليات النشطة",
         "workflow_connector_fulfilment": "خطوات الموصلات وخطافات الويب في الخدمات",
         "ai_budgets": "ميزانية الذكاء الاصطناعي",
@@ -16635,6 +16636,13 @@
       "attachedTo": "مرتبط بـ",
       "interrupting": "يوقف الخطوة المرتبط بها",
       "interruptingHint": "ألغ التحديد لبدء مسار جانبي مع استمرار الخطوة.",
+      "handler": "تتراجع عنها خطوة",
+      "handlerHint": "الخطوة التي تتراجع عن هذه الخطوة. حدد مهمة كخطوة تعويض لتظهر هنا.",
+      "activityRef": "التراجع",
+      "activityRefHint": "تراجع عن خطوة واحدة، أو عن كل خطوة منتهية في هذا الجزء من العملية، بدءا بالأحدث.",
+      "allActivities": "كل الخطوات المنتهية",
+      "forCompensation": "خطوة تعويض",
+      "forCompensationHint": "تعمل فقط للتراجع عن خطوة أخرى. ليس لها مسارات، وتحدد من حدث التعويض في تلك الخطوة.",
       "users": "المستخدمون",
       "usersHint": "معرفات المستخدمين مفصولة بفواصل.",
       "permission": "من لديهم صلاحية",
@@ -16726,7 +16734,8 @@
         "message": "رسالة",
         "error": "خطأ",
         "escalation": "تصعيد",
-        "terminate": "ينهي كل شيء"
+        "terminate": "ينهي كل شيء",
+        "compensation": "التراجع عن الخطوات المنتهية"
       },
       "timerKinds": {
         "duration": "بعد مدة",

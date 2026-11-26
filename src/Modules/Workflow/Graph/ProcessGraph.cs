@@ -39,7 +39,7 @@ public static class ElementTypes
     public static bool IsGateway(string type) => type is ExclusiveGateway or ParallelGateway or InclusiveGateway or EventBasedGateway;
 }
 
-/// <summary>The trigger of an event: none, timer, message, error, escalation or terminate.</summary>
+/// <summary>The trigger of an event: none, timer, message, error, escalation, terminate or compensation (R3).</summary>
 public static class EventKinds
 {
     public const string None = "none";
@@ -48,6 +48,9 @@ public static class EventKinds
     public const string Error = "error";
     public const string Escalation = "escalation";
     public const string Terminate = "terminate";
+
+    /// <summary>Compensation (spec 024 R3, FR-011): a boundary names its handler; a throw or end event runs the handlers.</summary>
+    public const string Compensation = "compensation";
 }
 
 /// <summary>A timer: an ISO 8601 date, duration or cycle (<c>R3/PT1H</c>), or a number of working days, as text or FEEL.</summary>
@@ -128,7 +131,10 @@ public sealed record GraphElement(
     bool TriggeredByEvent = false,
     IReadOnlyDictionary<string, string>? Outputs = null,
     TaskEscalation? Escalation = null,
-    string? Result = null)
+    string? Result = null,
+    string? Handler = null,
+    bool ForCompensation = false,
+    string? ActivityRef = null)
 {
     public string Name(string locale) => Names.TryGetValue(locale, out var n) ? n : Names.Values.FirstOrDefault() ?? Id;
 }
@@ -152,6 +158,13 @@ public sealed record ProcessGraph(string Key, IReadOnlyDictionary<string, string
     public IEnumerable<GraphElement> InScope(string? scope) => Elements.Where(e => e.Scope == scope);
 
     public IEnumerable<GraphElement> BoundariesOf(string activityId) => Elements.Where(e => e.Type == ElementTypes.BoundaryEvent && e.AttachedTo == activityId);
+
+    /// <summary>The compensation boundary of an activity (spec 024 R3), whose handler undoes it, if it has one.</summary>
+    public GraphElement? CompensationOf(string activityId) =>
+        BoundariesOf(activityId).FirstOrDefault(b => b.EventKind == EventKinds.Compensation && b.Handler is not null);
+
+    /// <summary>Whether the model uses an R3 element (compensation), which needs the advanced process package.</summary>
+    public bool UsesAdvanced => Elements.Any(e => e.EventKind == EventKinds.Compensation || e.ForCompensation);
 
     public string ToJson() => JsonSerializer.Serialize(this, Json);
 

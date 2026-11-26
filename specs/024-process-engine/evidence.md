@@ -45,3 +45,10 @@ R2 adds the modeler, the BPMN subset of section 12, DMN, messages, timers, servi
 | Package split (section 9) | Met | `workflow.bpmn` refused on Workplace in `A_draft_keeps_its_problems_publishing_makes_immutable_versions_and_owners_act_in_their_scope` and the operator test; pages listed only with the capability |
 | Tenant isolation | Met | Cross-tenant message in `Messages_correlate_by_name_and_key_once_and_wait_in_the_buffer_when_they_come_first` |
 | Section 10 RTL, keyboard and text outline, accessibility | Met | `process-operations.spec.ts` in en and ar with axe; keyboard connect and outline used in the modeler test |
+
+## R3
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| US4.3 and FR-011 compensation handlers in reverse order, shown in Tracking | Met | `ProcessCompensationTests`, `ProcessModelTests.Compensation_needs_the_advanced_package_and_undoes_completed_steps_newest_first` |
+| Package split for R3 items (section 9) | Met for compensation | Publish refused with `validation.process.advanced_package` without `workflow.bpmn_advanced` in the same integration test |

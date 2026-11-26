@@ -85,3 +85,11 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - Defaults are in the spec 035 R3 plan. The external AI client policy gains `confirmInClient` (off). Agents migration 0025 adds `agents.external_action.decided_in`.
 - The MCP endpoint uses the SDK's multi round-trip requests: it throws `InputRequiredException` with one form elicitation and the action ID as request state, and reads the answer from `inputResponses` on the retry. It decides through the new Agents contract `IExternalActionConfirmations`, which checks employee, app, tool, argument hash and expiry before the same decision path as the TeamBeats card.
 - Clients on protocol revisions before `2026-07-28` (no multi round-trip requests) keep the TeamBeats card only; URL mode elicitation is not used.
+
+## Spec 024 R3 slice 1: compensation (T018)
+
+- Defaults are in the spec 024 R3 plan. The graph gains the `compensation` event kind, `Handler`, `ForCompensation` and `ActivityRef`; the reader takes the handler from the association of the boundary.
+- The executor keeps `InstanceState.Compensable` (activity and scope, in order of completion) and runs handlers in a scope of kind `compensation` owned by the waiting token. The engine saves the list with the rest of the state.
+- Capability `workflow.bpmn_advanced` (Entitlements migration 0047, Enterprise & Government) is checked at publish through `ProcessGraph.UsesAdvanced`.
+- The modeler reads and writes compensation: the compensation event on boundary, throw and end events, the handler a boundary names (written as a BPMN association), the activity a throw or end event undoes, and a "Compensation step" switch on tasks.
+- Gaps: no multi-instance or sub-process compensation; the canvas does not draw the association line, the properties panel shows it.

@@ -32,17 +32,20 @@ export const PALETTE = [
 ] as const;
 export type ElementKind = (typeof PALETTE)[number];
 
-export const EVENT_DEFINITIONS = ["none", "timer", "message", "error", "escalation", "terminate"] as const;
+export const EVENT_DEFINITIONS = ["none", "timer", "message", "error", "escalation", "terminate", "compensation"] as const;
 export type EventDefinition = (typeof EVENT_DEFINITIONS)[number];
 
 /** Which event definitions each event kind can carry in the subset. */
 export const EVENTS_FOR: Partial<Record<ElementKind, readonly EventDefinition[]>> = {
   startEvent: ["none", "timer", "message"],
-  endEvent: ["none", "terminate", "error", "escalation", "message"],
+  endEvent: ["none", "terminate", "error", "escalation", "message", "compensation"],
   intermediateCatchEvent: ["timer", "message"],
-  intermediateThrowEvent: ["message", "escalation"],
-  boundaryEvent: ["timer", "message", "error", "escalation"],
+  intermediateThrowEvent: ["message", "escalation", "compensation"],
+  boundaryEvent: ["timer", "message", "error", "escalation", "compensation"],
 };
+
+/** Tasks that can be a compensation handler (spec 024 R3): marked for compensation, with no flows, named by one boundary. */
+export const HANDLER_TYPES: readonly ElementKind[] = ["userTask", "serviceTask", "manualTask", "sendTask", "businessRuleTask"];
 
 export const TIMER_KINDS = ["duration", "date", "cycle", "workingDays"] as const;
 export type TimerKind = (typeof TIMER_KINDS)[number];
@@ -87,6 +90,12 @@ export type ModelElement = {
   loopCollection: string;
   loopVariable: string;
   loopCompletion: string;
+  /** A compensation boundary: the handler task its association names. */
+  handler: string;
+  /** A task that runs only when its activity is compensated. */
+  forCompensation: boolean;
+  /** A compensation throw or end event: the one activity to compensate, or empty for all in its scope. */
+  activityRef: string;
 };
 
 export type ModelFlow = { id: string; source: string; target: string; condition: string };
@@ -150,6 +159,9 @@ export function blankElement(type: ElementKind, x: number, y: number): ModelElem
     loopCollection: "",
     loopVariable: "",
     loopCompletion: "",
+    handler: "",
+    forCompensation: false,
+    activityRef: "",
   };
 }
 
@@ -192,6 +204,10 @@ export function readProcess(xml: string): ReadResult {
   const unsupported: string[] = [];
   const elements: ModelElement[] = [];
   const flows: ModelFlow[] = [];
+  const associations = new Map<string, string[]>();
+  for (const a of bpmnChildren(process, "association")) {
+    associations.set(attr(a, "sourceRef"), [...(associations.get(attr(a, "sourceRef")) ?? []), attr(a, "targetRef")]);
+  }
   for (const child of bpmnChildren(process)) {
     const local = child.localName;
     const id = attr(child, "id");
@@ -231,6 +247,10 @@ export function readProcess(xml: string): ReadResult {
       e.code = escalations.get(attr(escalation, "escalationRef")) ?? "";
     } else if (bpmnChildren(child, "terminateEventDefinition").length > 0) {
       e.event = "terminate";
+    } else if (bpmnChildren(child, "compensateEventDefinition").length > 0) {
+      e.event = "compensation";
+      e.activityRef = attr(bpmnChildren(child, "compensateEventDefinition")[0], "activityRef");
+      if (type === "boundaryEvent") e.handler = associations.get(id)?.[0] ?? "";
     } else if (EVENTS_FOR[type]) {
       e.event = "none";
     }
@@ -260,6 +280,7 @@ export function readProcess(xml: string): ReadResult {
     e.decisionKey = attr(decision, "key");
     e.resultVariable = attr(decision, "resultVariable");
     e.calledKey = attr(child, "calledElement");
+    e.forCompensation = attr(child, "isForCompensation") === "true";
     const loop = bpmnChildren(child, "multiInstanceLoopCharacteristics")[0];
     if (loop) {
       const settings = ext(child, "loop")[0];
@@ -358,6 +379,7 @@ export function writeProcess(draft: ProcessDraft): string {
     if ((e.type === "exclusiveGateway" || e.type === "inclusiveGateway") && e.defaultFlow) attrs.default = e.defaultFlow;
     if ((e.type === "sendTask" || e.type === "receiveTask") && e.message.trim()) attrs.messageRef = messageIds.get(e.message.trim()) ?? "";
     if (e.type === "callActivity") attrs.calledElement = e.calledKey.trim();
+    if (e.forCompensation && HANDLER_TYPES.includes(e.type)) attrs.isForCompensation = "true";
     const node = el(process, e.type, attrs);
 
     const extensions: [string, Record<string, string>, string?][] = [];
@@ -423,6 +445,9 @@ export function writeProcess(draft: ProcessDraft): string {
       case "terminate":
         el(node, "terminateEventDefinition");
         break;
+      case "compensation":
+        el(node, "compensateEventDefinition", e.type === "boundaryEvent" ? {} : { activityRef: e.activityRef.trim() });
+        break;
     }
     if (e.loop) {
       const loop = el(node, "multiInstanceLoopCharacteristics", { isSequential: e.loopSequential ? "true" : "" });
@@ -432,6 +457,10 @@ export function writeProcess(draft: ProcessDraft): string {
   for (const f of draft.flows) {
     const flow = el(process, "sequenceFlow", { id: f.id, sourceRef: f.source, targetRef: f.target });
     if (f.condition.trim()) el(flow, "conditionExpression").textContent = f.condition.trim();
+  }
+  // A compensation boundary names its handler through an association, as BPMN tools draw it.
+  for (const e of draft.elements.filter((x) => x.type === "boundaryEvent" && x.event === "compensation" && x.handler)) {
+    el(process, "association", { id: `${e.id}_handler`, sourceRef: e.id, targetRef: e.handler, associationDirection: "One" });
   }
 
   const diagram = el(root, "BPMNDiagram", { id: "diagram" }, BPMNDI_NS, "bpmndi");

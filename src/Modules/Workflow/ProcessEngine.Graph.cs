@@ -345,7 +345,7 @@ public sealed partial class ProcessEngine
 
     private static string StateJson(InstanceState state)
     {
-        var copy = new InstanceState { Tokens = state.Tokens, Scopes = state.Scopes, Visits = state.Visits, Result = state.Result };
+        var copy = new InstanceState { Tokens = state.Tokens, Scopes = state.Scopes, Visits = state.Visits, Result = state.Result, Compensable = state.Compensable };
         return JsonSerializer.Serialize(copy, ProcessGraph.Json);
     }
 
