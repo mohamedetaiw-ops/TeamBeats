@@ -38,6 +38,7 @@ public static class EngagementModule
         services.AddScoped<Rooms>();
         services.AddSingleton<RoomStream>();
         services.AddMessageHandler<Contracts.PostPublished, Points>("engagement.points_post");
+        services.AddMessageHandler<Contracts.PostPublished, Mirrors>("engagement.mirror_post");
         services.AddScoped<Search.Contracts.ISearchSource, EngagementSearchSource>();
         return services;
     }
@@ -362,6 +363,24 @@ public static class EngagementModule
             {
             }
             return Results.Empty;
+        });
+
+        // ---- Mirroring to Slack and Teams (R3 US10) ----
+
+        root.MapGet("/communities/{id:guid}/mirrors", async (Guid id, Mirrors mirrors, CancellationToken ct) => Results.Ok(await mirrors.GetAsync(id, ct)));
+
+        root.MapPut("/communities/{id:guid}/mirrors/{target}", async (Guid id, string target, MirrorRequest request, Mirrors mirrors, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await mirrors.SetAsync(id, target, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapDelete("/communities/{id:guid}/mirrors/{target}", async (Guid id, string target, Mirrors mirrors, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await mirrors.RemoveAsync(id, target, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
         });
 
         // ---- Polls (US3) ----

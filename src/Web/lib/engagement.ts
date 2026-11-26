@@ -19,6 +19,8 @@ export type CommunityRights = {
   canAllowAnonymous: boolean;
   /** Whether the tenant's package has discussion rooms (spec 023 R3). */
   rooms: boolean;
+  /** Whether the viewer may link the community to Slack or Teams channels (spec 023 R3 US10). */
+  canMirror: boolean;
 };
 
 export type CommunityView = {
@@ -150,6 +152,7 @@ export const communityHref = (id: string) => `/communities/${encodeURIComponent(
 export const postHref = (communityId: string, postId: string) => `/communities/${encodeURIComponent(communityId)}/posts/${encodeURIComponent(postId)}`;
 export const roomsHref = (communityId: string) => `/communities/${encodeURIComponent(communityId)}/rooms`;
 export const roomHref = (communityId: string, roomId: string) => `/communities/${encodeURIComponent(communityId)}/rooms/${encodeURIComponent(roomId)}`;
+export const mirrorsHref = (communityId: string) => `/communities/${encodeURIComponent(communityId)}/mirrors`;
 export const hashtagHref = (tag: string) => `/communities/hashtags/${encodeURIComponent(tag)}`;
 
 /** A guid as the API writes it; pages refuse anything else before calling the API. */
@@ -379,3 +382,22 @@ export type RoomMessageView = {
 
 export type RoomMessagePage = { items: RoomMessageView[]; cursor: string | null };
 export type RoomMessageSaved = { message: RoomMessageView; notReachable: EngagementPerson[] };
+
+/** Mirroring a community's new posts to Slack or Teams channels (spec 023 R3 US10). */
+export type MirrorTarget = "slack" | "teams";
+export type MirrorView = {
+  target: MirrorTarget;
+  channelId: string;
+  excerpt: boolean;
+  createdAt: string;
+  lastSentAt: string | null;
+  lastFailure: "unavailable" | "channel_unavailable" | "unreachable" | null;
+  lastFailureAt: string | null;
+};
+export type MirrorsView = {
+  eligible: boolean;
+  mirrors: MirrorView[];
+  slackAvailable: boolean;
+  slackChannels: { id: string; name: string; member: boolean }[];
+  teamsAvailable: boolean;
+};

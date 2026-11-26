@@ -3142,5 +3142,9 @@
   "notifications.template.engagement.room.mention.title": "تمت الإشارة إليك في غرفة نقاش",
   "notifications.template.engagement.room.mention.body": "أشار إليك أحد الزملاء في غرفة نقاش في مجتمع. افتحها لقراءة الرسالة.",
   "conflict.engagement.room_limit": "يضم هذا المجتمع 20 غرفة مفتوحة بالفعل. أرشف إحداها أولًا.",
-  "conflict.engagement.room_archived": "هذه الغرفة مؤرشفة، لذلك لا تقبل رسائل جديدة."
+  "conflict.engagement.room_archived": "هذه الغرفة مؤرشفة، لذلك لا تقبل رسائل جديدة.",
+  "engagement.mirror.notice": "نشر {author} في {community}",
+  "engagement.mirror.open": "افتح في TeamBeats",
+  "conflict.engagement.mirror_not_allowed": "لا يمكن نسخ إلا مجتمع مفتوح وداخلي غير مرتبط بوحدة أو مساحة، لأن كل من في القناة سيراه.",
+  "validation.engagement.teams_channel": "أدخل معرّف قناة Teams. يبدأ بـ 19: وينتهي بـ ‎@thread.tacv2."
 }

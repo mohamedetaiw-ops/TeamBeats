@@ -17,6 +17,7 @@ import {
   communityHref,
   engagementApi,
   localName,
+  mirrorsHref,
   roomsHref,
   send,
   speakUpReplyPath,
@@ -129,6 +130,11 @@ export function CommunityFeed({ initial, feed, locales }: { initial: CommunityVi
           <Button size="sm" variant="primary" busy={busy === ":join"} busyLabel={t("working")} onClick={() => void membership(":join")}>
             {community.kind === "approval" ? t("community.askToJoin") : t("community.join")}
           </Button>
+        ) : null}
+        {r.canMirror ? (
+          <ButtonLink size="sm" variant="quiet" icon="link" href={mirrorsHref(community.id)}>
+            {t("mirrors.link")}
+          </ButtonLink>
         ) : null}
         {r.canModerate ? (
           <ButtonLink size="sm" variant="quiet" icon="alert" href={`/communities/moderation?communityId=${encodeURIComponent(community.id)}`}>

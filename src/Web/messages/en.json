@@ -14815,6 +14815,41 @@
       "send": "Send",
       "readOnly": "You can read this room. Join the community to write.",
       "delete": "Delete"
+    },
+    "mirrors": {
+      "link": "Mirroring",
+      "pageTitle": "Mirror to Teams and Slack",
+      "intro": "Each new post in this community appears in the channel as a short notice with the author and a link that needs sign in. Comments and anonymous posts are never sent.",
+      "notEligibleTitle": "This community cannot be mirrored",
+      "notEligible": "Only an open, internal community that is not linked to a unit or a space can be mirrored, because everyone in the channel would see its posts.",
+      "deniedTitle": "You cannot change mirroring",
+      "denied": "Only engagement administrators can mirror communities, and your organization's plan must include it.",
+      "slackTitle": "Slack",
+      "teamsTitle": "Microsoft Teams",
+      "on": "On",
+      "off": "Off",
+      "slackUnavailable": "Slack is not connected for your organization. An integration administrator can connect it.",
+      "teamsUnavailable": "Teams is not connected for your organization, or the TeamBeats bot is not available.",
+      "failureTitle": "The last notice was not delivered",
+      "lastSent": "Last notice sent",
+      "failures": {
+        "unavailable": "The connection is not available.",
+        "channel_unavailable": "The channel refused the notice. Check that the app or bot is added to the channel.",
+        "unreachable": "The service did not answer. Later posts will be tried again."
+      },
+      "slackChannel": "Slack channel",
+      "teamsChannel": "Teams channel ID",
+      "teamsHint": "Copy it from the channel's link in Teams. It starts with 19: and ends with @thread.tacv2.",
+      "choose": "Choose a channel",
+      "notMember": "#{name} (the app is not in it)",
+      "excerpt": "Include the first 200 characters of each post",
+      "excerptHint": "Leave this off when the channel has people who should not read the posts themselves.",
+      "save": "Save",
+      "remove": "Stop mirroring",
+      "saved": "Mirroring is saved.",
+      "removed": "Mirroring is off.",
+      "failed": "That did not work",
+      "working": "Working…"
     }
   },
   "learning": {

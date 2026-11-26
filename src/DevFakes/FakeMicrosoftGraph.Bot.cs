@@ -28,6 +28,16 @@ public sealed partial class FakeMicrosoftGraph
 
     public ConcurrentBag<BotMessage> BotMessages { get; } = [];
 
+    /// <summary>A card the bot posted as a new thread in a team channel: the directory, the channel ID and the card.</summary>
+    public sealed record ChannelPost(string Directory, string ChannelId, JsonElement Card);
+
+    public ConcurrentBag<ChannelPost> ChannelPosts { get; } = [];
+
+    private readonly ConcurrentDictionary<string, bool> _botChannels = new();
+
+    /// <summary>Installs the TeamBeats bot in the team of a channel, so it can post there.</summary>
+    public void InstallBotInChannel(Guid directoryId, string channelId) => _botChannels[$"{directoryId:D}/{channelId}"] = true;
+
     /// <summary>The Bot Connector refuses the bot's credentials, as when the installation has no bot registered.</summary>
     public bool BotRefused { get; set; }
 
@@ -109,6 +119,17 @@ public sealed partial class FakeMicrosoftGraph
         }
         var body = JsonDocument.Parse(await request.Content!.ReadAsStringAsync(ct)).RootElement;
         var rest = uri.AbsolutePath["/teams/v3/conversations".Length..];
+        if (rest.Length == 0 && body.TryGetProperty("isGroup", out var group) && group.ValueKind == JsonValueKind.True)
+        {
+            var team = body.GetProperty("tenantId").GetString() ?? string.Empty;
+            var channel = body.GetProperty("channelData").GetProperty("channel").GetProperty("id").GetString() ?? string.Empty;
+            if (!_botChannels.ContainsKey($"{team}/{channel}"))
+            {
+                return new HttpResponseMessage(HttpStatusCode.Forbidden) { Content = new StringContent("{\"error\":{\"code\":\"BotNotInConversationRoster\"}}") };
+            }
+            ChannelPosts.Add(new ChannelPost(team, channel, body.GetProperty("activity").GetProperty("attachments")[0].GetProperty("content").Clone()));
+            return Json(new { id = $"{channel};messageid=1", activityId = "1" });
+        }
         if (rest.Length == 0)
         {
             var directory = body.GetProperty("tenantId").GetString() ?? string.Empty;
