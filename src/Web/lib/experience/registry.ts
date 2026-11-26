@@ -20,6 +20,8 @@ const product: Record<string, Loader> = {
   // Microsoft 365 mail and calendar (spec 018 US2, US3).
   "outlook.my_mail@1": () => import("@/components/placements/outlook.my_mail"),
   "outlook.my_calendar@1": () => import("@/components/placements/outlook.my_calendar"),
+  // Gmail behind the same mail port and placement (spec 018 R3, FR-024).
+  "google.my_mail@1": () => import("@/components/placements/outlook.my_mail"),
   // The unified calendar card (spec 037 FR-007).
   "calendar.overview@1": () => import("@/components/placements/calendar.overview"),
   // People directory (spec 010 US4).

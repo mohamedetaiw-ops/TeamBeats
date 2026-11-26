@@ -35,8 +35,8 @@ public sealed record ConnectionView(
     DateTimeOffset? LastSuccessAt,
     IReadOnlyList<FeatureView> Features);
 
-/// <summary>Admin options of a feature (spec 018): Mail <c>previewLine</c>, <c>maxMessages</c>; Calendar <c>maxDays</c>.</summary>
-public sealed record FeatureOptionsRequest(bool? PreviewLine, int? MaxMessages, int? MaxDays);
+/// <summary>Admin options of a feature (spec 018): Mail <c>previewLine</c>, <c>maxMessages</c>, <c>assistantSummaries</c>; Calendar <c>maxDays</c>.</summary>
+public sealed record FeatureOptionsRequest(bool? PreviewLine, int? MaxMessages, int? MaxDays, bool? AssistantSummaries = null);
 
 public sealed record CreateConnectionRequest(string? Kind, string? ExternalTenantId, string? DisplayName, IReadOnlyList<string>? Features);
 
@@ -217,7 +217,7 @@ public sealed class ConnectionService(
         var errors = new ValidationErrors();
         var isMail = feature == Microsoft365Features.Mail;
         var isCalendar = feature == Microsoft365Features.Calendar;
-        if ((!isMail && (request.PreviewLine is not null || request.MaxMessages is not null)) || (!isCalendar && request.MaxDays is not null))
+        if ((!isMail && (request.PreviewLine is not null || request.MaxMessages is not null || request.AssistantSummaries is not null)) || (!isCalendar && request.MaxDays is not null))
         {
             errors.Add("options", "validation.integrations.option_not_for_feature");
         }
@@ -231,7 +231,8 @@ public sealed class ConnectionService(
         }
         errors.ThrowIfAny();
 
-        var after = new FeatureOptions(request.PreviewLine ?? before.PreviewLine, request.MaxMessages ?? before.MaxMessages, request.MaxDays ?? before.MaxDays);
+        var after = new FeatureOptions(request.PreviewLine ?? before.PreviewLine, request.MaxMessages ?? before.MaxMessages, request.MaxDays ?? before.MaxDays,
+            request.AssistantSummaries ?? before.AssistantSummaries);
         if (after == before)
         {
             return connection;
@@ -509,8 +510,25 @@ public sealed class ConnectionService(
 /// <summary>Read side for feature owners (<see cref="IConnectionFeatures"/>).</summary>
 public sealed class ConnectionFeatures(IDbSession session) : IConnectionFeatures
 {
-    public Task<ConnectionFeatureInfo?> FindAsync(string kind, string feature, CancellationToken ct = default) =>
-        session.QuerySingleOrDefaultAsync(
+    public async Task<ConnectionFeatureInfo?> FindAsync(string kind, string feature, CancellationToken ct = default)
+    {
+        if (kind == Google.GooglePack.KindName)
+        {
+            // A Google Workspace pack keeps its features in its settings and has no consent of its own (spec 018 R3, FR-024).
+            var rows = await session.QueryAsync(
+                "select id, settings::text, status from integrations.connection where kind = @k and enabled and status <> 'disabled' order by created_at",
+                new { k = kind }, r => (Id: r.GetGuid(0), Settings: r.GetString(1), Status: r.GetString(2)), ct);
+            foreach (var row in rows)
+            {
+                using var doc = JsonDocument.Parse(row.Settings);
+                if (Google.GooglePack.Parse(doc.RootElement) is { } settings && settings.Has(feature))
+                {
+                    return new ConnectionFeatureInfo(row.Id, kind, settings.Domain ?? string.Empty, feature, true, row.Status);
+                }
+            }
+            return null;
+        }
+        return await session.QuerySingleOrDefaultAsync(
             """
             select c.id, c.kind, c.external_tenant_id, f.feature, c.enabled and f.consent_status = 'granted' and c.status <> 'disabled', c.status
             from integrations.connection c join integrations.connection_feature f on f.connection_id = c.id
@@ -518,6 +536,7 @@ public sealed class ConnectionFeatures(IDbSession session) : IConnectionFeatures
             order by c.created_at limit 1
             """, new { k = kind, f = feature },
             r => new ConnectionFeatureInfo(r.GetGuid(0), r.GetString(1), r.GetString(2), r.GetString(3), r.GetBoolean(4), r.GetString(5)), ct);
+    }
 }
 
 /// <summary>Enabled connections that are not disabled, by name, for module checklists (spec 022 FR-017).</summary>

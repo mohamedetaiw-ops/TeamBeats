@@ -181,7 +181,7 @@ Mona asks the assistant "When is my next meeting and what's free this afternoon?
 
 ### My calendar
 - **FR-014 / M365-014**: My calendar MUST show the employee's own events for a configurable range (default 7 days, 1 to 14), recurring series expanded, cancelled and declined events hidden, tentative and free marked in text, times in the TeamBeats time zone and locale, mirrored in RTL.
-- **FR-015 / M365-015**: Online meetings MUST offer a Join action from Microsoft's join link, primary from 10 minutes before start until end. Events MUST open in Outlook on the web. Responding to invitations from TeamBeats is R3 and needs `Calendars.ReadWrite`.
+- **FR-015 / M365-015**: Online meetings MUST offer a Join action from Microsoft's join link, primary from 10 minutes before start until end. Events MUST open in Outlook on the web. Responding to invitations from TeamBeats is R3 and needs `Calendars.ReadWrite`. In R3 it is a separate connection feature, Invitation answers, off by default, so a tenant that only reads never grants write access. An employee MAY accept, tentatively accept or decline an invitation in their own calendar, with an optional note of up to 500 characters and a choice to tell the organizer (on by default). Their own meetings and events already declined MUST NOT offer an answer. The answer is sent as the employee through Microsoft Graph, Outlook's own rules apply, the calendar MUST show it at once, and the audit entry MUST hold the answer only, never the event, its subject or the note.
 - **FR-016 / M365-016**: A placement setting MUST allow hiding subjects of private events.
 - **FR-017 / M365-017**: Outlook events MUST be merged with TeamBeats items (company events, location holidays, leave) in the unified calendar of spec 037, labelled by source, and an item TeamBeats also sent to Outlook MUST show only once (spec 037 FR-004, by iCalendar UID). From R2 the home calendar card and the calendar workspace of spec 037 replace the R1 My calendar list; the `outlook.my_calendar` placement renders the spec 037 card.
 
@@ -192,7 +192,7 @@ Mona asks the assistant "When is my next meeting and what's free this afternoon?
 - **FR-021 / M365-021**: Booking MUST create an event in the employee's own calendar with the room as a resource attendee; the room mailbox's own rules decide acceptance, and the result MUST be visible in My calendar.
 
 ### Assistant and agents
-- **FR-022 / M365-022**: The assistant and agents MAY read calendar data (R1) and mail summaries (R3) only through read tools registered under spec 027, only as the employee, only when the tenant allows the tool and, for mail, the employee has opted in. Mail and event text MUST be treated as untrusted content.
+- **FR-022 / M365-022**: The assistant and agents MAY read calendar data (R1) and mail summaries (R3) only through read tools registered under spec 027, only as the employee, only when the tenant allows the tool and, for mail, the employee has opted in. Mail and event text MUST be treated as untrusted content. In R3 the tenant switch is a Mail feature option (Assistant summaries, off by default, which needs `Mail.Read`); the employee opts in, and out at any time, in their Outlook settings, and a disabled membership loses the opt-in. The mail tool reads at most 25 of the latest Inbox messages (sender, subject, time received, read, importance, attachments and the plain-text preview, never the full body) and its answer is Confidential, so only agents allowed Confidential data can use it.
 - **FR-023 / M365-023**: Access while the employee is signed out (for example a scheduled briefing) MUST require a separate, revocable employee opt-in. Without it, TeamBeats MUST NOT hold mail or calendar access beyond the employee's session.
 
 ### Ports
@@ -287,7 +287,7 @@ No new capability or permission key. Admin work uses `integration.manage`. The a
 ## 17. Open questions
 - Decided 2026-11-05 (Mohamed): mail and calendar ship in R1, using the R1 Microsoft 365 connection of spec 006 and Entra ID sign-in of spec 003; they do not wait for the connector framework (spec 017). Rooms stay in R2 with workplace booking (spec 031).
 - Decided 2026-11-05 (Mohamed): Workplace gets mail and calendar through the `integration.microsoft365` add-on.
-- [NEEDS CLARIFICATION: should Teams presence (available, in a call) be shown on profile cards?] Default: R3, needs `Presence.Read.All`, opt-in by tenant.
+- Teams presence on profile cards (resolved with the default): R3, a connection feature off by default that needs delegated `Presence.Read.All`, read as the viewer for a colleague whose free and busy the viewer may see, kept for a minute, and shown as the availability and activity in words only, never the status message.
 - [NEEDS CLARIFICATION: is on-premises Exchange Server needed for any target customer?] Default: not planned; hybrid through Graph only.
 - [NEEDS CLARIFICATION: should employees see their OneDrive recent files on the home page?] Default: R3, as a further feature of the same connection.
 

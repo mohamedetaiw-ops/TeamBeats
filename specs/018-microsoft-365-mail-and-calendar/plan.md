@@ -61,3 +61,13 @@ Registered events (spec 009) and leave and holidays (spec 022) are merged throug
 - Tenant boundaries: a token row of tenant A unusable in tenant B (RLS and associated data), a session of tenant A on tenant B's host, availability of a user in another tenant, cache keys.
 - Token hygiene: never in responses, logs or audit; deleted on each clean-up trigger.
 - Entitlement: every endpoint refuses without `integration.microsoft365`.
+
+## R3 plan
+
+R3 adds four things to the same Microsoft 365 connection and ports, in this order: answers to invitations (FR-015), Teams presence on profile cards (open question default), assistant mail summaries (US6, FR-022) and Google Workspace mail and calendar through the same ports (FR-024).
+
+- **Invitation answers (FR-015).** A new connection feature `calendar_responses` asks only for delegated `Calendars.ReadWrite`. The `ICalendarResponses` port in `Integrations.Contracts` has `AvailableAsync` and `RespondAsync`; the Graph adapter posts `accept`, `tentativelyAccept` or `decline` to `me/events/{id}`, with the ID escaped into the path, and maps Graph failures to connection states (`not_found`, `refused`, `reconnect` and the rest), never errors. A sent answer moves the employee's calendar cache to a new generation, so the next read is fresh. `POST /api/v1/me/calendar/events/{eventId}/response` checks `integration.microsoft365`, validates the answer and note, and audits `integration.calendar_invitation_answered` with the answer only. My calendar items carry `response` and `canRespond`; the unified calendar of spec 037 adds the `answer` action and the `invitation` value to Outlook invitations the employee can answer now, and its item details show Accept, Tentative and Decline with "Tell the organizer".
+- **Teams presence.** Delegated `Presence.Read.All` as a further feature, off by default; presence is read as the viewer for a colleague whose free and busy the viewer may see, cached briefly, and shown as text on the profile card.
+- **Mail summaries.** A read tool under spec 027 next to the calendar tool: a tenant switch on the mail feature and an employee opt-in, Inbox only, message text as untrusted content, and spec 013 classification for the model call.
+- **Google Workspace.** Gmail behind `IMailbox` and Google Calendar (already behind `IMeetingCalendars`) answered through the same ports and states, so My mail and the calendar need no new code per provider.
+

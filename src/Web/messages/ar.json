@@ -2796,6 +2796,7 @@
       },
       "compose": "رسالة جديدة",
       "opensOutlook": "(يفتح Outlook في علامة تبويب جديدة)",
+      "opensGmail": "(يفتح Gmail في علامة تبويب جديدة)",
       "empty": "لا يوجد بريد جديد",
       "noSubject": "(بلا موضوع)",
       "markers": {
@@ -2815,7 +2816,10 @@
       "reconnectAction": "إعادة ربط Outlook",
       "adminSetup": "يحتاج المسؤول إلى إكمال إعداد Outlook.",
       "conditionalAccess": "تطلب مؤسستك جهازا مُدارا لاستخدام Outlook.",
-      "unavailable": "إعدادات Outlook غير متاحة الآن."
+      "unavailable": "إعدادات Outlook غير متاحة الآن.",
+      "mailSummaries": "السماح للمساعد بتلخيص بريدي الوارد",
+      "mailSummariesHint": "يقرأ المساعد أحدث الرسائل في بريدك الوارد في Outlook فقط عندما تطلب منه ذلك. يمكنك إيقاف ذلك في أي وقت.",
+      "mailSummariesFailed": "لم يتم حفظ اختيارك. حاول مرة أخرى."
     }
   },
   "builder": {
@@ -3829,6 +3833,18 @@
     "quick": {
       "email": "مراسلة {name} بالبريد",
       "call": "الاتصال بـ {name}"
+    },
+    "presence": {
+      "label": "الحالة في Teams",
+      "available": "متاح",
+      "away": "بعيد",
+      "busy": "مشغول",
+      "do_not_disturb": "عدم الإزعاج",
+      "offline": "غير متصل",
+      "in_a_call": "في مكالمة",
+      "in_a_meeting": "في اجتماع",
+      "presenting": "يقدّم عرضاً",
+      "out_of_office": "خارج المكتب"
     }
   },
   "security": {
@@ -10876,7 +10892,9 @@
         "office_editing": "التحرير في Office عبر المتصفح",
         "sharepoint_documents": "مستندات SharePoint",
         "sharepoint_upload": "الرفع إلى SharePoint",
-        "teams": "إشعارات Teams"
+        "teams": "إشعارات Teams",
+        "calendar_responses": "الرد على دعوات الاجتماعات",
+        "presence": "الحالة في Teams على الملفات الشخصية"
       },
       "featureOn": "مفعلة",
       "featureOff": "متوقفة",
@@ -10897,7 +10915,9 @@
         "sites_selected": "قراءة مواقع SharePoint التي تسمح بها فقط، لإبقاء المكتبات المتصلة والبحث محدّثة",
         "files_read_all": "السماح لكل موظف بتصفح ملفات SharePoint ومعاينتها وتنزيلها إذا كان يستطيع فتحها في SharePoint",
         "files_read_write_all": "السماح لكل موظف برفع الملفات وإعادة تسمية العناصر في مكتبات SharePoint المتصلة حيث يسمح له SharePoint بذلك",
-        "teams_activity_send": "إرسال الإشعارات إلى موجز النشاط في Teams لكل شخص، دون قراءة المحادثات أو القنوات"
+        "teams_activity_send": "إرسال الإشعارات إلى موجز النشاط في Teams لكل شخص، دون قراءة المحادثات أو القنوات",
+        "calendars_read_write": "الرد على دعوات الاجتماعات نيابة عن الموظف، فقط عندما يختار ذلك",
+        "presence_read_all": "قراءة حالة الزملاء في Teams، مثل متاح أو في مكالمة، باسم الموظف"
       },
       "application": "تطبيق",
       "delegated": "نيابة عن الموظف",
@@ -10949,7 +10969,8 @@
           "confidential": "سري",
           "restricted": "مقيد"
         }
-      }
+      },
+      "assistantSummaries": "السماح للموظفين بأن يطلبوا من المساعد تلخيص بريدهم الوارد (ويجب أن يوافق كل موظف أيضاً)"
     },
     "webhooks": {
       "formLabel": "إعدادات خطاف الويب",
@@ -13674,6 +13695,24 @@
       "layers": "الطبقات المعروضة افتراضيًا",
       "save": "حفظ الإعدادات",
       "saved": "حُفظت الإعدادات بالإصدار {version}."
+    },
+    "invitation": {
+      "question": "ردك على هذه الدعوة",
+      "accept": "قبول",
+      "tentative": "مبدئي",
+      "decline": "رفض",
+      "notify": "إبلاغ المنظم",
+      "failed": "لم يتم إرسال ردك. حاول مرة أخرى.",
+      "states": {
+        "reconnect": "سجّل الدخول إلى Microsoft 365 مرة أخرى، ثم أرسل ردك.",
+        "not_found": "لم يعد هذا الاجتماع في تقويمك.",
+        "refused": "لم يقبل Outlook هذا الرد. أرسل ردك من Outlook.",
+        "turned_off": "الرد من TeamBeats متوقف. أرسل ردك من Outlook.",
+        "admin_setup": "يحتاج المسؤول إلى إكمال إعداد الرد على الدعوات.",
+        "no_mailbox": "ليس لديك صندوق بريد Outlook للرد منه.",
+        "conditional_access": "تمنع قواعد تسجيل الدخول في مؤسستك ذلك. أرسل ردك من Outlook.",
+        "failed": "لم يتم إرسال ردك. حاول مرة أخرى."
+      }
     }
   },
   "letters": {

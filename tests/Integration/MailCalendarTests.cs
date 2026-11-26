@@ -11,7 +11,7 @@ namespace TeamBeats.Integration.Tests;
 
 /// <summary>Spec 018 (R1) User Stories 2 to 4: My mail, My calendar and a colleague's free and busy. All content is fictional.</summary>
 [Collection(WorldCollection.Name)]
-public sealed class MailCalendarTests(TenantWorld world)
+public sealed partial class MailCalendarTests(TenantWorld world)
 {
     private FakeMicrosoftGraph Graph => world.Factory.Graph;
 
@@ -583,12 +583,14 @@ public sealed class MailCalendarTests(TenantWorld world)
     {
         var s = await SetupAsync([], package: "workplace");
         var client = s.Tenant["employee"].Client;
-        foreach (var url in new[] { "/api/v1/me/mail", "/api/v1/me/calendar", $"/api/v1/people/{s.Tenant["admin"].Id}/availability" })
+        foreach (var url in new[] { "/api/v1/me/mail", "/api/v1/me/calendar", $"/api/v1/people/{s.Tenant["admin"].Id}/availability", $"/api/v1/people/{s.Tenant["admin"].Id}/presence" })
         {
             var response = await client.GetAsync(url);
             Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
             Assert.Equal("entitlement.not_in_package", (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("code").GetString());
             Assert.Equal(HttpStatusCode.Unauthorized, (await world.Factory.TenantClient(s.Tenant.Key).GetAsync(url)).StatusCode);
         }
+        var answer = await client.PostAsJsonAsync("/api/v1/me/calendar/events/invite/response", new { response = "accept" });
+        Assert.Equal(HttpStatusCode.Forbidden, answer.StatusCode);
     }
 }

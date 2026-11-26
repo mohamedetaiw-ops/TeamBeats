@@ -22,7 +22,7 @@ namespace TeamBeats.Integration.Tests;
 /// assertion's signature with the test's own key.
 /// </summary>
 [Collection(WorldCollection.Name)]
-public sealed class GoogleWorkspaceTests(TenantWorld world)
+public sealed partial class GoogleWorkspaceTests(TenantWorld world)
 {
     private const string Packs = "/api/v1/integrations/pack-connections";
     private const string Account = "teambeats-sync@acme-intranet.iam.gserviceaccount.com";
@@ -66,7 +66,8 @@ public sealed class GoogleWorkspaceTests(TenantWorld world)
             s.Headers.TryGetValue("Authorization", out var a) && a.StartsWith("Bearer tok:", StringComparison.Ordinal) ? a["Bearer tok:".Length..].Split(':')[0] : null;
 
         private static Dictionary<string, string> Query(Uri u) =>
-            u.Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries).Select(p => p.Split('=')).ToDictionary(p => p[0], p => Uri.UnescapeDataString(p[1]));
+            u.Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries).Select(p => p.Split('=')).GroupBy(p => p[0])
+                .ToDictionary(g => g.Key, g => string.Join(',', g.Select(p => Uri.UnescapeDataString(p[1]))));
 
         public HttpResponseMessage Directory(FakeRestApi.Sent s)
         {
@@ -144,6 +145,52 @@ public sealed class GoogleWorkspaceTests(TenantWorld world)
             };
         }
 
+        /// <summary>Each person's Gmail Inbox by address: message ID, labels, sender, subject, time and MIME type.</summary>
+        public Dictionary<string, List<(string Id, string[] Labels, string From, string Subject, DateTimeOffset At, string Mime)>> Inboxes { get; } = new(StringComparer.OrdinalIgnoreCase);
+        public bool GmailDown { get; set; }
+
+        public HttpResponseMessage Gmail(FakeRestApi.Sent s)
+        {
+            var sub = Sub(s);
+            if (sub is null)
+            {
+                return FakeRestApi.Json(HttpStatusCode.Unauthorized, "{}");
+            }
+            if (GmailDown)
+            {
+                return FakeRestApi.Json(HttpStatusCode.ServiceUnavailable, "{}");
+            }
+            var inbox = Inboxes.TryGetValue(sub, out var found) ? found : [];
+            var path = s.Uri.AbsolutePath["/gmail/v1/users/me/".Length..].Split('/');
+            var q = Query(s.Uri);
+            switch (path)
+            {
+                case ["labels", "INBOX"]:
+                    return Ok(new { id = "INBOX", messagesUnread = inbox.Count(m => m.Labels.Contains("UNREAD")) });
+                case ["messages"]:
+                    Assert.Equal("INBOX", q["labelIds"]);
+                    var primary = q.TryGetValue("q", out var query) && query == "category:primary";
+                    var ids = inbox.Where(m => !primary || m.Labels.Contains("CATEGORY_PERSONAL")).OrderByDescending(m => m.At).Take(int.Parse(q["maxResults"], System.Globalization.CultureInfo.InvariantCulture))
+                        .Select(m => new { id = m.Id, threadId = m.Id });
+                    return Ok(new { messages = ids });
+                case ["messages", var id]:
+                    // Metadata only: TeamBeats never asks Gmail for a body.
+                    Assert.Equal("metadata", q["format"]);
+                    var m = inbox.FirstOrDefault(x => x.Id == id);
+                    return m.Id is null
+                        ? FakeRestApi.Json(HttpStatusCode.NotFound, "{}")
+                        : Ok(new
+                        {
+                            id = m.Id,
+                            labelIds = m.Labels,
+                            internalDate = m.At.ToUnixTimeMilliseconds().ToString(System.Globalization.CultureInfo.InvariantCulture),
+                            payload = new { mimeType = m.Mime, headers = new[] { new { name = "From", value = m.From }, new { name = "Subject", value = m.Subject } } },
+                        });
+                default:
+                    return FakeRestApi.Json(HttpStatusCode.NotFound, "{}");
+            }
+        }
+
         private static HttpResponseMessage Ok(object body) => FakeRestApi.Json(HttpStatusCode.OK, JsonSerializer.Serialize(body));
 
         private static byte[] FromBase64Url(string s) => Convert.FromBase64String(s.Replace('-', '+').Replace('_', '/').PadRight(s.Length + (4 - s.Length % 4) % 4, '='));
@@ -172,8 +219,9 @@ public sealed class GoogleWorkspaceTests(TenantWorld world)
         Rest.On("oauth2.googleapis.com", google.Token);
         Rest.On("admin.googleapis.com", google.Directory);
         Rest.On("www.googleapis.com", google.DriveApi);
+        Rest.On("gmail.googleapis.com", google.Gmail);
         var admin = t["admin"].Client;
-        foreach (var host in new[] { "oauth2.googleapis.com", "admin.googleapis.com" }.Concat(allowDrive ? ["www.googleapis.com"] : []))
+        foreach (var host in new[] { "oauth2.googleapis.com", "admin.googleapis.com", "gmail.googleapis.com" }.Concat(allowDrive ? ["www.googleapis.com"] : []))
         {
             Assert.Equal(HttpStatusCode.OK, (await admin.PostAsJsonAsync("/api/v1/integrations/allowlist", new { host })).StatusCode);
         }

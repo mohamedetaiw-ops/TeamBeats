@@ -18,6 +18,10 @@ public static class GoogleHosts
     public const string DriveScope = "https://www.googleapis.com/auth/drive.readonly";
     public const string CalendarBase = "https://www.googleapis.com/calendar/v3";
     public const string CalendarScope = "https://www.googleapis.com/auth/calendar.events.readonly";
+    public const string GmailBase = "https://gmail.googleapis.com/gmail/v1";
+
+    /// <summary>Headers and labels only: Gmail never gives TeamBeats a message body with this scope.</summary>
+    public const string GmailScope = "https://www.googleapis.com/auth/gmail.metadata";
 
     /// <summary>The hosts each feature needs, the token host first.</summary>
     public static IReadOnlyList<Uri> For(IEnumerable<string> features)
@@ -29,6 +33,7 @@ public static class GoogleHosts
             {
                 GoogleFeatures.Directory => DirectoryBase,
                 GoogleFeatures.Calendar => CalendarBase,
+                GoogleFeatures.Mail => GmailBase,
                 _ => DriveBase,
             }));
         }

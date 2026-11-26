@@ -28,6 +28,7 @@ public sealed class UnifiedCalendar(
     IEntitlementService entitlements,
     ITenantSettingsReader tenantSettings,
     IMeetingCalendars meetings,
+    ICalendarResponses responses,
     IHrCalendarFeed hr,
     IWorkingCalendar working,
     IReportingLine reporting,
@@ -258,6 +259,9 @@ public sealed class UnifiedCalendar(
                 results = [new MeetingSourceResult(ItemSources.Outlook, "degraded", null, [])];
             }
             var seen = new Dictionary<string, int>(StringComparer.Ordinal);
+            // Answering is offered only when the employee can send the answer now (spec 018 R3, FR-015), asked once.
+            var answerable = results.Any(r => r.Source == ItemSources.Outlook && r.State == M365States.Ok && r.Occurrences.Any(Answerable))
+                && await responses.AvailableAsync(ct);
             foreach (var result in results)
             {
                 sources.Add(new SourceStatus(result.Source, result.State, result.AsOf));
@@ -269,7 +273,7 @@ public sealed class UnifiedCalendar(
                     {
                         continue;
                     }
-                    var item = Meeting(o, result.Source, zone, now);
+                    var item = Meeting(o, result.Source, zone, now, answerable && result.Source == ItemSources.Outlook);
                     if (seen.TryGetValue(uid, out var index))
                     {
                         if (items[index].OnlineUrl is null && item.OnlineUrl is not null)
@@ -370,9 +374,17 @@ public sealed class UnifiedCalendar(
         return true;
     }
 
-    private CalendarItemView Meeting(CalendarOccurrence o, string source, TimeZoneInfo zone, DateTimeOffset now)
+    /// <summary>An invitation the employee can still answer: never their own meeting, and not one they declined.</summary>
+    private static bool Answerable(CalendarOccurrence o) => o.Response is "not_responded" or "tentative" or "accepted";
+
+    private CalendarItemView Meeting(CalendarOccurrence o, string source, TimeZoneInfo zone, DateTimeOffset now, bool canAnswer = false)
     {
         var actions = new List<string>();
+        var answer = canAnswer && Answerable(o) && o.End > now;
+        if (answer)
+        {
+            actions.Add(ItemActions.Answer);
+        }
         if (o.OnlineJoinUrl is not null && !o.IsPrivate && o.End > now)
         {
             actions.Add(ItemActions.Join);
@@ -396,6 +408,7 @@ public sealed class UnifiedCalendar(
             WebLink = string.IsNullOrEmpty(o.WebLink) ? null : o.WebLink,
             Free = o.ShowAs == "free",
             IsPrivate = o.IsPrivate,
+            Invitation = answer ? o.Response : null,
         };
     }
 

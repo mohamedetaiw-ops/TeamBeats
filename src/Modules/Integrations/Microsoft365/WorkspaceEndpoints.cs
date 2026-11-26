@@ -27,11 +27,18 @@ public sealed record CalendarItemView(
     string? Location,
     string? OnlineJoinUrl,
     string WebLink,
-    bool HalfDay = false);
+    bool HalfDay = false,
+    string? Response = null,
+    bool CanRespond = false);
 
 public sealed record CalendarResponse(string State, DateTimeOffset? AsOf, string TimeZone, DateTimeOffset From, DateTimeOffset To, IReadOnlyList<CalendarItemView> Items);
 
 public sealed record AvailabilityResponse(string State, bool Shared, IReadOnlyList<AvailabilityBlock> Blocks);
+
+/// <summary>An answer to an invitation: accept, tentative or decline, an optional note and whether the organizer hears of it.</summary>
+public sealed record InvitationAnswer(string? Response, string? Comment, bool? NotifyOrganizer);
+
+public sealed record InvitationAnswerResult(string State);
 
 /// <summary>
 /// My mail, My calendar and a colleague's free and busy (spec 018 US2 to US4). Every endpoint needs
@@ -45,7 +52,11 @@ public static class WorkspaceEndpoints
 
         me.MapGet("/mail", async (string? view, int? top, bool? refresh, IEntitlementService entitlements, IMailbox mailbox, CancellationToken ct) =>
         {
-            await entitlements.DemandAsync(Capabilities.IntegrationMicrosoft365, ct);
+            // Outlook needs integration.microsoft365; Gmail (R3, FR-024) comes with the connector packs.
+            if (!await entitlements.IsEnabledAsync(Capabilities.IntegrationConnectors, ct))
+            {
+                await entitlements.DemandAsync(Capabilities.IntegrationMicrosoft365, ct);
+            }
             var errors = new ValidationErrors();
             if (view is not (null or "focused" or "all"))
             {
@@ -59,7 +70,7 @@ public static class WorkspaceEndpoints
             return Results.Ok(await mailbox.GetInboxAsync(new MailQuery(view ?? "focused", top ?? 5, refresh == true), ct));
         });
 
-        me.MapGet("/calendar", async (int? days, bool? hidePrivate, bool? refresh, IEntitlementService entitlements, ICalendar calendar,
+        me.MapGet("/calendar", async (int? days, bool? hidePrivate, bool? refresh, IEntitlementService entitlements, ICalendar calendar, ICalendarResponses responses,
             ITenantSettingsReader settings, IClock clock, IWorkingCalendar working, ITenantContext context, CancellationToken ct) =>
         {
             await entitlements.DemandAsync(Capabilities.IntegrationMicrosoft365, ct);
@@ -71,7 +82,7 @@ public static class WorkspaceEndpoints
             var from = StartOfDay(clock.UtcNow, zone);
             var to = from.AddDays(days ?? 7);
             var result = await calendar.GetEventsAsync(new CalendarQuery(from, to, refresh == true), ct);
-            var items = Shape(result.Occurrences, zone, hidePrivate == true);
+            var items = Shape(result.Occurrences, zone, hidePrivate == true, result.State == M365States.Ok && await responses.AvailableAsync(ct));
             if (result.State is M365States.Ok or M365States.Degraded)
             {
                 // FR-017: TeamBeats items join the Outlook ones, labelled by source. R1 has location holidays (spec 022);
@@ -82,40 +93,91 @@ public static class WorkspaceEndpoints
             return Results.Ok(new CalendarResponse(result.State, result.AsOf, zone.Id, from, to, items));
         });
 
+        // Answer an invitation (spec 018 R3, FR-015): as the employee, in their own calendar only; audited without the event.
+        me.MapPost("/calendar/events/{eventId}/response", async (string eventId, InvitationAnswer body, IEntitlementService entitlements, ICalendarResponses responses,
+            Audit.Contracts.IAuditWriter audit, ITenantContext context, Persistence.IDbSession session, CancellationToken ct) =>
+        {
+            await entitlements.DemandAsync(Capabilities.IntegrationMicrosoft365, ct);
+            var errors = new ValidationErrors();
+            if (eventId.Length is 0 or > 512 || eventId.Any(char.IsControl))
+            {
+                errors.Add("eventId", "validation.calendar.event_id");
+            }
+            if (body.Response is null || !InvitationResponses.All.Contains(body.Response))
+            {
+                errors.Add("response", "validation.calendar.response");
+            }
+            var comment = body.Comment?.Trim();
+            if (comment is { Length: > 500 } || comment?.Any(c => char.IsControl(c) && c is not '\n') == true)
+            {
+                errors.Add("comment", "validation.calendar.response_comment");
+            }
+            errors.ThrowIfAny();
+            var state = await responses.RespondAsync(eventId, body.Response!, string.IsNullOrEmpty(comment) ? null : comment, body.NotifyOrganizer ?? true, ct);
+            if (state == M365States.Ok)
+            {
+                await audit.WriteAsync(new Audit.Contracts.AuditEntry(Audit.Contracts.AuditActions.CalendarInvitationAnswered, "user", context.RequireUser().ToString(),
+                    Changes: new { response = body.Response }), ct);
+                await session.CommitAsync(ct);
+            }
+            return Results.Ok(new InvitationAnswerResult(state));
+        });
+
         app.MapGet("/api/v1/people/{userId:guid}/availability", async (Guid userId, IEntitlementService entitlements, IUserDirectory users,
             ITenantMemberships memberships, IAvailability availability, ITenantSettingsReader settings, IClock clock, IAuthorizationService authz,
             IProfiles profiles, ITenantContext context, CancellationToken ct) =>
         {
             await entitlements.DemandAsync(Capabilities.IntegrationMicrosoft365, ct);
-            // Who may see a colleague's free and busy is the profile visibility rule (spec 010 FR-014): the viewer needs
-            // `people.view` and the colleague an active profile the viewer may open. Users of another tenant are not found.
-            if (!await authz.HoldsAnywhereAsync(Permissions.PeopleView, ct))
-            {
-                throw AppException.NotFound();
-            }
-            var visible = await profiles.ViewAsync(context.RequireUser(), [userId], ct);
-            var colleague = visible is [{ Active: true }] ? await users.GetAsync(userId, ct) : null;
-            var membership = colleague is null ? null : await memberships.GetAsync(userId, ct);
-            if (colleague is null || membership is not { Status: MembershipStatus.Active } || string.IsNullOrEmpty(colleague.Email))
-            {
-                throw AppException.NotFound();
-            }
+            var email = await ColleagueAddressAsync(userId, users, memberships, authz, profiles, context, ct);
             var zone = await ZoneAsync(settings, ct);
             var now = clock.UtcNow;
-            var result = await availability.GetAsync(colleague.Email, now, StartOfDay(now, zone).AddDays(1), ct);
+            var result = await availability.GetAsync(email, now, StartOfDay(now, zone).AddDays(1), ct);
             return Results.Ok(new AvailabilityResponse(result.State, result.Shared, result.Blocks));
         }).RequireTenantUser().WithTags("Integrations: mail and calendar");
+
+        // Teams presence on the profile (spec 018 R3): the same visibility as free and busy, read as the viewer.
+        app.MapGet("/api/v1/people/{userId:guid}/presence", async (Guid userId, IEntitlementService entitlements, IUserDirectory users,
+            ITenantMemberships memberships, IPresence presence, IAuthorizationService authz, IProfiles profiles, ITenantContext context, CancellationToken ct) =>
+        {
+            await entitlements.DemandAsync(Capabilities.IntegrationMicrosoft365, ct);
+            var email = await ColleagueAddressAsync(userId, users, memberships, authz, profiles, context, ct);
+            return Results.Ok(await presence.GetAsync(email, ct));
+        }).RequireTenantUser().WithTags("Integrations: mail and calendar");
+    }
+
+    /// <summary>
+    /// Who may see a colleague's free and busy or presence is the profile visibility rule (spec 010 FR-014): the viewer
+    /// needs <c>people.view</c> and the colleague an active profile the viewer may open. Users of another tenant are not found.
+    /// </summary>
+    private static async Task<string> ColleagueAddressAsync(Guid userId, IUserDirectory users, ITenantMemberships memberships, IAuthorizationService authz,
+        IProfiles profiles, ITenantContext context, CancellationToken ct)
+    {
+        if (!await authz.HoldsAnywhereAsync(Permissions.PeopleView, ct))
+        {
+            throw AppException.NotFound();
+        }
+        var visible = await profiles.ViewAsync(context.RequireUser(), [userId], ct);
+        var colleague = visible is [{ Active: true }] ? await users.GetAsync(userId, ct) : null;
+        var membership = colleague is null ? null : await memberships.GetAsync(userId, ct);
+        if (colleague is null || membership is not { Status: MembershipStatus.Active } || string.IsNullOrEmpty(colleague.Email))
+        {
+            throw AppException.NotFound();
+        }
+        return colleague.Email;
     }
 
     /// <summary>
     /// FR-014 and FR-016: cancelled and declined hidden, free and tentative marked in text, private subjects hidden when the
     /// placement asks, and per day all-day items first.
     /// </summary>
-    public static IReadOnlyList<CalendarItemView> Shape(IEnumerable<CalendarOccurrence> occurrences, TimeZoneInfo zone, bool hidePrivate) =>
+    public static IReadOnlyList<CalendarItemView> Shape(IEnumerable<CalendarOccurrence> occurrences, TimeZoneInfo zone, bool hidePrivate, bool canRespond = false) =>
         Order(occurrences
             .Where(o => !o.IsCancelled && o.Response != "declined")
             .Select(o => new CalendarItemView(o.Id, "outlook", hidePrivate && o.IsPrivate ? null : o.Subject, o.Start, o.End, o.IsAllDay, o.IsPrivate,
-                o.ShowAs == "free", o.ShowAs == "tentative" || o.Response == "tentative", o.Location, o.OnlineJoinUrl, o.WebLink)), zone);
+                o.ShowAs == "free", o.ShowAs == "tentative" || o.Response == "tentative", o.Location, o.OnlineJoinUrl, o.WebLink,
+                Response: o.Response is "none" ? null : o.Response,
+                // Only an invitation can be answered: never the employee's own meeting (R3, FR-015).
+                CanRespond: canRespond && o.Response is "not_responded" or "tentative" or "accepted")), zone);
 
     /// <summary>Per day, all-day items first, then by start; all-day items keep the date they carry.</summary>
     private static IReadOnlyList<CalendarItemView> Order(IEnumerable<CalendarItemView> items, TimeZoneInfo zone) =>

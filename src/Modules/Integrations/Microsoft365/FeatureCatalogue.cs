@@ -42,9 +42,19 @@ public static class FeatureCatalogue
         [
             new("Calendars.ReadBasic", PermissionType.Delegated, "integrations.permission.calendars_read_basic"),
         ]),
+        // Invitation answers (spec 018 R3, FR-015): a separate feature so a tenant that only reads never grants write access.
+        new(Microsoft365Features.CalendarResponses, Capabilities.IntegrationMicrosoft365,
+        [
+            new("Calendars.ReadWrite", PermissionType.Delegated, "integrations.permission.calendars_read_write"),
+        ]),
         new(Microsoft365Features.FreeBusy, Capabilities.IntegrationMicrosoft365,
         [
             new("Calendars.ReadBasic", PermissionType.Delegated, "integrations.permission.calendars_read_basic"),
+        ]),
+        // Teams presence (spec 018 R3): read as the viewer, so Teams' own privacy decides what shows; opt-in by tenant.
+        new(Microsoft365Features.Presence, Capabilities.IntegrationMicrosoft365,
+        [
+            new("Presence.Read.All", PermissionType.Delegated, "integrations.permission.presence_read_all"),
         ]),
         // Office editing (spec 011 FR-010): the employee's own OneDrive holds the copy while they edit, so only
         // Files.ReadWrite on their own files; never Files.ReadWrite.All or Sites.
@@ -78,12 +88,15 @@ public static class FeatureCatalogue
 
     public static FeatureDefinition? Find(string key) => All.FirstOrDefault(f => f.Key == key);
 
-    /// <summary>Mail with the preview line on reads <c>Mail.Read</c> instead of <c>Mail.ReadBasic</c> (spec 018 FR-002).</summary>
+    /// <summary>
+    /// Mail with the preview line or assistant summaries on reads <c>Mail.Read</c> instead of <c>Mail.ReadBasic</c>
+    /// (spec 018 FR-002, FR-022).
+    /// </summary>
     public static readonly GraphPermission MailRead = new("Mail.Read", PermissionType.Delegated, "integrations.permission.mail_read");
 
     /// <summary>The permissions a feature needs with its current options.</summary>
     public static IReadOnlyList<GraphPermission> PermissionsFor(FeatureDefinition feature, FeatureOptions options) =>
-        feature.Key == Microsoft365Features.Mail && options.PreviewLine
+        feature.Key == Microsoft365Features.Mail && (options.PreviewLine || options.AssistantSummaries)
             ? [.. feature.Permissions.Where(p => p.Name != "Mail.ReadBasic"), MailRead]
             : feature.Permissions;
 
@@ -97,9 +110,11 @@ public static class FeatureCatalogue
 
 /// <summary>
 /// Admin options of a connection feature (spec 018 plan "Data model"): Mail <c>previewLine</c> and <c>maxMessages</c>
-/// (the most a placement may show, 1 to 10, default 10), Calendar <c>maxDays</c> (the longest range, 1 to 14, default 14). Other features take no options.
+/// (the most a placement may show, 1 to 10, default 10) and <c>assistantSummaries</c> (R3, the tenant switch for mail
+/// summaries by the assistant, off by default), Calendar <c>maxDays</c> (the longest range, 1 to 14, default 14). Other
+/// features take no options.
 /// </summary>
-public sealed record FeatureOptions(bool PreviewLine = false, int MaxMessages = 10, int MaxDays = 14)
+public sealed record FeatureOptions(bool PreviewLine = false, int MaxMessages = 10, int MaxDays = 14, bool AssistantSummaries = false)
 {
     public static readonly FeatureOptions Default = new();
 
@@ -115,13 +130,14 @@ public sealed record FeatureOptions(bool PreviewLine = false, int MaxMessages = 
         return new FeatureOptions(
             root.TryGetProperty("previewLine", out var p) && p.ValueKind == JsonValueKind.True,
             root.TryGetProperty("maxMessages", out var m) && m.TryGetInt32(out var mv) && mv is >= 1 and <= 10 ? mv : Default.MaxMessages,
-            root.TryGetProperty("maxDays", out var d) && d.TryGetInt32(out var dv) && dv is >= 1 and <= 14 ? dv : Default.MaxDays);
+            root.TryGetProperty("maxDays", out var d) && d.TryGetInt32(out var dv) && dv is >= 1 and <= 14 ? dv : Default.MaxDays,
+            root.TryGetProperty("assistantSummaries", out var a) && a.ValueKind == JsonValueKind.True);
     }
 
     /// <summary>The stored form for one feature: only the options that feature takes.</summary>
     public object ToStored(string feature) => feature switch
     {
-        Microsoft365Features.Mail => new { previewLine = PreviewLine, maxMessages = MaxMessages },
+        Microsoft365Features.Mail => new { previewLine = PreviewLine, maxMessages = MaxMessages, assistantSummaries = AssistantSummaries },
         Microsoft365Features.Calendar => new { maxDays = MaxDays },
         _ => new { },
     };

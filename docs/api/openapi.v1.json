@@ -146,6 +146,29 @@
         }
       }
     },
+    "/api/v1/people/{userId}/presence": {
+      "get": {
+        "tags": [
+          "Integrations: mail and calendar"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/integrations/pack-connections/{id}/finance-handoffs": {
       "get": {
         "tags": [
@@ -3122,6 +3145,38 @@
         }
       }
     },
+    "/api/v1/me/outlook/mail-summaries": {
+      "get": {
+        "tags": [
+          "Integrations: Outlook"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Integrations: Outlook"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MailSummaryChoice"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/me/mail": {
       "get": {
         "tags": [
@@ -3195,6 +3250,38 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/calendar/events/{eventId}/response": {
+      "post": {
+        "tags": [
+          "Integrations: mail and calendar"
+        ],
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvitationAnswer"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "description": "OK"
@@ -39638,6 +39725,12 @@
               "string"
             ],
             "format": "int32"
+          },
+          "assistantSummaries": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },
@@ -41015,6 +41108,34 @@
             "items": {
               "type": "string"
             }
+          }
+        }
+      },
+      "InvitationAnswer": {
+        "required": [
+          "response",
+          "comment",
+          "notifyOrganizer"
+        ],
+        "type": "object",
+        "properties": {
+          "response": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "comment": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "notifyOrganizer": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },
@@ -42602,6 +42723,20 @@
             "items": {
               "type": "string"
             }
+          }
+        }
+      },
+      "MailSummaryChoice": {
+        "required": [
+          "optedIn"
+        ],
+        "type": "object",
+        "properties": {
+          "optedIn": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },

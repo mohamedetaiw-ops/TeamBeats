@@ -100,6 +100,13 @@ async function fakeOutlook(page: Page) {
     seen.push(url.pathname + url.search);
     return answer(route, calendar(Number(url.searchParams.get("days")), url.searchParams.get("refresh") === "true"));
   });
+  // Spec 018 R3: the tenant offers mail summaries and the employee has not said yes yet.
+  let optedIn = false;
+  await page.route("**/api/v1/me/outlook/mail-summaries", (route) => {
+    seen.push(`${route.request().method()} /api/v1/me/outlook/mail-summaries`);
+    if (route.request().method() === "PUT") optedIn = (route.request().postDataJSON() as { optedIn: boolean }).optedIn;
+    return answer(route, { offered: true, optedIn });
+  });
   await page.route("**/api/v1/me/outlook", (route) => {
     seen.push(`${route.request().method()} /api/v1/me/outlook`);
     if (route.request().method() === "DELETE") {
@@ -216,6 +223,13 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.goto(`${hostOrigin(tenant.key)}/settings`);
       const section = page.getByRole("region", { name: msg(locale, "outlook.settings.title") });
       await expect(section.getByRole("status")).toContainText(msg(locale, "outlook.settings.connected"));
+      // Mail summaries by the assistant are the employee's own choice, saved at once (spec 018 R3, FR-022).
+      const summaries = section.getByRole("switch", { name: msg(locale, "outlook.settings.mailSummaries") });
+      await expect(summaries).not.toBeChecked();
+      await summaries.check();
+      await expect(summaries).toBeChecked();
+      expect(seen).toContain("PUT /api/v1/me/outlook/mail-summaries");
+      await expectAccessible(page, testInfo, `outlook-settings-summaries-${locale}`);
       await section.getByRole("button", { name: msg(locale, "outlook.settings.disconnect") }).click();
       await expect(section.getByRole("status")).toContainText(msg(locale, "outlook.settings.notConnected"));
       expect(seen).toContain("DELETE /api/v1/me/outlook");
