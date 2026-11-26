@@ -29,7 +29,7 @@ Depends on 002, 009, 011, 015, 017, 022, 025. R2.
 Depends on 010 (skills), 013 (AI Gateway), 015. R3 covers User Stories 8 to 10 and LRN-021 to LRN-030.
 
 ### Phase 5: User Story 8, quiz drafts (P2)
-- [ ] T013 [US8] Quiz drafts through the AI Gateway, AI draft mark, publish refused until reviewed, audit; builder controls; tests
+- [x] T013 [US8] Quiz drafts through the AI Gateway, AI draft mark, publish refused until reviewed, audit; builder controls; tests
 
 ### Phase 6: User Story 9, skill recommendations (P3)
 - [ ] T014 [US9] `IPersonSkills` contract, course skill tags, recommendations and dismissals on My learning; tests

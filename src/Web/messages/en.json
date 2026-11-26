@@ -15289,7 +15289,24 @@
       "packageIn": "Package in {language}",
       "packageHint": "A SCORM 1.2 or xAPI zip, up to 500 MB. It is scanned before it is imported.",
       "packageFailed": "The package was not imported.",
-      "packageChosen": "A package is chosen for this language. Upload another to replace it."
+      "packageChosen": "A package is chosen for this language. Upload another to replace it.",
+      "quizDraft": {
+        "title": "Draft questions with AI",
+        "hint": "The AI writes questions from the text of this course's page lessons, in each of its languages. Check every question: the course publishes only after you keep, edit or remove each one.",
+        "target": "Add them to",
+        "newLesson": "A new quiz lesson",
+        "quizNumber": "Quiz {number}",
+        "count": "Number of questions",
+        "ask": "Draft questions",
+        "working": "Drafting questions",
+        "added": "{count, plural, one {# question was added} other {# questions were added}} as AI drafts. Check each one before publishing.",
+        "none": "No questions were added",
+        "blocked": "This course's content cannot be sent to the AI under your organization's rules.",
+        "unavailable": "The AI could not draft questions just now. Try again later.",
+        "mark": "AI draft",
+        "markHint": "Check the question and its answers.",
+        "keep": "Keep"
+      }
     },
     "pathBuilder": {
       "eyebrow": "Path builder",

@@ -29,6 +29,7 @@ public static class LearningModule
         services.AddScoped<LmsSync>();
         services.AddScoped<Packages>();
         services.AddScoped<PackageRuntime>();
+        services.AddScoped<QuizDrafts>();
         services.AddScoped<Contracts.ILearningObligations>(sp => sp.GetRequiredService<LearningObligations>());
         services.AddMessageHandler<Tenancy.Contracts.OrganizationMembershipChanged, AssignmentRules>("learning.rule_membership");
         services.AddMessageHandler<Tenancy.Contracts.TenantMembershipDisabled, AssignmentRules>("learning.rule_disabled");
@@ -66,6 +67,13 @@ public static class LearningModule
         root.MapPost("/manage/courses/{id:guid}:publish", async (Guid id, PublishRequest request, Courses courses, IDbSession session, CancellationToken ct) =>
         {
             var view = await courses.PublishAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapPost("/manage/courses/{id:guid}/quiz-drafts", async (Guid id, QuizDraftRequest request, QuizDrafts drafts, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await drafts.DraftAsync(id, request, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });

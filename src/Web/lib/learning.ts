@@ -116,7 +116,9 @@ export type CertificateView = {
 export type Audience = { anyOf?: { orgUnits?: { id: string; subtree?: boolean }[] }[] | null };
 
 export type QuizOption = { key: string; labels: Texts; correct: boolean };
-export type QuizQuestion = { key: string; kind: QuestionKind; prompts: Texts; options: QuizOption[] };
+export type QuizQuestion = { key: string; kind: QuestionKind; prompts: Texts; options: QuizOption[]; aiDraft?: boolean };
+/** The answer to a quiz draft request (spec 028 US8): how many questions joined the draft, or why none did. */
+export type QuizDraftView = { outcome: "drafted" | "policy_blocked" | "unavailable"; added: number; denial: string | null; course: CourseDetail };
 export type QuizDefinition = { passMark: number; attempts: number; questions: QuizQuestion[] };
 export type LessonDefinition = { key: string; kind: LessonKind; titles: Texts; sources?: Record<string, string> | null; quiz?: QuizDefinition | null; minutes?: number | null };
 export type CourseDefinition = { titles: Texts; summaries: Texts; minutes?: number | null; lessons: LessonDefinition[] };

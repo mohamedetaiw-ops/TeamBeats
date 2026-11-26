@@ -3166,5 +3166,10 @@
   "validation.people.skill_free_text": "تسمح مؤسستك بالمهارات من قائمتها فقط.",
   "validation.people.assistants_count": "يمكن أن يكون للشخص ثلاثة مساعدين على الأكثر.",
   "validation.people.assistant_self": "لا يمكن لأحد أن يكون مساعدًا لنفسه.",
-  "validation.people.assistant_unknown": "اختر أشخاصًا نشطين كمساعدين."
+  "validation.people.assistant_unknown": "اختر أشخاصًا نشطين كمساعدين.",
+  "conflict.learning.quiz_draft_no_text": "لا يحتوي أي درس في هذه الدورة على نص يمكن استخدامه للأسئلة. أضف درس صفحة أولًا.",
+  "validation.learning.quiz_draft_count": "اطلب من 1 إلى 20 سؤالًا.",
+  "validation.learning.quiz_draft_lesson": "اختر درس اختبار من هذه الدورة.",
+  "validation.learning.quiz_unreviewed": "احتفظ بكل سؤال صاغه الذكاء الاصطناعي أو عدّله أو احذفه قبل النشر.",
+  "learning.quiz_draft.lesson_title": "تحقق مما تعلمته"
 }

@@ -3166,5 +3166,10 @@
   "validation.people.skill_free_text": "Your organization only allows skills from its list.",
   "validation.people.assistants_count": "A person can have at most three assistants.",
   "validation.people.assistant_self": "Nobody can be their own assistant.",
-  "validation.people.assistant_unknown": "Choose active people as assistants."
+  "validation.people.assistant_unknown": "Choose active people as assistants.",
+  "conflict.learning.quiz_draft_no_text": "None of this course's lessons has text that can be used for questions. Add a page lesson first.",
+  "validation.learning.quiz_draft_count": "Ask for 1 to 20 questions.",
+  "validation.learning.quiz_draft_lesson": "Choose a quiz lesson of this course.",
+  "validation.learning.quiz_unreviewed": "Keep, edit or remove each AI drafted question before publishing.",
+  "learning.quiz_draft.lesson_title": "Check what you learned"
 }

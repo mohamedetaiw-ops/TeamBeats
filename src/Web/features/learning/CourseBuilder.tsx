@@ -26,6 +26,7 @@ import {
   type LessonKind,
   type PackageView,
   type QuestionKind,
+  type QuizDraftView,
   type Texts,
 } from "@/lib/learning";
 import { statusTones } from "./ManageHome";
@@ -34,7 +35,7 @@ import { Rules } from "./Rules";
 import "./learning.css";
 
 type EditOption = { uid: string; key: string; labels: Texts; correct: boolean };
-type EditQuestion = { uid: string; key: string; kind: QuestionKind; prompts: Texts; options: EditOption[] };
+type EditQuestion = { uid: string; key: string; kind: QuestionKind; prompts: Texts; options: EditOption[]; aiDraft: boolean };
 type EditQuiz = { passMark: number; attempts: number; questions: EditQuestion[] };
 type EditLesson = { uid: string; key: string; kind: LessonKind; titles: Texts; sources: Texts; minutes: string; quiz: EditQuiz | null };
 
@@ -44,7 +45,7 @@ const guidIn = (text: string) => text.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}
 const only = (texts: Texts, langs: string[]) => Object.fromEntries(langs.filter((l) => (texts[l] ?? "").trim()).map((l) => [l, (texts[l] ?? "").trim()]));
 
 const newOption = (correct = false): EditOption => ({ uid: uid(), key: "", labels: {}, correct });
-const newQuestion = (): EditQuestion => ({ uid: uid(), key: "", kind: "single", prompts: {}, options: [newOption(true), newOption()] });
+const newQuestion = (): EditQuestion => ({ uid: uid(), key: "", kind: "single", prompts: {}, options: [newOption(true), newOption()], aiDraft: false });
 const newLesson = (kind: LessonKind): EditLesson => ({
   uid: uid(),
   key: "",
@@ -73,6 +74,7 @@ function editable(detail: CourseDetail): EditLesson[] {
             kind: q.kind,
             prompts: { ...q.prompts },
             options: q.options.map((o) => ({ uid: uid(), key: o.key, labels: { ...o.labels }, correct: o.correct })),
+            aiDraft: q.aiDraft === true,
           })),
         }
       : null,
@@ -169,6 +171,7 @@ function CourseForm({ initial, locales, packages }: { initial: CourseDetail; loc
                   kind: q.kind,
                   prompts: only(q.prompts, langs),
                   options: q.options.map((o) => ({ key: o.key || null, labels: only(o.labels, langs), correct: o.correct })),
+                  aiDraft: q.aiDraft,
                 })),
               }
             : null,
@@ -218,6 +221,32 @@ function CourseForm({ initial, locales, packages }: { initial: CourseDetail; loc
   }
 
   const retire = () => run(() => send(`${learningApi}/manage/courses/${detail.id}:retire`, "POST"), t("retiredNotice"));
+
+  /** Saves first when there are changes, so the draft the questions join is the one on screen. */
+  async function draftQuiz(lessonKey: string | null, count: number) {
+    let revision = detail.revision;
+    if (dirty) {
+      setBusy(true);
+      const saved = await call<CourseDetail>(() => send(`${learningApi}/manage/courses/${detail.id}`, "PUT", body()), t("failed"));
+      setBusy(false);
+      if (!saved.ok) {
+        setMessages(saved.messages);
+        return null;
+      }
+      loaded(saved.value);
+      revision = saved.value.revision;
+    }
+    setMessages([]);
+    setNotice(null);
+    const result = await call<QuizDraftView>(() => send(`${learningApi}/manage/courses/${detail.id}/quiz-drafts`, "POST", { revision, lessonKey, count }), t("failed"));
+    if (!result.ok) {
+      setMessages(result.messages);
+      return null;
+    }
+    loaded(result.value.course);
+    if (result.value.outcome === "drafted") setNotice(t("quizDraft.added", { count: result.value.added }));
+    return result.value;
+  }
 
   return (
     <form
@@ -375,6 +404,7 @@ function CourseForm({ initial, locales, packages }: { initial: CourseDetail; loc
             </li>
           ))}
         </ol>
+        <QuizDraftPanel quizzes={lessons.filter((l) => l.kind === "quiz" && l.key).map((l, i) => ({ key: l.key, title: localText(l.titles, locale) || t("quizDraft.quizNumber", { number: i + 1 }) }))} onDraft={draftQuiz} />
         <div className="learning-row">
           <SelectField
             label={t("lessonKind")}
@@ -556,8 +586,9 @@ function PackageUpload({ courseId, language, packageId, onImported }: { courseId
 function QuizEditor({ quiz, id, langs, onChange }: { quiz: EditQuiz; id: string; langs: string[]; onChange: (quiz: EditQuiz) => void }) {
   const t = useTranslations("learning.builder");
   const locale = useLocale();
+  // Any change to an AI drafted question is a person's review of it, so the mark goes (spec 028 FR-022).
   const setQuestion = (uidOf: string, update: (q: EditQuestion) => EditQuestion) =>
-    onChange({ ...quiz, questions: quiz.questions.map((q) => (q.uid === uidOf ? update(q) : q)) });
+    onChange({ ...quiz, questions: quiz.questions.map((q) => (q.uid === uidOf ? { ...update(q), aiDraft: false } : q)) });
   return (
     <div className="learning">
       <div className="learning-row">
@@ -583,6 +614,17 @@ function QuizEditor({ quiz, id, langs, onChange }: { quiz: EditQuiz; id: string;
       {quiz.questions.map((question, qi) => (
         <fieldset key={question.uid} className="learning-builder-lesson">
           <legend>{t("questionNumber", { number: qi + 1 })}</legend>
+          {question.aiDraft ? (
+            <div className="learning-row" data-testid="ai-draft-question">
+              <Badge tone="info" icon="spark">
+                {t("quizDraft.mark")}
+              </Badge>
+              <span className="learning-meta">{t("quizDraft.markHint")}</span>
+              <Button size="xs" icon="check" onClick={() => setQuestion(question.uid, (q) => q)}>
+                {t("quizDraft.keep")}
+              </Button>
+            </div>
+          ) : null}
           <div className="learning-row">
             <SelectField
               label={t("questionKind")}
@@ -758,5 +800,50 @@ function Learners({ course }: { course: CourseDetail }) {
         ))}
       </ul>
     </section>
+  );
+}
+
+/**
+ * Asks for quiz questions drafted from the course's own lessons (spec 028 US8). They join a quiz lesson marked as AI
+ * drafts, and the API refuses to publish until a person keeps, edits or removes each one.
+ */
+function QuizDraftPanel({ quizzes, onDraft }: { quizzes: { key: string; title: string }[]; onDraft: (lessonKey: string | null, count: number) => Promise<QuizDraftView | null> }) {
+  const t = useTranslations("learning.builder");
+  const [target, setTarget] = useState("");
+  const [count, setCount] = useState("10");
+  const [busy, setBusy] = useState(false);
+  const [outcome, setOutcome] = useState<string | null>(null);
+
+  async function ask() {
+    setBusy(true);
+    setOutcome(null);
+    const result = await onDraft(target || null, Number(count) || 10);
+    if (result && result.outcome !== "drafted") setOutcome(result.outcome);
+    setBusy(false);
+  }
+
+  return (
+    <div className="learning-builder-lesson" role="group" aria-labelledby="quiz-draft-title">
+      <h3 id="quiz-draft-title">{t("quizDraft.title")}</h3>
+      <p className="learning-meta">{t("quizDraft.hint")}</p>
+      <div className="learning-row">
+        <SelectField
+          label={t("quizDraft.target")}
+          name="quiz-draft-target"
+          value={target}
+          onChange={(e) => setTarget(e.target.value)}
+          options={[{ value: "", label: t("quizDraft.newLesson") }, ...quizzes.map((q) => ({ value: q.key, label: q.title }))]}
+        />
+        <FormField label={t("quizDraft.count")} name="quiz-draft-count" type="number" min={1} max={20} value={count} onChange={(e) => setCount(e.target.value)} />
+        <Button icon="spark" busy={busy} busyLabel={t("quizDraft.working")} onClick={() => void ask()}>
+          {t("quizDraft.ask")}
+        </Button>
+      </div>
+      {outcome ? (
+        <Alert tone="warning" title={t("quizDraft.none")} live>
+          {outcome === "policy_blocked" ? t("quizDraft.blocked") : t("quizDraft.unavailable")}
+        </Alert>
+      ) : null}
+    </div>
   );
 }
