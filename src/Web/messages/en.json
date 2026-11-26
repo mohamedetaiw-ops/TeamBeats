@@ -16079,7 +16079,19 @@
         "tool": "Read tool",
         "write_tool": "Write tool, confirmed in TeamBeats",
         "resource": "Resource"
-      }
+      },
+      "galleryTab": "App gallery",
+      "galleryTitle": "App gallery",
+      "galleryIntro": "Apps reviewed and published by TeamBeats. Adding one registers it here and gives your consent for its scopes, so employees can connect it without asking an administrator.",
+      "galleryEmpty": "No apps in the gallery yet",
+      "galleryEmptyHint": "Apps appear here once TeamBeats publishes them.",
+      "galleryBy": "by {publisher}",
+      "galleryAction": "Action",
+      "galleryAdd": "Add",
+      "galleryOpen": "Open app",
+      "galleryAdded": "{name} was added.",
+      "galleryNotInPackage": "Not in your plan",
+      "fromGallery": "Gallery"
     },
     "connected": {
       "title": "Connected apps",

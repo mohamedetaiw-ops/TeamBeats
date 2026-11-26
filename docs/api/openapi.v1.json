@@ -32400,6 +32400,40 @@
         }
       }
     },
+    "/api/v1/api-access/gallery": {
+      "get": {
+        "tags": [
+          "Tenant: API and MCP access"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/api-access/gallery:add": {
+      "post": {
+        "tags": [
+          "Tenant: API and MCP access"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GalleryAddRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/api-access/apps/{id}": {
       "get": {
         "tags": [
@@ -32898,6 +32932,38 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/VerifiedMcpClientRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/platform/api/gallery": {
+      "get": {
+        "tags": [
+          "Platform: API and MCP"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Platform: API and MCP"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GalleryAppRequest"
               }
             }
           },
@@ -39366,6 +39432,89 @@
               "string"
             ],
             "format": "int32"
+          }
+        }
+      },
+      "GalleryAddRequest": {
+        "required": [
+          "clientId"
+        ],
+        "type": "object",
+        "properties": {
+          "clientId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "GalleryAppRequest": {
+        "required": [
+          "clientId",
+          "name",
+          "publisher",
+          "description",
+          "homepage",
+          "redirectUris",
+          "scopes",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "clientId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "publisher": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "homepage": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "redirectUris": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "scopes": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

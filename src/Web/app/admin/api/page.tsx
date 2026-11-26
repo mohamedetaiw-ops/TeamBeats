@@ -1,12 +1,12 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { apiGet, type NavigationSection } from "@/lib/api";
-import type { AdminConsent, ApiApp, ApiScope, ApiSettings, ApiUsage, DeveloperPage } from "@/lib/api-access";
+import type { AdminConsent, ApiApp, ApiScope, ApiSettings, ApiUsage, DeveloperPage, GalleryApp } from "@/lib/api-access";
 import { ApiAccessAdmin } from "@/features/api-access/ApiAccessAdmin";
 import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /**
- * API and MCP access (spec 035 US1, US5, US6, US7, FR-029). The section appears only when the API lists it, for API
+ * API and MCP access (spec 035 US1, US5, US6, US7, FR-029, R3 app gallery). The section appears only when the API lists it, for API
  * administrators and viewers; every call is authorized again by the API.
  */
 export default async function ApiAccessPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
@@ -15,13 +15,14 @@ export default async function ApiAccessPage({ searchParams }: { searchParams: Pr
   if (!nav.ok || !nav.data.some((s) => s.key === "api")) {
     notFound();
   }
-  const [apps, scopes, consents, settings, usage, developer] = await Promise.all([
+  const [apps, scopes, consents, settings, usage, developer, gallery] = await Promise.all([
     apiGet<ApiApp[]>("/api/v1/api-access/apps"),
     apiGet<ApiScope[]>("/api/v1/api-access/scopes"),
     apiGet<AdminConsent[]>("/api/v1/api-access/consents"),
     apiGet<ApiSettings>("/api/v1/api-access/settings"),
     apiGet<ApiUsage>("/api/v1/api-access/usage?days=90"),
     apiGet<DeveloperPage>("/api/v1/api-access/developer"),
+    apiGet<{ items: GalleryApp[] }>("/api/v1/api-access/gallery"),
   ]);
   if (!apps.ok || !scopes.ok || !consents.ok || !settings.ok) {
     notFound();
@@ -37,6 +38,7 @@ export default async function ApiAccessPage({ searchParams }: { searchParams: Pr
         settings={settings.data}
         usage={usage.ok ? usage.data : null}
         developer={developer.ok ? developer.data : null}
+        gallery={gallery.ok ? gallery.data.items : []}
         initialTab={tab}
       />
     </>

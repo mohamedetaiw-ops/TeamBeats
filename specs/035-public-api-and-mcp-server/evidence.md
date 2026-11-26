@@ -61,3 +61,6 @@ The spec stays Approved, not Implemented. Everything in its R2 scope is built: t
 | Developer sandbox tenant: lower API limits, end date shown, suspended then closed on its own | Met | `SandboxTenantTests.A_sandbox_has_lower_limits_says_when_it_ends_and_ends_on_its_own` |
 | Sandbox length 1 to 30 days, platform operators only | Met | `SandboxTenantTests.A_sandbox_lasts_1_to_30_days_and_only_platform_operators_make_one` |
 | Demo data in a production sandbox | Gap | Demo data action on staging and the development host only |
+| Public app gallery: platform-published apps added with admin consent, withdrawn everywhere at once | Met | `PublicAppGalleryTests.An_administrator_adds_a_published_app_and_employees_connect_it_without_asking_again` |
+| Gallery publishing by platform operators only, scopes within the package | Met | `PublicAppGalleryTests.Only_platform_operators_publish_and_an_app_needs_scopes_the_package_covers` |
+| Publisher self-service and a platform gallery screen | Gap | Platform API only in R3 |

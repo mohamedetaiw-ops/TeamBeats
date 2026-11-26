@@ -26,6 +26,7 @@ import {
   type ApiUsage,
   type AppKind,
   type DeveloperPage,
+  type GalleryApp,
 } from "@/lib/api-access";
 import "./api-access.css";
 
@@ -43,6 +44,7 @@ export function ApiAccessAdmin({
   settings: initialSettings,
   usage,
   developer = null,
+  gallery: initialGallery = [],
   initialTab,
 }: {
   apps: ApiApp[];
@@ -51,12 +53,14 @@ export function ApiAccessAdmin({
   settings: ApiSettings;
   usage: ApiUsage | null;
   developer?: DeveloperPage | null;
+  gallery?: GalleryApp[];
   initialTab?: string;
 }) {
   const t = useTranslations("apiAccess.admin");
   const [apps, setApps] = useState(initialApps);
   const [consents, setConsents] = useState(initialConsents);
   const [settings, setSettings] = useState(initialSettings);
+  const [gallery, setGallery] = useState(initialGallery);
   const action = useAdminAction(returnTo);
 
   return (
@@ -70,6 +74,20 @@ export function ApiAccessAdmin({
             key: "apps",
             label: t("appsTab"),
             content: <AppsPanel apps={apps} scopes={scopes} action={action} onCreated={(app) => setApps((list) => [...list, app])} />,
+          },
+          {
+            key: "gallery",
+            label: t("galleryTab"),
+            content: (
+              <GalleryPanel
+                gallery={gallery}
+                action={action}
+                onAdded={(clientId, app) => {
+                  setGallery((list) => list.map((g) => (g.clientId === clientId ? { ...g, appId: app.id } : g)));
+                  setApps((list) => (list.some((a) => a.id === app.id) ? list : [...list, app]));
+                }}
+              />
+            ),
           },
           {
             key: "consents",
@@ -131,7 +149,8 @@ function AppsPanel({ apps, scopes, action, onCreated }: { apps: ApiApp[]; scopes
               header: t("kind"),
               cell: (a) => (
                 <>
-                  {t(`kinds.${a.kind}`)} {a.verified ? <Badge tone="success">{t("verified")}</Badge> : null}
+                  {t(`kinds.${a.kind}`)} {a.verified ? <Badge tone="success">{t("verified")}</Badge> : null}{" "}
+                  {a.gallery ? <Badge tone="info">{t("fromGallery")}</Badge> : null}
                 </>
               ),
             },
@@ -146,6 +165,96 @@ function AppsPanel({ apps, scopes, action, onCreated }: { apps: ApiApp[]; scopes
       </section>
       <RegisterApp scopes={scopes} action={action} onCreated={onCreated} />
     </div>
+  );
+}
+
+/**
+ * The public app gallery (spec 035 R3, T025): apps the platform published after a security review. Adding one registers
+ * it here and gives the administrator's consent for its scopes, so employees connect it without asking again.
+ */
+function GalleryPanel({
+  gallery,
+  action,
+  onAdded,
+}: {
+  gallery: GalleryApp[];
+  action: Action;
+  onAdded: (clientId: string, app: ApiApp) => void;
+}) {
+  const t = useTranslations("apiAccess.admin");
+  async function add(entry: GalleryApp) {
+    const outcome = await action.run<{ app: ApiApp }>(`gallery-${entry.clientId}`, "POST", "/api/v1/api-access/gallery:add", { clientId: entry.clientId }, () =>
+      t("galleryAdded", { name: entry.name }),
+    );
+    if (outcome.ok) {
+      onAdded(entry.clientId, outcome.data.app);
+    }
+  }
+  return (
+    <section className="admin-panel" aria-labelledby="api-gallery-title">
+      <div className="admin-panel-head">
+        <h2 id="api-gallery-title">{t("galleryTitle")}</h2>
+      </div>
+      <p className="admin-meta">{t("galleryIntro")}</p>
+      <DataTable
+        caption={t("galleryTitle")}
+        captionHidden
+        rows={gallery}
+        rowKey={(g) => g.clientId}
+        emptyTitle={t("galleryEmpty")}
+        emptyMessage={t("galleryEmptyHint")}
+        columns={[
+          {
+            key: "name",
+            header: t("name"),
+            rowHeader: true,
+            cell: (g) => (
+              <>
+                <a href={g.homepage} target="_blank" rel="noopener noreferrer">
+                  {g.name}
+                </a>
+                <span className="admin-meta"> {t("galleryBy", { publisher: g.publisher })}</span>
+              </>
+            ),
+            sortValue: (g) => g.name,
+          },
+          { key: "description", header: t("description"), cell: (g) => g.description },
+          {
+            key: "scopes",
+            header: t("scopes"),
+            cell: (g) => (
+              <span dir="ltr">
+                {g.scopes.map((s) => (
+                  <code key={s}>{s} </code>
+                ))}
+              </span>
+            ),
+          },
+          {
+            key: "action",
+            header: t("galleryAction"),
+            cell: (g) =>
+              g.appId ? (
+                <Link href={`/admin/api/apps/${g.appId}`} data-testid="gallery-added">
+                  {t("galleryOpen")}
+                </Link>
+              ) : g.inPackage ? (
+                <Button
+                  variant="secondary"
+                  onClick={() => void add(g)}
+                  busy={action.busy === `gallery-${g.clientId}`}
+                  busyLabel={t("saving")}
+                  data-testid="gallery-add"
+                >
+                  {t("galleryAdd")}
+                </Button>
+              ) : (
+                <Badge tone="neutral">{t("galleryNotInPackage")}</Badge>
+              ),
+          },
+        ]}
+      />
+    </section>
   );
 }
 

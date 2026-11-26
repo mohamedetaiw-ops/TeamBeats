@@ -15,7 +15,8 @@ public sealed record AppRequest(string? Name, string? Kind, string? Description,
 /// <param name="CallsPerMinute">The limit that applies: per app for an application app, per app and person for a delegated one.</param>
 public sealed record AppView(Guid Id, string ClientId, string Kind, string Name, string? Description, string? Publisher, IReadOnlyList<string> Scopes,
     IReadOnlyList<string> RedirectUris, bool AllowGuests, string Status, DateTimeOffset CreatedAt, DateTimeOffset? LastUsedAt, int Version,
-    IReadOnlyList<string> IpRanges, int CallsPerMinute, bool CallsPerMinuteLowered, bool Verified = false, bool SelfRegistered = false, bool RequireDpop = false);
+    IReadOnlyList<string> IpRanges, int CallsPerMinute, bool CallsPerMinuteLowered, bool Verified = false, bool SelfRegistered = false, bool RequireDpop = false,
+    bool Gallery = false);
 
 public sealed record CredentialView(Guid Id, string Kind, string? Hint, DateTimeOffset ExpiresAt, DateTimeOffset CreatedAt, DateTimeOffset? LastUsedAt,
     DateTimeOffset? RevokedAt);

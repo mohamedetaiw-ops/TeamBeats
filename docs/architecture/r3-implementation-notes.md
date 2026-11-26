@@ -73,3 +73,9 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - `SandboxWorker` runs hourly in Workers (and in the development host when `Tenancy:Sandboxes:InProcess` is set), suspends due sandboxes and closes them after 14 days through the same status change the platform page uses.
 - The developer page reads the end date through `ITenantSettingsReader.GetSandboxUntilAsync`.
 - Gaps: no self-service sandbox sign-up; production sandboxes start without demo data.
+
+## Spec 035 R3 slice 5: public app gallery (T025)
+
+- Defaults are in the spec 035 R3 plan. Migration 0010 of PublicApi adds `publicapi.gallery_app` (platform data, no tenant column) and `publicapi.app.gallery`; a gallery registration reads its name, publisher, description, scopes and redirect URIs from the gallery, as verified clients read theirs from the verified list, and shows as blocked once the entry is withdrawn.
+- `AppGallery` adds an app through `Apps.AddFromGalleryAsync` (package and app limit checks) and then `Consents.GrantAdminAsync`, so the admin consent is the same record an administrator would give by hand. Audit actions `api.gallery_app_changed` (platform) and `api.gallery_app_added` (tenant).
+- Gaps: no publisher self-service and no platform screen for the gallery.

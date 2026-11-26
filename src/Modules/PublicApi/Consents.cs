@@ -49,7 +49,7 @@ public sealed class Consents(
         var userConsent = (await settings.CurrentAsync(ct)).UserConsentScopes.ToHashSet(StringComparer.Ordinal);
         var views = requested.Select(s => new ConsentScopeView(s, ScopeCatalogue.Find(s)!.DescriptionKey, userConsent.Contains(s), granted.Contains(s))).ToList();
         var guest = !app.AllowGuests && await IsGuestAsync(user, ct);
-        return new ConsentPrompt(app.ClientId, app.Name, app.Publisher, app.Description, app.Kind, views, views.Any(v => !v.Granted && !v.UserConsent), guest, app.Verified);
+        return new ConsentPrompt(app.ClientId, app.Name, app.Publisher, app.Description, app.Kind, views, views.Any(v => !v.Granted && !v.UserConsent), guest, app.Verified || app.Gallery);
     }
 
     /// <summary>The person consents to the requested scopes they may consent to; scopes that need an administrator are refused.</summary>

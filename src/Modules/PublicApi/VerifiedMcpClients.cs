@@ -58,6 +58,11 @@ public sealed class VerifiedMcpClients(IDbSession session, ITenantContext contex
         {
             errors.Add("clientId", "validation.api.verified_client_id");
         }
+        else if (await session.ScalarAsync<bool>("select exists (select 1 from publicapi.gallery_app where client_id = @clientId)", new { clientId }, ct))
+        {
+            // One client ID is either an AI client the AI policy allows or a gallery app an API administrator adds, never both.
+            errors.Add("clientId", "validation.api.gallery_client_listed");
+        }
         var name = request.Name?.Trim() ?? "";
         if (name.Length is < 1 or > 80)
         {
