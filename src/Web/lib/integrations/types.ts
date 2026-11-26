@@ -40,7 +40,17 @@ export type McpRefreshResult = { listed: number; new: number; changed: number; g
 export const MCP_TOOL_STATUSES = ["pending", "approved", "rejected", "unsupported"] as const;
 export const TOOL_RULES = ["execute", "confirm"] as const;
 
-export type Pack = { kind: string; version: number; inPackage: boolean; actions: PackAction[] };
+/** A pack as the marketplace shows it (spec 017 R3): package state, whether the platform offers it now, and the tenant's connections of it. */
+export type Pack = {
+  kind: string;
+  version: number;
+  inPackage: boolean;
+  actions: PackAction[];
+  capabilityKey: string;
+  available: boolean;
+  unavailableReason: string | null;
+  connections: number;
+};
 
 export type PackCheck = { name: string; ok: boolean; resultKey: string; errorClass?: string | null };
 
@@ -178,7 +188,7 @@ export const CHECK_RESULTS = [
 ] as const;
 
 /** Connector pack kinds with their own name on these pages. */
-export const PACK_KINDS = ["custom_rest", "webhook", "onprem_ad", "servicenow", "jira_service_management", "camunda8", "mcp_server", "slack", "sms", "clock_import", "finance_rest", "google_workspace", "hr_rest", "hr_sftp", "lms_rest"] as const;
+export const PACK_KINDS = ["custom_rest", "webhook", "onprem_ad", "servicenow", "jira_service_management", "camunda8", "mcp_server", "slack", "sms", "clock_import", "finance_rest", "finance_oracle_fusion", "finance_sap_s4", "google_workspace", "hr_rest", "hr_sftp", "lms_rest"] as const;
 
 /** Settings of a clock data connection (spec 017 US7). Columns are header names, or numbers from 1 without a header row. */
 export type ClockColumns = {
@@ -285,6 +295,38 @@ export const FINANCE_AUTH = ["api_key", "bearer", "basic", "oauth_client_credent
 export const FINANCE_FIELDS = ["source_id", "employee_number", "currency", "amount", "claim_date", "description", "cost_centre", "project"] as const;
 export const FINANCE_LINE_FIELDS = ["category", "date", "amount", "description", "original_amount", "original_currency"] as const;
 export const FINANCE_STATUSES = ["submitted", "approved", "paid", "rejected"] as const;
+/** The named ERP finance packs (spec 017 R3): the ERP values each needs, beyond address, sign-in and accounts. */
+export const ERP_FINANCE_KINDS = ["finance_oracle_fusion", "finance_sap_s4"] as const;
+export type ErpFinanceKind = (typeof ERP_FINANCE_KINDS)[number];
+export type ErpFinanceSettings = {
+  businessUnit: string | null;
+  supplierSite: string | null;
+  invoiceGroup: string | null;
+  companyCode: string | null;
+  client: string | null;
+  taxCode: string | null;
+  accounts: Record<string, string> | null;
+  defaultAccount: string | null;
+  statusValues: Record<string, string[]> | null;
+};
+type ErpValue = "businessUnit" | "supplierSite" | "invoiceGroup" | "companyCode" | "client" | "taxCode";
+export const ERP_FINANCE_SETTINGS: Record<ErpFinanceKind, readonly { name: ErpValue; required: boolean }[]> = {
+  finance_oracle_fusion: [
+    { name: "businessUnit", required: true },
+    { name: "supplierSite", required: false },
+    { name: "invoiceGroup", required: false },
+  ],
+  finance_sap_s4: [
+    { name: "companyCode", required: true },
+    { name: "client", required: false },
+    { name: "taxCode", required: false },
+  ],
+};
+export const ERP_FINANCE_AUTH = ["basic", "oauth_client_credentials", "bearer"] as const;
+export const MAX_ERP_ACCOUNTS = 50;
+export function isErpFinance(kind: string): kind is ErpFinanceKind {
+  return (ERP_FINANCE_KINDS as readonly string[]).includes(kind);
+}
 export const FINANCE_STATES = ["queued", "sent", "failed", "unknown"] as const;
 export type FinanceHandOff = {
   id: string;

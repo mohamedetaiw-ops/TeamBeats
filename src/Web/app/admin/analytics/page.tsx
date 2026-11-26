@@ -38,6 +38,9 @@ export default async function AdoptionPage() {
       <p>
         <Link href="/admin/analytics/estimates">{t("estimatesLink")}</Link>
       </p>
+      <p>
+        <Link href="/admin/analytics/kpi-tiles">{t("kpiTilesLink")}</Link>
+      </p>
 
       {a.weeks.length === 0 && a.units.length === 0 ? (
         <section className="analytics-card">

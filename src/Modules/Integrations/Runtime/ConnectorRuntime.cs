@@ -461,6 +461,11 @@ public sealed class ConnectorRuntime(
         {
             return (null, ConnectorErrorClasses.NotInPackage, c);
         }
+        // A pack the platform turned off for all tenants makes no calls until it is turned on again (spec 017 R3).
+        if (pack.Listed && await session.ScalarAsync<bool>("select exists (select 1 from integrations.platform_pack_state where kind = @kind)", new { kind = c.Kind }, ct))
+        {
+            return (null, ConnectorErrorClasses.PackUnavailable, c);
+        }
         if (!c.Enabled)
         {
             return (null, ConnectorErrorClasses.ConnectionDisabled, c);

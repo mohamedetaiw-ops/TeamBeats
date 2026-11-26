@@ -14,8 +14,13 @@ namespace TeamBeats.Modules.Integrations.Runtime;
 /// <summary>An action as people see it. <paramref name="Inputs"/> is null for an action that declares none, which can be neither a route step nor an agent tool.</summary>
 public sealed record PackActionView(string Name, string SideEffect, bool Idempotent, IReadOnlyList<string> BusinessErrors, IReadOnlyList<ConnectorInput>? Inputs = null);
 
-/// <summary>A pack the tenant can add (spec 017 US1 scenario 1): its actions are listed before any credential is entered.</summary>
-public sealed record PackView(string Kind, int Version, bool InPackage, IReadOnlyList<PackActionView> Actions);
+/// <summary>
+/// A pack the tenant can add (spec 017 US1 scenario 1): its actions are listed before any credential is entered. For the
+/// marketplace (R3) it also names the capability it needs, whether the platform offers it now (and why not), and how
+/// many connections of it the tenant has.
+/// </summary>
+public sealed record PackView(string Kind, int Version, bool InPackage, IReadOnlyList<PackActionView> Actions, string CapabilityKey = "", bool Available = true,
+    string? UnavailableReason = null, int Connections = 0);
 
 public sealed record PackConnectionView(
     Guid Id,
@@ -69,10 +74,14 @@ public sealed class PackConnections(
     public async Task<IReadOnlyList<PackView>> CatalogueAsync(CancellationToken ct)
     {
         var connectors = await entitlements.IsEnabledAsync(Capabilities.IntegrationConnectors, ct);
+        var off = await session.QueryAsync("select kind, reason from integrations.platform_pack_state", null, r => (Kind: r.GetString(0), Reason: r.GetString(1)), ct);
+        var counts = await session.QueryAsync("select kind, count(*)::int from integrations.connection group by kind", null, r => (Kind: r.GetString(0), Count: r.GetInt32(1)), ct);
         var list = new List<PackView>();
         foreach (var p in packs.Where(p => p.Listed).OrderBy(p => p.Kind, StringComparer.Ordinal))
         {
-            list.Add(new PackView(p.Kind, p.Version, connectors && await entitlements.IsEnabledAsync(p.CapabilityKey, ct), p.Actions.Select(View).ToList()));
+            var reason = off.Where(o => o.Kind == p.Kind).Select(o => o.Reason).FirstOrDefault();
+            list.Add(new PackView(p.Kind, p.Version, connectors && await entitlements.IsEnabledAsync(p.CapabilityKey, ct), p.Actions.Select(View).ToList(), p.CapabilityKey,
+                reason is null, reason, counts.Where(c => c.Kind == p.Kind).Select(c => c.Count).FirstOrDefault()));
         }
         return list;
     }
@@ -129,6 +138,10 @@ public sealed class PackConnections(
         if (!await entitlements.IsEnabledAsync(pack.CapabilityKey, ct))
         {
             throw AppException.NotInPackage(pack.CapabilityKey);
+        }
+        if (await session.ScalarAsync<bool>("select exists (select 1 from integrations.platform_pack_state where kind = @kind)", new { kind = pack.Kind }, ct))
+        {
+            throw AppException.Conflict("conflict.integrations.pack_unavailable");
         }
         var name = ValidName(request.DisplayName);
         var rate = ValidRate(request.RateLimitPerMinute ?? 600);

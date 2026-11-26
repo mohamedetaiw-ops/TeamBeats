@@ -81,6 +81,7 @@ public static class IntegrationsModule
         services.AddScoped<Slack.SlackPack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Slack.SlackPack>());
         services.AddScoped<Runtime.TenantLinks>();
+        services.AddScoped<Runtime.PlatformPacks>();
         services.AddScoped<Slack.SlackMessaging>();
         services.AddScoped<ITeamsMessaging, Microsoft365.TeamsActivity>();
         services.AddScoped<Sms.SmsPack>();
@@ -96,6 +97,8 @@ public static class IntegrationsModule
         services.AddScoped<ClockData.ClockImports>();
         services.AddScoped<Finance.FinancePack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Finance.FinancePack>());
+        services.AddScoped<IConnectorPack, Finance.OracleFusionFinancePack>();
+        services.AddScoped<IConnectorPack, Finance.SapS4FinancePack>();
         services.AddScoped<Finance.FinanceHandOffs>();
         services.AddScoped<IFinanceHandOff>(sp => sp.GetRequiredService<Finance.FinanceHandOffs>());
         services.AddScoped<IConnectionDependents, Finance.FinanceDependents>();

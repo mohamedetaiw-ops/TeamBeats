@@ -30,6 +30,7 @@ export function ScopeList({ scopes, caption, locationNames }: { scopes: readonly
  */
 export function ScopeDashboard({ view }: { view: ScopeDashboardView }) {
   const t = useTranslations("analytics.scopes");
+  const locale = useLocale();
   const format = useFormatter();
   const percent = (n: number) => format.number(n, { style: "percent", maximumFractionDigits: 1 });
   const value = (n: number | null, of: number | null) =>
@@ -74,6 +75,39 @@ export function ScopeDashboard({ view }: { view: ScopeDashboardView }) {
           </tbody>
         </table>
       </div>
+      {view.kpis && view.kpis.length > 0 ? (
+        <div className="analytics-table">
+          <table data-testid="scope-kpis">
+            <caption>{t("kpisTitle")}</caption>
+            <thead>
+              <tr>
+                <th scope="col">{t("column.figure")}</th>
+                <th scope="col">{t("column.value")}</th>
+                <th scope="col">{t("kpiPeriod")}</th>
+                <th scope="col">{t("column.source")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {view.kpis.map((k) => (
+                <tr key={k.id} data-testid={`scope-kpi-${k.metric}`}>
+                  <th scope="row">{pick(k.names, locale)}</th>
+                  <td data-number>{k.value === null ? t("kpisEmpty") : `${format.number(k.value)} ${k.unit ?? ""}`.trim()}</td>
+                  <td>
+                    {k.periodStart && k.periodEnd
+                      ? format.dateTimeRange(new Date(k.periodStart), new Date(k.periodEnd), { dateStyle: "medium", timeZone: "UTC" })
+                      : null}
+                  </td>
+                  <td>
+                    {k.source ? <span>{t("kpiSource", { source: k.source })}</span> : null}
+                    {k.sourceTime ? <span className="analytics-meta">{t("kpiMeasured", { time: format.dateTime(new Date(k.sourceTime), { dateStyle: "medium", timeStyle: "short" }) })}</span> : null}
+                    {k.receivedAt ? <span className="analytics-meta">{t("kpiReceived", { time: format.dateTime(new Date(k.receivedAt), { dateStyle: "medium", timeStyle: "short" }) })}</span> : null}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
     </div>
   );
 }

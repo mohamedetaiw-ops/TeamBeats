@@ -149,3 +149,20 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - Estate trends (`GET /api/v1/evaluation/estate/trends`, `ai.evals.advanced`) reuse the dashboard rule for a version's result: its latest completed run, leaving route and comparison runs out. The noise margin is the platform default (2 points), since repeat runs are not kept per version for every agent.
 - Pages: Estate trends tab under Evaluation, and the agent task evaluation panel on the process model page. The panel shows only when the person reads evaluations of the process's agents.
 - Gaps: L4 steps have deterministic checks only, with no judged answer quality until process datasets exist. An instance outcome that is processed before its step facts is not kept. Estate benchmarks cover the last 12 months.
+
+## Spec 017 R3: Oracle Fusion and SAP packs, marketplace (T022 to T024)
+
+- Defaults are in the spec 017 R3 plan. `finance_oracle_fusion` and `finance_sap_s4` are packs behind the finance hand-off contract, under the spec 005 keys `integration.oracle_fusion` and `integration.sap`; no Entitlements migration was needed. The hand-off picks the oldest enabled connection of any finance kind (`FinancePack.Kinds`).
+- Both packs sign in with basic, OAuth client credentials or a bearer token through `RestSignIn`, reach only allowlisted hosts through the SSRF guard, keep claim payloads out of capture, and never return ERP fields beyond the reference and the canonical status.
+- A retried submit first looks for the invoice by the claim's number (Oracle `InvoiceNumber`, SAP `SupplierInvoiceIDByInvcgParty` with company code and supplier), so both submits are idempotent.
+- SAP writes fetch `x-csrf-token` and the session cookie with a read of the service root; a 403 that asks for a token is retried, not taken as a refused credential.
+- Marketplace: `GET /api/v1/integrations/packs` now also returns each pack's capability key, whether the platform offers it, why not, and the tenant's connection count; the page is `/admin/connections/marketplace`. Integrations migration 0022 adds `platform_pack_state` (platform data). `PUT /api/v1/platform/connector-packs/{kind}` turns a pack off or on, with platform audit. A pack turned off refuses new connections (`conflict.integrations.pack_unavailable`), and its jobs wait with `pack_unavailable` until it is on again, then run.
+- Gaps: SAP payment (clearing) is not read; Oracle and SAP field values were taken from the published API references and have not been run against a customer system; tax lines are not sent, only a tax code per line for SAP. The platform switch has no page in a platform console yet; it is an API for the platform operator.
+
+## Spec 021 R3 slice 1: KPI tiles (T022, with spec 017 T024)
+
+- Defaults are in the spec 021 R3 plan. Analytics migration 0006 adds `kpi_tile_set` (versioned documents, forced RLS). `GET /api/v1/analytics/kpi-tiles` and `PUT` (tenant settings managers, with the version read) under `analytics.kpi_tiles`; the location dashboard answer gains `kpis`, null for units and without the capability.
+- Analytics now references Integrations.Contracts and reads readings only through `IKpiFeed`. `KpiReading` gained `Source`, the connection's display name, which `KpiFeed` fills in when reading.
+- The admin page is `/admin/analytics/kpi-tiles`; the permission picker offers the permissions the workspace's roles grant.
+- Gaps: a location dashboard e2e with readings is not possible yet, since locations come only from directory sync; the integration suite covers the tiles on the dashboard. Tiles show the latest value only, without a trend.
+

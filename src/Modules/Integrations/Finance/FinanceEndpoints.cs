@@ -19,8 +19,8 @@ public static class FinanceEndpoints
             FinanceHandOffs handOffs, CancellationToken ct) =>
         {
             await authz.DemandAsync(Permissions.IntegrationManage, AuthzTarget.Tenant, ct);
-            if (!await session.ScalarAsync<bool>("select exists (select 1 from integrations.connection where id = @id and kind = @kind)",
-                new { id, kind = FinancePack.KindName }, ct))
+            if (!await session.ScalarAsync<bool>("select exists (select 1 from integrations.connection where id = @id and kind = any(@kinds))",
+                new { id, kinds = FinancePack.Kinds }, ct))
             {
                 throw AppException.NotFound();
             }

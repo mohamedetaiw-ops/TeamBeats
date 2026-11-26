@@ -3835,6 +3835,50 @@
         }
       }
     },
+    "/api/v1/platform/connector-packs": {
+      "get": {
+        "tags": [
+          "Platform: connector packs"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/platform/connector-packs/{kind}": {
+      "put": {
+        "tags": [
+          "Platform: connector packs"
+        ],
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlatformPackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/integrations/pack-connections/{id}/tools": {
       "get": {
         "tags": [
@@ -29748,6 +29792,38 @@
         }
       }
     },
+    "/api/v1/analytics/kpi-tiles": {
+      "get": {
+        "tags": [
+          "Analytics"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Analytics"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KpiTileSetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/analytics/adoption": {
       "get": {
         "tags": [
@@ -41633,6 +41709,72 @@
           }
         }
       },
+      "KpiTileInput": {
+        "required": [
+          "id",
+          "metric",
+          "names",
+          "permission"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "metric": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "names": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "permission": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "KpiTileSetRequest": {
+        "required": [
+          "tiles",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "tiles": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/KpiTileInput"
+            }
+          },
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "LabelChoice": {
         "required": [
           "labelId"
@@ -43864,6 +44006,24 @@
               "null",
               "string"
             ]
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "PlatformPackRequest": {
+        "required": [
+          "available",
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
           },
           "reason": {
             "type": [
@@ -50306,6 +50466,9 @@
     },
     {
       "name": "Integrations: runs"
+    },
+    {
+      "name": "Platform: connector packs"
     },
     {
       "name": "HR integration"

@@ -42,3 +42,12 @@ R2 builds the analytics workspace and its dashboards, scheduled reports, export,
 | FR-025 trends as charts with table alternatives | Met | Workspace line and bar charts with tables (`WorkspaceExplorer`), weekly charts on sentiment and AI usage; the a11y suite checks every analytics route |
 | US2 to US9 R2 scenarios | Met except as noted | The tests above; US8 scenario 3 by `AnalyticsAiTests.A_summary_names_the_figures_it_used_and_follows_the_dashboard_access`, `AnalyticsAiMathTests` and `analytics-ai.spec.ts` |
 | Section 7 cross-tenant cases | Met | Each R2 integration class reads from a second tenant and sees none of the first tenant's figures |
+
+# Spec 021 evidence (R3)
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| FR-010 KPI tiles from connected systems with source and freshness | Met | `KpiTileTests.A_location_dashboard_shows_each_tiles_latest_reading_with_its_source_and_hides_tiles_the_viewer_may_not_see` |
+| US6 scenario 2 tile hidden without permission to the data | Met | Same test (viewer without the tile's permission) |
+| KPI tile settings versioned, checked, audited, package and tenant boundary | Met | `KpiTileTests.The_tile_set_is_checked_and_versioned_the_package_decides_and_nothing_crosses_tenants`, `analytics-kpi-tiles.spec.ts` (en, ar, axe) |
+

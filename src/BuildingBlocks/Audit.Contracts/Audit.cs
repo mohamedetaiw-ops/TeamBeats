@@ -97,6 +97,8 @@ public static class AuditActions
     public const string ConnectionConsentGranted = "integration.consent_granted";
     public const string ConnectionConsentRevokedDetected = "integration.consent_revoked_detected";
     public const string ConnectionStatusChanged = "integration.status_changed";
+    public const string ConnectorPackTurnedOff = "integration.pack_turned_off";
+    public const string ConnectorPackTurnedOn = "integration.pack_turned_on";
     public const string ConnectionFeatureOptionsChanged = "integration.feature_options_changed";
     public const string ConnectionSiteAllowed = "integration.sharepoint_site_allowed";
     public const string ConnectionSiteRemoved = "integration.sharepoint_site_removed";
@@ -693,6 +695,7 @@ public static class AuditActions
     // 021
     public const string AnalyticsPrivacySettingChanged = "analytics.privacy_setting_changed";
     public const string AnalyticsEstimatesChanged = "analytics.estimates_changed";
+    public const string AnalyticsKpiTileConfigured = "analytics.kpi_tile_configured";
     public const string AnalyticsExportRequested = "analytics.export_requested";
     public const string AnalyticsExportCompleted = "analytics.export_completed";
     public const string AnalyticsExportDownloaded = "analytics.export_downloaded";
@@ -733,7 +736,7 @@ public static class AuditActions
         SecurityChangeExpired, SecurityKeyConnected, SecurityKeyRotated, SecurityKeyRevoked, SecurityKeyRestored, SecurityKeyUnreachable,
         MobileOfflinePolicyChanged, DeviceKioskEnrolled, DeviceKioskChanged, DeviceKioskRevoked, DeviceKioskSignIn, DeviceKioskLockout,
         ApiAppRegistered, ApiAppChanged, ApiAppDisabled, ApiCredentialAdded, ApiCredentialRevoked, ApiConsentGranted, ApiConsentRevoked,
-        ApiTokenFamilyRevoked, ApiTokenRefused, ApiSettingsChanged, ApiRoleAssignedToApp, ApiVerifiedClientChanged, ApiGalleryAppChanged, ApiGalleryAppAdded, ApiClientBlocked, ApiClientUnblocked, ApiTokensRevoked,
+        ApiTokenFamilyRevoked, ApiTokenRefused, ApiSettingsChanged, ApiRoleAssignedToApp, ApiVerifiedClientChanged, ApiGalleryAppChanged, ApiGalleryAppAdded, ApiClientBlocked, ApiClientUnblocked, AnalyticsKpiTileConfigured, ConnectorPackTurnedOff, ConnectorPackTurnedOn, ApiTokensRevoked,
         DeviceBadgeIssued, DeviceBadgePinReset, SecurityRequestBlockedNetwork, SecurityMfaMissing, SecurityStepUpCompleted, SecurityStepUpFailed, SecurityAlertRaised, SecurityAlertHandled,
         WorkflowDefinitionPublished, WorkflowTaskCompleted, WorkflowInstanceWithdrawn,
         ServiceCreated, ServiceChanged, ServicePublished, ServiceRetired, ServiceCategoryChanged, RequestSubmitted, RequestCancelled, RequestResubmitted,

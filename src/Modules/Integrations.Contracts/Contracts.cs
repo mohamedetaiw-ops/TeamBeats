@@ -376,6 +376,7 @@ public interface IDocumentRepository
 /// <summary>
 /// A KPI reading in canonical form (spec 017 FR-022): the metric, its value and unit, the period it covers, the
 /// location code it is for (null for the whole organization) and when the source system measured it.
+/// <paramref name="Source"/> is the display name of the connection it came through, filled in when readings are read.
 /// </summary>
 public sealed record KpiReading(
     Guid ConnectionId,
@@ -387,7 +388,8 @@ public sealed record KpiReading(
     DateTimeOffset PeriodEnd,
     string? Location,
     DateTimeOffset SourceTime,
-    DateTimeOffset ReceivedAt);
+    DateTimeOffset ReceivedAt,
+    string? Source = null);
 
 public sealed record KpiQuery(string? Metric, string? Location, DateTimeOffset? From, DateTimeOffset? To, int Limit = 100);
 

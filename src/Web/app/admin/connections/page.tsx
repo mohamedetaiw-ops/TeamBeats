@@ -35,9 +35,14 @@ export default async function ConnectionsPage({ searchParams }: { searchParams: 
         section="connections"
         description={t("intro")}
         actions={
-          <ButtonLink variant="primary" icon="plus" href={NEW_CONNECTION}>
-            {t("overview.add")}
-          </ButtonLink>
+          <>
+            <ButtonLink href="/admin/connections/marketplace" icon="services">
+              {t("marketplace.open")}
+            </ButtonLink>
+            <ButtonLink variant="primary" icon="plus" href={NEW_CONNECTION}>
+              {t("overview.add")}
+            </ButtonLink>
+          </>
         }
       />
       {consent === "granted" ? (

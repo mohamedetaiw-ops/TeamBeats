@@ -34,3 +34,15 @@ The spec stays Approved, not Implemented. The R2 runtime, connection lifecycle, 
 | 1,000 queued jobs a minute | Met | `ConnectorPerformanceTests.A_thousand_queued_jobs_run_within_a_minute_in_batches` |
 | 20,000 directory users through the agent under 30 minutes | Met | `OnPremDirectorySyncTests.Twenty_thousand_users_sent_by_the_agent_are_applied_well_within_thirty_minutes` |
 | Cross-tenant and package denial | Met | Every pack test class above has a tenant and package case; `CrossTenantSuite` |
+
+## R3
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| INT-005 Oracle Fusion pack on supported APIs | Met | `ErpFinancePackTests.Oracle_Fusion_gets_a_payables_invoice_per_claim_and_its_status_is_read_until_paid`, `A_retry_after_a_timeout_finds_the_invoice_the_first_attempt_made` |
+| INT-006 SAP pack on supported APIs | Met | `ErpFinancePackTests.SAP_S4HANA_gets_a_supplier_invoice_with_a_CSRF_token_and_posted_reads_as_approved` |
+| ERP packs: settings, package and tenant boundary | Met | `ErpFinancePackTests.Settings_are_checked_and_the_package_and_tenant_boundary_hold` |
+| MCP server registration for agents | Met | Spec 027 R3 T022 (`McpToolTests`) |
+| Connector marketplace with package state and connection counts | Met | `ConnectorMarketplaceTests.The_marketplace_lists_each_pack_with_its_capability_package_state_and_the_tenants_connections`, `connector-marketplace.spec.ts` (en, ar, axe) |
+| Platform operator turns a pack off for all tenants | Met | `ConnectorMarketplaceTests.A_pack_the_platform_turns_off_cannot_be_added_and_its_connections_make_no_calls` |
+| KPI tiles on location dashboards | Met | Spec 021 R3 T022 (`KpiTileTests`); `IKpiFeed` readings now carry the source connection's name |

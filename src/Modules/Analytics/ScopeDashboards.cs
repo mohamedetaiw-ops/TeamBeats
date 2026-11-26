@@ -27,8 +27,9 @@ public sealed record ScopeList(IReadOnlyList<ScopeRef> Units, IReadOnlyList<Scop
 /// </summary>
 public sealed record ScopeTile(string Key, int? Value, int? Of, double? Rate, double? GroupRate, bool Enough);
 
+/// <summary>A scope's dashboard. <paramref name="Kpis"/> are the KPI tiles of a location (spec 021 R3), null for a unit or without <c>analytics.kpi_tiles</c>.</summary>
 public sealed record ScopeDashboardView(ScopeRef Scope, DateOnly From, DateOnly To, int MinGroupSize, int People, bool Enough, bool GroupShown,
-    IReadOnlyList<ScopeTile> Tiles);
+    IReadOnlyList<ScopeTile> Tiles, IReadOnlyList<KpiTileView>? Kpis = null);
 
 /// <summary>
 /// Location and unit dashboards (spec 021 US6, FR-010, T014): adoption, communications reach, policy compliance, open
@@ -40,7 +41,7 @@ public sealed record ScopeDashboardView(ScopeRef Scope, DateOnly From, DateOnly 
 /// </summary>
 public sealed class ScopeDashboards(IDbSession session, IEntitlementService entitlements, IAuthorizationService authz, ITenantContext context,
     AnalyticsPolicies policies, IOrganizationHierarchy organization, ITenantMemberships memberships, IProfiles profiles, Pseudonyms pseudonyms,
-    IEnumerable<IAnalyticsScopeSource> sources, IClock clock)
+    IEnumerable<IAnalyticsScopeSource> sources, KpiTiles kpis, IClock clock)
 {
     public const int DefaultDays = 30;
     public const string Adoption = "adoption";
@@ -129,7 +130,9 @@ public sealed class ScopeDashboards(IDbSession session, IEntitlementService enti
         }
         var outside = people.Where(p => p.Location != location).ToList();
         var otherScopes = outside.Select(p => p.Location ?? "").Distinct(StringComparer.Ordinal).Count();
-        return await ViewAsync(new ScopeRef(ScopeKinds.Location, location, new Dictionary<string, string>()), inside, people, outside.Count, otherScopes, from, to, ct);
+        var view = await ViewAsync(new ScopeRef(ScopeKinds.Location, location, new Dictionary<string, string>()), inside, people, outside.Count, otherScopes, from, to, ct);
+        var until = new DateTimeOffset(view.To.AddDays(1).ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
+        return view with { Kpis = await kpis.ForLocationAsync(location, until, ct) };
     }
 
     private async Task<ScopeDashboardView> ViewAsync(ScopeRef scope, IReadOnlyList<Person> inside, IReadOnlyList<Person> everyone, int outside, int otherScopes,

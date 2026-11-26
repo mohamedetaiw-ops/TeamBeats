@@ -46,6 +46,9 @@ public sealed record FinanceSettings(
 public sealed partial class FinancePack(ITenantContext context, RestSignIn signIn, IHttpClientFactory httpClients) : IConnectorPack
 {
     public const string KindName = "finance_rest";
+
+    /// <summary>Every kind that implements the finance hand-off contract: this generic pack and the named ERP packs (spec 017 R3).</summary>
+    public static readonly string[] Kinds = [KindName, OracleFusionFinancePack.KindName, SapS4FinancePack.KindName];
     public const string Submit = "submit_expense";
     public const string Status = "get_payment_status";
     public const string InvalidRequest = "invalid_request";

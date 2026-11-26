@@ -9293,7 +9293,8 @@
       "weeksSummary": "Weekly active people over the last {weeks} weeks; {last} this week.",
       "unitsSummary": "Active people in {count} units this week.",
       "otherNote": "Units with fewer than {size} active people are counted together as Other.",
-      "estimatesLink": "Effort estimates for campaigns"
+      "estimatesLink": "Effort estimates for campaigns",
+      "kpiTilesLink": "KPI tiles for location dashboards"
     },
     "errors": {
       "title": "Frontend errors",
@@ -9602,8 +9603,15 @@
         "figure": "Figure",
         "value": "This scope",
         "rate": "Rate",
-        "group": "Whole organization"
-      }
+        "group": "Whole organization",
+        "source": "Source"
+      },
+      "kpisTitle": "Business figures",
+      "kpisEmpty": "No reading yet",
+      "kpiSource": "From {source}",
+      "kpiMeasured": "Measured {time}",
+      "kpiReceived": "Received {time}",
+      "kpiPeriod": "Period"
     },
     "experience": {
       "title": "Experience",
@@ -10308,6 +10316,28 @@
           }
         }
       }
+    },
+    "kpiTiles": {
+      "title": "KPI tiles",
+      "intro": "Business figures from connected systems shown on each location's dashboard, such as monthly sales or safety incidents. A connected system sends them through a KPI feed; each tile shows the latest value for the location with its source and when it was measured.",
+      "denied": "KPI tiles are not available",
+      "deniedHint": "Your package does not include KPI tiles, or you cannot see analytics for the whole organization.",
+      "none": "No KPI tiles yet. Add one for each metric your connected systems send.",
+      "tile": "Tile {number}",
+      "metric": "Metric",
+      "metricHint": "The metric name exactly as the KPI feed sends it, for example monthly_sales.",
+      "nameEn": "Name in English",
+      "nameAr": "Name in Arabic",
+      "permission": "Also needs permission",
+      "permissionHint": "People without this permission do not see the tile. Leave it at none to show it to everyone who sees the dashboard.",
+      "noPermission": "None",
+      "remove": "Remove tile",
+      "add": "Add a tile",
+      "save": "Save KPI tiles",
+      "saving": "Saving",
+      "saved": "KPI tiles saved.",
+      "failed": "The KPI tiles could not be saved. Try again.",
+      "readOnly": "You can see the KPI tiles but not change them."
     }
   },
   "design_system": {
@@ -10496,6 +10526,8 @@
       "sms": "SMS gateway",
       "clock_import": "Clock data import",
       "finance_rest": "Finance hand-off",
+      "finance_oracle_fusion": "Oracle Fusion finance",
+      "finance_sap_s4": "SAP S/4HANA finance",
       "google_workspace": "Google Workspace",
       "hr_rest": "HR system (REST API)",
       "hr_sftp": "HR system (SFTP and CSV)",
@@ -10527,6 +10559,8 @@
       "sms": "Sends mandatory notifications as text messages to people who have no work email and no app, to the mobile number in the directory.",
       "clock_import": "Reads clock data files from an SFTP server every day, or takes CSV files you upload, and matches each row to a person by employee number.",
       "finance_rest": "Sends approved expense claims to your finance system over REST and reads back their payment status.",
+      "finance_oracle_fusion": "Sends approved expense claims to Oracle Fusion Payables as supplier invoices and reads back whether they are approved and paid.",
+      "finance_sap_s4": "Sends approved expense claims to SAP S/4HANA as supplier invoices and reads back whether they are parked or posted.",
       "google_workspace": "Reads users and groups for directory sync, and files in chosen shared drives, through a service account with domain-wide delegation.",
       "hr_rest": "Reads the full employee list from an HR system's REST API every night.",
       "hr_sftp": "Reads the newest full employee export that an HR system drops on an SFTP server every night.",
@@ -10695,6 +10729,7 @@
       "connection_disabled": "The connection is off",
       "connection_missing": "The connection no longer exists",
       "not_in_package": "Not included in your package",
+      "pack_unavailable": "The platform does not offer this connector at the moment",
       "unknown_action": "The action does not exist",
       "outcome_unknown": "It is not known whether the system acted",
       "unexpected": "Unexpected error",
@@ -11499,6 +11534,70 @@
         "completed_at": "Completion time",
         "score": "Score in percent"
       }
+    },
+    "erpFinance": {
+      "accountsTitle": "Accounts",
+      "defaultAccount": "Default account",
+      "category": "Expense category",
+      "categoryHint": "The category key as it appears on expense lines, for example travel.",
+      "account": "Account",
+      "addAccount": "Add a category account",
+      "removeAccount": "Remove",
+      "statusesTitle": "Payment status words (optional)",
+      "statuses": {
+        "submitted": "Words for submitted",
+        "approved": "Words for approved",
+        "paid": "Words for paid",
+        "rejected": "Words for rejected"
+      },
+      "wordsHint": "Values that mean this, separated by commas. Leave empty to use the standard values.",
+      "finance_oracle_fusion": {
+        "formLabel": "Oracle Fusion finance settings",
+        "addTitle": "Add Oracle Fusion finance",
+        "addIntro": "Send approved expense claims to Oracle Fusion Payables as supplier invoices for each employee's supplier record, and read back their approval and payment. Add your Oracle Cloud host to the allowlist and store the integration user's password or client secret in your secret manager.",
+        "valuesTitle": "Oracle values",
+        "businessUnit": "Business unit",
+        "businessUnitHint": "The Payables business unit that receives the invoices, as named in Oracle.",
+        "supplierSite": "Supplier site (optional)",
+        "supplierSiteHint": "The site of each employee's supplier record, if your suppliers have more than one.",
+        "invoiceGroup": "Invoice group (optional)",
+        "invoiceGroupHint": "A group to collect TeamBeats invoices in, for example TEAMBEATS.",
+        "accountsHint": "The distribution combination each line is charged to, for example 101.10.61100.000. Lines of other categories go to the default account.",
+        "statusesHint": "TeamBeats reads paid from the paid status, and approved or rejected from the approval status."
+      },
+      "finance_sap_s4": {
+        "formLabel": "SAP S/4HANA finance settings",
+        "addTitle": "Add SAP S/4HANA finance",
+        "addIntro": "Send approved expense claims to SAP S/4HANA as supplier invoices for each employee's supplier account, through the Supplier Invoice API. Add your SAP host to the allowlist and store the communication user's password or client secret in your secret manager.",
+        "valuesTitle": "SAP values",
+        "companyCode": "Company code",
+        "companyCodeHint": "The company code that receives the invoices, for example 1010.",
+        "client": "Client (optional)",
+        "clientHint": "The three digit SAP client, if your system needs it in each call.",
+        "taxCode": "Tax code (optional)",
+        "taxCodeHint": "The tax code put on each line, if your claims carry tax.",
+        "accountsHint": "The G/L account each line is posted to, digits only. Lines of other categories go to the default account.",
+        "statusesHint": "SAP reports whether an invoice is parked or posted, not whether it is paid. Posted counts as approved unless you map its value differently."
+      }
+    },
+    "marketplace": {
+      "open": "Marketplace",
+      "title": "Connector marketplace",
+      "intro": "Every connector TeamBeats offers, with what your package includes and how many connections you have of each. Add one to set it up.",
+      "back": "Back to connections",
+      "search": "Search connectors",
+      "type": "Connector",
+      "state": "Availability",
+      "inPackage": "In your package",
+      "notInPackage": "Needs another package",
+      "unavailable": "Not offered at the moment",
+      "actions": "Actions",
+      "noActions": "No actions",
+      "actionCount": "{count, plural, one {# action} other {# actions}}: {reads} read, {writes} write",
+      "version": "Version",
+      "connections": "Your connections",
+      "add": "Add",
+      "addNamed": "Add {name}"
     }
   },
   "components_gallery": {
