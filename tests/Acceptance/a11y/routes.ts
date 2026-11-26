@@ -248,6 +248,7 @@ export const routes: readonly Route[] = [
   { path: "/people", tier: "primary" },
   { path: "/people/[id]", tier: "detail" },
   { path: "/people/me", tier: "other" },
+  { path: "/people/experts", tier: "detail" },
   { path: "/people/team", tier: "other" },
   { path: "/policies", tier: "primary" },
   { path: "/policies/[id]", tier: "detail" },

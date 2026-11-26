@@ -52,6 +52,7 @@ public sealed class WorkerProgram
         builder.Services.AddHostedService<TeamBeats.Modules.Documents.DocumentMaintenanceWorker>();
         builder.Services.AddHostedService<TeamBeats.Modules.Policies.PolicyMaintenanceWorker>();
         builder.Services.AddHostedService<TeamBeats.Modules.Learning.LearningMaintenanceWorker>();
+        builder.Services.AddHostedService<TeamBeats.Modules.People.PeopleMaintenanceWorker>();
         builder.Services.AddHostedService<TeamBeats.Modules.Spaces.SpacesMaintenanceWorker>();
         builder.Services.AddHostedService<TeamBeats.Modules.Booking.BookingMaintenanceWorker>();
         builder.Services.AddHostedService<TeamBeats.Modules.AiGateway.UsageRetentionWorker>();

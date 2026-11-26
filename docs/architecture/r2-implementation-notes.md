@@ -2485,3 +2485,12 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - `photo_source` says where the photo came from (People migration 0005). An own upload always wins. A directory photo the person, their manager or HR removed keeps its tag, so it does not come back until the directory has a new one; after a person removes their own upload, their directory photo shows again at the next sync. A photo the directory no longer has goes. Directory photo changes publish `ProfileUpdated` with `photo`, and are not audited, like the other directory-owned values.
 - Connector pack directories (Google Workspace) have no photo reader yet, so their people keep initials until they upload one.
 
+
+## Skills, Find an expert, completeness, assistants and delegation (spec 010 R2, T013 to T016; US6, US8, PPL-018, PPL-019, PPL-028 to PPL-031)
+
+- Capability `people.skills` (Entitlements migration 0053), not in Workplace. People migration 0006 adds the tenant skill list with settings (versioned, If-Match `"s{version}"`), person skills with proficiency and endorsements; free text entries wait as suggestions until a people administrator merges them into a listed skill.
+- Endorsing sends the notification `people.skill.endorsed` in the recognition category; nobody endorses themselves, and a person can hide an endorsement from their profile. Find an expert ranks by proficiency then endorsement count and only returns people the viewer may see (the same visibility rule as search).
+- Turning skills off hides them everywhere at once; the hourly `PeopleMaintenanceWorker` deletes them 90 days later unless they are turned on again.
+- Completeness counts the fields the person may edit, the photo and, with skills on, at least one skill. Each missing item links to its place on the Me page; dismissing hides the prompt for 90 days (`completeness_dismissed_until`, People migration 0007).
+- Assistants: at most three per person, active people only, never the person themselves, set with `people.manage` at tenant scope and audited as `people.assistant_set`. Both profiles show the relationship.
+- Delegation comes from spec 016 through `IDelegations.ActiveForAsync` (Workflow contracts). The profile shows only the delegate and the last day, never which approvals are delegated.

@@ -147,6 +147,7 @@ export function OwnProfileForm({ initial }: { initial: OwnProfile }) {
 
   return (
     <form
+      id="own-profile"
       className="people-profile"
       aria-labelledby="own-profile-title"
       onSubmit={(e) => {
@@ -172,7 +173,7 @@ export function OwnProfileForm({ initial }: { initial: OwnProfile }) {
         <p className="people-meta">
           {joinMeta([person.unit ? localName(person.unit.names, locale) : null, person.location ? locationName(person.location, locale) : null])}
         </p>
-        <div className="people-photo-actions">
+        <div className="people-photo-actions" id="own-photo">
           <label className="button button-secondary" data-size="sm" aria-disabled={photoBusy || undefined}>
             <Icon name="upload" size={16} />
             <span>{photo ? t("me.photo.change") : t("me.photo.add")}</span>

@@ -184,6 +184,8 @@ public static class Capabilities
     public const string NotificationsSignage = "notifications.signage";
     public const string PeopleDirectory = "people.directory";
     public const string PeopleCustomFields = "people.custom_fields";
+    /// <summary>Spec 010 R2: skills, endorsements and Find an expert.</summary>
+    public const string PeopleSkills = "people.skills";
     public const string SecurityIpRules = "security.ip_rules";
     public const string SecurityIpRulesScoped = "security.ip_rules_scoped";
     public const string SecuritySessionPolicy = "security.session_policy";

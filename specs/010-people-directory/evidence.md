@@ -23,3 +23,15 @@ Photo upload (T007) and directory photos (T012) are done. The reporting line is 
 | PPL-017 search rate limit | Met | `people_search` limiter, 120 per minute per user |
 | PPL-022 last synced values kept | Met | Profiles keep stored values between syncs; the sync time shows on `/admin/people` |
 | Search p95 under 300 ms at 50,000 members | Met | `PeopleSearchPerformanceTests` (local run: p95 98 ms) |
+
+## R2
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| PPL-018 declared skills and endorsements | Met | `SkillTests.People_declare_skills_colleagues_endorse_them_and_experts_rank_by_proficiency` (endorsement notice, no self endorsement, hidden endorsements), `Free_text_skills_wait_as_suggestions_until_an_administrator_merges_them`; `people-skills.spec.ts` in English and Arabic with axe |
+| PPL-019 Find an expert within visibility | Met | `People_declare_skills_...` (ranking by proficiency then endorsements, hidden people left out, other tenant not found); `people-skills.spec.ts` |
+| PPL-028 profile completeness | Met | `ProfileRelationshipTests.The_own_profile_shows_what_is_missing_until_complete_or_dismissed`; `people-relations.spec.ts` |
+| PPL-029 assistants | Met | `ProfileRelationshipTests.Administrators_record_assistants_shown_on_both_profiles` (at most three, not self, unknown refused, audit, employee refused, other tenant); `people-relations.spec.ts` |
+| PPL-030 active delegation on the profile | Met | `ProfileRelationshipTests.An_active_delegation_shows_the_delegate_and_last_day_only`; `people-relations.spec.ts` |
+| PPL-031 skills off and purge | Met | `SkillTests.Skills_turned_off_are_hidden_and_deleted_after_90_days_and_Workplace_has_none` |
+| PPL-020, PPL-021 | Earlier slices | Out of office and HR owned fields are evidenced in specs 022 and 019 |

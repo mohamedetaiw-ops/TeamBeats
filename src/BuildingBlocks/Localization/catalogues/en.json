@@ -3149,5 +3149,22 @@
   "validation.engagement.teams_channel": "Enter the Teams channel ID. It starts with 19: and ends with @thread.tacv2.",
   "conflict.engagement.ai_anonymous_off": "AI is not allowed to read anonymous posts in your organization.",
   "conflict.engagement.summary_short": "This conversation is short enough to read. Summaries are for longer threads.",
-  "conflict.engagement.ai_setting_changed": "Someone else changed the AI setting. Reload it and try again."
+  "conflict.engagement.ai_setting_changed": "Someone else changed the AI setting. Reload it and try again.",
+  "notifications.template.people.skill.endorsed.title": "A colleague endorsed your skill",
+  "notifications.template.people.skill.endorsed.body": "Someone endorsed one of the skills on your profile. Open your profile to see it.",
+  "conflict.people.skills_off": "Skills are turned off for your organization.",
+  "conflict.people.skills_changed": "Someone changed the skill list. Reload and try again.",
+  "conflict.people.endorse_self": "You cannot endorse your own skills.",
+  "validation.people.skill_name": "Give the skill a name.",
+  "validation.people.skill_name_length": "A skill name can have at most 80 characters.",
+  "validation.people.skill_count": "The skill list can have at most 300 skills.",
+  "validation.people.skill_duplicate": "Two skills have the same name.",
+  "validation.people.skill_merge": "Choose another skill to merge into.",
+  "validation.people.skills_per_person": "You can add at most 30 skills.",
+  "validation.people.proficiency": "Choose basic, good or expert.",
+  "validation.people.skill_unknown": "Choose a skill from the list.",
+  "validation.people.skill_free_text": "Your organization only allows skills from its list.",
+  "validation.people.assistants_count": "A person can have at most three assistants.",
+  "validation.people.assistant_self": "Nobody can be their own assistant.",
+  "validation.people.assistant_unknown": "Choose active people as assistants."
 }

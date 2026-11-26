@@ -4,6 +4,9 @@ import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
 import { isPhoneField, photoAt, localName, locationName, personName, type OrgChart, type PersonView } from "@/lib/people/types";
 import type { RecognitionView } from "@/lib/engagement";
+import type { PersonSkillsView } from "@/lib/people/skills";
+import { PersonSkills } from "@/features/people/Skills";
+import { Relationships } from "@/features/people/Relationships";
 import { Header } from "@/components/shell/Header";
 import { RecognitionCard } from "@/features/engagement/RecognitionWall";
 import { OrgChartView } from "@/features/people/OrgChartView";
@@ -16,7 +19,7 @@ import { PresenceStatus } from "@/features/people/PresenceStatus";
 
 /**
  * A person's profile (spec 010 US1 and US3): the fields the viewer may see, contact actions built only from those
- * fields (FR-015), the manager, and the org chart. A person who left shows as no longer available (410).
+ * fields (FR-015), the manager, skills with endorsements (R2 US6), and the org chart. A person who left shows as no longer available (410).
  */
 export default async function PersonPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -46,9 +49,10 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
     );
   }
   const p = person.data;
-  const [chart, recognitions] = await Promise.all([
+  const [chart, recognitions, skills] = await Promise.all([
     apiGet<OrgChart>(`/api/v1/people/${encodeURIComponent(id)}/org-chart`),
     apiGet<RecognitionView[]>(`/api/v1/engagement/people/${encodeURIComponent(id)}/recognitions`),
+    apiGet<PersonSkillsView>(`/api/v1/people/${encodeURIComponent(id)}/skills`),
   ]);
 
   const name = personName(p, locale);
@@ -126,8 +130,23 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
             <dd>{p.manager ? <PersonItem person={p.manager} locale={locale} /> : t("profile.noManager")}</dd>
             <dt>{t("org.reports")}</dt>
             <dd>{t("profile.reports", { count: p.directReports })}</dd>
+            {p.delegation ? (
+              <>
+                <dt>{t("relations.delegation")}</dt>
+                <dd data-testid="person-delegation">
+                  <PersonItem person={p.delegation.delegate} locale={locale} />
+                  <span className="people-meta">
+                    {t("relations.until", { date: format.dateTime(new Date(`${p.delegation.until}T00:00:00Z`), { dateStyle: "medium", timeZone: "UTC" }) })}
+                  </span>
+                </dd>
+              </>
+            ) : null}
           </dl>
         </Widget>
+
+        {skills.ok ? <PersonSkills personId={p.id} initial={skills.data} /> : null}
+
+        <Relationships person={p} />
 
         {recognitions.ok && recognitions.data.length > 0 ? (
           <Widget title={t("profile.recognition")}>

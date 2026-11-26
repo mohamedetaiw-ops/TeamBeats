@@ -2,22 +2,28 @@ import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
 import type { OwnProfile } from "@/lib/people/types";
+import type { OwnSkillsView } from "@/lib/people/skills";
+import { OwnSkillsEditor } from "@/features/people/Skills";
+import { CompletenessPrompt } from "@/features/people/Completeness";
+import { localName } from "@/lib/people/types";
+import { getLocale } from "next-intl/server";
 import { Header } from "@/components/shell/Header";
 import { OwnProfileForm } from "@/features/people/OwnProfileForm";
 import { PeopleNav } from "@/features/people/PeopleNav";
 import { PageHeader } from "@/components/ui/PageHeader";
 
-/** The signed-in person's own profile settings (spec 010 US1). */
+/** The signed-in person's own profile settings (spec 010 US1) and skills (R2 US6). */
 export default async function OwnProfilePage() {
   const me = await apiGet<Me>("/api/v1/me");
   if (!me.ok) {
     redirect("/signin");
   }
-  const own = await apiGet<OwnProfile>("/api/v1/me/profile");
+  const [own, skills] = await Promise.all([apiGet<OwnProfile>("/api/v1/me/profile"), apiGet<OwnSkillsView>("/api/v1/me/skills")]);
   if (!own.ok) {
     notFound();
   }
   const t = await getTranslations("people");
+  const locale = await getLocale();
   return (
     <>
       <Header
@@ -29,7 +35,14 @@ export default async function OwnProfilePage() {
       />
       <main id="main" className="page people">
         <PageHeader title={t("me.title")} description={t("me.intro")} icon="people" nav={<PeopleNav current="me" />} />
+        {own.data.completeness ? (
+          <CompletenessPrompt
+            initial={own.data.completeness}
+            fieldLabel={Object.fromEntries(own.data.fields.map((f) => [f.key, f.names ? localName(f.names, locale, f.key) : t(`field.${f.key}` as "field.email")]))}
+          />
+        ) : null}
         <OwnProfileForm initial={own.data} />
+        {skills.ok ? <OwnSkillsEditor initial={skills.data} /> : null}
       </main>
     </>
   );

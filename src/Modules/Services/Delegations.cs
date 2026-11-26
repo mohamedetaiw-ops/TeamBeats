@@ -43,6 +43,23 @@ public sealed class Delegations(IDbSession session, ITenantContext context, IEnt
         return active;
     }
 
+    public async Task<ActiveDelegation?> ActiveForAsync(Guid userId, CancellationToken ct = default)
+    {
+        if (!await entitlements.IsEnabledAsync(Capabilities.WorkflowCatalogue, ct))
+        {
+            return null;
+        }
+        var row = await session.QuerySingleOrDefaultAsync(
+            "select delegate_user_id, starts_on, ends_on from services.delegation where user_id = @userId", new { userId },
+            r => (Delegate: r.GetGuid(0), Starts: r.GetFieldValue<DateOnly>(1), Ends: r.GetFieldValue<DateOnly>(2)), ct);
+        if (row.Delegate == Guid.Empty)
+        {
+            return null;
+        }
+        var today = (await calendars.ForUserAsync(userId, ct)).Today(clock.UtcNow);
+        return row.Starts <= today && today <= row.Ends ? new ActiveDelegation(row.Delegate, row.Ends) : null;
+    }
+
     public async Task<DelegationView?> MineAsync(CancellationToken ct)
     {
         await entitlements.DemandAsync(Capabilities.WorkflowCatalogue, ct);
