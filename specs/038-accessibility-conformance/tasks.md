@@ -33,5 +33,5 @@ Depends on 007 (baseline), 008 (shell and preferences), 032 (page builder), 033 
 
 ## R3
 - [ ] T018 External assistive technology audit and report update (A11Y-024)
-- [ ] T019 Tagged PDF output for letters and reports
+- [x] T019 Tagged PDF output for letters and reports
 - [ ] T020 Accessibility matrix in Firefox and WebKit

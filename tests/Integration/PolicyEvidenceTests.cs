@@ -142,6 +142,8 @@ public sealed class PolicyEvidenceTests(TenantWorld world)
         var pdf = await TextAsync(t["co"].Client, $"{Packs}/{id}/pdf");
         Assert.StartsWith("%PDF", pdf, StringComparison.Ordinal);
         Assert.Contains("Policy evidence pack", pdf, StringComparison.Ordinal);
+        Assert.StartsWith("%PDF-1.7 html tagged", pdf, StringComparison.Ordinal);
+        Assert.Contains("<title>Policy evidence pack</title>", pdf, StringComparison.Ordinal);
         Assert.Contains("Linked controls", pdf, StringComparison.Ordinal);
         await world.Database.AssertAuditedAsync(t.Id, AuditActions.PolicyEvidenceDownloaded, id.ToString());
         Assert.Single((await OkAsync(t["co"].Client.GetAsync(Packs))).EnumerateArray());

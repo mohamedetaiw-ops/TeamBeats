@@ -100,5 +100,5 @@ Moderate and minor findings from the gate, and gaps from manual review, with the
 |---|---|---|
 | Uploaded video previews have no caption track unless the uploader provides captions | 1.2.2 | Listed as a limitation in the statement |
 | Three detail routes (an agent security alert, an evaluation review item and an agent approval) have no record an end-to-end suite can build; they share their parts with checked pages and are listed with a review date in `a11y/exclusions.ts` (`unseededRoutes`). The other 32 suite-built detail routes are checked in their matrix design, mode and width by `expectDetailConformant` | all | T022 follow-up |
-| Generated PDFs are not tagged | 1.3.1, 4.1.2 for documents | T019 (R3) |
+| The PDF rendition of a brand image is the picture on a page with no text alternative of its own; the image's description lives with the asset. Letters, certificates, disposition certificates and evidence packs are tagged PDFs with their language, title and outline since T019 | 1.1.1 for documents | Listed as a limitation in the statement |
 | No external assistive technology audit yet | all | T018 (R3) |

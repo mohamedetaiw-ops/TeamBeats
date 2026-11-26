@@ -184,7 +184,7 @@ Not applicable: no tenant state changes.
 ## 17. Open questions
 1. Defaulted 2026-11-18: phone width for the axe matrix is 390 CSS pixels (the phone the design suite uses); the 320 pixel reflow check runs separately (A11Y-012). Change only if a buyer names a device.
 2. Defaulted 2026-11-18: the external audit is planned for R3; R2 ships with internal keyboard and screen reader checks, and the report says so.
-3. Defaulted 2026-11-18: generated PDFs (letters, reports) become tagged PDFs in R3; until then the report lists them as Partially supports.
+3. Defaulted 2026-11-18: generated PDFs (letters, reports) become tagged PDFs in R3. Built in R3 (T019): letters, learning certificates, disposition certificates and policy evidence packs print as tagged PDFs with an outline, their language and direction and a title.
 
 ## 18. Traceability
 
