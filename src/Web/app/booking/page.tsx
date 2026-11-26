@@ -45,7 +45,7 @@ export default async function BookingPage({ searchParams }: { searchParams: Prom
           }
         />
         {rights.ok && rights.data.book && sites.ok ? (
-          <FindSpace sites={sites.data} kinds={rights.data.kinds} initial={{ site: query.site, kind: query.kind, zone: query.zone, date: tomorrow }} />
+          <FindSpace sites={sites.data} kinds={rights.data.kinds} initial={{ site: query.site, kind: query.kind, zone: query.zone, date: tomorrow }} floorPlans={rights.data.floorPlans} />
         ) : (
           <StateView kind={sites.ok || sites.status === 403 ? "unsupported" : "error"} title={t("unavailableTitle")} message={t("unavailable")} />
         )}

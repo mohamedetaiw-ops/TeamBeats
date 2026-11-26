@@ -15,6 +15,7 @@ import { PersonPicker } from "@/features/services/PersonPicker";
 import {
   bookingApi,
   call,
+  floorPlanEditorHref,
   kioskHref,
   manageSiteHref,
   pick,
@@ -103,7 +104,7 @@ const kinds: ResourceKind[] = ["room", "desk", "parking", "equipment"];
  * One site for its facilities administrators (spec 031 US1): floors and zones, resources of each kind in the plan,
  * the rule of a resource, removal (holders of future bookings are told), and the QR labels to print.
  */
-export function SiteAdmin({ initial, inPlan }: { initial: SiteDetail; inPlan: ResourceKind[] }) {
+export function SiteAdmin({ initial, inPlan, floorPlans = false }: { initial: SiteDetail; inPlan: ResourceKind[]; floorPlans?: boolean }) {
   const t = useTranslations("booking.manage");
   const tk = useTranslations("booking.kinds");
   const locale = useLocale();
@@ -223,6 +224,12 @@ export function SiteAdmin({ initial, inPlan }: { initial: SiteDetail; inPlan: Re
             <li key={f.id}>
               <bdi>{pick(f.names, locale)}</bdi>
               {f.zones.length > 0 ? <span className="booking-meta"> {f.zones.map((z) => pick(z.names, locale)).join(", ")}</span> : null}
+              {floorPlans ? (
+                <>
+                  {" "}
+                  <Link href={floorPlanEditorHref(f.id)}>{t("floorPlan", { floor: pick(f.names, locale) })}</Link>
+                </>
+              ) : null}
             </li>
           ))}
         </ul>

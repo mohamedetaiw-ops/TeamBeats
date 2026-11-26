@@ -12,6 +12,11 @@ export const siteLabelsHref = (id: string) => `/booking/manage/sites/${id}/label
 export const calendarFileHref = (id: string) => `${bookingApi}/bookings/${id}/calendar.ics`;
 export const scanHref = (code: string) => `/booking/scan/${code}`;
 export const kioskHref = (siteId: string) => `/booking/kiosk/${siteId}`;
+export const floorMapHref = (floorId: string, query?: { date?: string; start?: string; end?: string }) => {
+  const q = new URLSearchParams(Object.entries(query ?? {}).filter(([, v]) => !!v) as [string, string][]).toString();
+  return `/booking/floors/${floorId}${q ? `?${q}` : ""}`;
+};
+export const floorPlanEditorHref = (floorId: string) => `/booking/manage/floors/${floorId}`;
 export const qrImageHref = (resourceId: string) => `${bookingApi}/manage/resources/${resourceId}/qr.svg`;
 
 export type ResourceKind = "room" | "desk" | "parking" | "equipment";
@@ -21,7 +26,7 @@ export type Names = Record<string, string>;
 /** The name in the viewer's language, else English, else any. */
 export const pick = (names: Names | null | undefined, locale: string) => (names ? (names[locale] ?? names.en ?? Object.values(names)[0] ?? "") : "");
 
-export type BookingRights = { book: boolean; manage: boolean; report: boolean; kinds: ResourceKind[] };
+export type BookingRights = { book: boolean; manage: boolean; report: boolean; kinds: ResourceKind[]; floorPlans: boolean; visitors: boolean };
 
 export type SiteView = {
   id: string;
@@ -62,7 +67,7 @@ export type SiteDetail = { site: SiteView; floors: FloorView[]; resources: Resou
 
 export type QrLabel = { resourceId: string; kind: ResourceKind; names: Names; floor: Names | null; zone: Names | null; code: string; link: string };
 
-export type SearchHit = { id: string; kind: ResourceKind; names: Names; capacity: number | null; attributes: string[]; floor: Names | null; zone: Names | null; needsApproval: boolean };
+export type SearchHit = { id: string; kind: ResourceKind; names: Names; capacity: number | null; attributes: string[]; floor: Names | null; zone: Names | null; needsApproval: boolean; floorId: string | null };
 export type SearchResult = { siteId: string; timeZone: string; startsAt: string; endsAt: string; resources: SearchHit[] };
 
 export type BookingStatus = "tentative" | "confirmed" | "checked_in" | "released" | "cancelled" | "rejected" | "expired";
@@ -228,3 +233,12 @@ export function minutesOnDay(iso: string, date: string, timeZone: string): numbe
 
 /** "HH:mm" for minutes after midnight. */
 export const clock = (minutes: number) => `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+
+/** Floor plan maps (spec 031 R3 US7). X and Y are percentages of the image; states come from the API. */
+export type PlaceState = "free" | "busy" | "unavailable";
+export type FloorPlanImage = { version: number; contentType: string; width: number; height: number; url: string };
+export type PlacedResource = {
+  id: string; kind: ResourceKind; names: Names; capacity: number | null; attributes: string[]; zoneId: string | null; zone: Names | null; x: number | null; y: number | null;
+  needsApproval: boolean; state: PlaceState;
+};
+export type FloorMapView = { floorId: string; siteId: string; names: Names; timeZone: string; startsAt: string; endsAt: string; plan: FloorPlanImage | null; resources: PlacedResource[]; manages: boolean };

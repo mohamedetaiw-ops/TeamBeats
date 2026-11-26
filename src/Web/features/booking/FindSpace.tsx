@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { Alert } from "@/components/ui/Alert";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
+import { Button, ButtonLink } from "@/components/ui/Button";
 import { FormField, SelectField } from "@/components/ui/FormField";
 import { StateView } from "@/components/ui/StateView";
 import { PersonPicker } from "@/features/services/PersonPicker";
@@ -14,6 +14,7 @@ import {
   bookingDetailHref,
   call,
   clock,
+  floorMapHref,
   minutesOnDay,
   otherZone,
   pick,
@@ -34,7 +35,7 @@ export type FindQuery = { site?: string; kind?: string; zone?: string; date: str
  * that are free and that the viewer may book. Booking confirms at once; a repeat books a daily or weekly series and lists
  * the days left out. Every rule is checked by the API; this page only shows what it says.
  */
-export function FindSpace({ sites, kinds, initial }: { sites: SiteView[]; kinds: ResourceKind[]; initial: FindQuery }) {
+export function FindSpace({ sites, kinds, initial, floorPlans = false }: { sites: SiteView[]; kinds: ResourceKind[]; initial: FindQuery; floorPlans?: boolean }) {
   const t = useTranslations("booking.find");
   const tk = useTranslations("booking.kinds");
   const locale = useLocale();
@@ -201,6 +202,11 @@ export function FindSpace({ sites, kinds, initial }: { sites: SiteView[]; kinds:
                   <Button size="sm" variant="quiet" icon="clock" aria-expanded={dayOf === r.id} onClick={() => setDayOf((x) => (x === r.id ? null : r.id))}>
                     {t("grid.show")}
                   </Button>
+                  {floorPlans && r.floorId ? (
+                    <ButtonLink size="sm" variant="quiet" icon="building" href={floorMapHref(r.floorId, { date, start, end })}>
+                      {t("onPlan", { name: pick(r.names, locale) })}
+                    </ButtonLink>
+                  ) : null}
                 </div>
                 {dayOf === r.id ? (
                   <DayGrid resourceId={r.id} name={pick(r.names, locale)} date={date} slot={30}

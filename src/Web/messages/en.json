@@ -12489,6 +12489,16 @@
       "rowAccess": "Access to the finance workspace",
       "rowTraining": "Safety training booking",
       "failed": "This part of the page could not be shown"
+    },
+    "plan": {
+      "title": "Plan map",
+      "intro": "A floor plan with pins. Each pin is a button with its name and state, shapes differ by state, and a list next to it offers the same actions.",
+      "label": "Sample floor",
+      "alt": "Sample floor plan with three rooms and an open area",
+      "d1": "Desk 1, free",
+      "d2": "Desk 2, taken",
+      "d3": "Desk 3, not bookable",
+      "r1": "Meeting room, free"
     }
   },
   "patterns_gallery": {
@@ -16258,7 +16268,8 @@
         "takenBy": "{start} to {end}, booked by {name}",
         "closed": "The site is closed that day.",
         "failed": "The day could not be loaded."
-      }
+      },
+      "onPlan": "{name} on the floor plan"
     },
     "mine": {
       "pageTitle": "My bookings",
@@ -16377,7 +16388,8 @@
       "approval": "Needs approval",
       "approvalHint": "Bookings are held until an approver or a facilities administrator of the site approves them.",
       "approver": "Approver",
-      "qrAlt": "QR code to check in to {name}"
+      "qrAlt": "QR code to check in to {name}",
+      "floorPlan": "Plan of {floor}"
     },
     "checkIn": {
       "pageTitle": "Check in",
@@ -16455,6 +16467,74 @@
       "reopenQuestion": "Open the site again on {date}? Bookings cancelled for that day stay cancelled.",
       "reopenConfirm": "Open it",
       "keep": "Keep it closed"
+    },
+    "floor": {
+      "pageTitle": "Floor plan",
+      "pageIntro": "See what is free on this floor and book it from the plan or the list.",
+      "unavailableTitle": "This floor plan is not available",
+      "unavailable": "Floor plans are not part of your plan, or the floor could not be loaded.",
+      "failed": "That did not work",
+      "working": "Working",
+      "date": "Date",
+      "start": "From",
+      "end": "To",
+      "show": "Show",
+      "edit": "Edit plan",
+      "timeZone": "Times are in {zone}.",
+      "booked": "{name} is booked",
+      "openBooking": "Open the booking",
+      "mapTitle": "Plan",
+      "mapLabel": "Plan of {floor}",
+      "planAlt": "Floor plan of {floor}",
+      "legend": "Legend",
+      "state": {
+        "free": "Free",
+        "busy": "Taken",
+        "unavailable": "Not bookable"
+      },
+      "selected": "Selected: {name}",
+      "noPlanTitle": "No plan yet",
+      "noPlan": "A facilities administrator has not uploaded a plan for this floor. Use the list to book.",
+      "listTitle": "Places on this floor",
+      "emptyTitle": "Nothing to book here",
+      "empty": "This floor has no resources you can see.",
+      "seats": "{count, plural, one {# seat} other {# seats}}",
+      "notPlaced": "not on the plan",
+      "request": "Request {name}",
+      "book": "Book {name}",
+      "pin": "{name}, {state}"
+    },
+    "floorEditor": {
+      "pageTitle": "Edit floor plan",
+      "pageIntro": "Upload the plan image and place each resource where it is.",
+      "site": "Site",
+      "deniedTitle": "You cannot edit this floor plan",
+      "denied": "Only facilities administrators for this site edit its floor plans, and floor plans must be part of your plan.",
+      "failed": "That did not work",
+      "uploaded": "Plan uploaded.",
+      "removed": "Plan removed.",
+      "saved": "Places saved.",
+      "working": "Working",
+      "imageTitle": "Plan image",
+      "imageIntro": "Use a PNG, JPEG or WebP image of up to 5 MB.",
+      "file": "Image file",
+      "replace": "Replace plan",
+      "upload": "Upload plan",
+      "remove": "Remove plan",
+      "view": "View the floor",
+      "mapTitle": "Place resources",
+      "placeHint": "Click the plan to place {name}.",
+      "chooseHint": "Choose a resource, then click where it is on the plan.",
+      "mapLabel": "Plan of {floor}",
+      "planAlt": "Floor plan of {floor}",
+      "placesTitle": "Positions",
+      "noResourcesTitle": "No resources on this floor",
+      "noResources": "Add resources to this floor first.",
+      "x": "{name} across, in percent",
+      "y": "{name} down, in percent",
+      "save": "Save places",
+      "noPlanTitle": "No plan yet",
+      "noPlan": "Upload a plan image to place resources on it."
     }
   },
   "kiosk": {

@@ -23,6 +23,7 @@ import { WidgetBudgetGallery } from "./WidgetBudgetGallery";
 import { DataGallery } from "./DataGallery";
 import { CellsGallery } from "./CellsGallery";
 import { RecordsGallery } from "./RecordsGallery";
+import { PlanGallery } from "./PlanGallery";
 import { CalendarGallery } from "./CalendarGallery";
 import { InputsGallery } from "./InputsGallery";
 import { OverlaysGallery } from "./OverlaysGallery";
@@ -262,6 +263,7 @@ export function ComponentsGallery() {
       <WidgetBudgetGallery />
       <CellsGallery />
       <RecordsGallery />
+      <PlanGallery />
     </div>
   );
 }

@@ -25,7 +25,7 @@ Depends on 002, 015, 016, 018, 022, 030. R2, and R3 below (also 011 scanning and
 ## R3
 
 - [x] T011 [US7] Floor plan images and resource positions, availability map for a time, booking from the map; tests
-- [ ] T012 [US7] Floor plan page with its list alternative, and the plan editor for administrators; e2e
+- [x] T012 [US7] Floor plan page with its list alternative, and the plan editor for administrators; e2e
 - [ ] T013 [US8] Visits, visitor emails, reception check-in by code, host notice, 30 day purge; tests
 - [ ] T014 [US8] Visitors page for hosts and Reception page; e2e
 - [ ] T015 [US9] Occupancy connector pack and contract, sensor mapping, readings job, sensor check-in, sensed hours in reports; tests

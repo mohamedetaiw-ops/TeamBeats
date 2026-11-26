@@ -102,7 +102,8 @@ public static class CheckInMethods
 
 // ---- Views ----
 
-public sealed record BookingRights(bool Book, bool Manage, bool Report, IReadOnlyList<string> Kinds);
+/// <summary>What the viewer may do in booking. FloorPlans and Visitors say whether those R3 parts are in the plan.</summary>
+public sealed record BookingRights(bool Book, bool Manage, bool Report, IReadOnlyList<string> Kinds, bool FloorPlans = false, bool Visitors = false);
 
 public sealed record SiteView(Guid Id, IReadOnlyDictionary<string, string> Names, string? LocationKey, Guid? OrgUnitId, string TimeZone, TimeOnly OpensAt, TimeOnly ClosesAt,
     string Status, bool Manages, int Version);
@@ -145,7 +146,7 @@ public sealed record QrLabel(Guid ResourceId, string Kind, IReadOnlyDictionary<s
 
 /// <summary>A resource free for the asked time that the viewer may book (FR-004).</summary>
 public sealed record SearchHit(Guid Id, string Kind, IReadOnlyDictionary<string, string> Names, int? Capacity, IReadOnlyList<string> Attributes,
-    IReadOnlyDictionary<string, string>? Floor, IReadOnlyDictionary<string, string>? Zone, bool NeedsApproval);
+    IReadOnlyDictionary<string, string>? Floor, IReadOnlyDictionary<string, string>? Zone, bool NeedsApproval, Guid? FloorId = null);
 
 public sealed record SearchResult(Guid SiteId, string TimeZone, DateTimeOffset StartsAt, DateTimeOffset EndsAt, IReadOnlyList<SearchHit> Resources);
 

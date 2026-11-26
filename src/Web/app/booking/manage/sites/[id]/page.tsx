@@ -49,7 +49,7 @@ export default async function ManageSitePage({ params }: { params: Promise<{ id:
       />
       <main id="main" className="page">
         <PageHeader title={name} description={t("manage.siteIntro", { zone: detail.data.site.timeZone })} icon="building" />
-        <SiteAdmin initial={detail.data} inPlan={rights.ok ? rights.data.kinds : []} />
+        <SiteAdmin initial={detail.data} inPlan={rights.ok ? rights.data.kinds : []} floorPlans={rights.ok && rights.data.floorPlans} />
         {detail.data.site.status === "active" ? (
           <SiteClosures siteId={id} initial={closures.ok ? closures.data : []} today={siteToday(detail.data.site.timeZone)} />
         ) : null}
