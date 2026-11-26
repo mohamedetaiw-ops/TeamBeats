@@ -3171,5 +3171,6 @@
   "validation.learning.quiz_draft_count": "Ask for 1 to 20 questions.",
   "validation.learning.quiz_draft_lesson": "Choose a quiz lesson of this course.",
   "validation.learning.quiz_unreviewed": "Keep, edit or remove each AI drafted question before publishing.",
-  "learning.quiz_draft.lesson_title": "Check what you learned"
+  "learning.quiz_draft.lesson_title": "Check what you learned",
+  "validation.learning.skill_count": "Tag a course with at most 10 skills."
 }

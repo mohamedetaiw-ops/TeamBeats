@@ -505,8 +505,26 @@ public sealed class Skills(
         return await session.ExecAsync("delete from people.skill", null, ct);
     }
 
-    private static Dictionary<string, string> NamesOf(string json) =>
+    internal static Dictionary<string, string> NamesOf(string json) =>
         System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? new Dictionary<string, string>();
 
     private static string Json(object value) => System.Text.Json.JsonSerializer.Serialize(value);
 }
+
+/// <summary>The skills contract for other modules (spec 028 R3): active skills only, and null while skills are off.</summary>
+internal sealed class PersonSkills(Skills skills, IDbSession session) : TeamBeats.Modules.People.Contracts.IPersonSkills
+{
+    public async Task<IReadOnlyList<TeamBeats.Modules.People.Contracts.ListedSkill>?> ListedAsync(CancellationToken ct = default) =>
+        await skills.OnAsync(ct)
+            ? (await session.QueryAsync("select id, names::text from people.skill where status = 'active' order by search, id", null,
+                r => new TeamBeats.Modules.People.Contracts.ListedSkill(r.GetGuid(0), Skills.NamesOf(r.GetString(1))), ct)).ToList()
+            : null;
+
+    public async Task<IReadOnlyList<TeamBeats.Modules.People.Contracts.DeclaredSkill>?> DeclaredAsync(Guid userId, CancellationToken ct = default) =>
+        await skills.OnAsync(ct)
+            ? (await session.QueryAsync(
+                "select ps.skill_id, ps.proficiency from people.person_skill ps join people.skill s on s.id = ps.skill_id where ps.user_id = @userId and s.status = 'active'",
+                new { userId }, r => new TeamBeats.Modules.People.Contracts.DeclaredSkill(r.GetGuid(0), r.GetString(1)), ct)).ToList()
+            : null;
+}
+

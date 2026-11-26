@@ -139,7 +139,13 @@ export type CourseDetail = {
   updatedAt: string;
   externalId?: string | null;
   launchUrl?: string | null;
+  /** Skills from the spec 010 list the course is tagged with (spec 028 R3 US9). */
+  skills?: string[] | null;
 };
+
+/** A course recommended for skills the learner declared below expert (spec 028 R3 US9). */
+export type RecommendedCourse = { id: string; titles: Texts; summaries: Texts; category: string | null; minutes: number | null; skills: { id: string; names: Texts }[] };
+export type RecommendationsView = { available: boolean; items: RecommendedCourse[] };
 
 export type CourseSummary = {
   id: string;

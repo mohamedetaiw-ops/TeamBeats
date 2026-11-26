@@ -15306,6 +15306,10 @@
         "mark": "AI draft",
         "markHint": "Check the question and its answers.",
         "keep": "Keep"
+      },
+      "skills": {
+        "title": "Skills",
+        "hint": "People who declared these skills below expert see the course among their recommendations. Up to 10."
       }
     },
     "pathBuilder": {
@@ -15473,6 +15477,13 @@
       "never": "never",
       "syncNow": "Sync now",
       "failed": "The sync did not run."
+    },
+    "recommended": {
+      "title": "Recommended for your skills",
+      "hint": "Open courses for skills you added to your profile.",
+      "dismiss": "Not for me",
+      "dismissCourse": "Not for me: {title}",
+      "failed": "That did not work. Try again."
     }
   },
   "spaces": {

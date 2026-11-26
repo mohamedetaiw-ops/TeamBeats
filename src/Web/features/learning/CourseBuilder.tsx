@@ -125,7 +125,23 @@ function CourseForm({ initial, locales, packages }: { initial: CourseDetail; loc
   const [messages, setMessages] = useState<string[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
+  const [skillChoices, setSkillChoices] = useState<{ id: string; names: Texts }[] | null>(null);
+  const [skills, setSkills] = useState<string[]>(initial.skills ?? []);
   const readOnly = detail.status === "retired";
+
+  // Skill tags (spec 028 R3 US9) are offered only while the skill list is available and on; the API checks them again.
+  useEffect(() => {
+    let live = true;
+    void fetch("/api/v1/people/skills", { headers: { accept: "application/json" } })
+      .then(async (r) => (r.ok ? ((await r.json()) as { available: boolean; enabled: boolean; skills: { id: string; names: Texts; status: string }[] }) : null))
+      .then((list) => {
+        if (live && list?.available && list.enabled) setSkillChoices(list.skills.filter((s) => s.status === "active"));
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, []);
   // A course from the LMS keeps its titles and lessons from there; who sees it is decided here.
   const fromLms = detail.externalId != null;
 
@@ -149,6 +165,8 @@ function CourseForm({ initial, locales, packages }: { initial: CourseDetail; loc
       category: category.trim() || null,
       audience: audience(),
       openEnrolment,
+      // Without the list the API keeps the tags as they are.
+      skills: skillChoices ? skills : null,
       definition: {
         titles: only(titles, langs),
         summaries: only(summaries, langs),
@@ -185,6 +203,7 @@ function CourseForm({ initial, locales, packages }: { initial: CourseDetail; loc
     setLessons(editable(next));
     setTitles(next.draft.titles);
     setSummaries(next.draft.summaries);
+    setSkills(next.skills ?? []);
     setDirty(false);
   }
 
@@ -372,6 +391,25 @@ function CourseForm({ initial, locales, packages }: { initial: CourseDetail; loc
         <Checkbox name="course-subtree" label={t("subtree")} checked={subtree} onChange={(e) => change(setSubtree)(e.target.checked)} />
         <p className="learning-meta">{audienceUnits.length === 0 ? t("everyone") : t("targeted", { count: audienceUnits.length })}</p>
       </fieldset>
+
+      {skillChoices && skillChoices.length > 0 ? (
+        <fieldset className="learning-section" disabled={readOnly}>
+          <legend>{t("skills.title")}</legend>
+          <p className="learning-meta">{t("skills.hint")}</p>
+          <div className="learning-row">
+            {skillChoices.map((s) => (
+              <Checkbox
+                key={s.id}
+                name="course-skill"
+                label={<bdi>{localText(s.names, locale)}</bdi>}
+                checked={skills.includes(s.id)}
+                disabled={!skills.includes(s.id) && skills.length >= 10}
+                onChange={(e) => change(setSkills)(toggle(skills, s.id, e.target.checked))}
+              />
+            ))}
+          </div>
+        </fieldset>
+      ) : null}
 
       {fromLms ? null : (
       <fieldset className="learning-section" disabled={readOnly}>

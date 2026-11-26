@@ -128,7 +128,7 @@ public sealed class Player(
         r.Get<DateOnly?>("due_on"), r.GetInt32(6), r.Get<string>("last_lesson_key"), r.Get<DateTimeOffset?>("started_at"), r.Get<DateTimeOffset?>("completed_at"),
         r.Get<int?>("completed_version"), r.GetFieldValue<DateTimeOffset>(11));
 
-    private async Task<Guid> RequireLearnerAsync(CancellationToken ct)
+    internal async Task<Guid> RequireLearnerAsync(CancellationToken ct)
     {
         await entitlements.DemandAsync(Capabilities.LearningCourses, ct);
         var user = context.RequireUser();

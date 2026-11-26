@@ -30,6 +30,7 @@ public static class LearningModule
         services.AddScoped<Packages>();
         services.AddScoped<PackageRuntime>();
         services.AddScoped<QuizDrafts>();
+        services.AddScoped<Recommendations>();
         services.AddScoped<Contracts.ILearningObligations>(sp => sp.GetRequiredService<LearningObligations>());
         services.AddMessageHandler<Tenancy.Contracts.OrganizationMembershipChanged, AssignmentRules>("learning.rule_membership");
         services.AddMessageHandler<Tenancy.Contracts.TenantMembershipDisabled, AssignmentRules>("learning.rule_disabled");
@@ -197,6 +198,15 @@ public static class LearningModule
         // ---- Learning ----
 
         root.MapGet("/me", async (Player player, CancellationToken ct) => Results.Ok(await player.MineAsync(ct)));
+
+        root.MapGet("/recommendations", async (Recommendations recommendations, CancellationToken ct) => Results.Ok(await recommendations.ListAsync(ct)));
+
+        root.MapPost("/recommendations/{courseId:guid}:dismiss", async (Guid courseId, Recommendations recommendations, IDbSession session, CancellationToken ct) =>
+        {
+            await recommendations.DismissAsync(courseId, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
 
         root.MapGet("/catalogue", async (string? q, Player player, CancellationToken ct) => Results.Ok(await player.CatalogueAsync(q, ct)));
 

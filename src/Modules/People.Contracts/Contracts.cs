@@ -81,3 +81,23 @@ public interface ICelebrationDates
     /// <summary>People whose hire date falls on one of the given month and day pairs (the caller works out the years).</summary>
     Task<IReadOnlyList<WorkDate>> HireDatesOnAsync(IReadOnlyCollection<(int Month, int Day)> days, CancellationToken ct = default);
 }
+
+/// <summary>A skill on the tenant's list, with its name per locale.</summary>
+public sealed record ListedSkill(Guid Id, IReadOnlyDictionary<string, string> Names);
+
+/// <summary>A skill a person declared, with the proficiency (basic, good or expert).</summary>
+public sealed record DeclaredSkill(Guid SkillId, string Proficiency);
+
+/// <summary>
+/// Skills for other modules (spec 028 R3 FR-024, FR-025: courses tagged with skills and recommended by them). Each call
+/// answers null while the package has no <c>people.skills</c> or the tenant has skills off, so nothing shows. Tenant
+/// comes from context.
+/// </summary>
+public interface IPersonSkills
+{
+    /// <summary>The tenant's active skills.</summary>
+    Task<IReadOnlyList<ListedSkill>?> ListedAsync(CancellationToken ct = default);
+
+    /// <summary>The active skills a person declared.</summary>
+    Task<IReadOnlyList<DeclaredSkill>?> DeclaredAsync(Guid userId, CancellationToken ct = default);
+}

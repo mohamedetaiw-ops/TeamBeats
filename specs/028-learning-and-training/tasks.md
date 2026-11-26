@@ -32,7 +32,7 @@ Depends on 010 (skills), 013 (AI Gateway), 015. R3 covers User Stories 8 to 10 a
 - [x] T013 [US8] Quiz drafts through the AI Gateway, AI draft mark, publish refused until reviewed, audit; builder controls; tests
 
 ### Phase 6: User Story 9, skill recommendations (P3)
-- [ ] T014 [US9] `IPersonSkills` contract, course skill tags, recommendations and dismissals on My learning; tests
+- [x] T014 [US9] `IPersonSkills` contract, course skill tags, recommendations and dismissals on My learning; tests
 
 ### Phase 7: User Story 10, classroom sessions (P2)
 - [ ] T015 [US10] Classroom lesson kind, capability `learning.classroom`, sessions, seats, waiting list, reminders, attendance completing the lesson; integration tests

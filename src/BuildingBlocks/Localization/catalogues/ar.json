@@ -3171,5 +3171,6 @@
   "validation.learning.quiz_draft_count": "اطلب من 1 إلى 20 سؤالًا.",
   "validation.learning.quiz_draft_lesson": "اختر درس اختبار من هذه الدورة.",
   "validation.learning.quiz_unreviewed": "احتفظ بكل سؤال صاغه الذكاء الاصطناعي أو عدّله أو احذفه قبل النشر.",
-  "learning.quiz_draft.lesson_title": "تحقق مما تعلمته"
+  "learning.quiz_draft.lesson_title": "تحقق مما تعلمته",
+  "validation.learning.skill_count": "ضع على الدورة 10 مهارات على الأكثر."
 }

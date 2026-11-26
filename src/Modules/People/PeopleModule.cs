@@ -39,6 +39,7 @@ public static class PeopleModule
         services.AddScoped<DirectoryProfiles>();
         services.AddScoped<HrProfiles>();
         services.AddScoped<Skills>();
+        services.AddScoped<IPersonSkills, PersonSkills>();
         services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IComponentRegistration, PeopleComponents>();
         services.AddMessageHandler<DirectorySynced, ApplyDirectoryProfiles>("people.directory_profiles");
         services.AddMessageHandler<DirectorySynced, ApplyDirectoryPhotos>("people.directory_photos");
