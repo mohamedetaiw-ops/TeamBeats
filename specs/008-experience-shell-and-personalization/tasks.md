@@ -42,3 +42,10 @@ R2 covers User Story 2 resize and presets, User Story 4 favorites, recents and c
 - [x] T024 In-context help and tours (FR-020): help hints and short tours as versioned, schema-validated tenant configuration (`help.edit`), dismissible and reopenable from the help menu, never a blocking overlay; dismissals stored per user; tests and e2e in `ar` and `en`
 - [x] T025 Safe suggestions (FR-035): rule-based suggestions (for example add a component the person's unit uses, pin a page visited often) that say why they are offered, need acceptance and can be undone; nothing changes a stored preference without acceptance; off when the tenant's personalization policy turns it off
 - [x] T026 OpenAPI, R2 implementation notes, e2e with axe for favorites, commands, presets, focus mode and tours in `ar` and `en`
+
+## R3: Behavioral personalization (User Story 6, FR-033)
+
+R3 adds behavioral personalization behind `experience.behavioral_personalization`, a tenant policy and each person's consent. Specs 012, 014 and 021 read the same signals through an Experience contract.
+
+- [x] T027 [US6] Tenant policy (enabled, consent mode opt-in or opt-out) for `personalization.policy` at tenant scope, audited as `experience.behavioral_personalization_changed`; each person's consent with opt-out that deletes their signals and keeps every other setting; daily page signals per person kept 90 days; quick navigation ranked by the person's own use with a "ranked from your use" mark; contract `IBehaviorSignals` for other modules; preference export includes the person's signals; tests for policy off, capability off, no consent under opt-in, opt-out, the 90 day purge, another user and another tenant
+- [x] T028 [US6] Pages: the policy on the shell settings page, the choice on the preferences page, the mark in the quick navigation box, English and Arabic, e2e with axe; OpenAPI, R3 implementation notes and evidence

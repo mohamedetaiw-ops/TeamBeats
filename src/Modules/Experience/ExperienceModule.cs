@@ -62,6 +62,8 @@ public static class ExperienceModule
         services.AddScoped<Offline.OfflineBundles>();
         services.AddScoped<ShellService>();
         services.AddScoped<Favorites>();
+        services.AddScoped<Personalization.BehaviorPersonalization>();
+        services.AddScoped<IBehaviorSignals>(sp => sp.GetRequiredService<Personalization.BehaviorPersonalization>());
         services.AddScoped<Commands>();
         services.AddScoped<PreferenceExport>();
         services.AddScoped<Help>();
@@ -906,6 +908,28 @@ public static class ExperienceModule
             await f.RemoveAsync(id, ct);
             await session.CommitAsync(ct);
             return Results.NoContent();
+        });
+
+        // ---- Behavioral personalization (spec 008 R3, FR-033) ----
+
+        me.MapGet("/personalization/behavior", async (Personalization.BehaviorPersonalization b, CancellationToken ct) => Results.Ok(await b.ChoiceAsync(ct)));
+
+        me.MapPut("/personalization/behavior", async (Personalization.BehaviorChoiceRequest request, Personalization.BehaviorPersonalization b, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var view = await b.ChooseAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        app.MapGroup("/api/v1/experience").RequireTenantUser().WithTags("Experience: personalization").MapGet("/behavior-policy", async (Personalization.BehaviorPersonalization b, CancellationToken ct) => Results.Ok(await b.PolicyAsync(ct)));
+
+        app.MapGroup("/api/v1/experience").RequireTenantUser().WithTags("Experience: personalization").MapPut("/behavior-policy", async (Personalization.BehaviorPolicyRequest request, Personalization.BehaviorPersonalization b, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var view = await b.SetPolicyAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
         });
 
         me.MapGet("/recents", async (Favorites f, RequestLocale locale, CancellationToken ct) => Results.Ok(await f.RecentsAsync(locale.Locale, ct)));

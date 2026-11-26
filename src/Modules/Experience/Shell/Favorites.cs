@@ -34,7 +34,8 @@ public static class FavoriteReasons
 /// query string or fragment; a recent shell address the person can no longer open is left out, and the person can
 /// clear recents at any time. Nothing here is visible to anyone else.
 /// </summary>
-public sealed partial class Favorites(IDbSession session, ITenantContext context, ShellService shell, IEnumerable<ISearchSource> sources, IClock clock)
+public sealed partial class Favorites(IDbSession session, ITenantContext context, ShellService shell, IEnumerable<ISearchSource> sources, IClock clock,
+    Personalization.BehaviorPersonalization behavior)
 {
     public const int MaxFavorites = 50;
     public const int MaxRecents = 30;
@@ -193,6 +194,8 @@ public sealed partial class Favorites(IDbSession session, ITenantContext context
             delete from experience.recent_visit where user_id = @user and path not in
               (select path from experience.recent_visit where user_id = @user order by visited_at desc limit @max);
             """, new { user, path, label, now = clock.UtcNow, max = MaxRecents }, ct);
+        // A behavioral signal too, only where the tenant and the person allow it (spec 008 R3, FR-033).
+        await behavior.RecordAsync(Personalization.BehaviorPersonalization.PageKind, path, ct);
     }
 
     /// <summary>The person's recent visits, newest first; a shell address they can no longer open is left out.</summary>

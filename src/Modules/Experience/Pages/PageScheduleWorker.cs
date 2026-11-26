@@ -51,6 +51,8 @@ public sealed class PageScheduleWorker(IServiceScopeFactory scopes, IClock clock
                 await scope.ServiceProvider.GetRequiredService<PageSchedules>().RunDueAsync(now, 200, ct);
                 // Scheduled theme versions go live on the same tick (spec 033 R2 T014).
                 await scope.ServiceProvider.GetRequiredService<Themes.ThemeService>().RunDueSchedulesAsync(now, 200, ct);
+                // Behavioral signals older than 90 days go (spec 008 R3, section 13).
+                await scope.ServiceProvider.GetRequiredService<Personalization.BehaviorPersonalization>().PurgeAsync(now, ct);
                 await scope.ServiceProvider.GetRequiredService<IDbSession>().CommitAsync(ct);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)

@@ -13,6 +13,8 @@ import { PreferenceControls } from "@/features/shell/SettingsPanel";
 import { KioskBadgeSettings } from "@/features/kiosk/KioskBadgeSettings";
 import { ProductionOptOut } from "@/features/evaluation/ProductionOptOut";
 import type { ProductionOptOutView } from "@/lib/evaluation/types";
+import type { BehaviorChoice as BehaviorChoiceView } from "@/lib/shell/types";
+import { BehaviorChoice } from "@/features/shell/BehaviorChoice";
 import type { Badge } from "@/lib/kiosk";
 import "@/features/shell/preferences.css";
 
@@ -29,12 +31,14 @@ export default async function PreferencesPage() {
   // The kiosk badge section shows only to someone who has a badge, in a package with kiosks.
   // Connected API apps show only where the package has the public API (spec 035 FR-029).
   // The evaluation opt-out shows only where the tenant samples live runs for evaluation (spec 034 US7).
-  const [values, t, badge, connected, evaluation] = await Promise.all([
+  // The personalization choice shows only where the tenant turned personalization from use on (spec 008 R3).
+  const [values, t, badge, connected, evaluation, behavior] = await Promise.all([
     getPreferences(),
     getTranslations("preferences"),
     apiGet<Badge>("/api/v1/me/kiosk-badge"),
     apiGet<unknown[]>("/api/v1/me/connected-apps"),
     apiGet<ProductionOptOutView>("/api/v1/evaluation/production/opt-out"),
+    apiGet<BehaviorChoiceView>("/api/v1/me/personalization/behavior"),
   ]);
   const locales = me.data.tenant.enabledLocales.filter((l) => l === "ar" || l === "en");
   return (
@@ -73,6 +77,11 @@ export default async function PreferencesPage() {
         {evaluation.ok && evaluation.data.available ? (
           <SettingsSection id="pref-evaluation" icon="spark" title={t("evaluation.title")} hint={t("evaluation.hint")}>
             <ProductionOptOut initial={evaluation.data} />
+          </SettingsSection>
+        ) : null}
+        {behavior.ok && behavior.data.available ? (
+          <SettingsSection id="pref-behavior" icon="spark" title={t("behavior.title")} hint={t("behavior.hint")}>
+            <BehaviorChoice initial={behavior.data} />
           </SettingsSection>
         ) : null}
         <SettingsSection id="pref-pages" icon="home" title={t("pages.title")} hint={t("pages.hint")}>

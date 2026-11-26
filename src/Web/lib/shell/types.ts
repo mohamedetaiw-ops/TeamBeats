@@ -74,7 +74,12 @@ export type Resolved = {
   recovery: Crumb[];
 };
 
-export type QuickNavItem = { label: string; href: string; owner: string | null };
+/** A quick navigation match; `ranked` marks one moved up by the person's own use (spec 008 R3). */
+export type QuickNavItem = { label: string; href: string; owner: string | null; ranked?: boolean };
+
+/** Behavioral personalization (spec 008 R3, FR-033): the tenant policy and the person's own choice. */
+export type BehaviorPolicy = { available: boolean; enabled: boolean; consentMode: "opt_in" | "opt_out"; updatedAt: string | null };
+export type BehaviorChoice = { available: boolean; consentMode: "opt_in" | "opt_out"; consented: boolean | null; active: boolean };
 
 export type PreferenceKey = "mode" | "density" | "motion" | "text_scale" | "focus";
 
