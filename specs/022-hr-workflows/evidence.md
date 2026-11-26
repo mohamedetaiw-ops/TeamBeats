@@ -38,3 +38,13 @@ The spec stays Approved, not Implemented. Calendars (R1) and every R2 part are b
 | SC-003 leaver access ends within one sync interval; removal confirmed within 1 working day | Partly met | The escalation after one working day is covered by `JourneyStepTypeTests`; access ending at sync is spec 003's (SC-003 there) |
 | SC-004 salary certificate without approval in under 2 minutes | Met | `LetterTests.A_letter_without_approval_is_issued_at_once_...`, `letters.spec.ts` |
 | Cross-tenant, org boundary and package denial | Met | Every class above has a case for another tenant, a sibling unit's officer and a plan without the capability |
+
+### R3
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| FR-027 probation and contract dates from HR or set by hand; review task 30 days before, reminder at 7; outcomes written back | Met | `HrSyncTests.Milestones_from_HR_open_reviews_and_alerts_once_and_write_the_outcome_back_without_the_comment`, `MilestoneTests` (3 tests), `milestones.spec.ts` |
+| FR-028 contract end alert to the unit's HR officers 60 days before, once per date | Met | `HrSyncTests.Milestones_from_HR_...` (moved date alerts again), `MilestoneTests.An_HR_officer_sets_dates_by_hand_and_the_review_follows_without_write_back` |
+| FR-029 weekly shift rosters from tenant patterns, leave and holiday conflicts, publish and change notices, attendance against the shift | Met | `RosterTests` (4 tests), `AttendanceMathTests.A_published_shift_replaces_the_week_and_the_rule_hours_for_the_day` (unit), `rosters.spec.ts` |
+| FR-030 AI receipt reading in every package, counted against the AI quota | Met | `ExpenseTests.Receipt_reading_comes_with_expenses_in_every_package`, `ExpenseTests.Receipt_reading_only_suggests_values_and_follows_the_tenant_AI_policy` |
+| Cross-tenant, org boundary and package denial (R3) | Met | `MilestoneTests.Milestones_need_the_plan_and_stay_in_their_tenant`, `RosterTests.Rosters_need_the_plan_and_stay_in_their_tenant`, sibling unit cases in both classes |

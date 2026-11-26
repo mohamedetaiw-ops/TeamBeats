@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
+using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Modules.Hr.Milestones;
 using TeamBeats.Modules.Tenancy.Contracts;
@@ -96,6 +97,9 @@ public sealed class MilestoneTests(TenantWorld world)
         Assert.Equal(1L, await NotesAsync(t, "hr_gulf", Milestones.ReviewedTemplate));
         Assert.Equal(0L, await NotesAsync(t, "hr_egypt", Milestones.ReviewedTemplate));
         Assert.Equal(0L, await world.Database.TenantScalarAsync<long>(t.Id, "select count(*) from integrations.hr_data_change_handoff"));
+        Assert.Equal(1L, await world.Database.TenantScalarAsync<long>(t.Id, "select count(*) from audit.audit_event where action = @a", ("a", AuditActions.HrMilestoneSet)));
+        Assert.Equal(1L, await world.Database.TenantScalarAsync<long>(t.Id, "select count(*) from audit.audit_event where action = @a", ("a", AuditActions.HrMilestoneReviewed)));
+        Assert.Equal(0L, await world.Database.TenantScalarAsync<long>(t.Id, "select count(*) from audit.audit_event where changes::text like '%role''s goals%'"));
 
         // Contract end in 40 days: the unit's HR officers are told once.
         await OkAsync(SetAsync(hr, t, "omar", "contract", Today.AddDays(40)));

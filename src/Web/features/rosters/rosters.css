@@ -1,0 +1,19 @@
+/* Spec 022 R3 roster pages. Spacing comes from tokens; surfaces come from the form panel and the data table. */
+.rosters {
+  display: grid;
+  gap: var(--tb-space-lg);
+  min-inline-size: 0;
+}
+
+.rosters-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-sm);
+}
+
+.rosters-cell {
+  display: grid;
+  gap: var(--tb-space-xs);
+  min-inline-size: 7rem;
+}

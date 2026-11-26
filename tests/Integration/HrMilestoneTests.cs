@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Testing;
 using Xunit;
@@ -112,7 +113,7 @@ public sealed partial class HrSyncTests
         Assert.Equal("recorded", review.GetProperty("writeBack").GetString());
         Assert.Equal("Needs more time on the reconciliations", review.GetProperty("comment").GetString());
         Assert.Equal(0L, await world.Database.TenantScalarAsync<long>(t.Id, "select count(*) from audit.audit_event where changes::text like '%reconciliations%'"));
-        Assert.Equal(1L, await world.Database.TenantScalarAsync<long>(t.Id, "select count(*) from audit.audit_event where action = 'hr.milestone_written_back'"));
+        Assert.Equal(1L, await world.Database.TenantScalarAsync<long>(t.Id, "select count(*) from audit.audit_event where action = @a", ("a", AuditActions.HrMilestoneWrittenBack)));
 
         // HR brings the new date: the milestone reopens. A moved contract date alerts again.
         sara["probationEnd"] = Iso(extended);

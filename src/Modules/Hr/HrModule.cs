@@ -68,6 +68,8 @@ public static class HrModule
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<Expenses.ExpenseTaskSource>());
         services.AddMessageHandler<Integrations.Contracts.FinanceHandOffChanged, Expenses.ExpenseTaskSource>("hr.expense_finance_changed");
         services.AddSingleton<Services.Contracts.IModuleServiceSource, Expenses.ExpenseModuleServices>();
+        services.AddScoped<Rosters.Rosters>();
+        services.AddScoped<Rosters.ShiftRoster>();
         services.AddScoped<Milestones.Milestones>();
         services.AddScoped<Milestones.MilestoneHandlers>();
         services.AddScoped<Workflow.Contracts.IPersonalTaskSource>(sp => sp.GetRequiredService<Milestones.MilestoneHandlers>());
@@ -168,6 +170,7 @@ public static class HrModule
         DataChanges.DataChangeEndpoints.MapDataChangeEndpoints(app);
         Expenses.ExpenseEndpoints.MapExpenseEndpoints(app);
         Milestones.MilestoneEndpoints.MapMilestoneEndpoints(app);
+        Rosters.RosterEndpoints.MapRosterEndpoints(app);
         return app;
     }
 }

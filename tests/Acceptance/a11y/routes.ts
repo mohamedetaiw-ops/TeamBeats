@@ -209,6 +209,7 @@ export const routes: readonly Route[] = [
   { path: "/hr/journeys", tier: "other" },
   { path: "/hr/journeys/[id]", tier: "detail", reason: "needs a journey template and an HR hire event; opened by the journeys suite" },
   { path: "/hr/milestones", tier: "other" },
+  { path: "/hr/rosters", tier: "other" },
   { path: "/hr/milestones/[id]", tier: "detail", reason: "needs a probation date set by HR; opened by the milestones suite" },
   { path: "/kb", tier: "primary" },
   { path: "/kb/[id]", tier: "detail" },

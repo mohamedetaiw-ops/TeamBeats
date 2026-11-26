@@ -49,6 +49,16 @@ public sealed record WorkRule(TimeOnly Start, TimeOnly End, int GraceLateMinutes
     public static readonly WorkRule Default = new(new TimeOnly(9, 0), new TimeOnly(17, 0), 15, 15);
 }
 
+/// <summary>
+/// A published shift for one person and day (spec 022 FR-029): it replaces the working week and the rule's hours for
+/// that day. A day off on the roster is a day off even on a working weekday; a shift on a day off of the week is a
+/// working day. Shifts end on the day they start (smallest safe default).
+/// </summary>
+public sealed record Shift(TimeOnly Start, TimeOnly End, int BreakMinutes, bool DayOff)
+{
+    public static readonly Shift Off = new(TimeOnly.MinValue, TimeOnly.MinValue, 0, true);
+}
+
 public sealed record Punch(DateTimeOffset At, string Direction, bool Remote, string Source);
 
 public sealed record AttendanceDay(
@@ -73,9 +83,13 @@ public static class AttendanceMath
     /// <paramref name="leaveFraction"/> is approved leave on the day (0, 0.5 or 1): it removes the day's exceptions.
     /// </summary>
     public static AttendanceDay Evaluate(DateOnly date, IReadOnlyList<Punch> punches, WorkRule rule, WorkingCalendarSnapshot calendar, decimal leaveFraction,
-        DateOnly today)
+        DateOnly today, Shift? shift = null)
     {
-        var working = calendar.WorkingFraction(date);
+        var working = shift is null ? calendar.WorkingFraction(date) : shift.DayOff ? 0m : 1m;
+        if (shift is { DayOff: false })
+        {
+            rule = rule with { Start = shift.Start, End = shift.End };
+        }
         var kind = leaveFraction >= 1m && working > 0 ? AttendanceDayKinds.Leave
             : working > 0 ? AttendanceDayKinds.Working
             : calendar.IsHoliday(date) ? AttendanceDayKinds.Holiday : AttendanceDayKinds.DayOff;
@@ -105,11 +119,12 @@ public static class AttendanceMath
         missing |= open is not null && date < today;
 
         var dayLength = rule.End.ToTimeSpan() - rule.Start.ToTimeSpan();
-        if (calendar.ReducedHours(date) is { } reduced)
+        if (shift is null && calendar.ReducedHours(date) is { } reduced)
         {
             dayLength = TimeSpan.FromHours((double)reduced);
         }
-        var expected = kind == AttendanceDayKinds.Working ? Round((decimal)dayLength.TotalHours * working * (1m - Math.Min(leaveFraction, 1m))) : 0m;
+        var paid = shift is { DayOff: false } ? dayLength - TimeSpan.FromMinutes(shift.BreakMinutes) : dayLength;
+        var expected = kind == AttendanceDayKinds.Working ? Round((decimal)paid.TotalHours * working * (1m - Math.Min(leaveFraction, 1m))) : 0m;
 
         var firstIn = ordered.FirstOrDefault(p => p.Direction == PunchDirections.In) is { } first ? local(first.At) : (TimeOnly?)null;
         var lastOut = ordered.LastOrDefault(p => p.Direction == PunchDirections.Out) is { } last ? local(last.At) : (TimeOnly?)null;
