@@ -1618,3 +1618,63 @@ public interface IHrCompensation
     Task<HrCompensationRead> ForLetterAsync(Guid userId, Guid letterId, CancellationToken ct = default);
 }
 
+
+/// <summary>The task tracker packs (spec 029 R3 US10): Microsoft Planner and Jira Software.</summary>
+public static class TaskTrackerKinds
+{
+    public const string Planner = "tasks_planner";
+    public const string Jira = "tasks_jira";
+
+    public static readonly IReadOnlyList<string> All = [Planner, Jira];
+}
+
+/// <summary>An enabled task tracker connection a space owner may link a task list to.</summary>
+public sealed record TaskTrackerConnection(Guid Id, string Kind, string Name);
+
+/// <summary>Where tasks live in the tracker: a Planner plan or a Jira project (its key).</summary>
+public sealed record TrackerContainer(string Id, string Name);
+
+/// <summary>
+/// A task as the tracker has it, in canonical fields only. <paramref name="Version"/> changes whenever the tracker's task
+/// changes (Planner's etag, Jira's updated time); <paramref name="ModifiedAt"/> is when it last changed, or when the
+/// change was first seen when the tracker does not say. Description is null when the tracker does not list it.
+/// </summary>
+public sealed record TrackerTask(string ExternalId, string Title, string? Description, DateOnly? DueOn, bool Done, IReadOnlyList<string> AssigneeEmails, string Version,
+    DateTimeOffset ModifiedAt);
+
+/// <summary>What is sent to the tracker for a task. Assignees are work emails; ones the tracker does not know are left out.</summary>
+public sealed record TrackerTaskInput(string Title, string? Description, DateOnly? DueOn, bool Done, IReadOnlyList<string> AssigneeEmails);
+
+/// <summary>How a tracker call went: done, no such connection (or not in the package), the tracker did not answer, it refused, or the task is gone.</summary>
+public static class TrackerResults
+{
+    public const string Ok = "ok";
+    public const string NotConfigured = "not_configured";
+    public const string Unavailable = "unavailable";
+    public const string Refused = "refused";
+    public const string NotFound = "not_found";
+}
+
+public sealed record TrackerRead<T>(string Result, IReadOnlyList<T> Items);
+
+/// <summary>A write's result with the task as the tracker now has it, so its new version is known.</summary>
+public sealed record TrackerWrite(string Result, TrackerTask? Task);
+
+/// <summary>
+/// Task trackers through spec 017 (spec 029 FR-023 to FR-025). Every call goes through the connector runtime inline and
+/// is kept in the connection's run history. Only canonical fields cross this contract; no Planner or Jira shape leaves
+/// it. Tenant comes from context.
+/// </summary>
+public interface ITaskTrackers
+{
+    Task<IReadOnlyList<TaskTrackerConnection>> ConnectionsAsync(CancellationToken ct = default);
+
+    Task<TrackerRead<TrackerContainer>> ContainersAsync(Guid connectionId, CancellationToken ct = default);
+
+    /// <summary>The tasks of a container, up to 1,000.</summary>
+    Task<TrackerRead<TrackerTask>> TasksAsync(Guid connectionId, string containerId, CancellationToken ct = default);
+
+    Task<TrackerWrite> CreateAsync(Guid connectionId, string containerId, TrackerTaskInput task, string idempotencyKey, CancellationToken ct = default);
+
+    Task<TrackerWrite> UpdateAsync(Guid connectionId, string containerId, string externalId, TrackerTaskInput task, string idempotencyKey, CancellationToken ct = default);
+}

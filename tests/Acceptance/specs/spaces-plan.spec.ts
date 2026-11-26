@@ -9,7 +9,8 @@ import { hostOrigin } from "../support/stack";
  * task's page they say it waits for the first, see the schedule conflict, log time, and find both tasks on the
  * timeline with the conflict and the time on the owners' totals. Loops, viewer refusal, author rules and the tenant
  * boundary: SpaceScheduleTests. T015 (US11): the owner asks for a status summary, sees it marked as AI generated and starts the
- * status note from it. In English and Arabic, with axe. Names are fictional.
+ * status note from it. T016 (US10): the owner opens the sync page, which says a tracker connection comes first; linking, both
+ * directions, conflicts, failures and boundaries: SpaceSyncTests. In English and Arabic, with axe. Names are fictional.
  */
 for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
   test.describe(`space plan and time in ${locale}`, () => {
@@ -91,6 +92,19 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await summary.getByRole("button", { name: m("spaces.overview.useSummary") }).click();
       await expect(main.getByLabel(m("spaces.overview.note"))).not.toHaveValue("");
       await expectAccessible(page, testInfo, `spaces-plan-summary-${locale}`);
+    });
+
+    test("the owner opens Sync and is told a tracker connection comes first", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/spaces/${spaceId}`);
+      const nav = page.getByRole("navigation", { name: m("spaces.parts.nav.label") });
+      await nav.getByRole("link", { name: m("spaces.parts.nav.sync"), exact: true }).click();
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("spaces.syncTitle"));
+      const main = page.getByRole("main");
+      await expect(main.getByText(m("spaces.sync.noLinksTitle"))).toBeVisible();
+      await expect(main.getByText(m("spaces.sync.noConnectionsTitle"))).toBeVisible();
+      await expect(main.getByText(m("spaces.sync.noHistory"))).toBeVisible();
+      await expectAccessible(page, testInfo, `spaces-plan-sync-${locale}`);
     });
   });
 }

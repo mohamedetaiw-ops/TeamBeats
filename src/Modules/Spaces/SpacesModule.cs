@@ -30,6 +30,7 @@ public static class SpacesModule
         services.AddScoped<SpaceSchedule>();
         services.AddScoped<SpaceTime>();
         services.AddScoped<SpaceSummaries>();
+        services.AddScoped<SpaceSync>();
         services.AddScoped<SpaceGuests>();
         services.AddScoped<IGuestInvitationSource>(sp => sp.GetRequiredService<SpaceGuests>());
         services.AddScoped<Contracts.ISpaceGuestReview>(sp => sp.GetRequiredService<SpaceGuests>());
@@ -211,6 +212,17 @@ public static class SpacesModule
         // R3 US11: a status summary through the AI Gateway, from this space only. Nothing is stored, but the request is audited.
         space.MapPost("/status-summary", async (Guid id, SpaceSummaries summaries, IDbSession session, CancellationToken ct) =>
             await CommitAsync(session, await summaries.SummarizeAsync(id, ct), ct));
+
+        // R3 US10: a task list kept in step with a Planner plan or a Jira project, for owners. Runs also come every 10 minutes from the worker.
+        space.MapGet("/sync", async (Guid id, SpaceSync sync, CancellationToken ct) => Results.Ok(await sync.GetAsync(id, ct)));
+        space.MapGet("/sync/containers", async (Guid id, Guid connection, SpaceSync sync, CancellationToken ct) =>
+            Results.Ok(await sync.ContainersAsync(id, connection, ct)));
+        space.MapPost("/sync/links", async (Guid id, SyncLinkRequest request, SpaceSync sync, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await sync.LinkAsync(id, request, ct), ct));
+        space.MapPost("/sync/links/{linkId:guid}:run", async (Guid id, Guid linkId, SpaceSync sync, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await sync.RunNowAsync(id, linkId, ct), ct));
+        space.MapDelete("/sync/links/{linkId:guid}", async (Guid id, Guid linkId, SpaceSync sync, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await sync.UnlinkAsync(id, linkId, ct), ct));
 
         space.MapPost("/status", async (Guid id, StatusRequest request, SpaceMilestones milestones, IDbSession session, CancellationToken ct) =>
             await CommitAsync(session, await milestones.SetStatusAsync(id, request, ct), ct));

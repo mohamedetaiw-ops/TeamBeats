@@ -3204,5 +3204,12 @@
   "validation.spaces.time_minutes": "أدخل الوقت المستغرق، من دقيقة واحدة إلى 24 ساعة.",
   "validation.spaces.time_note": "اجعل الملاحظة في حدود 500 حرف.",
   "validation.spaces.time_range": "اختر مدة لا تزيد على عام، يكون بدايتها قبل نهايتها.",
-  "authz.denied.spaces_time_entry": "لا يغيّر هذا الوقت إلا من سجّله. ويمكن لمالكي المساحة حذفه."
+  "authz.denied.spaces_time_entry": "لا يغيّر هذا الوقت إلا من سجّله. ويمكن لمالكي المساحة حذفه.",
+  "validation.spaces.sync_list": "اختر قائمة مهام من هذه المساحة.",
+  "validation.spaces.sync_connection": "اختر اتصال Planner أو Jira أعدّه المسؤول.",
+  "validation.spaces.sync_container": "اختر خطة أو مشروعًا من هذا الاتصال.",
+  "conflict.spaces.sync_unavailable": "لم يستجب نظام المهام. حاول مرة أخرى لاحقًا.",
+  "conflict.spaces.sync_linked": "هذه القائمة أو هذه الخطة مرتبطة بالفعل. ألغِ الربط أولًا.",
+  "validation.tasks.planner_group": "أدخل معرّف مجموعة Microsoft 365 التي تملك الخطط.",
+  "capability.spaces.task_sync": "مزامنة قوائم المهام مع Planner وJira"
 }

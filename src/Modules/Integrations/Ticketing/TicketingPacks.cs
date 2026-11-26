@@ -16,9 +16,9 @@ namespace TeamBeats.Modules.Integrations.Ticketing;
 /// <summary>
 /// Settings of a ticketing connection: the instance or site address (https, on the tenant allowlist) and how it signs
 /// in, with a secret manager reference. Jira Service Management also names the service desk and request type that new
-/// requests go to.
+/// requests go to; the Planner task pack names the Microsoft 365 group whose plans it lists.
 /// </summary>
-public sealed record TicketingSettings(string BaseUrl, RestAuth Auth, string? ServiceDeskId = null, string? RequestTypeId = null)
+public sealed record TicketingSettings(string BaseUrl, RestAuth Auth, string? ServiceDeskId = null, string? RequestTypeId = null, string? GroupId = null)
 {
     public RestSettings Rest => new(BaseUrl, Auth);
 }
@@ -75,7 +75,8 @@ public abstract partial class TicketingPack(ITenantContext context, RestSignIn s
     /// <paramref name="noContent"/>, a 204 answer is a success with no body.
     /// </summary>
     protected async Task<(PackCallResult? Failure, JsonElement Body)> SendAsync(PackConnection connection, TicketingSettings settings, HttpMethod method,
-        string pathAndQuery, object? body, IReadOnlyDictionary<int, string>? business, bool writes, CancellationToken ct, bool noContent = false)
+        string pathAndQuery, object? body, IReadOnlyDictionary<int, string>? business, bool writes, CancellationToken ct, bool noContent = false,
+        IReadOnlyDictionary<string, string>? headers = null)
     {
         var baseUri = new Uri(settings.BaseUrl.TrimEnd('/') + "/");
         var uri = new Uri(settings.BaseUrl.TrimEnd('/') + pathAndQuery);
@@ -85,6 +86,10 @@ public abstract partial class TicketingPack(ITenantContext context, RestSignIn s
         }
         using var request = new HttpRequestMessage(method, uri);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        foreach (var (name, value) in headers ?? new Dictionary<string, string>())
+        {
+            request.Headers.TryAddWithoutValidation(name, value);
+        }
         if (body is not null)
         {
             request.Content = new StringContent(JsonSerializer.Serialize(body, JsonDefaults.Options), Encoding.UTF8, "application/json");
@@ -103,7 +108,8 @@ public abstract partial class TicketingPack(ITenantContext context, RestSignIn s
         {
             return (null, default);
         }
-        return await RestSignIn.ReadJsonAsync(response, ct) is { ValueKind: JsonValueKind.Object } json
+        // An object, or an array where the system answers with a list (Jira's user search).
+        return await RestSignIn.ReadJsonAsync(response, ct) is { ValueKind: JsonValueKind.Object or JsonValueKind.Array } json
             ? (null, json)
             : (PackCallResult.Technical(ConnectorErrorClasses.InvalidResponse, mayHaveActed: writes), default);
     }
@@ -165,7 +171,7 @@ public abstract partial class TicketingPack(ITenantContext context, RestSignIn s
     }
 
     /// <summary>Checks the settings beyond address and sign-in, and returns them with only the fields this kind keeps.</summary>
-    protected virtual TicketingSettings Extra(TicketingSettings s, ValidationErrors errors) => s with { ServiceDeskId = null, RequestTypeId = null };
+    protected virtual TicketingSettings Extra(TicketingSettings s, ValidationErrors errors) => s with { ServiceDeskId = null, RequestTypeId = null, GroupId = null };
 
     public async Task<IReadOnlyList<PackCheck>> TestAsync(PackConnection connection, CancellationToken ct)
     {
@@ -337,7 +343,7 @@ public sealed class JiraServiceManagementPack(ITenantContext context, RestSignIn
         {
             errors.Add("requestTypeId", "validation.ticketing.request_type_id");
         }
-        return s;
+        return s with { GroupId = null };
     }
 
     protected override async Task<PackCallResult> CallAsync(PackConnection connection, TicketingSettings settings, string action, JsonElement input, string idempotencyKey,

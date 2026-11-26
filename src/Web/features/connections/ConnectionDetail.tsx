@@ -129,6 +129,7 @@ export function ConnectionDetail({ initial, webhookEvents = [] }: { initial: Pac
             initial={view}
             authTypes={TICKETING_KINDS[view.kind].auth}
             desk={TICKETING_KINDS[view.kind].desk}
+            group={TICKETING_KINDS[view.kind].group}
             submitLabel={t("detail.save")}
             busy={busy === "save"}
             onSubmit={(body: SettingsBody) => void run<PackConnection>("save", "PATCH", base, body, (v) => (setView(v), t("detail.saved")))}

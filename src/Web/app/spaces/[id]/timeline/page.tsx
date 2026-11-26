@@ -36,7 +36,7 @@ export default async function SpaceTimelinePage({ params }: { params: Promise<{ 
       />
       <main id="main" className="page">
         <PageHeader title={t("timelineTitle")} eyebrow={space.data.name} icon="calendar"
-          nav={<SpaceNav id={id} current="timeline" settings={space.data.rights.owns || space.data.rights.manages} time={space.data.rights.owns} files={!!space.data.libraryId} discussion={!!space.data.communityId} />} />
+          nav={<SpaceNav id={id} current="timeline" settings={space.data.rights.owns || space.data.rights.manages} owns={space.data.rights.owns} files={!!space.data.libraryId} discussion={!!space.data.communityId} />} />
         {timeline?.ok ? (
           <Timeline spaceId={id} view={timeline.data} today={new Date().toISOString().slice(0, 10)} />
         ) : (

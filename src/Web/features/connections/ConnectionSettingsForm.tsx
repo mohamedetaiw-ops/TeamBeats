@@ -9,7 +9,7 @@ import { AUTH_TYPES, type PackConnection, type RestAuth } from "@/lib/integratio
 export type SettingsBody = {
   displayName: string;
   rateLimitPerMinute: number;
-  settings: { baseUrl: string; auth: RestAuth; serviceDeskId?: string; requestTypeId?: string } & Record<string, unknown>;
+  settings: { baseUrl: string; auth: RestAuth; serviceDeskId?: string; requestTypeId?: string; groupId?: string } & Record<string, unknown>;
 };
 
 /** More settings of a pack that signs in like custom REST: its own fields, and their values when the form is sent. */
@@ -18,7 +18,7 @@ export type ExtraSettings = { fields: ReactNode; values: () => Record<string, un
 /**
  * Name, address and sign-in of a custom REST connection (spec 017 US4, FR-003). The credential is a secret manager
  * reference, never the secret itself; the API checks the reference, the allowlist and every field. Ticketing packs use
- * the same form with their own sign-in methods, Jira Service Management adds its service desk and request type, and other packs add their own fields.
+ * the same form with their own sign-in methods, Jira Service Management adds its service desk and request type, Planner its Microsoft 365 group, and other packs add their own fields.
  */
 export function ConnectionSettingsForm({
   initial,
@@ -27,6 +27,7 @@ export function ConnectionSettingsForm({
   onSubmit,
   authTypes = AUTH_TYPES,
   desk = false,
+  group = false,
   extra,
   formLabel,
 }: {
@@ -36,6 +37,7 @@ export function ConnectionSettingsForm({
   onSubmit: (body: SettingsBody) => void;
   authTypes?: readonly string[];
   desk?: boolean;
+  group?: boolean;
   extra?: ExtraSettings;
   formLabel?: string;
 }) {
@@ -54,6 +56,7 @@ export function ConnectionSettingsForm({
   const [expiresOn, setExpiresOn] = useState(a?.expiresOn ?? "");
   const [serviceDeskId, setServiceDeskId] = useState(initial?.settings.serviceDeskId ?? "");
   const [requestTypeId, setRequestTypeId] = useState(initial?.settings.requestTypeId ?? "");
+  const [groupId, setGroupId] = useState(initial?.settings.groupId ?? "");
   const [rate, setRate] = useState(String(initial?.rateLimitPerMinute ?? 600));
 
   function submit() {
@@ -71,6 +74,7 @@ export function ConnectionSettingsForm({
       settings.serviceDeskId = serviceDeskId.trim();
       settings.requestTypeId = requestTypeId.trim();
     }
+    if (group) settings.groupId = groupId.trim();
     onSubmit({ displayName: name.trim(), rateLimitPerMinute: Number(rate), settings });
   }
 
@@ -115,6 +119,9 @@ export function ConnectionSettingsForm({
           <FormField label={t("serviceDeskId")} hint={t("serviceDeskIdHint")} name="serviceDeskId" dir="ltr" inputMode="numeric" required value={serviceDeskId} onChange={(e) => setServiceDeskId(e.target.value)} />
           <FormField label={t("requestTypeId")} hint={t("requestTypeIdHint")} name="requestTypeId" dir="ltr" inputMode="numeric" required value={requestTypeId} onChange={(e) => setRequestTypeId(e.target.value)} />
         </>
+      ) : null}
+      {group ? (
+        <FormField label={t("groupId")} hint={t("groupIdHint")} name="groupId" dir="ltr" required value={groupId} onChange={(e) => setGroupId(e.target.value)} />
       ) : null}
       {extra?.fields}
       <FormField label={t("rateLimit")} hint={t("rateLimitHint")} name="rateLimitPerMinute" type="number" min={1} max={100000} value={rate} onChange={(e) => setRate(e.target.value)} />

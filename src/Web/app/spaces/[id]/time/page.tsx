@@ -36,7 +36,7 @@ export default async function SpaceTimePage({ params }: { params: Promise<{ id: 
       />
       <main id="main" className="page">
         <PageHeader title={t("timeTitle")} eyebrow={space.data.name} icon="clock"
-          nav={<SpaceNav id={id} current="time" settings={space.data.rights.owns || space.data.rights.manages} time={space.data.rights.owns} files={!!space.data.libraryId} discussion={!!space.data.communityId} />} />
+          nav={<SpaceNav id={id} current="time" settings={space.data.rights.owns || space.data.rights.manages} owns={space.data.rights.owns} files={!!space.data.libraryId} discussion={!!space.data.communityId} />} />
         {totals.ok ? <TimeTotals spaceId={id} initial={totals.data} /> : <StateView kind="denied" title={t("timeDeniedTitle")} message={t("timeDenied")} />}
       </main>
     </>

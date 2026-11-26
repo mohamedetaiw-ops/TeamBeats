@@ -982,6 +982,7 @@
         "learning_lms_connector": "LMS connector",
         "spaces_projects": "Project and team spaces",
         "spaces_guests": "Guests in spaces",
+        "spaces_task_sync": "Planner and Jira sync",
         "spaces_max_spaces": "Spaces",
         "booking_rooms": "Room booking",
         "booking_desks": "Desk booking",
@@ -10671,6 +10672,8 @@
       "onprem_ad": "On-premises Active Directory",
       "servicenow": "ServiceNow",
       "jira_service_management": "Jira Service Management",
+      "tasks_planner": "Microsoft Planner",
+      "tasks_jira": "Jira Software",
       "camunda8": "Camunda 8",
       "mcp_server": "MCP server",
       "slack": "Slack",
@@ -10720,6 +10723,8 @@
       "microsoft365": "Directory sync, mail, calendar and free and busy times from your Microsoft 365 tenant, each with its own consent.",
       "servicenow": "Services and agents create incidents in ServiceNow and read their status.",
       "jira_service_management": "Services and agents create requests in Jira Service Management and read their status.",
+      "tasks_planner": "Space owners keep a task list in step with a Planner plan of one Microsoft 365 group.",
+      "tasks_jira": "Space owners keep a task list in step with a Jira project.",
       "camunda8": "Camunda user tasks assigned to TeamBeats people appear in their task inbox and are completed from TeamBeats.",
       "mcp_server": "Agents use the tools of an external MCP server after an integration administrator approves each one.",
       "lms_rest": "Brings your LMS courses into the catalogue, sends assignments of them to the LMS and reads completions back.",
@@ -10739,6 +10744,14 @@
       "jira_service_management": {
         "addTitle": "Add a Jira Service Management connection",
         "addIntro": "Enter your site address, such as https://your-site.atlassian.net, how TeamBeats signs in, and the service desk and request type new requests go to. For a cloud site, sign in with the account email and an API token."
+      },
+      "tasks_planner": {
+        "addTitle": "Add a Microsoft Planner connection",
+        "addIntro": "Enter the Microsoft Graph address, https://graph.microsoft.com/v1.0, and sign in with your app registration (Tasks.ReadWrite.All and User.Read.All). Name the Microsoft 365 group whose plans space owners can link."
+      },
+      "tasks_jira": {
+        "addTitle": "Add a Jira Software connection",
+        "addIntro": "Enter your site address, such as https://your-site.atlassian.net, and how TeamBeats signs in. For a cloud site, sign in with the account email and an API token. Space owners can then link a task list to a project."
       },
       "camunda8": {
         "addTitle": "Add a Camunda 8 connection",
@@ -10794,6 +10807,8 @@
       "serviceDeskIdHint": "The number of the service desk in Jira Service Management.",
       "requestTypeId": "Request type ID",
       "requestTypeIdHint": "The number of the request type that new requests use.",
+      "groupId": "Microsoft 365 group ID",
+      "groupIdHint": "The ID of the group that owns the plans, from the Microsoft Entra admin center.",
       "rateLimit": "Calls per minute",
       "rateLimitHint": "TeamBeats never calls this system more often than this.",
       "working": "Saving…"
@@ -15609,7 +15624,8 @@
         "discussion": "Discussion",
         "calendar": "Calendar",
         "timeline": "Timeline",
-        "time": "Time"
+        "time": "Time",
+        "sync": "Sync"
       }
     },
     "directory": {
@@ -16018,6 +16034,67 @@
     "timeTitle": "Time",
     "timeDeniedTitle": "Only owners see time totals",
     "timeDenied": "Space owners see the time logged by everyone. You can see and log your own time on each task.",
+    "syncTitle": "Planner and Jira sync",
+    "syncDeniedTitle": "Only owners manage sync",
+    "syncDenied": "Ask an owner of this space to link its task lists.",
+    "sync": {
+      "failed": "The sync could not be changed.",
+      "working": "Working",
+      "trackerDown": "The tracker did not answer. Try again later.",
+      "notInPackageTitle": "Sync is not in your plan",
+      "notInPackage": "Linking task lists to Planner or Jira needs another package. Ask the person who manages your plan.",
+      "linksTitle": "Linked lists",
+      "noLinksTitle": "No list is linked",
+      "noLinks": "Link a task list to keep it in step with a Planner plan or a Jira project.",
+      "link": "{list} with {container}",
+      "linkMeta": "{tasks, plural, one {# task} other {# tasks}} in step, last run {last}",
+      "never": "not yet",
+      "runNow": "Sync now",
+      "ran": "Synced.",
+      "unlink": "Unlink {list}",
+      "unlinked": "Unlinked. Tasks on both sides are kept.",
+      "linkTitle": "Link a list",
+      "linkIntro": "Tasks with the same title are matched, the rest are created on the other side. Title, due date, done or open and assignees stay in step, and descriptions too with Jira. Sync runs every 10 minutes.",
+      "noConnectionsTitle": "No tracker connection",
+      "noConnections": "Ask your administrator to add a Planner or Jira connection in Connections.",
+      "allLinked": "Every task list of this space is linked.",
+      "list": "Task list",
+      "chooseList": "Choose a list",
+      "connection": "Connection",
+      "chooseConnection": "Choose a connection",
+      "container": "Plan or project",
+      "chooseContainer": "Choose a plan or project",
+      "linkSubmit": "Link",
+      "linked": "Linked and synced.",
+      "historyTitle": "Sync history",
+      "noHistory": "Nothing has run yet. History is kept for 90 days.",
+      "kinds": {
+        "tasks_planner": "Planner",
+        "tasks_jira": "Jira"
+      },
+      "event": {
+        "run": "Run",
+        "conflict": "Conflict",
+        "failed": "Not sent",
+        "skipped_assignee": "Assignee left out",
+        "unlinked_task": "Task unlinked"
+      },
+      "outcome": {
+        "ok": "done",
+        "partial": "some changes not sent",
+        "unavailable": "tracker unavailable",
+        "refused": "refused by the tracker",
+        "not_found": "not found in the tracker",
+        "not_configured": "connection turned off",
+        "tracker_won": "the tracker's change",
+        "space_won": "the space's change"
+      },
+      "runLine": "{pulled} in, {pushed} out, {outcome}",
+      "conflictLine": "{title} changed on both sides; kept {winner}",
+      "failedLine": "{title}: {outcome}, sent again with the next run",
+      "skippedLine": "{title}: {person} is not a member of this space",
+      "unlinkedLine": "{title} was deleted on one side, so it is no longer synced. Nothing else was deleted."
+    },
     "plan": {
       "failed": "That did not work",
       "saved": "Dates saved",

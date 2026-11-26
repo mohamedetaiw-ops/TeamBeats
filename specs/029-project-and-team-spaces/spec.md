@@ -139,7 +139,7 @@ The ERP team already plans in Jira. Omar links the space's task list to the Jira
 
 **Acceptance scenarios:**
 1. **Given** a Planner or Jira connection made by an administrator in 017, **When** a space owner links one task list to a Planner plan or a Jira project, **Then** existing tasks on both sides are matched or created, and later changes flow both ways.
-2. **Given** a synced task, **Then** title, description, due date, done or open, and assignees matched by work email are kept in step; other fields stay on their own side.
+2. **Given** a synced task, **Then** title, due date, done or open, and assignees matched by work email are kept in step, and so is the description where the system lists it with the task (Jira); other fields stay on their own side.
 3. **Given** the same task changed on both sides between two syncs, **Then** the later change wins and the space shows the conflict in the sync history.
 4. **Given** the external system is unavailable or refuses a change, **Then** work in the space carries on, the change is retried, and owners see the failure in the sync history.
 5. **Given** an assignee who is not a member of the space, **Then** the task syncs without that assignee and the history says so.
@@ -160,7 +160,7 @@ Before the steering meeting Omar asks for a summary of where the project stands.
 - Task assigned to a guest whose access expired: shown as unassigned with a notice.
 - Template changed: existing spaces are not affected.
 - A task deleted while other tasks are blocked by it: the links are removed.
-- A synced task deleted on one side: it is deleted on the other side only when the space owner allowed deletes in the link; otherwise the link for that task ends.
+- A synced task deleted on one side: the link for that task ends and the other side keeps its task (nothing is deleted by sync).
 
 ## 5. Functional requirements
 
@@ -187,7 +187,7 @@ Before the steering meeting Omar asks for a summary of where the project stands.
 - **PRJ-021 / FR-021**: Members MUST be able to set a task estimate and log time entries; only authors change their entries; owners may remove any.
 - **PRJ-022 / FR-022**: Owners MUST see time totals per person and per task for a date range and export them as CSV.
 - **PRJ-023 / FR-023**: A space owner MUST be able to link one task list to one Planner plan or one Jira project through a 017 connection; all calls go through connector adapters.
-- **PRJ-024 / FR-024**: Sync MUST carry title, description, due date, done state and assignees matched by work email, both ways, with the later change winning and a history of runs, conflicts and failures.
+- **PRJ-024 / FR-024**: Sync MUST carry title, due date, done state, assignees matched by work email and, where the system lists it, description, both ways, with the later change winning and a history of runs, conflicts and failures.
 - **PRJ-025 / FR-025**: A failed or refused external change MUST NOT block work in the space and MUST be retried.
 - **PRJ-026 / FR-026**: Status summaries MUST go through 013 and use only the space the reader can see; nothing from other spaces, files or discussions is sent.
 - **PRJ-027 / FR-027**: Summaries MUST be marked as AI generated, MUST NOT be saved unless an owner saves them as a status note, and MUST tell the reader when the AI policy blocks them.
@@ -236,7 +236,7 @@ R2: none. R3: status summaries through 013 using only tasks the reader can see (
 ## 12. Integrations and events
 - Publishes `SpaceCreated`, `SpaceArchived`, `TaskAssigned`, `TaskCompleted`, `MilestoneReached`, `SpaceStatusChanged`.
 - Consumes leave events (022), guest expiry (026), people changes (010).
-- R3: Planner (through the 006 Microsoft 365 connection) and Jira Software (Jira Cloud REST) task packs in 017. Only canonical task fields cross the contract.
+- R3: Planner (Microsoft Graph, signing in with the tenant's app registration by client credentials) and Jira Software (Jira Cloud REST) task packs in 017. Only canonical task fields cross the contract.
 
 ## 13. Audit, telemetry and analytics
 

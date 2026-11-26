@@ -256,4 +256,17 @@ export function announceTaskChanged(taskId: string): void {
 export const hoursOf = (minutes: number) => ({ hours: Math.floor(minutes / 60), minutes: minutes % 60 });
 
 /** A status summary written through the AI Gateway (spec 029 R3 US11). Never stored; always AI generated. */
+/** Task list sync with Planner or Jira (spec 029 R3 US10), for owners. Every rule is the API's; this is what it answers. */
+export type TrackerConnection = { id: string; kind: "tasks_planner" | "tasks_jira"; displayName: string };
+export type TrackerContainer = { id: string; name: string };
+export type SyncLink = {
+  id: string; listId: string; listName: string; connectionId: string; kind: TrackerConnection["kind"]; containerId: string; containerName: string; status: string;
+  lastRunAt: string | null; createdAt: string; tasks: number;
+};
+export type SyncEvent = {
+  id: string; runId: string; kind: "run" | "conflict" | "failed" | "skipped_assignee" | "unlinked_task"; outcome: string | null; taskTitle: string | null;
+  detail: string | null; pulled: number; pushed: number; at: string;
+};
+export type SpaceSync = { available: boolean; links: SyncLink[]; connections: TrackerConnection[]; history: SyncEvent[] };
+
 export type StatusSummary = { outcome: "summarized" | "policy_blocked" | "unavailable"; summary: string | null; denial: string | null; tasks: number; aiGenerated: boolean; at: string };

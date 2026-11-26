@@ -43,7 +43,7 @@ export default async function SpaceDiscussionPage({ params }: { params: Promise<
       />
       <main id="main" className="page">
         <PageHeader title={t("discussionTitle")} eyebrow={space.data.name} icon="chat"
-          nav={<SpaceNav id={id} current="discussion" settings={space.data.rights.owns || space.data.rights.manages} time={space.data.rights.owns} files={!!space.data.libraryId} discussion={!!communityId} />} />
+          nav={<SpaceNav id={id} current="discussion" settings={space.data.rights.owns || space.data.rights.manages} owns={space.data.rights.owns} files={!!space.data.libraryId} discussion={!!communityId} />} />
         {community?.ok ? (
           <CommunityFeed initial={community.data} feed={feed?.ok ? feed.data : null} locales={me.data.tenant.enabledLocales} />
         ) : !space.data.rights.reads ? (

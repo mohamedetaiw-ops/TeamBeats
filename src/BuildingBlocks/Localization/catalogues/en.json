@@ -3204,5 +3204,12 @@
   "validation.spaces.time_minutes": "Give the time spent, from 1 minute to 24 hours.",
   "validation.spaces.time_note": "Keep the note to 500 characters.",
   "validation.spaces.time_range": "Choose a range of up to one year, with the start before the end.",
-  "authz.denied.spaces_time_entry": "Only the person who logged this time can change it. Space owners can remove it."
+  "authz.denied.spaces_time_entry": "Only the person who logged this time can change it. Space owners can remove it.",
+  "validation.spaces.sync_list": "Choose a task list of this space.",
+  "validation.spaces.sync_connection": "Choose a Planner or Jira connection your administrator set up.",
+  "validation.spaces.sync_container": "Choose a plan or project from this connection.",
+  "conflict.spaces.sync_unavailable": "The tracker did not answer. Try again later.",
+  "conflict.spaces.sync_linked": "This list or this plan is already linked. Unlink it first.",
+  "validation.tasks.planner_group": "Enter the Microsoft 365 group ID that owns the plans.",
+  "capability.spaces.task_sync": "Planner and Jira sync of task lists"
 }

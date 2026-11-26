@@ -120,6 +120,7 @@ public static class Capabilities
     // Spec 029 section 9: project and team spaces and guests Workplace Plus and above, with a limit on spaces.
     public const string SpacesProjects = "spaces.projects";
     public const string SpacesGuests = "spaces.guests";
+    public const string SpacesTaskSync = "spaces.task_sync";
     public const string SpacesMaxSpaces = "spaces.max_spaces";
 
     // Spec 031 section 9: rooms, desks, parking and equipment, and usage reports, Workplace Plus and above.
