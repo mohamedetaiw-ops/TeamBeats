@@ -290,6 +290,7 @@ export const routes: readonly Route[] = [
   { path: "/spaces/manage", tier: "other" },
   { path: "/spaces/new", tier: "other" },
   { path: "/tasks", tier: "primary" },
+  { path: "/tasks/external/[id]", tier: "detail", reason: "needs a Camunda 8 cluster with a waiting user task, which the end-to-end stack does not run" },
   { path: "/ui-gallery", tier: "primary" },
   { path: "/ui-gallery/components", tier: "primary" },
   { path: "/ui-gallery/patterns", tier: "primary" },
