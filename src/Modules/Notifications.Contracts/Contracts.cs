@@ -159,6 +159,9 @@ public static class NotificationCategories
     /// <summary>Spec 031: confirmations, reminders, releases and cancellations of the person's bookings.</summary>
     public const string Bookings = "bookings";
 
+    /// <summary>Spec 037: registrations, places freed from a waiting list, reminders and cancellations of company events.</summary>
+    public const string Events = "events";
+
     /// <summary>Spec 012: new items that match a search the person saved with alerts on.</summary>
     public const string SearchAlerts = "search_alerts";
 
@@ -187,6 +190,7 @@ public static class NotificationCategories
         new(SpaceActivity, Mandatory: false, EmailByDefault: true),
         new(Bookings, Mandatory: false, EmailByDefault: true),
         new(SearchAlerts, Mandatory: false, EmailByDefault: false),
+        new(Events, Mandatory: false, EmailByDefault: true),
         new(AiBudgets, Mandatory: false, EmailByDefault: true),
         new(AgentBriefings, Mandatory: false, EmailByDefault: false),
     ];

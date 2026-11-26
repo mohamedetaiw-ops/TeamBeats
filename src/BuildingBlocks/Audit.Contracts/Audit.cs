@@ -258,6 +258,8 @@ public static class AuditActions
     public const string CalendarEventChanged = "calendar.event_changed";
     public const string CalendarEventCancelled = "calendar.event_cancelled";
     public const string CalendarEventDeleted = "calendar.event_deleted";
+    public const string CalendarAttachmentAdded = "calendar.attachment_added";
+    public const string CalendarAttachmentRemoved = "calendar.attachment_removed";
     public const string CalendarSettingsChanged = "calendar.settings_changed";
     public const string CalendarTeamViewed = "calendar.team_viewed";
 
@@ -762,7 +764,7 @@ public static class AuditActions
         HrLeaveSubmitted, HrLeaveApproved, HrLeaveRejected, HrLeaveCancelled, HrLeaveShortened, HrLeaveOnBehalf, HrBalanceAdjusted, HrLeaveTypeChanged, HrLeavePolicyChanged,
         HrLeaveRecounted, HrLeaveSourceChanged, HrLeaveHandOffRetried,
         HrJourneyTemplateChanged, HrJourneyStarted, HrJourneyRescheduled, HrJourneyStepCompleted, HrJourneyCancelled, HrAccessRemovalConfirmed, HrAccessRemovalEscalated, HrExitInterviewRecorded, HrJourneySettingsChanged, HrPreboardingSent, HrAttendanceSettingsChanged, HrWorkRuleChanged, HrAttendanceExported, HrAttendanceRequested, HrAttendanceCorrected, HrCompensationCredited, HrAttendanceRequestRejected, HrLetterTypeChanged, HrLetterSettingsChanged, HrLetterRequested, HrLetterIssued, HrLetterRejected, HrLetterVerified, HrDataChangeSettingsChanged, HrDataChangeRequested, HrDataChangeApproved, HrDataChangeRejected, HrDataChangeWrittenBack, HrDataChangeWriteFailed, HrExpensePolicyChanged, HrExpenseRatesChanged, HrExpenseSubmitted, HrExpenseApproved, HrExpenseRejected, HrExpenseHandedOff, HrMilestoneSet, HrMilestoneReviewed, HrMilestoneWrittenBack, HrRosterPublished, HrRosterChanged,
-        CalendarEventCreated, CalendarEventChanged, CalendarEventCancelled, CalendarEventDeleted, CalendarSettingsChanged, CalendarTeamViewed,
+        CalendarEventCreated, CalendarEventChanged, CalendarEventCancelled, CalendarEventDeleted, CalendarAttachmentAdded, CalendarAttachmentRemoved, CalendarSettingsChanged, CalendarTeamViewed,
         PeopleVisibilityChanged, PeopleFieldSourceChanged, PeopleManagerSetManually, PeopleProfileUpdated, PeopleReportingCycleDetected, PeopleSettingsChanged, PeoplePhotoRemoved, PeopleSkillListChanged, PeopleAssistantSet,
         SecurityPolicyChanged, SecurityFourEyesChanged, SecurityChangeRequested, SecurityChangeApproved, SecurityChangeRejected, SecurityChangeWithdrawn,
         SecurityChangeExpired, SecurityKeyConnected, SecurityKeyRotated, SecurityKeyRevoked, SecurityKeyRestored, SecurityKeyUnreachable,

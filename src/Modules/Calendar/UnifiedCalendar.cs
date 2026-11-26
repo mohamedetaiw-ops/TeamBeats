@@ -214,7 +214,7 @@ public sealed class UnifiedCalendar(
         {
             await SourceAsync(ItemSources.Events, sources, async () =>
             {
-                foreach (var (o, rsvp) in await events.VisibleAsync(fromAt, toAt, ct))
+                foreach (var (o, rsvp, registration, attachments) in await events.VisibleAsync(fromAt, toAt, ct))
                 {
                     var layer = CalendarLayers.ForKind(o.Event.Kind);
                     if (!wanted.Contains(layer))
@@ -231,6 +231,14 @@ public sealed class UnifiedCalendar(
                     {
                         actions.Add(ItemActions.Rsvp);
                     }
+                    if (registration is { Open: true } && (registration.State is not null || registration.SeatsLeft > 0 || registration.Waitlist))
+                    {
+                        actions.Add(ItemActions.Register);
+                    }
+                    if (o.Event.Status == "published" && end > now)
+                    {
+                        actions.Add(ItemActions.CalendarFile);
+                    }
                     teamBeatsEvents.Add(Item(zone, $"event:{o.Event.Id}:{o.Key}", layer, ItemSources.Events, o.Event.Id.ToString(), Pick(o.Event.Titles),
                         o.Start, o.End, o.StartDate, o.EndDate, o.Event.Status == "cancelled" ? ItemStatuses.Cancelled : ItemStatuses.Confirmed,
                         o.Event.OrgUnitId is null ? "tenant" : "unit", actions) with
@@ -239,6 +247,8 @@ public sealed class UnifiedCalendar(
                         OnlineUrl = o.Event.OnlineUrl,
                         Description = o.Event.Descriptions.Count > 0 ? Pick(o.Event.Descriptions) : null,
                         Rsvp = rsvp,
+                        Registration = registration,
+                        Attachments = attachments.Count > 0 ? attachments : null,
                         OccurrenceKey = o.Key,
                         Recurring = o.Event.Recurrence is not null,
                     });

@@ -10,3 +10,9 @@ public sealed record CalendarEventCancelled(Guid EventId, Guid? OrgUnitId, bool 
 
 /// <summary>A person answered an event with RSVP on.</summary>
 public sealed record CalendarEventResponded(Guid EventId, string OccurrenceKey, Guid UserId, string Answer) : IIntegrationEvent;
+
+/// <summary>
+/// A registration changed (spec 037 FR-029): registered, waitlisted, cancelled or promoted from the waiting list. Spec 009
+/// event items and spec 021 analytics read it. IDs only.
+/// </summary>
+public sealed record EventRegistrationChanged(Guid EventId, string OccurrenceKey, Guid UserId, string Change) : IIntegrationEvent;

@@ -2,10 +2,12 @@ using System.Text.Json;
 using Npgsql;
 using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
+using TeamBeats.Localization;
 using TeamBeats.Messaging;
 using TeamBeats.Modules.Calendar.Contracts;
 using TeamBeats.Modules.Content.Contracts;
 using TeamBeats.Modules.Identity.Contracts;
+using TeamBeats.Modules.Notifications.Contracts;
 using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
@@ -33,11 +35,16 @@ internal sealed record EventRow(
     string Status,
     DateTimeOffset? CancelledAt,
     int Version,
-    DateTimeOffset UpdatedAt)
+    DateTimeOffset UpdatedAt,
+    bool Registration,
+    int? Capacity,
+    bool Waitlist,
+    DateTimeOffset? RegistrationClosesAt,
+    string Reminder)
 {
     public const string Columns =
         "id, org_unit_id, kind, titles::text, descriptions::text, all_day, start_at, end_at, start_date, end_date, time_zone, location, online_url, " +
-        "audience::text, recurrence::text, rsvp, status, cancelled_at, version, updated_at";
+        "audience::text, recurrence::text, rsvp, status, cancelled_at, version, updated_at, registration, capacity, waitlist, registration_closes_at, reminder";
 
     public static EventRow Read(NpgsqlDataReader r) => new(
         r.GetGuid(0), r.Get<Guid?>("org_unit_id"), r.GetString(2),
@@ -48,10 +55,12 @@ internal sealed record EventRow(
         r.GetString(10), r.Get<string>("location"), r.Get<string>("online_url"),
         JsonSerializer.Deserialize<ContentAudience>(r.GetString(13), JsonDefaults.Options) ?? ContentAudience.Everyone,
         r.IsDBNull(14) ? null : JsonSerializer.Deserialize<RecurrenceRule>(r.GetString(14), JsonDefaults.Options),
-        r.GetBoolean(15), r.GetString(16), r.Get<DateTimeOffset?>("cancelled_at"), r.GetInt32(18), r.GetFieldValue<DateTimeOffset>(19));
+        r.GetBoolean(15), r.GetString(16), r.Get<DateTimeOffset?>("cancelled_at"), r.GetInt32(18), r.GetFieldValue<DateTimeOffset>(19),
+        r.GetBoolean(20), r.Get<int?>("capacity"), r.GetBoolean(22), r.Get<DateTimeOffset?>("registration_closes_at"), r.GetString(24));
 
-    public EventView View() => new(Id, OrgUnitId, Kind, Titles, Descriptions, AllDay, StartAt, EndAt, StartDate, EndDate, TimeZone, Location, OnlineUrl, Audience,
-        Recurrence, Rsvp, Status, CancelledAt, Version, UpdatedAt);
+    public EventView View(IReadOnlyList<AttachmentView>? attachments = null) => new(Id, OrgUnitId, Kind, Titles, Descriptions, AllDay, StartAt, EndAt, StartDate,
+        EndDate, TimeZone, Location, OnlineUrl, Audience, Recurrence, Rsvp, Status, CancelledAt, Version, UpdatedAt, Registration, Capacity, Waitlist,
+        RegistrationClosesAt, Reminder, attachments);
 
     /// <summary>A unit event with no audience is for its unit and everything below it, never a sibling (section 7).</summary>
     public ContentAudience AppliesTo => Audience.IsEveryone && OrgUnitId is { } unit
@@ -69,7 +78,7 @@ internal sealed record Occurrence(EventRow Event, string Key, DateTimeOffset? St
 /// at the owning unit (tenant scope for whole tenant events) manage them; who sees one is the spec 009 audience inside
 /// the owning subtree, checked on every read. Answers are kept per occurrence.
 /// </summary>
-public sealed class CompanyEvents(
+public sealed partial class CompanyEvents(
     IDbSession session,
     ITenantContext context,
     IClock clock,
@@ -78,7 +87,12 @@ public sealed class CompanyEvents(
     IOrganizationHierarchy hierarchy,
     IUserDirectory users,
     IAuditWriter audit,
-    IOutbox outbox)
+    IOutbox outbox,
+    INotificationSender notifications,
+    ITenantSettingsReader tenantSettings,
+    TenantObjectStorage storage,
+    IMalwareScanner scanner,
+    RequestLocale locale)
 {
     public const int MaxTitle = 200;
     public const int MaxDescription = 4000;
@@ -86,6 +100,7 @@ public sealed class CompanyEvents(
     public const int MaxUrl = 2000;
     public static readonly TimeSpan CancelledShownFor = TimeSpan.FromDays(7);
     public static readonly string[] Answers = ["going", "maybe", "declined"];
+    public const int MaxCapacity = 10_000;
 
     // ---- Admin ----
 
@@ -101,7 +116,7 @@ public sealed class CompanyEvents(
     {
         var coverage = await RequireCoverageAsync(ct);
         var row = await RowAsync(id, ct);
-        return row is not null && Manages(coverage, row) ? row.View() : throw AppException.NotFound();
+        return row is not null && Manages(coverage, row) ? row.View(await AttachmentsOfAsync(id, ct)) : throw AppException.NotFound();
     }
 
     public async Task<EventView> CreateAsync(EventRequest request, CancellationToken ct)
@@ -113,16 +128,18 @@ public sealed class CompanyEvents(
         await session.ExecAsync(
             """
             insert into calendar.event (tenant_id, id, org_unit_id, kind, titles, descriptions, all_day, start_at, end_at, start_date, end_date, time_zone,
-              location, online_url, audience, recurrence, series_end, rsvp, created_by, created_at, updated_at)
+              location, online_url, audience, recurrence, series_end, rsvp, registration, capacity, waitlist, registration_closes_at, reminder, created_by,
+              created_at, updated_at)
             values (platform.current_tenant_id(), @id, @unit, @kind, @titles, @descriptions, @allDay, @startAt, @endAt, @startDate, @endDate, @zone,
-              @location, @url, @audience, @recurrence, @seriesEnd, @rsvp, @actor, @now, @now)
+              @location, @url, @audience, @recurrence, @seriesEnd, @rsvp, @registration, @capacity, @waitlist, @closes, @reminder, @actor, @now, @now)
             """,
             new
             {
                 id, unit = request.OrgUnitId, kind = v.Kind, titles = Jsonb.From(v.Titles), descriptions = Jsonb.From(v.Descriptions), allDay = request.AllDay,
                 startAt = v.StartAt, endAt = v.EndAt, startDate = v.StartDate, endDate = v.EndDate, zone = v.Zone, location = v.Location, url = v.Url,
                 audience = Jsonb.From(v.Audience), recurrence = v.Recurrence is null ? null : Jsonb.From(v.Recurrence), seriesEnd = v.SeriesEnd,
-                rsvp = request.Rsvp, actor = context.RequireUser(), now,
+                rsvp = request.Rsvp, registration = request.Registration, capacity = v.Capacity, waitlist = v.Waitlist, closes = v.ClosesAt, reminder = v.Reminder,
+                actor = context.RequireUser(), now,
             }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.CalendarEventCreated, "calendar_event", id.ToString(), TargetOrgUnitId: request.OrgUnitId,
             Changes: new { kind = v.Kind, titles = v.Titles, allDay = request.AllDay, recurring = v.Recurrence is not null }), ct);
@@ -142,11 +159,13 @@ public sealed class CompanyEvents(
             await DemandManageAsync(request.OrgUnitId, ct);
         }
         var v = await ValidateAsync(request, ct);
+        await CheckCapacityAsync(row, request, v.Capacity, ct);
         var changed = await session.ExecAsync(
             """
             update calendar.event set org_unit_id = @unit, kind = @kind, titles = @titles, descriptions = @descriptions, all_day = @allDay, start_at = @startAt,
               end_at = @endAt, start_date = @startDate, end_date = @endDate, time_zone = @zone, location = @location, online_url = @url, audience = @audience,
-              recurrence = @recurrence, series_end = @seriesEnd, rsvp = @rsvp, updated_at = @now, version = version + 1
+              recurrence = @recurrence, series_end = @seriesEnd, rsvp = @rsvp, registration = @registration, capacity = @capacity, waitlist = @waitlist,
+              registration_closes_at = @closes, reminder = @reminder, updated_at = @now, version = version + 1
             where id = @id and version = @version
             """,
             new
@@ -154,7 +173,8 @@ public sealed class CompanyEvents(
                 id, version = row.Version, unit = request.OrgUnitId, kind = v.Kind, titles = Jsonb.From(v.Titles), descriptions = Jsonb.From(v.Descriptions),
                 allDay = request.AllDay, startAt = v.StartAt, endAt = v.EndAt, startDate = v.StartDate, endDate = v.EndDate, zone = v.Zone, location = v.Location,
                 url = v.Url, audience = Jsonb.From(v.Audience), recurrence = v.Recurrence is null ? null : Jsonb.From(v.Recurrence), seriesEnd = v.SeriesEnd,
-                rsvp = request.Rsvp, now = clock.UtcNow,
+                rsvp = request.Rsvp, registration = request.Registration, capacity = v.Capacity, waitlist = v.Waitlist, closes = v.ClosesAt, reminder = v.Reminder,
+                now = clock.UtcNow,
             }, ct);
         if (changed == 0)
         {
@@ -163,7 +183,9 @@ public sealed class CompanyEvents(
         await audit.WriteAsync(new AuditEntry(AuditActions.CalendarEventChanged, "calendar_event", id.ToString(), TargetOrgUnitId: request.OrgUnitId,
             Changes: new { kind = v.Kind, titles = v.Titles, allDay = request.AllDay, recurring = v.Recurrence is not null }), ct);
         await outbox.EnqueueAsync(new CalendarEventPublished(id, request.OrgUnitId, v.Kind, true), ct);
-        return (await RowAsync(id, ct))!.View();
+        var updated = (await RowAsync(id, ct))!;
+        await AfterRegistrationChangeAsync(row, updated, ct);
+        return updated.View(await AttachmentsOfAsync(id, ct));
     }
 
     public async Task<EventView> CancelAsync(Guid id, CancellationToken ct)
@@ -183,7 +205,12 @@ public sealed class CompanyEvents(
     public async Task DeleteAsync(Guid id, CancellationToken ct)
     {
         var row = await ManagedAsync(id, ct);
+        var files = await AttachmentsOfAsync(id, ct);
         await session.ExecAsync("delete from calendar.event where id = @id", new { id }, ct);
+        foreach (var file in files)
+        {
+            await storage.DeleteAsync(AttachmentKey(id, file.Id), ct);
+        }
         await audit.WriteAsync(new AuditEntry(AuditActions.CalendarEventDeleted, "calendar_event", id.ToString(), TargetOrgUnitId: row.OrgUnitId), ct);
         await outbox.EnqueueAsync(new CalendarEventCancelled(id, row.OrgUnitId, true), ct);
     }
@@ -241,7 +268,8 @@ public sealed class CompanyEvents(
     /// days after cancelling, whose audience includes them. With each, the viewer's own answer and, for people who manage
     /// the event, the counts.
     /// </summary>
-    internal async Task<IReadOnlyList<(Occurrence Occurrence, RsvpView? Rsvp)>> VisibleAsync(DateTimeOffset from, DateTimeOffset to, CancellationToken ct)
+    internal async Task<IReadOnlyList<(Occurrence Occurrence, RsvpView? Rsvp, RegistrationView? Registration, IReadOnlyList<AttachmentView> Attachments)>> VisibleAsync(
+        DateTimeOffset from, DateTimeOffset to, CancellationToken ct)
     {
         var me = context.RequireUser();
         var now = clock.UtcNow;
@@ -254,7 +282,7 @@ public sealed class CompanyEvents(
             limit 1000
             """,
             new { cancelledSince = now - CancelledShownFor, toMargin = to.AddDays(2), fromMargin = from.AddDays(-2) }, EventRow.Read, ct);
-        var list = new List<(Occurrence, RsvpView?)>();
+        var list = new List<(Occurrence, RsvpView?, RegistrationView?, IReadOnlyList<AttachmentView>)>();
         if (rows.Count == 0)
         {
             return list;
@@ -272,9 +300,12 @@ public sealed class CompanyEvents(
         var answers = ids.Length == 0 ? [] : await session.QueryAsync(
             "select event_id, occurrence_key, user_id, answer from calendar.response where event_id = any(@ids)",
             new { ids }, r => (Event: r.GetGuid(0), Key: r.GetString(1), User: r.GetGuid(2), Answer: r.GetString(3)), ct);
+        var seats = await SeatsAsync(visible.Where(r => r.Registration).Select(r => r.Id).ToArray(), ct);
+        var files = await AttachmentsOfAsync(visible.Select(r => r.Id).ToArray(), ct);
         foreach (var row in visible)
         {
             var manages = Manages(coverage, row);
+            var attached = files.GetValueOrDefault(row.Id) ?? [];
             foreach (var o in Expand(row, from, to))
             {
                 RsvpView? rsvp = null;
@@ -288,7 +319,8 @@ public sealed class CompanyEvents(
                             answers.Count(a => a.Event == row.Id && a.Key == o.Key && a.Answer == "declined"))
                         : new RsvpView(mine, open);
                 }
-                list.Add((o, rsvp));
+                var registration = row.Registration ? RegistrationOf(row, o, seats, me, manages, now) : null;
+                list.Add((o, rsvp, registration, attached));
             }
         }
         return list;
@@ -341,13 +373,14 @@ public sealed class CompanyEvents(
         return new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(unspecified, zone), TimeSpan.Zero);
     }
 
-    private static DateTimeOffset OccurrenceEnd(Occurrence o, EventRow row) =>
+    internal static DateTimeOffset OccurrenceEnd(Occurrence o, EventRow row) =>
         o.End ?? ToInstant(o.EndDate!.Value.ToDateTime(TimeOnly.MinValue), row.Zone);
 
     // ---- Helpers ----
 
     private sealed record Valid(string Kind, Dictionary<string, string> Titles, Dictionary<string, string> Descriptions, DateTimeOffset? StartAt, DateTimeOffset? EndAt,
-        DateOnly? StartDate, DateOnly? EndDate, string Zone, string? Location, string? Url, ContentAudience Audience, RecurrenceRule? Recurrence, DateTimeOffset SeriesEnd);
+        DateOnly? StartDate, DateOnly? EndDate, string Zone, string? Location, string? Url, ContentAudience Audience, RecurrenceRule? Recurrence, DateTimeOffset SeriesEnd,
+        int? Capacity, bool Waitlist, DateTimeOffset? ClosesAt, string Reminder);
 
     private async Task<Valid> ValidateAsync(EventRequest request, CancellationToken ct)
     {
@@ -420,6 +453,26 @@ public sealed class CompanyEvents(
             }
         }
         Recurrence.Validate(request.Recurrence, firstDate, errors);
+        if (request.Rsvp && request.Registration)
+        {
+            errors.Add("registration", "validation.calendar_event.answers_both");
+        }
+        if (request.Registration && request.Capacity is not (>= 1 and <= MaxCapacity))
+        {
+            errors.Add("capacity", "validation.calendar_event.capacity");
+        }
+        var firstStart = request.AllDay
+            ? ToInstant(firstDate.ToDateTime(TimeOnly.MinValue), zone)
+            : request.Start?.ToUniversalTime() ?? now;
+        if (request.Registration && request.RegistrationClosesAt is { } closes && closes.ToUniversalTime() >= firstStart)
+        {
+            errors.Add("registrationClosesAt", "validation.calendar_event.closes");
+        }
+        var reminder = request.Reminder ?? (request.AllDay ? "1d" : "1h");
+        if (!EventReminders.All.Contains(reminder))
+        {
+            errors.Add("reminder", "validation.calendar_event.reminder");
+        }
         errors.ThrowIfAny();
         var lastDate = Recurrence.LastDate(firstDate, request.Recurrence);
         DateTimeOffset seriesEnd;
@@ -434,7 +487,9 @@ public sealed class CompanyEvents(
             seriesEnd = ToInstant(lastDate.ToDateTime(TimeOnly.FromTimeSpan(localStart.TimeOfDay)), zone) + (request.End!.Value - request.Start.Value);
         }
         return new Valid(kind, titles, descriptions, request.AllDay ? null : request.Start!.Value.ToUniversalTime(), request.AllDay ? null : request.End!.Value.ToUniversalTime(),
-            request.AllDay ? request.StartDate : null, request.AllDay ? request.EndDate : null, zone.Id, location, url, audience, request.Recurrence, seriesEnd);
+            request.AllDay ? request.StartDate : null, request.AllDay ? request.EndDate : null, zone.Id, location, url, audience, request.Recurrence, seriesEnd,
+            request.Registration ? request.Capacity : null, request.Registration && request.Waitlist, request.Registration ? request.RegistrationClosesAt?.ToUniversalTime() : null,
+            reminder);
     }
 
     private static Dictionary<string, string> Clean(IReadOnlyDictionary<string, string>? values) =>

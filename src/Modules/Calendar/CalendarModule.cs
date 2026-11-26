@@ -17,6 +17,7 @@ public static class CalendarModule
         services.AddScoped<CalendarSettings>();
         services.AddScoped<CompanyEvents>();
         services.AddScoped<UnifiedCalendar>();
+        services.AddScoped<CalendarMaintenance>();
         services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IComponentRegistration, CalendarComponents>();
         services.AddScoped<TeamBeats.Modules.Agents.Contracts.IAgentTool, MyCalendarTool>();
         services.AddScoped<TeamBeats.Modules.Agents.Contracts.IAgentTool, TeamAvailabilityTool>();
@@ -60,6 +61,58 @@ public static class CalendarModule
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });
+
+        // R3 US8: registration with seats and a waiting list, and the calendar file of an occurrence.
+        root.MapPost("/events/{id:guid}/registration", async (Guid id, RegistrationRequest request, CompanyEvents events, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await events.RegisterAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapDelete("/events/{id:guid}/registration", async (Guid id, string? occurrence, CompanyEvents events, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await events.CancelRegistrationAsync(id, occurrence, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapGet("/events/{id:guid}/calendar-file", async (Guid id, string occurrence, CompanyEvents events, CancellationToken ct) =>
+            Results.Text(await events.CalendarFileAsync(id, occurrence, ct), "text/calendar; charset=utf-8"));
+
+        // R3 US10: event attachments, read with the audience check.
+        root.MapGet("/events/{id:guid}/attachments/{attachmentId:guid}", async (Guid id, Guid attachmentId, CompanyEvents events, HttpResponse response, CancellationToken ct) =>
+        {
+            var (content, file) = await events.OpenAttachmentAsync(id, attachmentId, ct);
+            response.Headers.XContentTypeOptions = "nosniff";
+            return Results.File(content, file.ContentType, file.Name);
+        });
+
+        root.MapPost("/admin-events/{id:guid}/attachments", async (Guid id, string? name, HttpRequest http, CompanyEvents events, IDbSession session, CancellationToken ct) =>
+        {
+            var buffer = new byte[CompanyEvents.MaxAttachmentBytes + 1];
+            int read, total = 0;
+            while ((read = await http.Body.ReadAsync(buffer.AsMemory(total, buffer.Length - total), ct)) > 0)
+            {
+                total += read;
+                if (total > CompanyEvents.MaxAttachmentBytes)
+                {
+                    throw Primitives.AppException.Validation("file", "validation.calendar_event.attachment_size");
+                }
+            }
+            var view = await events.AttachAsync(id, name, http.ContentType, buffer[..total], ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/calendar/events/{id}/attachments/{view.Id}", view);
+        }).DisableAntiforgery();
+
+        root.MapDelete("/admin-events/{id:guid}/attachments/{attachmentId:guid}", async (Guid id, Guid attachmentId, CompanyEvents events, IDbSession session, CancellationToken ct) =>
+        {
+            await events.RemoveAttachmentAsync(id, attachmentId, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        root.MapGet("/admin-events/{id:guid}/registrations", async (Guid id, CompanyEvents events, CancellationToken ct) => Results.Ok(await events.RegistrationsAsync(id, ct)));
 
         root.MapGet("/admin-events", async (CompanyEvents events, CancellationToken ct) => Results.Ok(await events.ListAdminAsync(ct)));
 

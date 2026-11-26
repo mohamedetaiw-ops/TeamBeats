@@ -81,9 +81,9 @@ Covers User Stories 8 to 11, FR-028 to FR-036 (CAL-027 to CAL-031). CAL-032 (bac
 
 ### API additions (`/api/v1/calendar`)
 - `POST /events/{id}/registration` (body: occurrence) registers or joins the waiting list; `DELETE /events/{id}/registration?occurrence` cancels.
-- `GET /events/{id}/occurrences/{key}.ics` the calendar file.
+- `GET /events/{id}/calendar-file?occurrence` the calendar file (`text/calendar`).
 - `GET /events/{id}/attachments/{attachmentId}` the file, audience checked.
-- Admin: event body gains `answers`, `capacity`, `waitlist`, `registrationClosesAt`, `reminder`; `GET /admin-events/{id}/registrations`; `POST /admin-events/{id}/attachments` (multipart), `DELETE /admin-events/{id}/attachments/{attachmentId}`.
+- Admin: event body gains `answers`, `capacity`, `waitlist`, `registrationClosesAt`, `reminder`; `GET /admin-events/{id}/registrations`; `POST /admin-events/{id}/attachments?name` (the file as the body, like floor plans), `DELETE /admin-events/{id}/attachments/{attachmentId}`.
 - Items carry `registration` (`state`, `position`, `seatsLeft`, `open`) and `attachments`; holidays carry `provisional` and `observedFor`.
 
 ### Jobs and notifications

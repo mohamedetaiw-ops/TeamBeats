@@ -54,7 +54,7 @@ public sealed class CalendarRulesTests
 
     private static EventRow Row(bool allDay, DateTimeOffset? start, DateTimeOffset? end, DateOnly? startDate, DateOnly? endDate, RecurrenceRule? rule, string zone = "Europe/London") =>
         new(Guid.NewGuid(), null, EventKinds.Company, new() { ["en"] = "Event" }, [], allDay, start, end, startDate, endDate, zone, null, null,
-            ContentAudience.Everyone, rule, false, "published", null, 1, DateTimeOffset.UtcNow);
+            ContentAudience.Everyone, rule, false, "published", null, 1, DateTimeOffset.UtcNow, false, null, false, null, "none");
 
     [Fact]
     public void A_weekly_series_keeps_its_local_time_across_the_clock_change()
