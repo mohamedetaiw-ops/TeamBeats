@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Alert } from "@/components/ui/Alert";
 import { Badge } from "@/components/ui/Badge";
@@ -11,6 +11,7 @@ import { Widget } from "@/components/ui/Widget";
 import { problemMessages } from "@/lib/notifications/types";
 import { localName } from "@/lib/people/types";
 import {
+  ownSkillsChangedEvent,
   proficiencies,
   type OwnSkillsView,
   type PersonSkillsView,
@@ -152,6 +153,20 @@ export function OwnSkillsEditor({ initial }: { initial: OwnSkillsView }) {
   const [busy, setBusy] = useState(false);
   const [messages, setMessages] = useState<string[]>([]);
   const [saved, setSaved] = useState(false);
+
+  // A suggestion added from the suggestions part (spec 010 R3) is read again here.
+  useEffect(() => {
+    const reload = async () => {
+      const response = await fetch("/api/v1/me/skills", { cache: "no-store" });
+      if (!response.ok) return;
+      const next = (await response.json()) as OwnSkillsView;
+      setView(next);
+      setDrafts(next.items.map((s) => ({ skillId: s.skillId, name: "", names: s.names, proficiency: s.proficiency })));
+    };
+    const listen = () => void reload();
+    window.addEventListener(ownSkillsChangedEvent, listen);
+    return () => window.removeEventListener(ownSkillsChangedEvent, listen);
+  }, []);
 
   if (!view.enabled) return null;
   const available = view.choices.filter(

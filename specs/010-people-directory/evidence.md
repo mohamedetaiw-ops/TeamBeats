@@ -35,3 +35,12 @@ Photo upload (T007) and directory photos (T012) are done. The reporting line is 
 | PPL-030 active delegation on the profile | Met | `ProfileRelationshipTests.An_active_delegation_shows_the_delegate_and_last_day_only`; `people-relations.spec.ts` |
 | PPL-031 skills off and purge | Met | `SkillTests.Skills_turned_off_are_hidden_and_deleted_after_90_days_and_Workplace_has_none` |
 | PPL-020, PPL-021 | Earlier slices | Out of office and HR owned fields are evidenced in specs 022 and 019 |
+
+## R3
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| PPL-032 Teams presence on the profile | Met | Delivered with spec 018 R3: presence endpoint with the free and busy visibility rule, `PresenceStatus` on the profile |
+| PPL-033 consent before anything is read | Met | `SkillSuggestionTests.Suggestions_read_only_the_persons_own_published_items_after_consent_and_cite_them` (no model call before consent), `Turning_suggestions_off_deletes_open_ones_and_Workplace_has_none` |
+| PPL-034 own published items, tenant list only, cited | Met | `SkillSuggestionTests.Suggestions_read_only_...` (Confidential item and a colleague's article not sent, citations); `people-suggestions.spec.ts` in English and Arabic with axe |
+| PPL-035 private until added, dismissed not offered again | Met | `SkillSuggestionTests.Suggestions_read_only_...` (colleague and other tenant not found, accept declares the skill, dismissed skill left out of the next run) |
