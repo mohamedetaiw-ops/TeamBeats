@@ -1,0 +1,71 @@
+/* Plan map (spec 036 DLS-040). The canvas keeps left to right in every language: it is a picture of a place, and the
+   pins sit where things are on it. */
+.ui-planmap {
+  margin: 0;
+  min-inline-size: 0;
+}
+
+.ui-planmap-canvas {
+  position: relative;
+  direction: ltr;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-sunken);
+  overflow: hidden;
+}
+
+.ui-planmap-canvas[data-placing] {
+  cursor: crosshair;
+}
+
+.ui-planmap-image {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: contain;
+}
+
+.ui-planmap-pin {
+  position: absolute;
+  inset-inline-start: var(--xp-x);
+  inset-block-start: var(--xp-y);
+
+  /* 24px at least in the compact density too (WCAG 2.5.8). */
+  inline-size: max(var(--tb-space-lg), 1.5rem);
+  block-size: max(var(--tb-space-lg), 1.5rem);
+  padding: 0;
+  translate: -50% -50%;
+  border: var(--tb-border-width-thick) solid var(--tb-color-surface-raised);
+  border-radius: var(--tb-radius-full);
+  background: var(--tb-color-state-success);
+  cursor: pointer;
+}
+
+.ui-planmap-pin:disabled {
+  cursor: default;
+}
+
+.ui-planmap-pin:focus-visible {
+  outline: var(--tb-border-width-focus) solid var(--tb-color-focus-ring);
+  outline-offset: var(--tb-border-width-thick);
+}
+
+/* Busy is a square, unavailable a hollow ring, selected a larger ring: shape tells them apart, not only color. */
+.ui-planmap-pin[data-state="busy"] {
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-text-secondary);
+}
+
+.ui-planmap-pin[data-state="unavailable"] {
+  border-color: var(--tb-color-text-secondary);
+  background: var(--tb-color-surface-raised);
+}
+
+.ui-planmap-pin[data-state="selected"] {
+  inline-size: max(var(--tb-space-xl), 2rem);
+  block-size: max(var(--tb-space-xl), 2rem);
+  border-color: var(--tb-color-accent-base);
+  background: var(--tb-color-accent-subtle);
+}

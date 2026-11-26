@@ -48,6 +48,7 @@ Every TeamBeats screen is built from these components. They live in `src/Web/com
 | Avatar group | `Avatar.tsx` (`AvatarGroup`) | The people on a card or a thread, at most four and then a count | A named list; the count is text |
 | Accordion | `Accordion.tsx` | Questions and settings that open in place | Native `details`; works without script; found by find in page |
 | Pagination | `Pagination.tsx` | Pages of a list that the API pages | A named `nav` of links; the current page has `aria-current="page"` |
+| Plan map | `PlanMap.tsx` | Places on a floor plan image, to choose one or to place one; always next to a list with the same actions | A named group with the image and its alternative text; each pin is a button named with its place and state, shapes differ by state, the canvas keeps left to right positions in both directions; states free, busy, unavailable, selected, no plan, placing |
 | Announcement | `Announcement.tsx` | News about the product or workplace, with at most one action; not for errors | A named region; the close button is named |
 | Dialog | `Dialog.tsx` (`Dialog`) | A task or question that must be finished or dismissed before going on, and needs room | Native modal `dialog`: focus stays inside, Escape and a click outside close it, focus returns to the opener; named by its title |
 | Drawer | `Dialog.tsx` (`Drawer`) | Details or filters beside a list, attached to an edge (end by default) | Same as Dialog; the edge follows the reading direction |

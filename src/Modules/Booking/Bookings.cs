@@ -242,7 +242,7 @@ public sealed class Bookings(
         var busy = taken.ToLookup(t => t.Resource);
         var hits = bookable
             .Where(b => !busy[b.Row.Id].Any(t => t.From < span.EndsAt.AddMinutes(b.Rule.BufferMinutes) && t.To > span.StartsAt))
-            .Select(b => new SearchHit(b.Row.Id, b.Row.Kind, b.Row.Names, b.Row.Capacity, b.Row.Attributes, b.Floor, b.Zone, b.Row.NeedsApproval))
+            .Select(b => new SearchHit(b.Row.Id, b.Row.Kind, b.Row.Names, b.Row.Capacity, b.Row.Attributes, b.Floor, b.Zone, b.Row.NeedsApproval, b.Row.FloorId))
             .ToList();
         return new SearchResult(site.Id, site.TimeZone, span.StartsAt, span.EndsAt, hits);
     }

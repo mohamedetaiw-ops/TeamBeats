@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
-import { bookingApi, bookingHref, bookingReportsHref, manageBookingHref, myBookingsHref, tomorrowIso, type BookingRights, type SiteView } from "@/lib/booking";
+import { bookingApi, bookingHref, bookingReportsHref, manageBookingHref, myBookingsHref, receptionHref, tomorrowIso, type BookingRights, type SiteView } from "@/lib/booking";
 import { Header } from "@/components/shell/Header";
 import { ButtonLink } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -36,6 +36,11 @@ export default async function BookingPage({ searchParams }: { searchParams: Prom
                   {t("manage.pageTitle")}
                 </ButtonLink>
               ) : null}
+              {rights.ok && rights.data.reception ? (
+                <ButtonLink href={receptionHref()} icon="people">
+                  {t("reception.pageTitle")}
+                </ButtonLink>
+              ) : null}
               {rights.ok && rights.data.report ? (
                 <ButtonLink href={bookingReportsHref} icon="trend-up">
                   {t("reports.pageTitle")}
@@ -45,7 +50,7 @@ export default async function BookingPage({ searchParams }: { searchParams: Prom
           }
         />
         {rights.ok && rights.data.book && sites.ok ? (
-          <FindSpace sites={sites.data} kinds={rights.data.kinds} initial={{ site: query.site, kind: query.kind, zone: query.zone, date: tomorrow }} />
+          <FindSpace sites={sites.data} kinds={rights.data.kinds} initial={{ site: query.site, kind: query.kind, zone: query.zone, date: tomorrow }} floorPlans={rights.data.floorPlans} />
         ) : (
           <StateView kind={sites.ok || sites.status === 403 ? "unsupported" : "error"} title={t("unavailableTitle")} message={t("unavailable")} />
         )}

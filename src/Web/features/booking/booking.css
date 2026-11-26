@@ -155,3 +155,53 @@
   text-decoration: line-through;
   cursor: not-allowed;
 }
+
+/* Floor plan maps (spec 031 R3 US7): the map beside its list, stacked on narrow screens. */
+.booking-split {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: var(--tb-space-lg);
+  align-items: start;
+}
+
+@media (width <= 60rem) {
+  .booking-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.booking-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+  margin: var(--tb-space-sm) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.booking-places {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.booking-places > li {
+  align-items: center;
+  justify-content: space-between;
+  padding-block: var(--tb-space-xs);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.booking-places > li[data-selected] {
+  background: var(--tb-color-accent-subtle);
+}
+
+/* A visit code (spec 031 R3 US8): spaced so it reads aloud letter by letter, the same way in both directions. */
+.booking-code {
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-weight: var(--tb-font-weight-semibold);
+  letter-spacing: 0.15em;
+}

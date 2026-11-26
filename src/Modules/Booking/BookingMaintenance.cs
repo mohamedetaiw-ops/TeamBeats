@@ -26,7 +26,9 @@ public sealed class BookingMaintenance(
     ITenantSettingsReader tenantSettings,
     INotificationSender notifications,
     IOutbox outbox,
-    BookingActivity activity)
+    BookingActivity activity,
+    Visits visits,
+    Sensors sensors)
 {
     public const string CheckInOpenTemplate = "booking.check_in_open";
     public const string ReleasedTemplate = "booking.released";
@@ -36,11 +38,13 @@ public sealed class BookingMaintenance(
 
     public const int RetentionDays = 365;
 
-    public sealed record Run(int Expired, int Reminded, int Released, int Noticed, int Anonymized = 0);
+    public sealed record Run(int Expired, int Reminded, int Released, int Noticed, int Anonymized = 0, int VisitsPurged = 0, int SensorCheckIns = 0);
 
     public async Task<Run> RunDueAsync(DateTimeOffset now, CancellationToken ct)
     {
         var expired = await approvals.ExpireDueAsync(now, ct);
+        // Spec 031 R3 FR-027: sensors are read first, so an occupied desk is checked in before release is considered.
+        var sensed = await sensors.RunDueAsync(now, ct);
         var settings = await rules.SettingsAsync(ct);
         var locale = (await tenantSettings.GetLocaleSettingsAsync(ct)).DefaultLocale;
 
@@ -144,7 +148,9 @@ public sealed class BookingMaintenance(
               and not exists (select 1 from booking.booking b where b.series_id = s.id and b.holder_id <> '00000000-0000-0000-0000-000000000000')
             """, new { day = DateOnly.FromDateTime(cutoff.UtcDateTime) }, ct);
         await session.ExecAsync("delete from booking.no_show_notice where noticed_at < @cutoff and (restricted_until is null or restricted_until < @now)", new { cutoff, now }, ct);
-        return new Run(expired, open.Count, released.Count, noticed, anonymized);
+        // Spec 031 R3 FR-025: visit emails are retried and visitor details cleared 30 days after the visit.
+        var (_, purged) = await visits.RunDueAsync(now, ct);
+        return new Run(expired, open.Count, released.Count, noticed, anonymized, purged, sensed);
     }
 }
 

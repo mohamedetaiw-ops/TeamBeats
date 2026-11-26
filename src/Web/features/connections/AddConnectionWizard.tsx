@@ -189,6 +189,7 @@ function setupHeading(kind: ConnectionType): { title: string; intro: string } {
     case "jira_service_management":
     case "tasks_planner":
     case "tasks_jira":
+    case "occupancy_rest":
     case "camunda8":
     case "mcp_server":
       return { title: `ticketing.${kind}.addTitle`, intro: `ticketing.${kind}.addIntro` };

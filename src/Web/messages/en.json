@@ -988,6 +988,9 @@
         "booking_desks": "Desk booking",
         "booking_resources": "Parking and equipment booking",
         "booking_reports": "Booking reports",
+        "booking_floor_plans": "Floor plan maps",
+        "booking_visitors": "Visitor booking",
+        "booking_sensors": "Sensor occupancy",
         "mobile_pwa": "Installable app",
         "mobile_push": "Push notifications",
         "mobile_offline": "Offline reading",
@@ -1666,7 +1669,8 @@
       "booking": {
         "book": "Book desks and rooms",
         "manage": "Manage booking",
-        "report": "Booking reports"
+        "report": "Booking reports",
+        "reception": "Work reception"
       },
       "kiosk": {
         "signin": "Sign in at kiosks"
@@ -10688,7 +10692,8 @@
       "microsoft365": "Microsoft 365",
       "lms_rest": "Learning management system (LMS)",
       "hr_oracle_hcm": "Oracle HCM Cloud",
-      "hr_sap_successfactors": "SAP SuccessFactors"
+      "hr_sap_successfactors": "SAP SuccessFactors",
+      "occupancy_rest": "Occupancy sensors (REST)"
     },
     "status": {
       "healthy": "Healthy",
@@ -10729,7 +10734,8 @@
       "mcp_server": "Agents use the tools of an external MCP server after an integration administrator approves each one.",
       "lms_rest": "Brings your LMS courses into the catalogue, sends assignments of them to the LMS and reads completions back.",
       "hr_oracle_hcm": "Reads Oracle HCM workers, their assignments and managers every night, with the mapping already filled.",
-      "hr_sap_successfactors": "Reads SAP SuccessFactors users and their managers every night, leavers included, with the mapping already filled."
+      "hr_sap_successfactors": "Reads SAP SuccessFactors users and their managers every night, leavers included, with the mapping already filled.",
+      "occupancy_rest": "Facilities map desk and room sensors to resources, for sensed occupancy and optional sensor check-in."
     },
     "add": {
       "title": "Add a custom REST connection",
@@ -10760,6 +10766,10 @@
       "mcp_server": {
         "addTitle": "Add an MCP server connection",
         "addIntro": "Enter the server's MCP endpoint, such as https://tools.example.com/mcp, and how TeamBeats signs in. The host must be on the allowlist. Each tool the server lists waits for your approval before any agent can use it."
+      },
+      "occupancy_rest": {
+        "addTitle": "Add an occupancy sensor connection",
+        "addIntro": "Enter the https address of the sensor service. TeamBeats reads the address followed by /sensors every 5 minutes and keeps only each sensor's ID, whether it is occupied and when."
       }
     },
     "slack": {
@@ -12486,6 +12496,16 @@
       "rowAccess": "Access to the finance workspace",
       "rowTraining": "Safety training booking",
       "failed": "This part of the page could not be shown"
+    },
+    "plan": {
+      "title": "Plan map",
+      "intro": "A floor plan with pins. Each pin is a button with its name and state, shapes differ by state, and a list next to it offers the same actions.",
+      "label": "Sample floor",
+      "alt": "Sample floor plan with three rooms and an open area",
+      "d1": "Desk 1, free",
+      "d2": "Desk 2, taken",
+      "d3": "Desk 3, not bookable",
+      "r1": "Meeting room, free"
     }
   },
   "patterns_gallery": {
@@ -16255,7 +16275,8 @@
         "takenBy": "{start} to {end}, booked by {name}",
         "closed": "The site is closed that day.",
         "failed": "The day could not be loaded."
-      }
+      },
+      "onPlan": "{name} on the floor plan"
     },
     "mine": {
       "pageTitle": "My bookings",
@@ -16374,7 +16395,8 @@
       "approval": "Needs approval",
       "approvalHint": "Bookings are held until an approver or a facilities administrator of the site approves them.",
       "approver": "Approver",
-      "qrAlt": "QR code to check in to {name}"
+      "qrAlt": "QR code to check in to {name}",
+      "floorPlan": "Plan of {floor}"
     },
     "checkIn": {
       "pageTitle": "Check in",
@@ -16433,8 +16455,11 @@
         "usedHours": "Used hours",
         "availableHours": "Available hours",
         "utilization": "Utilization",
-        "noShowRate": "No-show rate"
-      }
+        "noShowRate": "No-show rate",
+        "sensedHours": "Sensed occupied hours"
+      },
+      "sensedOf": "Sensed occupied: {value} hours",
+      "visitsOf": "{count, plural, =0 {No visitors} one {# visitor} other {# visitors}}, {arrived} arrived"
     },
     "closures": {
       "title": "Closed days",
@@ -16452,6 +16477,179 @@
       "reopenQuestion": "Open the site again on {date}? Bookings cancelled for that day stay cancelled.",
       "reopenConfirm": "Open it",
       "keep": "Keep it closed"
+    },
+    "floor": {
+      "pageTitle": "Floor plan",
+      "pageIntro": "See what is free on this floor and book it from the plan or the list.",
+      "unavailableTitle": "This floor plan is not available",
+      "unavailable": "Floor plans are not part of your plan, or the floor could not be loaded.",
+      "failed": "That did not work",
+      "working": "Working",
+      "date": "Date",
+      "start": "From",
+      "end": "To",
+      "show": "Show",
+      "edit": "Edit plan",
+      "timeZone": "Times are in {zone}.",
+      "booked": "{name} is booked",
+      "openBooking": "Open the booking",
+      "mapTitle": "Plan",
+      "mapLabel": "Plan of {floor}",
+      "planAlt": "Floor plan of {floor}",
+      "legend": "Legend",
+      "state": {
+        "free": "Free",
+        "busy": "Taken",
+        "unavailable": "Not bookable"
+      },
+      "selected": "Selected: {name}",
+      "noPlanTitle": "No plan yet",
+      "noPlan": "A facilities administrator has not uploaded a plan for this floor. Use the list to book.",
+      "listTitle": "Places on this floor",
+      "emptyTitle": "Nothing to book here",
+      "empty": "This floor has no resources you can see.",
+      "seats": "{count, plural, one {# seat} other {# seats}}",
+      "notPlaced": "not on the plan",
+      "request": "Request {name}",
+      "book": "Book {name}",
+      "pin": "{name}, {state}"
+    },
+    "floorEditor": {
+      "pageTitle": "Edit floor plan",
+      "pageIntro": "Upload the plan image and place each resource where it is.",
+      "site": "Site",
+      "deniedTitle": "You cannot edit this floor plan",
+      "denied": "Only facilities administrators for this site edit its floor plans, and floor plans must be part of your plan.",
+      "failed": "That did not work",
+      "uploaded": "Plan uploaded.",
+      "removed": "Plan removed.",
+      "saved": "Places saved.",
+      "working": "Working",
+      "imageTitle": "Plan image",
+      "imageIntro": "Use a PNG, JPEG or WebP image of up to 5 MB.",
+      "file": "Image file",
+      "replace": "Replace plan",
+      "upload": "Upload plan",
+      "remove": "Remove plan",
+      "view": "View the floor",
+      "mapTitle": "Place resources",
+      "placeHint": "Click the plan to place {name}.",
+      "chooseHint": "Choose a resource, then click where it is on the plan.",
+      "mapLabel": "Plan of {floor}",
+      "planAlt": "Floor plan of {floor}",
+      "placesTitle": "Positions",
+      "noResourcesTitle": "No resources on this floor",
+      "noResources": "Add resources to this floor first.",
+      "x": "{name} across, in percent",
+      "y": "{name} down, in percent",
+      "save": "Save places",
+      "noPlanTitle": "No plan yet",
+      "noPlan": "Upload a plan image to place resources on it."
+    },
+    "visits": {
+      "pageTitle": "Visitors",
+      "pageIntro": "Expect a visitor at a site. They get an email with a code to show at reception, and you are told when they arrive.",
+      "unavailableTitle": "Visitors are not available",
+      "unavailable": "Visitor booking is not part of your plan, or it could not be loaded.",
+      "failed": "That did not work",
+      "working": "Working",
+      "formTitle": "Expect a visitor",
+      "editTitle": "Change the visit",
+      "noSitesTitle": "No sites yet",
+      "noSites": "A facilities administrator adds sites before visitors can be expected.",
+      "site": "Site",
+      "date": "Date",
+      "start": "From",
+      "end": "To",
+      "name": "Visitor's name",
+      "email": "Visitor's email",
+      "company": "Company",
+      "optional": "Optional",
+      "booking": "With your booking",
+      "noBooking": "No booking",
+      "bookingOption": "{name}, {start} to {end}",
+      "privacy": "The visitor's name, email and company are deleted 30 days after the visit.",
+      "register": "Expect visitor",
+      "save": "Save changes",
+      "stopEditing": "Stop changing",
+      "registered": "{name} is expected. The code is on its way by email.",
+      "changed": "The visit of {name} is changed and they were told.",
+      "listTitle": "Your visitors",
+      "emptyTitle": "No visitors expected",
+      "empty": "Visitors you expect appear here with their code.",
+      "removedName": "Visitor details deleted",
+      "when": "{date}, {start} to {end}",
+      "zone": "({zone} time)",
+      "status": {
+        "expected": "Expected",
+        "arrived": "Arrived",
+        "left": "Left",
+        "cancelled": "Cancelled"
+      },
+      "hostLeft": "Cancelled because the host left",
+      "code": "Code",
+      "change": "Change the visit of {name}",
+      "cancel": "Cancel the visit of {name}",
+      "cancelQuestion": "Cancel this visit? The visitor is told by email and the code stops working.",
+      "cancelConfirm": "Cancel visit",
+      "keep": "Keep it",
+      "emailState": {
+        "none": "No email yet",
+        "pending": "Email waiting to send",
+        "sent": "Email sent",
+        "bounced": "Email refused, give the code another way",
+        "failed": "Email not sent, give the code another way"
+      }
+    },
+    "reception": {
+      "pageTitle": "Reception",
+      "pageIntro": "Today's visitors at the site, checked in by the code they bring or from the list.",
+      "deniedTitle": "You do not work reception",
+      "denied": "Reception is for people a facilities administrator gave it to, and visitor booking must be part of your plan.",
+      "noSitesTitle": "No sites to receive at",
+      "noSites": "There is no active site in your reception scope.",
+      "failed": "That did not work",
+      "unavailable": "The visitors could not be loaded.",
+      "working": "Working",
+      "site": "Site",
+      "date": "Date",
+      "show": "Show",
+      "codeTitle": "Check in by code",
+      "code": "Visit code",
+      "codeHint": "8 letters and digits from the visitor's email",
+      "checkIn": "Check in",
+      "arrived": "{name} is checked in and their host was told.",
+      "left": "{name} has left.",
+      "todayTitle": "Today at {site}",
+      "dayTitle": "Visitors at {site}",
+      "counts": "{total, plural, =0 {No visitors} one {# visitor} other {# visitors}}: {waiting} expected, {inside} inside",
+      "emptyTitle": "No visitors",
+      "empty": "Nobody is expected on this day.",
+      "listLabel": "Visitors",
+      "host": "Host: {name}",
+      "arrivedAt": "Arrived {time}",
+      "leftAt": "Left {time}",
+      "checkInName": "Check in {name}",
+      "checkOutName": "Check out {name}"
+    },
+    "sensors": {
+      "title": "Occupancy sensors",
+      "checkInOn": "Sensor check-in is on: a sensor that sees a booked resource occupied in its check-in window checks the booking in.",
+      "checkInOff": "Sensor check-in is off: sensors only count sensed occupancy for reports.",
+      "failed": "That did not work",
+      "saved": "Sensors saved.",
+      "noConnectionsTitle": "No sensor connection",
+      "noConnections": "An integration administrator adds and turns on an occupancy sensor connection under Connections first.",
+      "noResourcesTitle": "No resources",
+      "noResources": "Add resources to this site first.",
+      "connection": "Connection",
+      "listLabel": "Sensors by resource",
+      "sensorId": "Sensor ID for {name}",
+      "occupied": "Occupied at {at}",
+      "vacant": "Vacant at {at}",
+      "notRead": "Not read yet",
+      "save": "Save sensors",
+      "working": "Working"
     }
   },
   "kiosk": {

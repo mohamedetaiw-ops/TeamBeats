@@ -9,11 +9,11 @@
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R2 (bookable rooms, desks, parking and equipment for tenants without Microsoft 365 room mailboxes, sites, floors and zones, availability calendar, booking rules, recurring bookings, approval for restricted resources, check-in with auto release, booking on behalf, usage reports), R3 (floor plan maps, visitor booking, sensor based occupancy through connectors) |
-| Last updated | 2026-11-07 |
+| Last updated | 2026-11-26 |
 | Approved | 2026-11-07 by Mohamed (standing approval to proceed) |
-| Requirement IDs | BKG-001 to BKG-018 (new) |
+| Requirement IDs | BKG-001 to BKG-018 (R2), BKG-019 to BKG-027 (R3) |
 | Use cases | UC-08 |
-| Depends on | 002 (org units, locations), 004, 005, 010 (people), 015 (reminders), 016 (approvals and services), 018 (M365 rooms, the alternative), 022 (calendars, holidays), 030 (QR check-in on mobile) |
+| Depends on | 002 (org units, locations), 004, 005, 010 (people), 011 (malware scan of uploads), 015 (reminders, external email), 016 (approvals and services), 017 (occupancy connector, R3), 018 (M365 rooms, the alternative), 022 (calendars, holidays), 030 (QR check-in on mobile) |
 | Used by | 008 (My bookings widget), 016 (booking as a service), 021 (usage counts) |
 
 ## 1. Problem and outcome
@@ -37,8 +37,14 @@
 - Reports: utilization by resource, zone and site, no-show rates.
 - Coexistence with 018: a room is either an M365 room mailbox or a TeamBeats room, never both.
 
+**In scope for R3:**
+- Floor plan maps: an image per floor with resources placed on it, showing availability for the chosen time, with a list that offers the same choices.
+- Visitor booking: a host registers a visitor for a site and time; the visitor gets an email with a visit code; reception checks them in and the host is told.
+- Sensor based occupancy: occupancy readings from sensors through a 017 connector, mapped to resources, used to check bookings in and shown in reports as counts.
+
 **Out of scope:**
-- Floor plan maps (R3), visitor management (R3), sensor occupancy (R3).
+- Visitor badges printing, NDAs and watch lists (a later visitor management spec).
+- Indoor positioning or tracking of people; sensors report a resource as occupied or free, never who is there.
 - Catering and service orders for meetings (use 016 services).
 - Payment or chargeback.
 
@@ -51,6 +57,8 @@
 | Facilities administrator | Define locations, resources, rules, QR codes; cancel any booking with a reason | `booking.manage` in location scope |
 | Resource approver | Approve or reject restricted bookings | Approver in the resource's approval route |
 | Facilities analyst | See utilization reports | `booking.report` in location scope |
+| Host (R3) | Register visitors for a site, cancel their own visits | `booking.book` |
+| Reception (R3) | See the day's visitors of a site, check them in and out | `booking.reception` in location scope |
 
 ## 4. User scenarios
 
@@ -101,12 +109,44 @@ Hana, facilities administrator, adds the Riyadh office with 2 floors, 8 rooms, 1
 1. **Given** bookings and check-ins, **Then** the analyst sees utilization (checked-in hours over available hours) and no-show rates by resource, zone, site and week.
 2. **Given** reports, **Then** they show no names, only counts, unless the viewer is a facilities administrator looking at a single booking.
 
+### User Story 7: Pick a desk on the floor plan (Priority: P1, R3)
+
+Hana uploads the plan of the second floor and places the desks and rooms on it. Laila picks a desk next to her team from the map.
+
+**Acceptance scenarios:**
+1. **Given** a floor, **When** Hana uploads a PNG, JPEG or WebP plan of up to 5 MB, **Then** it is scanned for malware and shown on the floor, and she places each resource of the floor on it by position.
+2. **Given** a time, **When** Laila opens the floor, **Then** each placed resource shows as free, booked or not for her (rules), and choosing a free one books it through the same rules as search.
+3. **Given** a keyboard or screen reader user, **Then** the same resources and actions are offered as a list next to the map, in the same order, and the map works right to left.
+4. **Given** a resource removed or moved to another floor, **Then** its place on the old plan goes with it.
+
+### User Story 8: Expect a visitor (Priority: P2, R3)
+
+Omar expects a supplier at the Riyadh office on Tuesday at 10:00.
+
+**Acceptance scenarios:**
+1. **Given** a site, **When** Omar registers a visitor with name, email and optional company for a day and time, optionally with one of his bookings, **Then** the visitor gets an email with the site, the time, the host's name and a visit code.
+2. **Given** the visit day, **When** reception opens the site's visitors, **Then** they see the day's visitors with host and time, and check one in by code or from the list; the host is told the visitor has arrived.
+3. **Given** a visit that is cancelled or changed by the host, **Then** the visitor gets an email saying so.
+4. **Given** 30 days after the visit, **Then** the visitor's name, email and company are deleted and only counts remain.
+
+### User Story 9: Know a desk is really used (Priority: P3, R3)
+
+The tenant has desk and room sensors behind its building system.
+
+**Acceptance scenarios:**
+1. **Given** an administrator who made an occupancy connection in 017 and mapped sensor IDs to resources, **When** a sensor reports occupied during a booking's check-in window, **Then** the booking is checked in by the sensor when the tenant turned sensor check-in on.
+2. **Given** readings, **Then** the utilization report shows sensed occupied hours next to checked-in hours, as counts without names.
+3. **Given** the connector is unavailable or a sensor is silent, **Then** bookings follow the R2 check-in and release rules and nothing is checked in by the sensor.
+
 ### Edge cases and exception flows
 - Resource removed with future bookings: holders are notified and offered alternatives in the same zone.
 - Site closed for a day (holiday or emergency): bookings that day are cancelled with notice.
 - Booking across midnight: allowed only if the rules allow overnight (for vehicles).
 - Person leaves the company: future bookings are cancelled.
 - Time zone: bookings use the site's time zone and show it when different from the user's.
+- R3: a floor plan replaced by a new image keeps the positions, which are stored relative to the image; resources placed outside the new image are listed as not placed.
+- R3: a visitor whose host leaves the company: future visits are cancelled and the visitor is told.
+- R3: two readings for the same sensor at the same time: the later one counts; readings older than one hour are ignored.
 
 ## 5. Functional requirements
 
@@ -128,11 +168,23 @@ Hana, facilities administrator, adds the Riyadh office with 2 floors, 8 rooms, 1
 - **BKG-016 / FR-016**: Leavers' future bookings MUST be cancelled.
 - **BKG-017 / FR-017**: Bookings MUST use the site's time zone and show it when it differs from the user's.
 - **BKG-018 / FR-018**: All user-facing text MUST use resource keys and work in RTL.
+- **BKG-019 / FR-019**: Facilities administrators MUST be able to upload a floor plan image per floor, scanned for malware, and place the floor's resources on it.
+- **BKG-020 / FR-020**: The floor plan MUST show each placed resource's availability for the chosen time and book through the same server rules as search.
+- **BKG-021 / FR-021**: The floor plan MUST have a list alternative with the same resources and actions, and work by keyboard, with screen readers and in RTL.
+- **BKG-022 / FR-022**: Employees MUST be able to register visitors for a site and time, optionally with their booking, and cancel or change their own visits.
+- **BKG-023 / FR-023**: Visitors MUST get an email with an opaque visit code, and an email when the visit is cancelled or changed.
+- **BKG-024 / FR-024**: Reception MUST see the day's visitors of the sites in their scope and check them in by code or from the list; the host MUST be told on arrival.
+- **BKG-025 / FR-025**: Visitor personal data MUST be deleted 30 days after the visit; reports show counts only.
+- **BKG-026 / FR-026**: Occupancy readings MUST come through a 017 connector, mapped from sensor IDs to resources, and carry no personal data.
+- **BKG-027 / FR-027**: When the tenant turns sensor check-in on, a reading of occupied in the check-in window MUST check the booking in; utilization reports MUST show sensed occupied hours as counts.
 
 ## 6. Business and validation rules
 - Defaults: book up to 14 days ahead, 15 minute slots, check-in window 15 minutes before to 15 minutes after start, 3 active desk bookings per person.
 - Tentative hold for approval up to 24 hours.
 - No-show restriction default off.
+- R3: a floor plan image is PNG, JPEG or WebP, up to 5 MB and up to 8,000 pixels a side; positions are percentages of its width and height.
+- R3: up to 20 visitors per host per day; a visit is between 15 minutes and 12 hours on one day, up to 90 days ahead; visit codes are 8 characters, unique per tenant, and work only on the visit day.
+- R3: occupancy is read every 5 minutes; sensor check-in default off; readings are kept 90 days, then hourly counts only.
 
 ## 7. Tenant and organization scope
 - Tenant-owned data: locations, resources, rules, bookings, check-ins.
@@ -146,6 +198,9 @@ Hana, facilities administrator, adds the Riyadh office with 2 floors, 8 rooms, 1
 |---|---|---|---|---|
 | Locations, resources, rules | Product | Internal | Life of resource | No |
 | Bookings and check-ins | Product | Internal | 1 year, then counts only | Yes |
+| Floor plans and positions (R3) | Product | Internal | Life of floor | No |
+| Visits (R3) | Product | Confidential | 30 days after the visit, then counts only | Yes (visitor name, email, company) |
+| Occupancy readings (R3) | Connector | Internal | 90 days, then hourly counts | No |
 
 ## 9. Package entitlements
 
@@ -155,17 +210,22 @@ Hana, facilities administrator, adds the Riyadh office with 2 floors, 8 rooms, 1
 | `booking.desks` | off | on | on |
 | `booking.resources` (parking, equipment) | off | on | on |
 | `booking.reports` | off | on | on |
+| `booking.floor_plans` (R3) | off | on | on |
+| `booking.visitors` (R3) | off | on | on |
+| `booking.sensors` (R3) | off | off | on |
 
 ## 10. UX, localization and accessibility
 - Find a space page with filters and a time grid; My bookings page and widget; resource admin pages; QR print sheet.
 - The time grid is keyboard operable and announces availability to screen readers; it runs right to left in RTL.
+- R3: floor plan page with a time picker, the map and its list; floor plan editor for administrators that places resources by pointer or by entering a position; Visitors page for hosts; Reception page per site.
 
 ## 11. AI behavior
-None in R2.
+None in R2 or R3.
 
 ## 12. Integrations and events
 - Publishes `BookingConfirmed`, `BookingCancelled`, `BookingReleased`, `CheckedIn`.
 - Consumes leaver events (019, 003), holiday calendars (022), approval outcomes (016).
+- R3: an occupancy connector pack in 017 (`occupancy_rest`, a REST endpoint that lists sensors and their state). Visitor emails go through the 015 external email contract. Floor plan images are scanned through the shared malware scanner before they are stored.
 
 ## 13. Audit, telemetry and analytics
 
@@ -174,12 +234,19 @@ None in R2.
 | booking.resource_created / removed | audit | resource, type, actor |
 | booking.rules_changed | audit | resource or type, version, actor |
 | booking.cancelled_by_admin | audit | booking, reason, actor |
+| booking.floor_plan_changed (R3) | audit | floor, actor |
+| booking.visit_registered / cancelled (R3) | audit | visit, site, actor (no visitor details) |
+| booking.visitor_checked_in (R3) | audit | visit, site, actor |
+| booking.sensors_mapped (R3) | audit | connection, resources mapped, actor |
 | booking.activity | telemetry | type, site (no names) |
 
 ## 14. Security and abuse cases
 - Hoarding: active booking limits, auto release, no-show rules.
 - QR spoofing: opaque IDs, check-in only by the booking holder.
 - Rule bypass through the API: server-side checks on every path.
+- R3: floor plan uploads are images only, checked by content and scanned; SVG is refused because it can carry script.
+- R3: visit codes are random, used only on the visit day and only by reception of that site; guessing is limited by the request rate limit.
+- R3: sensor readings name resources, never people; a reading for an unmapped sensor is ignored.
 
 ## 15. Non-functional requirements
 - Search under 700 ms p95 for a site with 1,000 resources.
@@ -202,3 +269,6 @@ None in R2.
 | BKG-008 to BKG-010 | US4 |
 | BKG-011, BKG-012 | US5 |
 | BKG-014 | US6 |
+| BKG-019 to BKG-021 | US7 |
+| BKG-022 to BKG-025 | US8 |
+| BKG-026, BKG-027 | US9 |

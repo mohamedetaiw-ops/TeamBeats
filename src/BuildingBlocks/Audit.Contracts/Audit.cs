@@ -718,6 +718,11 @@ public static class AuditActions
     public const string BookingSiteChanged = "booking.site_changed";
     public const string BookingSiteClosed = "booking.site_closed";
     public const string BookingSiteReopened = "booking.site_reopened";
+    public const string BookingFloorPlanChanged = "booking.floor_plan_changed";
+    public const string BookingVisitRegistered = "booking.visit_registered";
+    public const string BookingVisitCancelled = "booking.visit_cancelled";
+    public const string BookingVisitorCheckedIn = "booking.visitor_checked_in";
+    public const string BookingSensorsMapped = "booking.sensors_mapped";
 
     // 021
     public const string AnalyticsPrivacySettingChanged = "analytics.privacy_setting_changed";
@@ -805,7 +810,7 @@ public static class AuditActions
         SpacesCreated, SpacesChanged, SpacesArchived, SpacesRestored, SpacesMemberAdded, SpacesMemberRemoved, SpacesOwnerReassigned, SpacesSettingsChanged,
         SpacesTemplateChanged, SpacesEventChanged, SpacesGuestInvited, SpacesGuestExpired, SpacesStatusSummarized, SpacesSyncLinked, SpacesSyncUnlinked,
         BookingResourceCreated, BookingResourceRemoved, BookingRulesChanged, BookingCancelledByAdmin, BookingSettingsChanged, BookingSiteChanged,
-        BookingSiteClosed, BookingSiteReopened,
+        BookingSiteClosed, BookingSiteReopened, BookingFloorPlanChanged, BookingVisitRegistered, BookingVisitCancelled, BookingVisitorCheckedIn, BookingSensorsMapped,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =

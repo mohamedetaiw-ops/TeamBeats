@@ -79,7 +79,9 @@ public sealed partial class Facilities(
         var book = (await authz.CheckAsync(Permissions.BookingBook, AuthzTarget.Tenant, ct)).Allowed;
         var manage = await authz.HoldsAnywhereAsync(Permissions.BookingManage, ct);
         var report = await entitlements.IsEnabledAsync(Capabilities.BookingReports, ct) && await authz.HoldsAnywhereAsync(Permissions.BookingReport, ct);
-        return new BookingRights(book, manage, report, kinds);
+        var visitors = await entitlements.IsEnabledAsync(Capabilities.BookingVisitors, ct);
+        return new BookingRights(book, manage, report, kinds, await entitlements.IsEnabledAsync(Capabilities.BookingFloorPlans, ct), visitors,
+            visitors && await authz.HoldsAnywhereAsync(Permissions.BookingReception, ct), await entitlements.IsEnabledAsync(Capabilities.BookingSensors, ct));
     }
 
     // ---- Sites ----
@@ -396,7 +398,8 @@ public sealed partial class Facilities(
         var (names, attributes, mailbox, approvers) = await ValidateResourceAsync(resource.SiteId, resource.Kind, request, id, ct);
         await session.ExecAsync(
             """
-            update booking.resource set floor_id = @floor, zone_id = @zone, names = @names, capacity = @capacity, attributes = @attributes, fixed_user_id = @fixedUser,
+            update booking.resource set floor_id = @floor, zone_id = @zone, names = @names,
+              plan_x = case when floor_id is distinct from @floor then null else plan_x end, plan_y = case when floor_id is distinct from @floor then null else plan_y end, capacity = @capacity, attributes = @attributes, fixed_user_id = @fixedUser,
               mailbox = @mailbox, check_in = @checkIn, needs_approval = @needsApproval, approver_ids = @approvers, updated_at = @now, row_version = row_version + 1
             where id = @id
             """, new

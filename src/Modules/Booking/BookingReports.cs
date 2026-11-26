@@ -20,12 +20,14 @@ public sealed record UsageRow(
     double UsedHours,
     double AvailableHours,
     double? Utilization,
-    double? NoShowRate);
+    double? NoShowRate,
+    double? SensedHours = null);
 
 public sealed record ReportSite(Guid Id, IReadOnlyDictionary<string, string> Names, string TimeZone, string Status);
 
+/// <param name="Visits">Visit counts for the range (spec 031 R3 FR-025), null when visitors are not in the plan.</param>
 public sealed record UsageReport(Guid SiteId, IReadOnlyDictionary<string, string> SiteNames, string TimeZone, DateOnly From, DateOnly To, string GroupBy, UsageRow Total,
-    IReadOnlyList<UsageRow> Rows);
+    IReadOnlyList<UsageRow> Rows, VisitCounts? Visits = null);
 
 /// <summary>
 /// How space is used (spec 031 US6, FR-014): for a site and a date range, utilization (hours used over hours available)
@@ -33,7 +35,7 @@ public sealed record UsageReport(Guid SiteId, IReadOnlyDictionary<string, string
 /// with check-in off. Available hours are the site's opening hours on working days of its calendar. Only counts are
 /// shown; analysts and facilities administrators hold <c>booking.report</c> in the site's scope.
 /// </summary>
-public sealed class BookingReports(IDbSession session, IAuthorizationService authz, IEntitlementService entitlements, Facilities facilities, IWorkingCalendar calendars)
+public sealed class BookingReports(IDbSession session, IAuthorizationService authz, IEntitlementService entitlements, Facilities facilities, IWorkingCalendar calendars, Visits visits, Sensors sensors)
 {
     public const int MaxDays = 92;
     public static readonly IReadOnlySet<string> Groups = new HashSet<string>(StringComparer.Ordinal) { "resource", "zone", "site", "week" };
@@ -112,6 +114,11 @@ public sealed class BookingReports(IDbSession session, IAuthorizationService aut
 
         static DateOnly WeekOf(DateOnly d) => d.AddDays(-(((int)d.DayOfWeek + 6) % 7));
 
+        // Spec 031 R3 FR-027: hours the sensors saw resources occupied, as counts.
+        var sensed = await sensors.SensedAsync(ids, start, end, zone, ct);
+        double? Sensed(IReadOnlyCollection<Guid> resourceIds, DateOnly? week) => sensed is null ? null
+            : Math.Round(sensed.Where(x => resourceIds.Contains(x.Resource) && (week is null || WeekOf(x.Day) == week)).Sum(x => x.Hours), 2);
+
         UsageRow Row(string key, IReadOnlyDictionary<string, string>? names, DateOnly? week, IReadOnlyCollection<Guid> resourceIds, IEnumerable<Line> mine, int days)
         {
             var list = mine.ToList();
@@ -122,7 +129,8 @@ public sealed class BookingReports(IDbSession session, IAuthorizationService aut
             var available = resourceIds.Count * days * openHours;
             return new UsageRow(key, names, week, resourceIds.Count, list.Count(Held), checkedIn, noShows, list.Count(l => !Held(l)),
                 Math.Round(list.Where(Held).Sum(l => l.Hours), 2), Math.Round(used, 2), Math.Round(available, 2),
-                available > 0 ? Math.Round(used / available, 4) : null, checkedIn + noShows > 0 ? Math.Round((double)noShows / (checkedIn + noShows), 4) : null);
+                available > 0 ? Math.Round(used / available, 4) : null, checkedIn + noShows > 0 ? Math.Round((double)noShows / (checkedIn + noShows), 4) : null,
+                Sensed(resourceIds, week));
         }
 
         var all = resources.Select(r => r.Id).ToList();
@@ -137,6 +145,6 @@ public sealed class BookingReports(IDbSession session, IAuthorizationService aut
                 lines.Where(l => WeekOf(l.Day) == w), workingDays.Count(d => WeekOf(d) == w))).ToList(),
             _ => [total],
         };
-        return new UsageReport(site.Id, site.Names, site.TimeZone, from.Value, to.Value, group, total, result);
+        return new UsageReport(site.Id, site.Names, site.TimeZone, from.Value, to.Value, group, total, result, await visits.CountsAsync(site.Id, from.Value, to.Value, ct));
     }
 }

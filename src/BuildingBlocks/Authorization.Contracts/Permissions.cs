@@ -187,6 +187,9 @@ public static class Permissions
     public const string BookingManage = "booking.manage";
     public const string BookingReport = "booking.report";
 
+    // Spec 031 R3 US8: reception sees the day's visitors of the sites in its scope and checks them in and out.
+    public const string BookingReception = "booking.reception";
+
     // Spec 030 US4 (R2): frontline people sign in on a shared kiosk device; device administrators enrol and revoke
     // kiosks and issue badges. Kiosk sign-in is given by group through the kiosk user role.
     public const string KioskSignIn = "kiosk.signin";
@@ -257,7 +260,7 @@ public static class Permissions
         EngagementParticipate, EngagementModerate, EngagementManage, EngagementSurveyPublish, EngagementRecognitionApprove,
         LearningTake, LearningManage, LearningTeamView, LearningReport, LearningAssignLinked,
         SpacesCreate, SpacesManage, SpacesView, SpacesContribute, SpacesOwn,
-        BookingBook, BookingManage, BookingReport,
+        BookingBook, BookingManage, BookingReport, BookingReception,
         KioskSignIn, DeviceManage,
         ApiManage, ApiView,
     ];

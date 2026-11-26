@@ -14,12 +14,12 @@ internal sealed record Rule(string Source, Guid[] UnitIds, int AdvanceDays, int 
 }
 
 internal sealed record Settings(int SlotMinutes, int CheckInBeforeMinutes, int CheckInGraceMinutes, int ApprovalHoldHours, int NoShowLimit, int NoShowWindowDays,
-    bool NoShowRestrict, int NoShowRestrictDays, int NoShowAdvanceDays, bool ShowNames, int Version)
+    bool NoShowRestrict, int NoShowRestrictDays, int NoShowAdvanceDays, bool ShowNames, int Version, bool SensorCheckIn = false)
 {
     public static readonly Settings Defaults = new(15, 15, 15, 24, 3, 30, false, 14, 1, false, 0);
 
     public SettingsView View => new(SlotMinutes, CheckInBeforeMinutes, CheckInGraceMinutes, ApprovalHoldHours, NoShowLimit, NoShowWindowDays, NoShowRestrict, NoShowRestrictDays,
-        NoShowAdvanceDays, ShowNames, Version);
+        NoShowAdvanceDays, ShowNames, Version, SensorCheckIn);
 }
 
 /// <summary>
@@ -73,11 +73,11 @@ public sealed class BookingRules(IDbSession session, ITenantContext context, IAu
         await session.QuerySingleOrDefaultAsync(
             """
             select slot_minutes, check_in_before_minutes, check_in_grace_minutes, approval_hold_hours, no_show_limit, no_show_window_days, no_show_restrict,
-                   no_show_restrict_days, no_show_advance_days, show_names, version
+                   no_show_restrict_days, no_show_advance_days, show_names, version, sensor_check_in
             from booking.setting
             """, null,
             r => new Settings(r.GetInt32(0), r.GetInt32(1), r.GetInt32(2), r.GetInt32(3), r.GetInt32(4), r.GetInt32(5), r.GetBoolean(6), r.GetInt32(7), r.GetInt32(8),
-                r.GetBoolean(9), r.GetInt32(10)), ct) ?? Settings.Defaults;
+                r.GetBoolean(9), r.GetInt32(10), r.GetBoolean(11)), ct) ?? Settings.Defaults;
 
     // ---- Facilities administrators ----
 
@@ -100,7 +100,7 @@ public sealed class BookingRules(IDbSession session, ITenantContext context, IAu
         var next = new Settings(request.SlotMinutes ?? current.SlotMinutes, request.CheckInBeforeMinutes ?? current.CheckInBeforeMinutes,
             request.CheckInGraceMinutes ?? current.CheckInGraceMinutes, request.ApprovalHoldHours ?? current.ApprovalHoldHours, request.NoShowLimit ?? current.NoShowLimit,
             request.NoShowWindowDays ?? current.NoShowWindowDays, request.NoShowRestrict ?? current.NoShowRestrict, request.NoShowRestrictDays ?? current.NoShowRestrictDays,
-            request.NoShowAdvanceDays ?? current.NoShowAdvanceDays, request.ShowNames ?? current.ShowNames, current.Version + 1);
+            request.NoShowAdvanceDays ?? current.NoShowAdvanceDays, request.ShowNames ?? current.ShowNames, current.Version + 1, request.SensorCheckIn ?? current.SensorCheckIn);
         var errors = new ValidationErrors();
         if (next.SlotMinutes is not (5 or 10 or 15 or 30 or 60)) errors.Add("slotMinutes", "validation.booking.slot_minutes");
         if (next.CheckInBeforeMinutes is < 0 or > 120) errors.Add("checkInBeforeMinutes", "validation.booking.range");
@@ -114,18 +114,18 @@ public sealed class BookingRules(IDbSession session, ITenantContext context, IAu
         await session.ExecAsync(
             """
             insert into booking.setting (tenant_id, slot_minutes, check_in_before_minutes, check_in_grace_minutes, approval_hold_hours, no_show_limit, no_show_window_days,
-              no_show_restrict, no_show_restrict_days, no_show_advance_days, show_names, version, updated_by, updated_at)
+              no_show_restrict, no_show_restrict_days, no_show_advance_days, show_names, version, sensor_check_in, updated_by, updated_at)
             values (platform.current_tenant_id(), @SlotMinutes, @CheckInBeforeMinutes, @CheckInGraceMinutes, @ApprovalHoldHours, @NoShowLimit, @NoShowWindowDays,
-              @NoShowRestrict, @NoShowRestrictDays, @NoShowAdvanceDays, @ShowNames, @Version, @actor, @now)
+              @NoShowRestrict, @NoShowRestrictDays, @NoShowAdvanceDays, @ShowNames, @Version, @SensorCheckIn, @actor, @now)
             on conflict (tenant_id) do update set slot_minutes = excluded.slot_minutes, check_in_before_minutes = excluded.check_in_before_minutes,
               check_in_grace_minutes = excluded.check_in_grace_minutes, approval_hold_hours = excluded.approval_hold_hours, no_show_limit = excluded.no_show_limit,
               no_show_window_days = excluded.no_show_window_days, no_show_restrict = excluded.no_show_restrict, no_show_restrict_days = excluded.no_show_restrict_days,
-              no_show_advance_days = excluded.no_show_advance_days, show_names = excluded.show_names, version = excluded.version, updated_by = excluded.updated_by,
+              no_show_advance_days = excluded.no_show_advance_days, show_names = excluded.show_names, version = excluded.version, sensor_check_in = excluded.sensor_check_in, updated_by = excluded.updated_by,
               updated_at = excluded.updated_at
             """, new
             {
                 next.SlotMinutes, next.CheckInBeforeMinutes, next.CheckInGraceMinutes, next.ApprovalHoldHours, next.NoShowLimit, next.NoShowWindowDays, next.NoShowRestrict,
-                next.NoShowRestrictDays, next.NoShowAdvanceDays, next.ShowNames, next.Version, actor = context.RequireUser(), now = clock.UtcNow,
+                next.NoShowRestrictDays, next.NoShowAdvanceDays, next.ShowNames, next.Version, next.SensorCheckIn, actor = context.RequireUser(), now = clock.UtcNow,
             }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.BookingSettingsChanged, "booking_settings", null, Changes: next.View), ct);
         return next.View;
