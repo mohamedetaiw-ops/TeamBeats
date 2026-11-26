@@ -27,7 +27,7 @@ import {
   type Preferences,
   type TeamAnswer,
 } from "@/lib/calendar";
-import { Freshness, ItemRow, itemsOn, layerOptions, useCalendar } from "./shared";
+import { Freshness, ItemRow, itemTitle, itemsOn, layerOptions, useCalendar } from "./shared";
 
 const AGENDA_DAYS = 14;
 
@@ -249,7 +249,7 @@ export function CalendarWorkspace({ canManage }: { canManage: boolean }) {
 function toChip(item: CalendarItem, day: string, zone: string, t: (key: string, values?: Record<string, string | number>) => string): CalendarEvent {
   const hm = (iso: string) => new Intl.DateTimeFormat("en-GB", { timeZone: zone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(iso));
   const sameDay = !item.allDay && zoneDay(item.start!, zone) === day && zoneDay(item.end!, zone) === day;
-  const title = item.layer === "team_leave" ? t("teamAway", { count: item.count ?? 0 }) : item.title ?? (item.isPrivate ? t("private") : t("busy"));
+  const title = itemTitle(item, t);
   return {
     id: `${item.id}-${day}`,
     title: item.status === "cancelled" ? t("cancelledTitle", { title }) : title,

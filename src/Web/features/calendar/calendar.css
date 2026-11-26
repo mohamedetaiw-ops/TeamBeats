@@ -240,3 +240,19 @@
   border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
   border-radius: var(--tb-radius-md);
 }
+
+.cal-files {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cal-files li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs);
+  align-items: center;
+  min-inline-size: 0;
+}

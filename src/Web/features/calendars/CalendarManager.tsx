@@ -175,7 +175,7 @@ function NewCalendar({ units, onCreated, run }: { units: OrgUnit[]; onCreated: (
   );
 }
 
-type HolidayRow = { key: string; date: string; en: string; ar: string; halfDay: boolean };
+type HolidayRow = { key: string; date: string; en: string; ar: string; halfDay: boolean; provisional: boolean; observedFor: string };
 
 function CalendarEditor({ calendar, title, run, onSaved, onDeleted }: { calendar: Calendar; title: string; run: Run; onSaved: (c: Calendar) => void; onDeleted: () => void }) {
   const t = useTranslations("calendars");
@@ -185,7 +185,7 @@ function CalendarEditor({ calendar, title, run, onSaved, onDeleted }: { calendar
   const [week, setWeek] = useState(calendar.weekDays);
   const [year, setYear] = useState(new Date().getFullYear());
   const toRows = (y: number, list: Holiday[]) =>
-    list.filter((h) => h.date.startsWith(`${y}-`)).map((h) => ({ key: h.date, date: h.date, en: h.name.en ?? "", ar: h.name.ar ?? "", halfDay: h.halfDay }));
+    list.filter((h) => h.date.startsWith(`${y}-`)).map((h) => ({ key: h.date, date: h.date, en: h.name.en ?? "", ar: h.name.ar ?? "", halfDay: h.halfDay, provisional: h.provisional ?? false, observedFor: h.observedFor ?? "" }));
   const [rows, setRows] = useState<HolidayRow[]>(toRows(year, calendar.holidays ?? []));
   const editable = calendar.canEdit;
 
@@ -227,7 +227,7 @@ function CalendarEditor({ calendar, title, run, onSaved, onDeleted }: { calendar
             () =>
               fetch(
                 `/api/v1/hr/calendars/${calendar.id}/holidays`,
-                json("PUT", { year, holidays: rows.map((r) => ({ date: r.date, name: { en: r.en, ar: r.ar }, halfDay: r.halfDay })) }, calendar.eTag),
+                json("PUT", { year, holidays: rows.map((r) => ({ date: r.date, name: { en: r.en, ar: r.ar }, halfDay: r.halfDay, provisional: r.provisional, observedFor: r.observedFor || null })) }, calendar.eTag),
               ),
             t("holidays.saved"),
             saved,
@@ -259,13 +259,15 @@ function CalendarEditor({ calendar, title, run, onSaved, onDeleted }: { calendar
                   <th scope="col">{t("nameEn")}</th>
                   <th scope="col">{t("nameAr")}</th>
                   <th scope="col">{t("holidays.halfDay")}</th>
+                  <th scope="col">{t("holidays.provisional")}</th>
+                  <th scope="col">{t("holidays.observedFor")}</th>
                   <th scope="col">{t("holidays.actions")}</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan={5}>{t("holidays.none")}</td>
+                    <td colSpan={7}>{t("holidays.none")}</td>
                   </tr>
                 ) : null}
                 {rows.map((r, i) => (
@@ -283,6 +285,12 @@ function CalendarEditor({ calendar, title, run, onSaved, onDeleted }: { calendar
                       <input type="checkbox" aria-label={t("holidays.halfDayFor", { number: i + 1 })} checked={r.halfDay} onChange={(e) => setRow(r.key, { halfDay: e.target.checked })} />
                     </td>
                     <td>
+                      <input type="checkbox" aria-label={t("holidays.provisionalFor", { number: i + 1 })} checked={r.provisional} onChange={(e) => setRow(r.key, { provisional: e.target.checked })} />
+                    </td>
+                    <td>
+                      <input type="date" aria-label={t("holidays.observedForFor", { number: i + 1 })} value={r.observedFor} onChange={(e) => setRow(r.key, { observedFor: e.target.value })} />
+                    </td>
+                    <td>
                       <button type="button" className="button button-quiet" onClick={() => setRows((x) => x.filter((y) => y.key !== r.key))}>
                         {t("holidays.remove", { number: i + 1 })}
                       </button>
@@ -293,7 +301,7 @@ function CalendarEditor({ calendar, title, run, onSaved, onDeleted }: { calendar
             </table>
           </div>
           <div className="calendars-actions">
-            <Button onClick={() => setRows((x) => [...x, { key: crypto.randomUUID(), date: `${year}-01-01`, en: "", ar: "", halfDay: false }])}>{t("holidays.add")}</Button>
+            <Button onClick={() => setRows((x) => [...x, { key: crypto.randomUUID(), date: `${year}-01-01`, en: "", ar: "", halfDay: false, provisional: false, observedFor: "" }])}>{t("holidays.add")}</Button>
             <Button type="submit" variant="primary">
               {t("holidays.save")}
             </Button>

@@ -134,7 +134,7 @@ export function CalendarCard({ limit = 3 }: { limit?: number }) {
             <li key={h.date}>
               <Icon name="sun" size={14} />
               <span>
-                {t("alerts.holiday", {
+                {t(h.provisional ? "alerts.holidayProvisional" : "alerts.holiday", {
                   title: h.title,
                   date: new Intl.DateTimeFormat(locale, { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }).format(fromIso(h.date)),
                 })}

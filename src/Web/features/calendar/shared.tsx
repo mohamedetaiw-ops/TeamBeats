@@ -7,7 +7,7 @@ import { AgendaRow, type LayerOption } from "@/components/ui/CalendarParts";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { problemMessages } from "@/lib/notifications/types";
-import { LAYER_LOOK, liveNow, touches, zoneDay, type CalendarItem, type Layer, type Rsvp, type SourceStatus } from "@/lib/calendar";
+import { LAYER_LOOK, liveNow, touches, zoneDay, type Attachment, type CalendarItem, type Layer, type Registration, type Rsvp, type SourceStatus } from "@/lib/calendar";
 import "./calendar.css";
 
 export type Load<T> = { state: "loading" } | { state: "failed"; messages: string[] } | { state: "ok"; data: T };
@@ -69,8 +69,15 @@ export function Freshness({ sources, onRetry }: { sources: readonly SourceStatus
   );
 }
 
-const known = ["outlook", "google", "events", "holidays", "leave"] as const;
+const known = ["outlook", "google", "events", "holidays", "leave", "shifts"] as const;
 const source = (s: string) => (known as readonly string[]).includes(s) ? s : "other";
+
+/** The words an item shows as its title, the same in every view. */
+export function itemTitle(item: CalendarItem, t: (key: string, values?: Record<string, string | number>) => string): string {
+  if (item.layer === "team_leave") return t("teamAway", { count: item.count ?? 0 });
+  if (item.layer === "my_shifts" && item.typeKey === "day_off") return t("dayOff");
+  return item.title ?? (item.isPrivate ? t("private") : item.layer === "my_leave" ? t("onLeave") : t("busy"));
+}
 
 /** One item as an agenda row with its details and actions (spec 036 DLS-071, spec 037 FR-008). */
 export function ItemRow({
@@ -98,10 +105,7 @@ export function ItemRow({
   const dates = new Intl.DateTimeFormat(locale, { timeZone: "UTC", day: "numeric", month: "short" });
   const look = LAYER_LOOK[item.layer];
 
-  const title =
-    item.layer === "team_leave"
-      ? t("teamAway", { count: item.count ?? 0 })
-      : item.title ?? (item.isPrivate ? t("private") : item.layer === "my_leave" ? t("onLeave") : t("busy"));
+  const title = itemTitle(item, t);
 
   let time: string;
   if (item.allDay) {
@@ -113,7 +117,7 @@ export function ItemRow({
   }
 
   const status = item.status === "cancelled" ? "cancelled" : item.status === "pending" ? "pending" : item.status === "tentative" ? "tentative" : null;
-  const statusLabel = status ? t(`status.${status}`) : item.free ? t("status.free") : null;
+  const statusLabel = item.provisional ? t("status.provisional") : status ? t(`status.${status}`) : item.free ? t("status.free") : null;
   const meta = item.location ?? (item.onlineUrl ? t("online") : t(`sources.${source(item.source)}`));
   const live = liveNow(item, now);
   const primary = live ? (
@@ -139,14 +143,29 @@ export function ItemRow({
         <>
           {!item.allDay && item.start && item.end ? <p className="cal-detail-line">{t("timeRange", { start: long.format(new Date(item.start)), end: clock.format(new Date(item.end)) })}</p> : null}
           {item.recurring ? <p className="cal-detail-line">{t("recurring")}</p> : null}
+          {item.observedFor ? <p className="cal-detail-line">{t("observedFor", { date: dates.format(Date.parse(item.observedFor)) })}</p> : null}
+          {item.provisional ? <p className="cal-detail-line">{t("provisionalNote")}</p> : null}
           {item.location ? <p className="cal-detail-line">{item.location}</p> : null}
           {item.description ? <p className="cal-detail-text">{item.description}</p> : null}
           {item.rsvp ? <RsvpControl item={item} rsvp={item.rsvp} onChanged={onChanged} /> : null}
+          {item.registration ? <RegistrationControl item={item} registration={item.registration} onChanged={onChanged} /> : null}
+          {item.attachments && item.attachments.length > 0 ? <Attachments item={item} files={item.attachments} /> : null}
           {item.actions.includes("answer") && item.invitation ? <InvitationControl item={item} current={item.invitation} onChanged={onChanged} /> : null}
           <div className="cal-actions">
             {item.actions.includes("join") && item.onlineUrl && !live ? (
               <ButtonLink href={item.onlineUrl} size="sm" target="_blank" rel="noopener noreferrer" aria-label={t("joinLabel", { title })}>
                 {t("actions.join")}
+              </ButtonLink>
+            ) : null}
+            {item.actions.includes("calendar_file") && item.occurrenceKey ? (
+              <ButtonLink
+                href={`/api/v1/calendar/events/${item.sourceId}/calendar-file?occurrence=${encodeURIComponent(item.occurrenceKey)}`}
+                size="sm"
+                variant="quiet"
+                icon="download"
+                download
+              >
+                {t("actions.calendarFile")}
               </ButtonLink>
             ) : null}
             {item.actions.includes("open_source") && item.webLink ? (
@@ -219,6 +238,101 @@ function RsvpControl({ item, rsvp, onChanged }: { item: CalendarItem; rsvp: Rsvp
           {error}
         </p>
       ) : null}
+    </div>
+  );
+}
+
+/**
+ * Register, join the waiting list or give the place up (spec 037 R3, FR-028 to FR-030). Seats left, the waiting position
+ * and, for the event's managers, the counts come from the API; this only shows them and sends the choice.
+ */
+function RegistrationControl({ item, registration, onChanged }: { item: CalendarItem; registration: Registration; onChanged?: () => void }) {
+  const t = useTranslations("calendar");
+  const [current, setCurrent] = useState(registration);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const url = `/api/v1/calendar/events/${item.sourceId}/registration`;
+
+  async function send(cancel: boolean) {
+    setBusy(true);
+    setError(null);
+    try {
+      const response = cancel
+        ? await fetch(`${url}?occurrence=${encodeURIComponent(item.occurrenceKey ?? "")}`, { method: "DELETE" })
+        : await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ occurrenceKey: item.occurrenceKey }) });
+      if (response.ok) {
+        setCurrent((await response.json()) as Registration);
+        onChanged?.();
+      } else {
+        setError((await problemMessages(response)).join(" ") || t("registration.failed"));
+      }
+    } catch {
+      setError(t("registration.failed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const state =
+    current.state === "registered"
+      ? t("registration.registered")
+      : current.state === "waiting"
+        ? t("registration.waiting", { position: current.position ?? 1 })
+        : !current.open
+          ? t("registration.closed")
+          : current.seatsLeft > 0
+            ? t("registration.seatsLeft", { count: current.seatsLeft })
+            : current.waitlist
+              ? t("registration.full")
+              : t("registration.fullNoList");
+  const name = itemTitle(item, t);
+
+  return (
+    <div className="cal-rsvp" data-testid="calendar-registration">
+      <p className="cal-detail-line" aria-live="polite">
+        {state}
+      </p>
+      {current.open ? (
+        <div className="cal-actions">
+          {current.state ? (
+            <Button size="xs" variant="secondary" disabled={busy} onClick={() => void send(true)} aria-label={t("registration.cancelFor", { title: name })}>
+              {current.state === "waiting" ? t("registration.leaveList") : t("registration.cancel")}
+            </Button>
+          ) : current.seatsLeft > 0 || current.waitlist ? (
+            <Button size="xs" variant="primary" disabled={busy} onClick={() => void send(false)} aria-label={t(current.seatsLeft > 0 ? "registration.registerFor" : "registration.joinListFor", { title: name })}>
+              {current.seatsLeft > 0 ? t("registration.register") : t("registration.joinList")}
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
+      {current.taken !== null ? <p className="cal-detail-line">{t("registration.counts", { taken: current.taken, waiting: current.waiting ?? 0, left: current.seatsLeft })}</p> : null}
+      {error ? (
+        <p className="cal-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+/** The files attached to an event (FR-033), opened through the calendar API, which checks the audience. */
+function Attachments({ item, files }: { item: CalendarItem; files: readonly Attachment[] }) {
+  const t = useTranslations("calendar");
+  const locale = useLocale();
+  const size = new Intl.NumberFormat(locale, { style: "unit", unit: "megabyte", maximumFractionDigits: 1 });
+  return (
+    <div className="cal-rsvp">
+      <p className="cal-detail-line">{t("attachments.title")}</p>
+      <ul className="cal-files">
+        {files.map((f) => (
+          <li key={f.id}>
+            <ButtonLink href={`/api/v1/calendar/events/${item.sourceId}/attachments/${f.id}`} size="sm" variant="quiet" icon="attach" target="_blank" rel="noopener noreferrer">
+              <bdi>{f.name}</bdi>
+            </ButtonLink>
+            <span className="cal-person-dates">{size.format(f.size / 1_048_576)}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
