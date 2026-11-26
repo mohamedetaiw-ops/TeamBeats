@@ -3273,5 +3273,8 @@
   "notifications.template.calendar.event_reminder.body": "{when}. {place}",
   "notifications.template.calendar.event_cancelled.title": "{event} is cancelled",
   "notifications.template.calendar.event_cancelled.body": "The event on {when} will not take place.",
-  "validation.calendar.holiday_observed": "An observed holiday must name another date, at most 7 days away."
+  "validation.calendar.holiday_observed": "An observed holiday must name another date, at most 7 days away.",
+  "validation.people.suggestions_on": "Say whether skill suggestions are on or off.",
+  "conflict.people.suggestions_off": "Turn on skill suggestions first.",
+  "conflict.people.suggestion_limit": "You have asked for suggestions three times today. Try again tomorrow."
 }

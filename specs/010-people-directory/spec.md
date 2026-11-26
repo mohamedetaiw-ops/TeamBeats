@@ -130,6 +130,21 @@ Layla needs someone who knows Arabic legal translation. She searches "legal tran
 3. **Given** Omar delegated his approvals (spec 016) for a date range, **When** a colleague opens his profile inside that range, **Then** the profile shows "approvals go to Layla until 14 August", without the scope of the delegation.
 4. **Given** recognition in spec 023, **Then** the profile lists the person's latest recognitions and badges only where the tenant has recognition.
 
+### User Story 9: Skills suggested from what I publish (Priority: P3, R3)
+
+Omar writes news articles and community posts about contract law. He turns on skill suggestions and is offered "Legal drafting" from the tenant's list, with the two articles it came from, and adds it to his profile.
+
+**Acceptance scenarios:**
+1. **Given** an employee who has not turned suggestions on, **Then** nothing they wrote is read for skills and no suggestion is made.
+2. **Given** an employee who turned suggestions on, **When** they ask for suggestions, **Then** they get at most five skills from the tenant's active skill list, each with the published items it came from, and nobody else sees them.
+3. **Given** a suggestion, **When** the employee adds it with a proficiency, **Then** it becomes a declared skill like any other; **When** they dismiss it, **Then** it is not suggested to them again.
+4. **Given** the employee turns suggestions off, **Then** their open suggestions are deleted and nothing more is read.
+
+### User Story 10: Teams presence on the profile (Priority: P3, R3)
+
+**Acceptance scenarios:**
+1. **Given** the tenant turned on Teams presence (spec 018 R3), **When** a colleague opens a profile they may see free and busy for, **Then** the profile shows the person's availability and activity in words, read as the viewer.
+
 ### Edge cases and exception flows
 - Two people with the same display name: results show title, unit and location to tell them apart.
 - A person in two units: the primary membership (spec 002) decides the unit shown; the profile lists all units the viewer may see.
@@ -166,6 +181,10 @@ Layla needs someone who knows Arabic legal translation. She searches "legal tran
 - **PPL-029 / FR-029**: *(R2)* People administrators MUST be able to record an assistant for a person (at most three); the relationship MUST show on both profiles and be audited.
 - **PPL-030 / FR-030**: *(R2)* While a spec 016 delegation is active, the delegator's profile MUST show the delegate and the last day, never what is delegated.
 - **PPL-031 / FR-031**: *(R2)* Skills MUST be hidden everywhere while the tenant has them off or the package has no `people.skills`, and MUST be deleted 90 days after they were turned off unless turned on again.
+- **PPL-032 / FR-032**: *(R3)* The profile MUST show Teams presence through spec 018 R3, for colleagues whose free and busy the viewer may see (FR-014), in words only.
+- **PPL-033 / FR-033**: *(R3)* Skill suggestions from authored content MUST be off for each person until they turn them on, and turning them off MUST delete their open suggestions.
+- **PPL-034 / FR-034**: *(R3)* Suggestions MUST come only from the person's own published content and visible, named community posts read through the owning modules' contracts, MUST be chosen only from the tenant's active skill list, MUST go through the AI Gateway, and MUST cite the items they came from.
+- **PPL-035 / FR-035**: *(R3)* Suggestions MUST be visible only to the person until they add them as declared skills, and a dismissed suggestion MUST NOT be offered again.
 - **PPL-022 / FR-022**: Profiles MUST keep their last synced values when the directory is unavailable, with the sync time shown to administrators.
 - **FR-023**: The unit filter MUST make every unit distinguishable: units are listed as a tree with indentation, or with the parent's name when two units share a name ("Operations, Demo Services"). Acceptance: no two entries of the unit filter read the same.
 - **FR-024**: While a search or filter is active, the People page MUST show only the results; the New joiners section shows only without a search. A person card with no title or unit shows "Title not set" in the secondary text style instead of an empty line. Acceptance: searching People hides New joiners; a person with no title shows the fallback.
@@ -182,6 +201,7 @@ Layla needs someone who knows Arabic legal translation. She searches "legal tran
 - Skills (R2): at most 300 skills in the tenant list, names per locale up to 80 characters; at most 30 skills per person with proficiency basic, good or expert; one endorsement per colleague per skill, never of oneself; an owner may hide an endorsement. A free-text skill, when allowed, joins the tenant list as "suggested" and administrators can merge or remove it.
 - Find an expert ranks by proficiency (expert, good, basic), then by visible endorsements, then by name; at most 50 results.
 - Assistants (R2): at most three per person; nobody is their own assistant.
+- Skill suggestions (R3): at most five per run; the newest 50 authored items of the last 12 months are read, each as its title and the first 500 characters; Confidential items are never read; at most three runs per person per day.
 
 ## 7. Tenant and organization scope
 - Tenant-owned data: profiles, reporting lines, visibility policy, locations, skills.
@@ -197,6 +217,7 @@ Layla needs someone who knows Arabic legal translation. She searches "legal tran
 | Reporting line history | Product (from directory) | Internal | 3 years | Yes |
 | Photo | Directory or product object storage | Internal | Membership life | Yes |
 | Skills and endorsements (R2) | Product | Internal | Membership life | Yes |
+| Skill suggestion consent and suggestions (R3) | Product | Internal | Until added, dismissed or consent withdrawn; dismissals for membership life | Yes |
 
 ## 9. Package entitlements
 
@@ -206,6 +227,8 @@ Layla needs someone who knows Arabic legal translation. She searches "legal tran
 | `people.custom_fields` (tenant-defined fields) | off | on | on |
 | `people.skills` (skills, endorsements, find an expert, R2) | off | on | on |
 
+Skill suggestions (R3) need `people.skills` and `ai.assistant`; Teams presence needs the spec 018 presence feature.
+
 ## 10. UX, localization and accessibility
 - States: no results, person no longer available, field hidden, directory sync delayed (administrators only).
 - Names show in the user's locale where a localized name exists, else the directory name.
@@ -214,6 +237,8 @@ Layla needs someone who knows Arabic legal translation. She searches "legal tran
 
 ## 11. AI behavior
 Agents read profiles only through this module's contract as the user, with the same visibility rules (spec 027). Profile data is sent to a model only when the user's question needs it, as Internal classification, except Confidential fields, which follow the AI policy for Confidential.
+
+Skill suggestions (R3) send the titles and opening text of the person's own authored items and the tenant's skill names to the AI Gateway as quoted data, only after the person turned suggestions on. The model picks from the given skills only; anything else in its answer is dropped. Nothing is sent for anyone else, and the answer is kept only as the suggested skill ids with the item references.
 
 ## 12. Integrations and events
 - Consumes `UserProvisioned`, `UserDeprovisioned` and directory sync changes (spec 003). The directory reader adds `manager`, `jobTitle`, `department`, `businessPhones`, `mobilePhone`, `officeLocation`, `employeeHireDate`, `preferredLanguage` and the mapped location attribute. Consumes `LeaveApproved` and `LeaveCancelled` (022, R2) and HR record changes (019, R2).
@@ -228,6 +253,8 @@ Agents read profiles only through this module's contract as the user, with the s
 | people.manager_set_manually | audit | person, manager, actor |
 | people.skill_list_changed | audit | skills added, renamed, merged or removed, setting changes, actor |
 | people.assistant_set | audit | person, assistants, actor |
+| people.skill_suggestions_changed | audit | person, on or off |
+| people.skills_suggested | audit | person, items read, skills suggested, outcome |
 | people.profile_updated | audit | person, field names (no values), actor |
 | people.reporting_cycle_detected | operational | people involved, sync run |
 | people.searched | analytics | pseudonymous user, result count bucket (no query text) |
@@ -238,6 +265,8 @@ Agents read profiles only through this module's contract as the user, with the s
 - Inferring a hidden field from sort order or filters: sorting and filtering use only fields visible to the viewer.
 - Impersonating a manager by editing one's own manager: the manager field is never employee-editable.
 - Photo abuse: type and size checks; administrators can remove a photo, audited.
+- Prompt injection through an article or post: authored text is quoted as data, and only ids from the given skill list are accepted from the answer.
+- Learning about someone else's work through suggestions: suggestions read only the requester's own items and are shown only to them.
 
 ## 15. Non-functional requirements
 - People search p95 under 300 ms at 50,000 members.
@@ -263,6 +292,8 @@ Agents read profiles only through this module's contract as the user, with the s
 | R2 skills | PPL-018, PPL-019, PPL-031, US6 |
 | R2 out of office and HR fields | PPL-020, PPL-021, US7 |
 | R2 completeness, assistants, delegates, badges | PPL-028 to PPL-030, US8 |
+| R3 Teams presence | PPL-032, US10 |
+| R3 skills suggested from authored content | PPL-033 to PPL-035, US9 |
 | UC-05 | US1, US6 |
 | Location dimension for 009, 021, 022, 025 | PPL-011, US5 |
 | Reporting line for 009, 016, 025, 026 | PPL-004, PPL-005, US2 |

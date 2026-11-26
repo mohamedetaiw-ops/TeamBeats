@@ -22,6 +22,7 @@ public static class EngagementModule
         services.AddScoped<PostAttachments>();
         services.AddScoped<Communities>();
         services.AddScoped<TeamBeats.Modules.Analytics.Contracts.IAnalyticsTextSource, CommunityTextSource>();
+        services.AddScoped<TeamBeats.Modules.People.Contracts.IAuthoredWorkSource, EngagementAuthoredWork>();
         services.AddScoped<TeamBeats.Modules.Analytics.Contracts.IAnalyticsTextSource, SurveyTextSource>();
         services.AddScoped<TeamBeats.Modules.Analytics.Contracts.IAnalyticsTextSource, RoomTextSource>();
         services.AddScoped<TeamBeats.Modules.Analytics.Contracts.IAnalyticsTextSource, SpeakUpTextSource>();

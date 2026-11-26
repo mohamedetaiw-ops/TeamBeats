@@ -20,6 +20,7 @@ public static class ContentModule
         services.AddScoped<TeamBeats.Modules.Analytics.Contracts.IAnalyticsItemSource, ContentAnalyticsSource>();
         services.AddScoped<TeamBeats.Modules.Analytics.Contracts.IAnalyticsCampaignSource, ContentCampaignSource>();
         services.AddScoped<TeamBeats.Modules.Analytics.Contracts.IAnalyticsTextSource, ContentTextSource>();
+        services.AddScoped<TeamBeats.Modules.People.Contracts.IAuthoredWorkSource, ContentAuthoredWork>();
         services.AddScoped<Sites>();
         services.AddScoped<Contracts.ISiteDirectory, SiteDirectory>();
         services.AddScoped<Contracts.IKnowledgeContent, KnowledgeContent>();

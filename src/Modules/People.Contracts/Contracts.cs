@@ -101,3 +101,20 @@ public interface IPersonSkills
     /// <summary>The active skills a person declared.</summary>
     Task<IReadOnlyList<DeclaredSkill>?> DeclaredAsync(Guid userId, CancellationToken ct = default);
 }
+
+/// <summary>
+/// One item a person wrote and published, as a skill suggestion reads it (spec 010 R3 FR-034): where it is, its title
+/// and the opening text. <see cref="Source"/> is <c>content</c> or <c>community_post</c>.
+/// </summary>
+public sealed record AuthoredWork(string Source, Guid Id, string Title, string Text, string Link, DateTimeOffset PublishedAt);
+
+/// <summary>
+/// Items a person authored, implemented by the modules that own them (spec 010 R3). Each source answers only published,
+/// named items that are not Confidential, of the last <paramref name="since"/>, newest first. Tenant comes from context.
+/// </summary>
+public interface IAuthoredWorkSource
+{
+    string Source { get; }
+
+    Task<IReadOnlyList<AuthoredWork>> ByAuthorAsync(Guid userId, DateTimeOffset since, int limit, CancellationToken ct = default);
+}

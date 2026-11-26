@@ -39,6 +39,7 @@ public static class PeopleModule
         services.AddScoped<DirectoryProfiles>();
         services.AddScoped<HrProfiles>();
         services.AddScoped<Skills>();
+        services.AddScoped<SkillSuggestions>();
         services.AddScoped<IPersonSkills, PersonSkills>();
         services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IComponentRegistration, PeopleComponents>();
         services.AddMessageHandler<DirectorySynced, ApplyDirectoryProfiles>("people.directory_profiles");
@@ -284,6 +285,42 @@ public static class PeopleModule
         me.MapPost("/skills/{skillId:guid}/endorsements/{endorserId:guid}:show", async (Guid skillId, Guid endorserId, Skills skills, IDbSession session, CancellationToken ct) =>
         {
             var view = await skills.HideAsync(skillId, endorserId, false, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        // Skill suggestions from what the person published (spec 010 R3 US9), only for the person themselves.
+        me.MapGet("/skills/suggestions", async (SkillSuggestions suggestions, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await suggestions.MineAsync(ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        me.MapPut("/skills/suggestions", async (SkillSuggestionsRequest request, SkillSuggestions suggestions, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await suggestions.SetAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        me.MapPost("/skills/suggestions:run", async (SkillSuggestions suggestions, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await suggestions.RunAsync(ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        me.MapPost("/skills/suggestions/{skillId:guid}:accept", async (Guid skillId, AcceptSuggestionRequest request, SkillSuggestions suggestions, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await suggestions.AcceptAsync(skillId, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        me.MapPost("/skills/suggestions/{skillId:guid}:dismiss", async (Guid skillId, SkillSuggestions suggestions, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await suggestions.DismissAsync(skillId, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });
