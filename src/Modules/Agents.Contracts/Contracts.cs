@@ -34,6 +34,9 @@ public sealed record AssistantAnswered(Guid TurnId, Guid ConversationId, Guid Us
 public static class ToolUnavailable
 {
     public const string ConnectorDisabled = "connector_disabled";
+
+    /// <summary>An MCP tool that changed, was rejected or is no longer listed by its server waits for the integration administrator (spec 027 R3).</summary>
+    public const string NotApproved = "mcp_not_approved";
 }
 
 public static class ToolSideEffects

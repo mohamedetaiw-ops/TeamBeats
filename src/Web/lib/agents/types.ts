@@ -468,12 +468,18 @@ export type AgentIncident = {
   runIds: string[];
   actions: { at: string; by: string; text: string }[];
   closureNote: string | null;
-  openedBy: string;
+  /** Null when the platform opened it by itself, such as a limit breach of an L4 agent task (spec 027 R3). */
+  openedBy: string | null;
   openedAt: string;
   closedBy: string | null;
   closedAt: string | null;
   version: number;
   alertIds: string[];
+  kind: string | null;
 };
+
+export const INCIDENT_KINDS = ["l4_limit"] as const;
+export type IncidentKind = (typeof INCIDENT_KINDS)[number];
+export const incidentKind = (kind: string | null): IncidentKind | null => (kind !== null && (INCIDENT_KINDS as readonly string[]).includes(kind) ? (kind as IncidentKind) : null);
 
 export type AgentWatch = { agentId: string; agentNames: Localized; orgUnitId: string; version: number; reason: string; since: string; until: string };

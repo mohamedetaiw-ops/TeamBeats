@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { apiGet } from "@/lib/api";
-import type { AgentIncident } from "@/lib/agents/types";
+import { incidentKind, type AgentIncident } from "@/lib/agents/types";
 import { Badge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { AgentTabs } from "@/features/agents/AgentTabs";
@@ -23,7 +23,7 @@ export default async function AgentIncidentPage({ params }: { params: Promise<{ 
   const when = (value: string) => format.dateTime(new Date(value), { dateStyle: "medium", timeStyle: "short" });
   return (
     <>
-      <PageHeader title={i.title} nav={<AgentTabs current="security" />} />
+      <PageHeader title={incidentKind(i.kind) ? t(`incident.kinds.${incidentKind(i.kind)}`) : i.title} nav={<AgentTabs current="security" />} />
       <div className="agents">
         <section className="agents-section" aria-labelledby="agents-incident-facts">
           <h2 id="agents-incident-facts">{t("incident.facts")}</h2>

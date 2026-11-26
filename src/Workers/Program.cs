@@ -42,6 +42,7 @@ public sealed class WorkerProgram
         }
         builder.Services.AddHostedService<TeamBeats.Modules.Workflow.EngineJobWorker>();
         builder.Services.AddHostedService<TeamBeats.Modules.Workflow.ExternalTaskWorker>();
+        builder.Services.AddHostedService<TeamBeats.Modules.Integrations.Mcp.McpToolRefreshWorker>();
         builder.Services.AddHostedService<TeamBeats.Modules.Services.ServiceScheduleWorker>();
         builder.Services.AddHostedService<TeamBeats.Modules.Integrations.Runtime.ConnectorJobWorker>();
         builder.Services.AddHostedService<TeamBeats.Modules.Content.ContentScheduleWorker>();

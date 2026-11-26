@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { apiGet } from "@/lib/api";
-import { pickText, type AgentAlert, type AgentIncident, type AgentWatch } from "@/lib/agents/types";
+import { incidentKind, pickText, type AgentAlert, type AgentIncident, type AgentWatch } from "@/lib/agents/types";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -123,7 +123,7 @@ export default async function AgentSecurityPage({ searchParams }: { searchParams
                     <tr key={i.id}>
                       <td>
                         <Link href={`/admin/agents/security/incidents/${i.id}`}>
-                          <bdi>{i.title}</bdi>
+                          <bdi>{incidentKind(i.kind) ? t(`incident.kinds.${incidentKind(i.kind)}`) : i.title}</bdi>
                         </Link>
                       </td>
                       <td>

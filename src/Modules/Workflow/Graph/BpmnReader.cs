@@ -15,7 +15,7 @@ public sealed record ModelProblem(string ElementId, string Key);
 /// Extension elements, in the <c>teambeats</c> namespace inside <c>bpmn:extensionElements</c>:
 /// <c>tb:name xml:lang</c>; <c>tb:assignment users groups permission lineManager managerLevel assignee fallbackUsers</c>;
 /// <c>tb:due workingDays</c>; <c>tb:escalation afterWorkingDays users groups</c>; <c>tb:connector connection action
-/// retries</c>, <c>tb:webhook id retries</c> or <c>tb:product action</c> with <c>tb:input name source</c> and
+/// retries</c>, <c>tb:webhook id retries</c>, <c>tb:product action</c> or <c>tb:agent id tools minutes</c> with <c>tb:input name source</c> and
 /// <c>tb:output variable source</c>; <c>tb:decision key resultVariable</c>; <c>tb:correlation key</c>; <c>tb:loop
 /// collection elementVariable</c>; <c>tb:timer workingDays</c>; <c>tb:result value</c> on end events.
 /// </summary>
@@ -280,15 +280,19 @@ public static partial class BpmnReader
                 var connector = Extension(x, "connector");
                 var webhook = Extension(x, "webhook");
                 var product = Extension(x, "product");
+                var agent = Extension(x, "agent");
                 var retries = Attr(connector ?? webhook, "retries");
                 Guid? connection = Attr(connector, "connection") is { } c ? Guid.TryParse(c, out var g) ? g : Guid.Empty : null;
                 Guid? hook = Attr(webhook, "id") is { } w ? Guid.TryParse(w, out var h) ? h : Guid.Empty : null;
                 element = element with
                 {
-                    Call = connector is null && webhook is null && product is null ? null : new ServiceCall(connection, Attr(connector, "action"), hook,
+                    Call = connector is null && webhook is null && product is null && agent is null ? null : new ServiceCall(connection, Attr(connector, "action"), hook,
                         Mappings(x, "input", "name"), Mappings(x, "output", "variable"),
                         retries is null ? 3 : int.TryParse(retries, NumberStyles.None, CultureInfo.InvariantCulture, out var n) ? n : -1,
-                        product is null ? null : Attr(product, "action") ?? ""),
+                        product is null ? null : Attr(product, "action") ?? "",
+                        agent is null ? null : new AgentStep(Attr(agent, "id") is { } a && Guid.TryParse(a, out var ag) ? ag : Guid.Empty,
+                            (Attr(agent, "tools") ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries).Distinct(StringComparer.Ordinal).ToList(),
+                            Attr(agent, "minutes") is { } m ? int.TryParse(m, NumberStyles.None, CultureInfo.InvariantCulture, out var mm) ? mm : -1 : AgentStep.DefaultMinutes)),
                 };
                 break;
             }

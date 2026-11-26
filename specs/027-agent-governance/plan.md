@@ -52,3 +52,26 @@ Platform suites shipped with spec 034: permission isolation, prompt injection (c
 - Kill tests: worker restart mid-run resumes from the checkpoint; kill switch within 10 seconds under load.
 - Cross-tenant and cross-org probes as part of the permission isolation suite.
 - Acceptance (e2e): confirmation card in English and Arabic with axe; security officer run search.
+
+## R3 plan (2026-11-25)
+
+R3 adds SIEM export of agent events, external MCP servers as tool sources and L4 bounded autonomy inside approved processes.
+
+### SIEM export of agent events
+- Every agent action is an audit event under `agent.*`, so the spec 026 SIEM stream already carries tool calls, denials, injection detections, confirmations, approvals, suspensions, the kill switch and Security Center events. R3 adds `agent.run_finished` when any run that is not an evaluation run ends: status, outcome, reason, autonomy, steps, tool calls, denials, working time, classification and model, never the question, answer or parameters. A run stopped by a limit, a policy or a suspension has the outcome `denied`, a failed run `failure`.
+- `docs/security/siem-schema.md` lists the agent events and their fields; a SOC selects them by the `agent.` prefix.
+- Default (spec silent): no separate agent-only stream or filter per destination; evaluation runs stay out of the stream.
+
+### MCP servers as tool sources (FR-006, `ai.agents.mcp`)
+- The integration administrator registers an MCP server as an `mcp_server` connection (Streamable HTTP, https on the tenant allowlist, sign-in through the connector framework). TeamBeats reads its tool list; each tool is listed as pending and cannot be used until the administrator approves it with a side effect (read or external write) and a title per language. A tool whose description or input schema changes goes back to pending; a tool the server no longer lists is unavailable.
+- Approved tools join the tenant tools of the registry as `mcp.<name>`, where the administrator gives the name when approving (unique in the tenant); the AI policy decides which agents hold them, and the tool gateway checks them like any tool. Calls go through the connector runtime (`call_tool`), with only the schema's fields sent and the answer passed to the model as untrusted data.
+- Input schemas must fit the tool schema subset of `ToolSchema`; a tool whose schema does not fit is listed as unsupported and cannot be approved.
+- Defaults (spec silent): the server's description reaches the model as it was approved, with no injection scan of it (the approval is the control, and a changed description needs a new approval); a rejected tool stays rejected when it changes; the tool list is read hourly by a worker and on demand; at most 10 pages and 200 tools per server; a tool answer is cut to 16,000 characters; every tool call counts as a write for the connector runtime (no retry), while the side effect the administrator chose decides the autonomy it needs.
+
+### L4 bounded autonomy (US1 scenario 5, FR-015, FR-024, `ai.agents.autonomous`)
+- L4 runs only as an agent task inside a published process (spec 024): a service task bound to an agent runs it without a person, with the process instance's variables as its input, and only within the steps the process gives it.
+- The process version must be approved for autonomous agent steps by a process owner and a holder of `ai.policy_manage` (two different people) before an L4 agent task runs; any new version needs both again.
+- Limits: tool calls, steps, 60 minutes and the spec 013 budget per run; a breach stops the run, fails the process step into an incident and opens an agent incident. The kill switch and suspension stop it like any run.
+- Model (spec 024 extension): a service task with `tb:agent id tools minutes` and `tb:input` mappings; the answer is the step result `answer`. Only process models may hold agent tasks, and publishing one needs `ai.agents.autonomous`.
+- Defaults (spec silent): the run acts for the person who started the instance, with their permissions at run time intersected with the agent's grants and the step's tools; an instance started without a person (timer or message) raises the incident `agent_no_person` instead of using a service identity. The dual approval stands for the confirmation card of the step's tools, and a tool whose rule needs its own approver is refused (`tool.approval_not_available`). The step's limit defaults to 15 minutes. An L4 run counts toward the agent's daily runs. The automatic security incident has severity high and kind `l4_limit`.
+

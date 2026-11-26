@@ -1,6 +1,6 @@
 # Spec 027 evidence (R1)
 
-The spec stays Approved, not Implemented. R1 still lacks the worker that resumes a run interrupted mid-step (such runs are closed as interrupted instead), the tenant link allowlist (FR-014 treats every web address as outside it), the platform switch for a template or tool (FR-020), and the nightly safety run for High risk agents (FR-022). The R2 and R3 parts are not built: L3 approvals, connector and MCP tools (FR-006), org unit policies, scheduled runs (FR-003), the Agent Security Center with anomaly alerts and incidents (FR-023), external AI clients (FR-025) and L4 (FR-024). The spec 020 and 027 section of `docs/architecture/r1-implementation-notes.md` holds the defaults, deviations and gaps.
+The spec stays Approved, not Implemented. R1 still lacks the worker that resumes a run interrupted mid-step (such runs are closed as interrupted instead), the tenant link allowlist (FR-014 treats every web address as outside it), the platform switch for a template or tool (FR-020), and the nightly safety run for High risk agents (FR-022). The R3 parts (SIEM export of agent events, MCP tools of FR-006 and L4 of FR-024) are built; see the R3 table. The spec 020 and 027 section of `docs/architecture/r1-implementation-notes.md` holds the defaults, deviations and gaps.
 
 | Requirement | Status | Evidence |
 |---|---|---|
@@ -28,3 +28,13 @@ The spec stays Approved, not Implemented. R1 still lacks the worker that resumes
 | SC-001 safety suites on every build and no tool call from an injection document | Met | `EvaluationGateTests.The_platform_suites_of_each_launch_template_run_without_a_critical_failure` and `AgentInjectionTests` run in CI on every build |
 | SC-002 and SC-003 timed drills | Not measured | The records and the kill switch exist; the timed drills belong with the R2 Security Center |
 | Pages | Met | `agents.spec.ts` (en and ar, axe) |
+
+## R3
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| SIEM export of agent events (FR-016 with spec 026 US4) | Met | `AgentRunLimitTests.A_run_stops_when_its_working_time_passes_the_limit_and_waiting_for_a_confirmation_does_not_count` (`agent.run_finished` with outcome and counts, no text); the stream itself in `SecuritySiemTests`; catalogue in `docs/security/siem-schema.md` |
+| MCP servers as tool sources (FR-006 and the edge case on changed tool lists) | Met | `McpToolTests.Tools_of_an_MCP_server_wait_for_approval_and_an_approved_tool_is_called_with_only_its_fields` (pending until approved, schema change back to pending, unsupported schema, only declared fields sent, event stream answers), `McpToolTests.MCP_servers_need_the_package_and_stay_in_their_tenant` (entitlement and cross-tenant denial); admin panel on the connection page |
+| L4 bounded autonomy (US1 scenario 5, FR-015, FR-024) | Met | `AgentProcessTaskTests.An_agent_task_runs_only_after_two_people_approve_the_version_and_acts_for_the_starter_with_the_step_tools` (dual approval by two people, new version needs both, run as the starter without a card, approval tools refused), `AgentProcessTaskTests.A_limit_breach_fails_the_step_into_an_incident_and_opens_a_security_incident`, `AgentProcessTaskTests.L4_needs_its_package_and_an_L4_agent_and_stays_in_its_tenant` (package, autonomy, cross-tenant) |
+| R3 pages (MCP tools on the connection page, approval of agent steps on the process page) | Met | `agent-autonomy.spec.ts` (en and ar, axe); OpenAPI in `docs/api/openapi.v1.json` checked by `OpenApiContractTests` |
+

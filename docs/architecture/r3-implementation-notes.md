@@ -113,3 +113,23 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - Workflow migration 0021 adds `workflow.external_task`. `ExternalTasks` reaches Camunda only through `IConnectorRuntime` and finds connections through `IConnectorActions`; people come from the user directory contract. `ExternalTaskWorker` is hosted by the worker, and in the development host with `Workflow:ExternalTasks:InProcess`.
 - New keys: `validation.process.external_task_outcome`, `validation.process.external_task_comment`, `conflict.process.external_task_not_open`; audit action `process.external_task_completed`.
 - Gaps: no candidate group tasks; no rendering of Camunda forms; the sync reads up to 2,000 open tasks per connection a minute; Camunda SaaS sign-in that needs an `audience` parameter is not supported by the shared OAuth sign-in yet.
+
+## Spec 027 R3 slice 1: SIEM export of agent events (T021)
+
+- Agent events already were audit events, so they reach SIEM destinations through the spec 026 stream. `AgentRuns.FinishAsync` now writes `agent.run_finished` for every run except evaluation runs; outcome `denied` for limit, policy and suspension stops.
+- Default: no agent-only destination filter; receivers select by the `agent.` prefix (documented in `docs/security/siem-schema.md`).
+
+## Spec 027 R3 slice 2: MCP servers as tool sources (T022)
+
+- Defaults are in the spec 027 R3 plan. `ai.agents.mcp` and `ai.agents.autonomous` are new capabilities (Entitlements migration 0048, Enterprise and Government). The `mcp_server` pack (Integrations) speaks Streamable HTTP, protocol version 2025-06-18: each call opens a session with `initialize`, sends one request and reads a JSON or event stream answer. No persistent session and no server-sent notifications.
+- `integrations.mcp_tool` (migration 0021) keeps each listed tool, its schema hash and the hash that was approved. `McpToolSource` adds approved tools to the agent tool registry as `mcp.<name>`; a tool of a turned-off connection or one that is not approved is refused with `tool.connector_disabled` or `tool.mcp_not_approved`.
+- The admin panel sits on the connection page (Read the tool list, review and approve, reject). Gap: no diff view of what changed in a tool; the administrator sees the current description and status only.
+
+## Spec 027 R3 slice 3: L4 bounded autonomy in processes (T023)
+
+- Defaults are in the spec 027 R3 plan. The process engine (Workflow) runs an agent task like a service task: it checks the package and the dual approval (`workflow.autonomy_approval`, migration 0022), then sends `AgentTaskRequested`; Agents runs the agent in mode `autonomous` as the instance's starter and answers with `AgentTaskFinished`. Neither module reads the other's tables.
+- `agents.process_task` (Agents migration 0026) keeps one row per step run, so a redelivered request runs once. Security incidents may now be opened by the platform (`opened_by` null, `kind` set).
+- The approval panel sits on the process model page; the modeler edits agent tasks (`tb:agent`).
+- Gap: an L4 run keeps its record in one transaction with its answer, so a restart in the middle of a run starts it again from the beginning when the request is redelivered; tools it already called may be called again. Write tools that change other systems should stay idempotent.
+- Gap: no service identity for processes started without a person (FR-003 allows one granted by the AI Policy Administrator); such steps raise `agent_no_person`.
+- With T024 (pages, `agent-autonomy.spec.ts`) spec 027 R3 is built.

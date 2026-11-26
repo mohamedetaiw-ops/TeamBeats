@@ -128,7 +128,7 @@ public sealed class AgentDefinitionTests
         var looser = Assert.Throws<AppException>(() =>
             AgentPolicyService.Validate(AgentPolicy.Default with { ToolRules = new() { ["requests.submit"] = ToolApprovalRules.Execute } }, Tools));
         Assert.Contains("validation.agent_policy.rule", looser.Errors!.SelectMany(e => e.Value));
-        var cap = Assert.Throws<AppException>(() => AgentPolicyService.Validate(AgentPolicy.Default with { MaxAutonomy = "L4" }, Tools));
+        var cap = Assert.Throws<AppException>(() => AgentPolicyService.Validate(AgentPolicy.Default with { MaxAutonomy = "L5" }, Tools));
         Assert.Contains("validation.agent_policy.autonomy", cap.Errors!.SelectMany(e => e.Value));
         var normalized = AgentPolicyService.Validate(AgentPolicy.Default with { AllowedTools = ["tasks.inbox", "knowledge.search", "tasks.inbox"] }, Tools);
         Assert.Equal(["knowledge.search", "tasks.inbox"], normalized.AllowedTools);

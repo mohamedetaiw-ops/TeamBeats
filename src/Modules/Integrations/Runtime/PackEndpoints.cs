@@ -162,6 +162,45 @@ public static class PackEndpoints
         });
     }
 
+    /// <summary>Tools of an MCP server (spec 027 R3): read the list, approve with step-up, reject.</summary>
+    public static void MapMcpTools(IEndpointRouteBuilder app)
+    {
+        var api = app.MapGroup("/api/v1/integrations/pack-connections/{id:guid}").RequireTenantUser().InAdminArea()
+            .WithTags("Integrations: connector packs");
+
+        api.MapGet("/mcp-tools", async (Guid id, IAuthorizationService authz, Mcp.McpTools tools, CancellationToken ct) =>
+        {
+            await Demand(authz, ct);
+            return Results.Ok(await tools.ListAsync(id, ct));
+        });
+
+        api.MapPost("/mcp-tools:refresh", async (Guid id, IAuthorizationService authz, Mcp.McpTools tools, IDbSession session, CancellationToken ct) =>
+        {
+            await Demand(authz, ct);
+            var result = await tools.RefreshAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(result);
+        });
+
+        api.MapPost("/mcp-tools/{toolId:guid}:approve", async (Guid id, Guid toolId, Mcp.McpToolApproval request, IAuthorizationService authz, Mcp.McpTools tools,
+            IDbSession session, CancellationToken ct) =>
+        {
+            await Demand(authz, ct);
+            var view = await tools.ApproveAsync(id, toolId, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        }).RequireStepUp();
+
+        api.MapPost("/mcp-tools/{toolId:guid}:reject", async (Guid id, Guid toolId, IAuthorizationService authz, Mcp.McpTools tools, IDbSession session,
+            CancellationToken ct) =>
+        {
+            await Demand(authz, ct);
+            var view = await tools.RejectAsync(id, toolId, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+    }
+
     private static Task Demand(IAuthorizationService authz, CancellationToken ct) => authz.DemandAsync(Permissions.IntegrationManage, AuthzTarget.Tenant, ct);
 
     private static async Task<IResult> SetEnabled(Guid id, bool enabled, IAuthorizationService authz, PackConnections packs, IDbSession session,

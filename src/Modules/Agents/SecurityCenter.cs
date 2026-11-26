@@ -36,8 +36,8 @@ public sealed record AgentAlertView(Guid Id, Guid AgentId, IReadOnlyDictionary<s
 public sealed record IncidentAction(DateTimeOffset At, Guid By, string Text);
 
 public sealed record AgentIncidentView(Guid Id, string Title, string Severity, string Status, Guid? AgentId, Guid OrgUnitId, IReadOnlyList<Guid> RunIds,
-    IReadOnlyList<IncidentAction> Actions, string? ClosureNote, Guid OpenedBy, DateTimeOffset OpenedAt, Guid? ClosedBy, DateTimeOffset? ClosedAt, int Version,
-    IReadOnlyList<Guid> AlertIds);
+    IReadOnlyList<IncidentAction> Actions, string? ClosureNote, Guid? OpenedBy, DateTimeOffset OpenedAt, Guid? ClosedBy, DateTimeOffset? ClosedAt, int Version,
+    IReadOnlyList<Guid> AlertIds, string? Kind = null);
 
 public sealed record AgentWatchView(Guid AgentId, IReadOnlyDictionary<string, string> AgentNames, Guid OrgUnitId, int Version, string Reason, DateTimeOffset Since,
     DateTimeOffset Until);
@@ -346,14 +346,14 @@ public sealed class AgentSecurityCenter(IDbSession session, ITenantContext conte
     private const string IncidentSql =
         """
         select i.id, i.title, i.severity, i.status, i.agent_id, i.org_unit_id, i.run_ids, i.actions::text, i.closure_note, i.opened_by, i.opened_at, i.closed_by,
-          i.closed_at, i.version, coalesce((select array_agg(s.id order by s.created_at) from agents.security_alert s where s.incident_id = i.id), '{}')
+          i.closed_at, i.version, coalesce((select array_agg(s.id order by s.created_at) from agents.security_alert s where s.incident_id = i.id), '{}'), i.kind
         from agents.security_incident i
         """;
 
     private static AgentIncidentView ReadIncident(Npgsql.NpgsqlDataReader r) =>
         new(r.GetGuid(0), r.GetString(1), r.GetString(2), r.GetString(3), r.Get<Guid?>("agent_id"), r.GetGuid(5), r.GetFieldValue<Guid[]>(6),
-            JsonSerializer.Deserialize<List<IncidentAction>>(r.GetString(7), AgentPolicyService.Json) ?? [], r.Get<string?>("closure_note"), r.GetGuid(9),
-            r.GetFieldValue<DateTimeOffset>(10), r.Get<Guid?>("closed_by"), r.Get<DateTimeOffset?>("closed_at"), r.GetInt32(13), r.GetFieldValue<Guid[]>(14));
+            JsonSerializer.Deserialize<List<IncidentAction>>(r.GetString(7), AgentPolicyService.Json) ?? [], r.Get<string?>("closure_note"), r.Get<Guid?>("opened_by"),
+            r.GetFieldValue<DateTimeOffset>(10), r.Get<Guid?>("closed_by"), r.Get<DateTimeOffset?>("closed_at"), r.GetInt32(13), r.GetFieldValue<Guid[]>(14), r.Get<string?>("kind"));
 
     private async Task<AgentIncidentView?> FindIncidentAsync(Guid id, CancellationToken ct) =>
         (await session.QueryAsync($"{IncidentSql} where i.id = @id", new { id }, ReadIncident, ct)).FirstOrDefault();
@@ -420,6 +420,23 @@ public sealed class AgentSecurityCenter(IDbSession session, ITenantContext conte
             }
         }
         return ids;
+    }
+
+    /// <summary>
+    /// An incident the platform opens by itself (spec 027 US1 scenario 5): an L4 run of a process broke a limit. It has a
+    /// kind instead of a title and nobody who opened it; security officers work it like any other.
+    /// </summary>
+    internal async Task<Guid> OpenAutomaticAsync(string kind, Guid agent, Guid unit, Guid run, CancellationToken ct)
+    {
+        var id = Ids.New();
+        await session.ExecAsync(
+            """
+            insert into agents.security_incident (tenant_id, id, title, severity, status, agent_id, org_unit_id, run_ids, actions, opened_by, opened_at, kind)
+            values (platform.current_tenant_id(), @id, '', 'high', 'open', @agent, @unit, @runs, '[]', null, @now, @kind)
+            """, new { id, agent, unit, runs = new[] { run }, now = clock.UtcNow, kind }, ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.AgentIncidentOpened, "agent_incident", id.ToString(), TargetOrgUnitId: unit,
+            Changes: new { agent, severity = "high", kind, runs = 1 }), ct);
+        return id;
     }
 
     /// <summary>Opens an incident from an alert (which then points at it) or by hand for an agent.</summary>

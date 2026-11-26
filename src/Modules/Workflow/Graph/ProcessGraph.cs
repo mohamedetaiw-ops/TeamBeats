@@ -83,7 +83,19 @@ public sealed record ServiceCall(
     IReadOnlyDictionary<string, string> Inputs,
     IReadOnlyDictionary<string, string> Outputs,
     int Retries = 3,
-    string? Product = null);
+    string? Product = null,
+    AgentStep? Agent = null);
+
+/// <summary>
+/// An agent task (spec 027 FR-024, R3): an L4 agent runs with the step's inputs, may call only <see cref="Tools"/>, and
+/// stops after <see cref="MaxMinutes"/>. Its answer is the step's result <c>answer</c>.
+/// </summary>
+public sealed record AgentStep(Guid AgentId, IReadOnlyList<string> Tools, int MaxMinutes = AgentStep.DefaultMinutes)
+{
+    public const int DefaultMinutes = 15;
+    public const int MaxAllowedMinutes = 60;
+    public const int MaxTools = 20;
+}
 
 /// <summary>
 /// Built-in product actions a service task can run instead of a connector (spec 016 R2): <c>set</c> writes its inputs
@@ -165,6 +177,9 @@ public sealed record ProcessGraph(string Key, IReadOnlyDictionary<string, string
 
     /// <summary>Whether the model uses an R3 element (compensation), which needs the advanced process package.</summary>
     public bool UsesAdvanced => Elements.Any(e => e.EventKind == EventKinds.Compensation || e.ForCompensation);
+
+    /// <summary>Whether the model has an agent task (spec 027 FR-024), which needs <c>ai.agents.autonomous</c> and the dual approval of the version.</summary>
+    public bool UsesAgents => Elements.Any(e => e.Call?.Agent is not null);
 
     public string ToJson() => JsonSerializer.Serialize(this, Json);
 

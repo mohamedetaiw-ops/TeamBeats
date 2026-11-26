@@ -75,8 +75,8 @@ public static class AgentAutonomy
 {
     public static readonly IReadOnlyList<string> Levels = ["L0", "L1", "L2", "L3", "L4"];
 
-    /// <summary>What is built (spec 027 US1): L3 governed execution in R2; L4 comes in R3 with its package.</summary>
-    public const string HighestBuilt = "L3";
+    /// <summary>What is built (spec 027 US1): L3 governed execution in R2; L4 in R3, only for agent tasks of approved processes.</summary>
+    public const string HighestBuilt = "L4";
 
     public static int Rank(string? level) => level is null ? -1 : Levels.ToList().IndexOf(level);
 }
@@ -187,7 +187,7 @@ public static class AgentDefinitions
             }
         }
 
-        // Autonomy: a known level, not above what R1 builds, the package and the tenant cap (spec 027 section 6).
+        // Autonomy: a known level, not above what is built, the package and the tenant cap (spec 027 section 6).
         var rank = AgentAutonomy.Rank(d.Autonomy);
         if (rank < 0)
         {

@@ -323,3 +323,25 @@
   gap: var(--tb-space-md);
   max-inline-size: 48rem;
 }
+
+/* Spec 027 R3: the dual approval of a version for autonomous agent steps. */
+.processes-autonomy-tasks {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding-inline-start: var(--tb-space-lg);
+}
+
+.processes-autonomy-tasks li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.processes-autonomy-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+}

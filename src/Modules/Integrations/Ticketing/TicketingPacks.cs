@@ -181,7 +181,7 @@ public abstract partial class TicketingPack(ITenantContext context, RestSignIn s
         PackCheck check;
         try
         {
-            var (failure, _) = await SendAsync(connection, settings, HttpMethod.Get, ProbePath(settings), null, null, false, ct);
+            var failure = await ProbeAsync(connection, settings, ct);
             check = failure is null
                 ? new PackCheck("system", true, "integrations.test.system_ok")
                 : new PackCheck("system", false, failure.ErrorClass == ConnectorErrorClasses.CredentialRefused ? "integrations.test.system_refused" : "integrations.test.system_failed",
@@ -198,6 +198,10 @@ public abstract partial class TicketingPack(ITenantContext context, RestSignIn s
         checks.Add(check);
         return checks;
     }
+
+    /// <summary>The read Test connection makes; null when it worked. By default a GET of <see cref="ProbePath"/>.</summary>
+    protected virtual async Task<PackCallResult?> ProbeAsync(PackConnection connection, TicketingSettings settings, CancellationToken ct) =>
+        (await SendAsync(connection, settings, HttpMethod.Get, ProbePath(settings), null, null, false, ct)).Failure;
 
     [GeneratedRegex("^[A-Za-z0-9_-]{1,40}$")]
     protected static partial Regex RecordNumber();

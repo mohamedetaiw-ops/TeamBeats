@@ -56,6 +56,7 @@ public static class AgentsModule
         services.AddScoped<Contracts.IAssistantUsageFigures, AssistantUsageFigures>();
         services.AddScoped<Contracts.IAssistantKnowledgeFigures, AssistantKnowledgeFigures>();
         services.AddMessageHandler<Identity.Contracts.UserDeprovisioned, AgentOwnerHandler>("agents.owner_left");
+        services.AddMessageHandler<Workflow.Contracts.AgentTaskRequested, AgentProcessTaskHandler>("agents.process_task");
         services.AddMessageHandler<Identity.Contracts.UserDeprovisioned, AgentMemoryLeavers>("agents.memory_leaver");
         services.AddMessageHandler<Identity.Contracts.UserDeprovisioned, AgentBriefingLeavers>("agents.briefing_leaver");
         services.AddMessageHandler<Identity.Contracts.UserDeprovisioned, TeamsChatLeavers>("agents.teams_chat_leaver");

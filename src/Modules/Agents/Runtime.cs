@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Entitlements.Contracts;
@@ -157,8 +158,11 @@ public delegate Task RunEventSink(string name, object data);
 /// <param name="Model">Set by a comparison's challenger arm or a model challenger's gate run (spec 034 US9): model calls name this model.</param>
 /// <param name="Arm">The comparison arm of a person's run (spec 034 US9), or null.</param>
 internal sealed record RunAgent(Guid Id, int Version, Guid OrgUnitId, AgentDefinition Definition, string Mode, AgentPolicy Policy, Guid? RouteChangeId = null,
-    string? Model = null, AgentArm? Arm = null)
+    string? Model = null, AgentArm? Arm = null, IReadOnlySet<string>? ProcessTools = null)
 {
+    /// <summary>An L4 agent task of an approved process (spec 027 FR-024): no person to confirm, only the step's tools.</summary>
+    public bool Autonomous => Mode == "autonomous";
+
     public int MaxToolCalls => Math.Min(Definition.MaxToolCalls ?? Policy.MaxToolCalls, Policy.MaxToolCalls);
 
     /// <summary>Effective autonomy: the lower of the agent's level and the tenant cap (027 section 6).</summary>
@@ -335,6 +339,61 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         return await StartAsync(run, user, prompt, new RunRequest(prompt, language), null, ct);
     }
 
+    /// <summary>
+    /// An L4 agent task of an approved process (spec 027 US1 scenario 5, FR-015, FR-024), run as the person who started the
+    /// instance, with their permissions now, intersected with the agent's grants and the step's tools. The step's
+    /// inputs are the message. The run stops after the step's minutes (at most 60) or the tenant's tool call and step
+    /// limits. Returns the run, or the reason it could not start.
+    /// </summary>
+    internal async Task<(RunView? Run, string? Refusal)> ProcessTaskAsync(Guid agentId, IReadOnlyList<string> stepTools, int maxMinutes, JsonObject inputs,
+        CancellationToken ct)
+    {
+        var user = context.RequireUser();
+        if (!await entitlements.IsEnabledAsync(Capabilities.AiAgentsBasic, ct) || !await entitlements.IsEnabledAsync(Capabilities.AiAgentsAutonomous, ct))
+        {
+            return (null, "not_in_package");
+        }
+        var row = await AgentRowAsync(agentId, ct);
+        if (row is not { } agent || agent.Current is not { } version)
+        {
+            return (null, "agent_missing");
+        }
+        if (agent.Status != AgentStatuses.Published)
+        {
+            return (null, agent.Status == AgentStatuses.Suspended ? "agent_suspended" : "agent_unavailable");
+        }
+        if (await KillSwitchOnAsync(ct))
+        {
+            return (null, "kill_switch");
+        }
+        var definition = await VersionAsync(agentId, version, ct);
+        if (!await InAudienceAsync(agentId, definition.Audience, user, ct))
+        {
+            return (null, "not_in_audience");
+        }
+        var policy = await unitPolicies.ForUnitAsync(agent.Unit, ct);
+        var minutes = Math.Clamp(maxMinutes, 1, 60);
+        var run = new RunAgent(agentId, version, agent.Unit, definition, "autonomous", policy with { MaxRunSeconds = minutes * 60 },
+            ProcessTools: stepTools.ToHashSet(StringComparer.Ordinal));
+        if (run.Autonomy < AgentAutonomy.Rank("L4"))
+        {
+            return (null, "autonomy");
+        }
+        try
+        {
+            await DemandDailyLimitAsync(run, ct);
+        }
+        catch (AppException)
+        {
+            return (null, "daily_limit");
+        }
+        var languages = definition.Languages ?? ["en"];
+        // One line per input: text as it is, other values as JSON, so the model reads the step like a request.
+        var lines = string.Join('\n', inputs.Select(p => $"{p.Key}: {(p.Value is JsonValue v && v.TryGetValue<string>(out var str) ? str : p.Value?.ToJsonString() ?? "null")}"));
+        var message = "Process step input:\n" + (lines.Length > 8000 ? lines[..8000] : lines);
+        return (await StartAsync(run, user, message, new RunRequest(message, languages[0]), null, ct, limitChecked: true), null);
+    }
+
     /// <summary>The test panel (020 US1 scenario 4): the latest version, as the designer, with no write action executed.</summary>
     public async Task<RunView> TestAsync(Guid agentId, RunRequest request, CancellationToken ct)
     {
@@ -479,7 +538,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
     private async Task DemandDailyLimitAsync(RunAgent agent, CancellationToken ct)
     {
         var day = new DateTimeOffset(clock.UtcNow.UtcDateTime.Date, TimeSpan.Zero);
-        var started = await session.ScalarAsync<long>("select count(*) from agents.run where agent_id = @agent and mode = 'run' and created_at >= @day",
+        var started = await session.ScalarAsync<long>("select count(*) from agents.run where agent_id = @agent and mode in ('run', 'autonomous') and created_at >= @day",
             new { agent = agent.Id, day }, ct);
         if (started >= agent.Policy.MaxDailyRunsPerAgent)
         {
@@ -555,7 +614,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
 
     private async Task<RunView> LoopAsync(Guid runId, RunAgent agent, Guid user, string language, RunState state, CancellationToken ct)
     {
-        var offered = (agent.Definition.Tools ?? []).Select(tools.Find).Where(t => t is not null && t.Definition.Unavailable is null)
+        var offered = (agent.Definition.Tools ?? []).Where(t => agent.ProcessTools is null || agent.ProcessTools.Contains(t)).Select(tools.Find).Where(t => t is not null && t.Definition.Unavailable is null)
             .Select(t => new AiTool(RunAgent.ModelName(t!.Definition.Name), t.Definition.Description, t.Definition.Parameters)).ToList();
         if (state.Memory)
         {
@@ -727,6 +786,11 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         {
             return new Gate(null, null, null, Refusal: "tool.not_granted");
         }
+        if (agent.ProcessTools is { } stepTools && !memoryCall && !stepTools.Contains(granted))
+        {
+            // An agent task takes only the steps its approved process version gives it (spec 027 US1 scenario 5).
+            return new Gate(granted, null, null, Refusal: "tool.not_in_process");
+        }
         if ((memoryCall ? remember : tools.Find(granted)) is not { } tool)
         {
             return new Gate(granted, null, null, Refusal: "tool.unknown");
@@ -734,8 +798,8 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         var definition = tool.Definition;
         if (definition.Unavailable is not null)
         {
-            // A tool of a disabled connector is off for every agent (027 US7 scenario 3).
-            return new Gate(granted, null, null, Refusal: "tool.connector_disabled");
+            // A tool of a disabled connector, or an MCP tool waiting for approval, is off for every agent (027 US7 scenario 3, R3).
+            return new Gate(granted, null, null, Refusal: "tool." + definition.Unavailable);
         }
         var rule = memoryCall ? ToolApprovalRules.Execute : agent.Policy.RuleFor(definition);
         if (!memoryCall)
@@ -794,6 +858,12 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         if (agent.DryRun && (ToolSideEffects.IsWrite(definition.SideEffect) || rule == ToolApprovalRules.Approval))
         {
             return agent.Sandbox ? new Gate(granted, arguments, hash, Confirm: true, Sandbox: true) : new Gate(granted, arguments, hash, Refusal: "tool.test_mode");
+        }
+        if (agent.Autonomous)
+        {
+            // The dual approval of the process version stands for the confirmation of the step's tools (FR-024); an action
+            // that needs its own approver has nobody to wait for inside an unattended run.
+            return rule == ToolApprovalRules.Approval ? new Gate(granted, arguments, hash, Refusal: "tool.approval_not_available") : new Gate(granted, arguments, hash);
         }
         if (rule == ToolApprovalRules.Approval)
         {
@@ -1055,6 +1125,22 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
     {
         await session.ExecAsync("delete from agents.run_checkpoint where run_id = @runId", new { runId }, ct);
         await UpdateRunAsync(runId, state, status, outcome, reason, usage, true, ct, answer, cited);
+        if (agent.Mode != "eval")
+        {
+            var result = status switch
+            {
+                RunStatuses.Completed => AuditOutcome.Success,
+                RunStatuses.Failed => AuditOutcome.Failure,
+                _ when outcome is RunOutcomes.PolicyBlocked or RunOutcomes.Suspended or RunOutcomes.LimitReached => AuditOutcome.Denied,
+                _ => AuditOutcome.Success,
+            };
+            await audit.WriteAsync(new AuditEntry(AuditActions.AgentRunFinished, "agent_run", runId.ToString(), result, agent.OrgUnitId, Changes: new
+            {
+                agent = agent.Id, version = agent.Version, mode = agent.Mode, status, outcome, reason, autonomy = agent.Definition.Autonomy, steps = state.Steps,
+                toolCalls = state.ToolCalls, denials = state.Denials, durationMs = (long)(state.ActiveSeconds * 1000), classification = state.Classification,
+                model = usage.Item1,
+            }), ct);
+        }
         if (agent.Mode == "run" && state.UserId is { } person)
         {
             await OfferAsync(runId, agent, person, state, status, outcome, reason, answer, language, usage, cited ?? [], ct);

@@ -112,6 +112,10 @@ public static class AuditActions
     public const string ConnectionDisabled = "integration.connection_disabled";
     public const string ActionDefined = "integration.action_defined";
     public const string ActionChanged = "integration.action_changed";
+
+    /// <summary>Spec 027 R3: an MCP server tool was approved for agents, or rejected.</summary>
+    public const string IntegrationMcpToolApproved = "integration.mcp_tool_approved";
+    public const string IntegrationMcpToolRejected = "integration.mcp_tool_rejected";
     public const string WebhookSecretRotated = "integration.webhook_secret_rotated";
     public const string AgentEnrolled = "integration.agent_enrolled";
     public const string AgentRevoked = "integration.agent_revoked";
@@ -369,6 +373,7 @@ public static class AuditActions
     public const string ProcessVariablesChanged = "process.variables_changed";
     public const string ProcessMigrationExecuted = "process.migration_executed";
     public const string ProcessExternalTaskCompleted = "process.external_task_completed";
+    public const string ProcessAutonomyApproved = "process.autonomy_approved";
     public const string DecisionModelSaved = "decision.model_saved";
     public const string DecisionPublished = "decision.published";
 
@@ -576,6 +581,9 @@ public static class AuditActions
     public const string AgentOwnerChanged = "agent.owner_changed";
     public const string AgentPolicyChanged = "agent.policy_changed";
     public const string AgentToolCalled = "agent.tool_called";
+
+    /// <summary>A run ended (spec 027 R3 SIEM export): how, why, its counts and usage; never the question or answer.</summary>
+    public const string AgentRunFinished = "agent.run_finished";
 
     /// <summary>Spec 035 US3 scenarios 2 and 8: an external AI client was refused by policy, the kill switch or external access off.</summary>
     public const string AgentExternalCallRefused = "agent.external_call_refused";
