@@ -32,16 +32,29 @@ public static class CampaignStepStatuses
 /// announcement (spec 015 mandatory category: preferences do not apply and it is labelled); an optional one as an
 /// announcement, so each person's channel preferences apply. With <see cref="OnlyNotActed"/>, people who already acted
 /// on the item (confirmed it when it asks for confirmation, otherwise opened it) are left out.
+/// With <see cref="Follows"/> (R3, FR-026: the 1-based place of an earlier step in the request) and <see cref="DelayDays"/>,
+/// the step has no fixed time: it is due that many days after the earlier step was sent and goes only to the people the
+/// earlier step reached who have not acted on its item. <see cref="At"/> is then ignored.
 /// </summary>
-public sealed record CampaignStepRequest(Guid ItemId, DateTimeOffset At, bool Mandatory = false, bool OnlyNotActed = false);
+public sealed record CampaignStepRequest(Guid ItemId, DateTimeOffset At, bool Mandatory = false, bool OnlyNotActed = false, int? Follows = null, int? DelayDays = null);
 
-public sealed record CampaignRequest(string? Name, Guid? SiteId, ContentAudience? Audience, IReadOnlyList<CampaignStepRequest>? Steps, int? Version = null);
+/// <summary>A campaign goal (R3, FR-027): an item of the campaign's steps and the share of the audience, 1 to 100 percent, that acted on it.</summary>
+public sealed record CampaignGoal(Guid ItemId, int Percent);
 
+public sealed record CampaignRequest(string? Name, Guid? SiteId, ContentAudience? Audience, IReadOnlyList<CampaignStepRequest>? Steps, int? Version = null,
+    CampaignGoal? Goal = null);
+
+/// <summary>A step as planned; <see cref="Follows"/> is the position of the step it follows, and <see cref="At"/> the time it is planned for.</summary>
 public sealed record CampaignStepView(Guid Id, int Position, Guid ItemId, IReadOnlyDictionary<string, string> ItemTitle, DateTimeOffset At, bool Mandatory,
-    bool OnlyNotActed, string Status, DateTimeOffset? SentAt, int? Recipients);
+    bool OnlyNotActed, string Status, DateTimeOffset? SentAt, int? Recipients, int? Follows = null, int? DelayDays = null);
+
+public sealed record CampaignGoalView(Guid ItemId, int Percent, DateTimeOffset? ReachedAt);
 
 public sealed record CampaignView(Guid Id, Guid SiteId, string Name, ContentAudience Audience, string Status, IReadOnlyList<CampaignStepView> Steps,
-    ContentPerson CreatedBy, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt, int Version);
+    ContentPerson CreatedBy, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt, int Version, CampaignGoalView? Goal = null);
+
+/// <summary>How far the goal is: the share of the audience that acted on its item, null below the minimum group size.</summary>
+public sealed record CampaignGoalProgress(Guid ItemId, int Percent, int? ActedPercent, DateTimeOffset? ReachedAt);
 
 /// <summary>Counts of a step or of the whole campaign; the counts of what people did are null below the minimum group size.</summary>
 public sealed record CampaignCounts(int Audience, int Delivered, int? Viewed, int? Clicked, int? Acknowledged);
@@ -52,13 +65,13 @@ public sealed record CampaignStepStats(Guid StepId, int Position, string Status,
 public sealed record CampaignBreakdownRow(string? Key, IReadOnlyDictionary<string, string>? Names, int Audience, int Viewed, int Acknowledged);
 
 public sealed record CampaignDashboard(Guid CampaignId, int MinimumGroupSize, CampaignCounts Total, IReadOnlyList<CampaignStepStats> Steps,
-    IReadOnlyList<CampaignBreakdownRow> ByUnit, IReadOnlyList<CampaignBreakdownRow> ByLocation);
+    IReadOnlyList<CampaignBreakdownRow> ByUnit, IReadOnlyList<CampaignBreakdownRow> ByLocation, CampaignGoalProgress? Goal = null);
 
 internal sealed record CampaignRow(Guid Id, Guid SiteId, string Name, ContentAudience Audience, string Status, Guid CreatedBy, DateTimeOffset CreatedAt,
-    DateTimeOffset UpdatedAt, int Version);
+    DateTimeOffset UpdatedAt, int Version, Guid? GoalItemId = null, int? GoalPercent = null, DateTimeOffset? GoalReachedAt = null);
 
 internal sealed record StepRow(Guid Id, Guid CampaignId, int Position, Guid ItemId, DateTimeOffset At, bool Mandatory, bool OnlyNotActed, string Status,
-    DateTimeOffset? SentAt, int? Recipients, int? Delivered);
+    DateTimeOffset? SentAt, int? Recipients, int? Delivered, Guid? FollowsStepId = null, int? DelayDays = null);
 
 /// <summary>
 /// Campaigns across channels (spec 009 US8, FR-015). A campaign belongs to a site; those who publish at the site plan,
@@ -83,21 +96,24 @@ public sealed class ContentCampaigns(
     public const int MaxSteps = 20;
     public const int MinimumGroupSize = 5;
     public const string Template = "content.campaign.step";
+    public const string GoalReachedTemplate = "content.campaign.goal_reached";
+    public const int MaxDelayDays = 60;
+    private const int GoalChecks = 50;
 
-    private const string Columns = "id, site_id, name, audience::text, status, created_by, created_at, updated_at, row_version";
+    private const string Columns = "id, site_id, name, audience::text, status, created_by, created_at, updated_at, row_version, goal_item_id, goal_percent, goal_reached_at";
+
+    private const string StepColumns = "id, campaign_id, position, item_id, at, mandatory, only_not_acted, status, sent_at, recipients, delivered, follows_step_id, delay_days";
 
     private static CampaignRow Map(Npgsql.NpgsqlDataReader r) => new(r.GetGuid(0), r.GetGuid(1), r.GetString(2), ContentJson.Read<ContentAudience>(r.GetString(3)),
-        r.GetString(4), r.GetGuid(5), r.GetFieldValue<DateTimeOffset>(6), r.GetFieldValue<DateTimeOffset>(7), r.GetInt32(8));
+        r.GetString(4), r.GetGuid(5), r.GetFieldValue<DateTimeOffset>(6), r.GetFieldValue<DateTimeOffset>(7), r.GetInt32(8), r.Get<Guid?>("goal_item_id"),
+        r.Get<int?>("goal_percent"), r.Get<DateTimeOffset?>("goal_reached_at"));
 
     private Task<List<StepRow>> StepsAsync(Guid campaign, CancellationToken ct) =>
-        session.QueryAsync(
-            """
-            select id, campaign_id, position, item_id, at, mandatory, only_not_acted, status, sent_at, recipients, delivered
-            from content.campaign_step where campaign_id = @campaign order by position
-            """, new { campaign }, StepMap, ct);
+        session.QueryAsync($"select {StepColumns} from content.campaign_step where campaign_id = @campaign order by position", new { campaign }, StepMap, ct);
 
     private static StepRow StepMap(Npgsql.NpgsqlDataReader r) => new(r.GetGuid(0), r.GetGuid(1), r.GetInt32(2), r.GetGuid(3), r.GetFieldValue<DateTimeOffset>(4),
-        r.GetBoolean(5), r.GetBoolean(6), r.GetString(7), r.Get<DateTimeOffset?>("sent_at"), r.Get<int?>("recipients"), r.Get<int?>("delivered"));
+        r.GetBoolean(5), r.GetBoolean(6), r.GetString(7), r.Get<DateTimeOffset?>("sent_at"), r.Get<int?>("recipients"), r.Get<int?>("delivered"),
+        r.Get<Guid?>("follows_step_id"), r.Get<int?>("delay_days"));
 
     private async Task<CampaignRow?> RowAsync(Guid id, bool forUpdate, CancellationToken ct) =>
         (await session.QueryAsync($"select {Columns} from content.campaign where id = @id{(forUpdate ? " for update" : "")}", new { id }, Map, ct)).FirstOrDefault();
@@ -140,16 +156,19 @@ public sealed class ContentCampaigns(
     private async Task<CampaignView> ViewAsync(CampaignRow row, CancellationToken ct)
     {
         var steps = new List<CampaignStepView>();
-        foreach (var s in await StepsAsync(row.Id, ct))
+        var rows = await StepsAsync(row.Id, ct);
+        var positions = rows.ToDictionary(s => s.Id, s => s.Position);
+        foreach (var s in rows)
         {
             var item = await items.RowAsync(s.ItemId, false, ct);
             var number = item?.DraftVersion ?? item?.PublishedVersion;
             var version = number is { } n ? await items.VersionAsync(s.ItemId, n, ct) : null;
             var title = version?.Variants.ToDictionary(v => v.Key, v => v.Value.Title, StringComparer.Ordinal) ?? [];
-            steps.Add(new CampaignStepView(s.Id, s.Position, s.ItemId, title, s.At, s.Mandatory, s.OnlyNotActed, s.Status, s.SentAt, s.Recipients));
+            steps.Add(new CampaignStepView(s.Id, s.Position, s.ItemId, title, s.At, s.Mandatory, s.OnlyNotActed, s.Status, s.SentAt, s.Recipients,
+                s.FollowsStepId is { } f && positions.TryGetValue(f, out var p) ? p : null, s.DelayDays));
         }
         return new CampaignView(row.Id, row.SiteId, row.Name, row.Audience, row.Status, steps, await items.PersonAsync(row.CreatedBy, ct), row.CreatedAt,
-            row.UpdatedAt, row.Version);
+            row.UpdatedAt, row.Version, row.GoalItemId is { } g ? new CampaignGoalView(g, row.GoalPercent ?? 100, row.GoalReachedAt) : null);
     }
 
     private async Task<ContentAudience> ValidateAsync(CampaignRequest request, SiteRow site, ValidationErrors errors, CancellationToken ct)
@@ -189,22 +208,81 @@ public sealed class ContentCampaigns(
                 break;
             }
         }
+        await ValidateAutomationAsync(steps, request.Goal, errors, ct);
         return audience;
+    }
+
+    /// <summary>
+    /// Follow-ups and goals (R3, FR-026, FR-027) need the advanced automation feature; without it they are refused, never
+    /// dropped. A step follows an earlier step of the request after 1 to 60 days; the goal is an item of the steps and 1 to 100 percent.
+    /// </summary>
+    private async Task ValidateAutomationAsync(IReadOnlyList<CampaignStepRequest> steps, CampaignGoal? goal, ValidationErrors errors, CancellationToken ct)
+    {
+        var follows = steps.Any(s => s is not null && (s.Follows is not null || s.DelayDays is not null));
+        if ((follows || goal is not null) && !await entitlements.IsEnabledAsync(Capabilities.ContentCampaignAutomation, ct))
+        {
+            errors.Add(goal is not null ? "goal" : "steps", "validation.content.campaign_automation");
+            return;
+        }
+        for (var i = 0; i < steps.Count && i < MaxSteps; i++)
+        {
+            var step = steps[i];
+            if (step is null || (step.Follows is null && step.DelayDays is null))
+            {
+                continue;
+            }
+            if (step.Follows is not { } f || f < 1 || f > i || step.DelayDays is not { } d || d < 1 || d > MaxDelayDays)
+            {
+                errors.Add("steps", "validation.content.campaign_follows");
+                break;
+            }
+        }
+        if (goal is not null && (goal.Percent is < 1 or > 100 || !steps.Any(s => s is not null && s.ItemId == goal.ItemId)))
+        {
+            errors.Add("goal", "validation.content.campaign_goal");
+        }
+    }
+
+    /// <summary>
+    /// The plan of the steps: a fixed step at its time, a follow-up at the planned time of the step it follows plus its
+    /// delay. Positions follow the planned times; a follow-up always comes after the step it follows.
+    /// </summary>
+    private static List<(Guid Id, CampaignStepRequest Step, DateTimeOffset At, int? Follows, int Index)> Plan(IReadOnlyList<CampaignStepRequest> steps)
+    {
+        var planned = new List<(Guid Id, CampaignStepRequest Step, DateTimeOffset At, int? Follows, int Index)>();
+        for (var i = 0; i < steps.Count; i++)
+        {
+            var step = steps[i];
+            var at = step.Follows is { } f && step.DelayDays is { } d ? planned[f - 1].At.AddDays(d) : step.At;
+            planned.Add((Ids.New(), step, at, step.Follows is { } x ? x - 1 : null, i));
+        }
+        return planned.OrderBy(p => p.At).ThenBy(p => p.Index).ToList();
     }
 
     private async Task WriteStepsAsync(Guid campaign, IReadOnlyList<CampaignStepRequest> steps, CancellationToken ct)
     {
         await session.ExecAsync("delete from content.campaign_step where campaign_id = @campaign", new { campaign }, ct);
+        var plan = Plan(steps);
+        // Ids of the request's steps by their place in the request, so a follow-up points at the step it follows.
+        var byIndex = plan.ToDictionary(p => p.Index, p => p.Id);
         var position = 0;
-        foreach (var step in steps.OrderBy(s => s.At))
+        foreach (var (id, step, at, follows, _) in plan)
         {
             await session.ExecAsync(
                 """
-                insert into content.campaign_step (tenant_id, id, campaign_id, position, item_id, at, mandatory, only_not_acted, status)
-                values (platform.current_tenant_id(), @id, @campaign, @position, @item, @at, @mandatory, @notActed, 'pending')
-                """, new { id = Ids.New(), campaign, position = ++position, item = step.ItemId, at = step.At, mandatory = step.Mandatory, notActed = step.OnlyNotActed }, ct);
+                insert into content.campaign_step (tenant_id, id, campaign_id, position, item_id, at, mandatory, only_not_acted, status, follows_step_id, delay_days)
+                values (platform.current_tenant_id(), @id, @campaign, @position, @item, @at, @mandatory, @notActed, 'pending', @follows, @delay)
+                """, new
+                {
+                    id, campaign, position = ++position, item = step.ItemId, at, mandatory = step.Mandatory, notActed = step.OnlyNotActed,
+                    follows = follows is { } f ? byIndex[f] : (Guid?)null, delay = follows is null ? null : step.DelayDays,
+                }, ct);
         }
     }
+
+    private Task WriteGoalAsync(Guid campaign, CampaignGoal? goal, CancellationToken ct) =>
+        session.ExecAsync("update content.campaign set goal_item_id = @item, goal_percent = @percent where id = @campaign",
+            new { campaign, item = goal?.ItemId, percent = goal?.Percent }, ct);
 
     public async Task<CampaignView> CreateAsync(CampaignRequest request, CancellationToken ct)
     {
@@ -234,6 +312,7 @@ public sealed class ContentCampaigns(
             values (platform.current_tenant_id(), @id, @site, @name, @audience, 'draft', @user, @now, @now)
             """, new { id, site = site.Id, name = request.Name!.Trim(), audience = new Jsonb(ContentJson.Write(audience)), user, now }, ct);
         await WriteStepsAsync(id, request.Steps ?? [], ct);
+        await WriteGoalAsync(id, request.Goal, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.ContentCampaignCreated, "content_campaign", id.ToString(), TargetOrgUnitId: site.OrgUnitId), ct);
         return await ViewAsync((await RowAsync(id, false, ct))!, ct);
     }
@@ -251,15 +330,20 @@ public sealed class ContentCampaigns(
             throw AppException.Conflict("conflict.content.campaign_started");
         }
         var errors = new ValidationErrors();
-        var audience = await ValidateAsync(request with { Name = request.Name ?? campaign.Name, Audience = request.Audience ?? campaign.Audience }, site, errors, ct);
+        // A goal is checked against the steps that will be in force; new steps without a goal clear it, no steps keep it.
+        var goal = request.Goal ?? (request.Steps is null && campaign.GoalItemId is { } g ? new CampaignGoal(g, campaign.GoalPercent ?? 100) : null);
+        var steps = request.Steps ?? (request.Goal is null ? null : (await StepsAsync(id, ct)).Select(s => new CampaignStepRequest(s.ItemId, s.At)).ToList());
+        var audience = await ValidateAsync(request with { Name = request.Name ?? campaign.Name, Audience = request.Audience ?? campaign.Audience, Steps = steps }, site,
+            errors, ct);
         errors.ThrowIfAny();
         await session.ExecAsync(
             "update content.campaign set name = @name, audience = @audience, updated_at = @now, row_version = row_version + 1 where id = @id",
             new { id, name = (request.Name ?? campaign.Name).Trim(), audience = new Jsonb(ContentJson.Write(audience)), now = clock.UtcNow }, ct);
-        if (request.Steps is { } steps)
+        if (request.Steps is { } newSteps)
         {
-            await WriteStepsAsync(id, steps, ct);
+            await WriteStepsAsync(id, newSteps, ct);
         }
+        await WriteGoalAsync(id, goal, ct);
         return await ViewAsync((await RowAsync(id, false, ct))!, ct);
     }
 
@@ -305,6 +389,17 @@ public sealed class ContentCampaigns(
     /// <summary>Sends the due steps of started campaigns, as the system actor. Returns how many steps were handled.</summary>
     public async Task<int> RunDueAsync(DateTimeOffset now, int limit, CancellationToken ct)
     {
+        // Goals first, so a campaign that reached its goal sends no more steps (FR-027).
+        var goals = await session.QueryAsync(
+            "select id from content.campaign where status = 'scheduled' and goal_item_id is not null order by updated_at, id limit @limit",
+            new { limit = GoalChecks }, r => r.GetGuid(0), ct);
+        foreach (var campaignId in goals)
+        {
+            if (await RowAsync(campaignId, true, ct) is { Status: CampaignStatuses.Scheduled, GoalItemId: not null } campaign)
+            {
+                await CheckGoalAsync(campaign, now, ct);
+            }
+        }
         var due = await session.QueryAsync(
             """
             select s.id from content.campaign_step s join content.campaign c on c.id = s.campaign_id
@@ -312,38 +407,135 @@ public sealed class ContentCampaigns(
             """, new { now, limit }, r => r.GetGuid(0), ct);
         foreach (var stepId in due)
         {
-            var step = (await session.QueryAsync(
-                """
-                select id, campaign_id, position, item_id, at, mandatory, only_not_acted, status, sent_at, recipients, delivered
-                from content.campaign_step where id = @stepId for update
-                """, new { stepId }, StepMap, ct)).FirstOrDefault();
+            var step = (await session.QueryAsync($"select {StepColumns} from content.campaign_step where id = @stepId for update", new { stepId }, StepMap, ct))
+                .FirstOrDefault();
             if (step is not { Status: CampaignStepStatuses.Pending } || await RowAsync(step.CampaignId, true, ct) is not { Status: CampaignStatuses.Scheduled } campaign)
             {
                 continue;
             }
-            await SendStepAsync(campaign, step, now, ct);
-            if (!await session.ScalarAsync<bool>("select exists (select 1 from content.campaign_step where campaign_id = @id and status = 'pending')", new { id = campaign.Id }, ct))
+            StepRow? followed = null;
+            if (step.FollowsStepId is { } followsId)
             {
-                await SetStatusAsync(campaign.Id, CampaignStatuses.Completed, ct);
+                followed = (await session.QueryAsync($"select {StepColumns} from content.campaign_step where id = @followsId", new { followsId }, StepMap, ct)).FirstOrDefault();
+                if (followed is { Status: CampaignStepStatuses.Pending })
+                {
+                    continue; // The earlier step has not gone yet; its sending sets this step's time.
+                }
+                if (followed is { Status: CampaignStepStatuses.Sent, SentAt: { } sentAt } && sentAt.AddDays(step.DelayDays ?? 0) > now)
+                {
+                    await session.ExecAsync("update content.campaign_step set at = @at where id = @id", new { id = step.Id, at = sentAt.AddDays(step.DelayDays ?? 0) }, ct);
+                    continue;
+                }
+                if (followed is not { Status: CampaignStepStatuses.Sent })
+                {
+                    // A follow-up of a step that was skipped or cancelled is skipped too.
+                    await SkipAsync(step.Id, now, ct);
+                    await CompleteWhenDoneAsync(campaign.Id, ct);
+                    continue;
+                }
             }
+            await SendStepAsync(campaign, step, followed, now, ct);
+            await CompleteWhenDoneAsync(campaign.Id, ct);
         }
         return due.Count;
     }
 
-    private async Task SendStepAsync(CampaignRow campaign, StepRow step, DateTimeOffset now, CancellationToken ct)
+    private async Task CompleteWhenDoneAsync(Guid campaign, CancellationToken ct)
+    {
+        if (!await session.ScalarAsync<bool>("select exists (select 1 from content.campaign_step where campaign_id = @campaign and status = 'pending')", new { campaign }, ct))
+        {
+            await SetStatusAsync(campaign, CampaignStatuses.Completed, ct);
+        }
+    }
+
+    private Task SkipAsync(Guid step, DateTimeOffset now, CancellationToken ct) =>
+        session.ExecAsync("update content.campaign_step set status = 'skipped', sent_at = @now, recipients = 0, delivered = 0 where id = @step", new { step, now }, ct);
+
+    /// <summary>
+    /// The goal check (FR-027): the share of the campaign's current audience that acted on the goal item. When reached, the
+    /// pending steps are skipped, the campaign is completed, the people who publish at the site are told and it is audited.
+    /// </summary>
+    private async Task CheckGoalAsync(CampaignRow campaign, DateTimeOffset now, CancellationToken ct)
+    {
+        if (await GoalShareAsync(campaign, ct) is not { } share || share.Percent < campaign.GoalPercent)
+        {
+            return;
+        }
+        await session.ExecAsync("update content.campaign_step set status = 'skipped', sent_at = @now, recipients = 0, delivered = 0 where campaign_id = @id and status = 'pending'",
+            new { id = campaign.Id, now }, ct);
+        await session.ExecAsync(
+            "update content.campaign set status = 'completed', goal_reached_at = @now, updated_at = @now, row_version = row_version + 1 where id = @id",
+            new { id = campaign.Id, now }, ct);
+        var site = await sites.RowAsync(campaign.SiteId, false, ct);
+        if (site is not null)
+        {
+            var candidates = new HashSet<Guid>(await provisioning.TenantHoldersAsync(Permissions.ContentPublish, ct)) { campaign.CreatedBy };
+            foreach (var holder in await provisioning.OrgHoldersAsync(Permissions.ContentPublish, ct))
+            {
+                candidates.Add(holder.UserId);
+            }
+            var publishers = new List<Guid>();
+            foreach (var user in candidates.Order())
+            {
+                if (await provisioning.UserHoldsAsync(user, Permissions.ContentPublish, site.Target, ct))
+                {
+                    publishers.Add(user);
+                }
+            }
+            if (publishers.Count > 0)
+            {
+                await notifications.SendAsync(new NotificationRequest(publishers, NotificationCategories.DocumentUpdate, GoalReachedTemplate, CampaignPage(campaign.Id),
+                    DedupeKey: $"content:campaign:{campaign.Id:N}:goal"), ct);
+            }
+        }
+        await audit.WriteAsync(new AuditEntry(AuditActions.CampaignGoalReached, "content_campaign", campaign.Id.ToString(), TargetOrgUnitId: site?.OrgUnitId,
+            Changes: new { item = campaign.GoalItemId, percent = campaign.GoalPercent, acted = share.Acted, audience = share.Audience }), ct);
+    }
+
+    /// <summary>Who of the current audience acted on the goal item, as counts and a whole percent; null without a goal, its item or an audience.</summary>
+    private async Task<(int Acted, int Audience, int Percent)?> GoalShareAsync(CampaignRow campaign, CancellationToken ct)
+    {
+        if (campaign.GoalItemId is not { } goalItem || await items.RowAsync(goalItem, false, ct) is not { } item)
+        {
+            return null;
+        }
+        var members = (await audiences.MembersAsync(campaign.Audience, ct)).ToHashSet();
+        if (members.Count == 0)
+        {
+            return null;
+        }
+        var acted = (await ActedAsync(campaign.Id, item, ct)).Count(members.Contains);
+        return (acted, members.Count, acted * 100 / members.Count);
+    }
+
+    public static string CampaignPage(Guid campaign) => $"/content/campaigns/{campaign}";
+
+    private async Task SendStepAsync(CampaignRow campaign, StepRow step, StepRow? followed, DateTimeOffset now, CancellationToken ct)
     {
         var item = await items.RowAsync(step.ItemId, false, ct);
         var site = item is null ? null : await sites.RowAsync(item.SiteId, false, ct);
         if (item is not { Status: ContentStatuses.Published } || site is not { Active: true })
         {
             // Only live items are sent; a step whose item is not live is skipped and shows so on the dashboard.
-            await session.ExecAsync("update content.campaign_step set status = 'skipped', sent_at = @now, recipients = 0, delivered = 0 where id = @id",
-                new { id = step.Id, now }, ct);
+            await SkipAsync(step.Id, now, ct);
             return;
         }
         var acted = step.OnlyNotActed ? await ActedAsync(campaign.Id, item, ct) : new HashSet<Guid>();
+        IEnumerable<Guid> audience;
+        if (followed is not null)
+        {
+            // A follow-up goes to the people the earlier step reached who have not acted on its item (FR-026).
+            var reached = await session.QueryAsync("select user_id from content.campaign_send where step_id = @step", new { step = followed.Id }, r => r.GetGuid(0), ct);
+            var earlier = await items.RowAsync(followed.ItemId, false, ct);
+            var done = earlier is null ? new HashSet<Guid>() : await ActedAsync(campaign.Id, earlier, ct);
+            audience = reached.Where(u => !done.Contains(u));
+        }
+        else
+        {
+            audience = await audiences.MembersAsync(campaign.Audience, ct);
+        }
         var recipients = new List<Guid>();
-        foreach (var user in (await audiences.MembersAsync(campaign.Audience, ct)).Order())
+        foreach (var user in audience.Order())
         {
             // Targeting is not access: a step reaches only people who may read the item.
             if (!acted.Contains(user) && await items.UserMayReadAsync(user, item, site, ct))
@@ -366,6 +558,9 @@ public sealed class ContentCampaigns(
         }
         await session.ExecAsync("update content.campaign_step set status = 'sent', sent_at = @now, recipients = @count, delivered = @delivered where id = @id",
             new { id = step.Id, now, count = recipients.Count, delivered }, ct);
+        // Follow-ups of this step are now due their delay after this send.
+        await session.ExecAsync("update content.campaign_step set at = @now + make_interval(days => delay_days) where follows_step_id = @id and status = 'pending'",
+            new { id = step.Id, now }, ct);
         await outbox.EnqueueAsync(new CampaignStepSent(campaign.Id, step.Id, item.Id, recipients.Count), ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.ContentCampaignStepSent, "content_campaign", campaign.Id.ToString(), TargetOrgUnitId: site.OrgUnitId,
             Changes: new { step = step.Position, recipients = recipients.Count, mandatory = step.Mandatory }), ct);
@@ -439,7 +634,13 @@ public sealed class ContentCampaigns(
         var unitRows = Breakdown(byUnit);
         var names = await hierarchy.GetNamesAsync(unitRows.Where(r => r.Key is not null).Select(r => Guid.Parse(r.Key!)), ct);
         unitRows = unitRows.Select(r => r.Key is { } k && names.TryGetValue(Guid.Parse(k), out var n) ? r with { Names = n } : r).ToList();
-        return new CampaignDashboard(campaign.Id, MinimumGroupSize, total, bySteps, unitRows, Breakdown(byLocation));
+        CampaignGoalProgress? goal = null;
+        if (campaign.GoalItemId is { } goalItem)
+        {
+            var share = await GoalShareAsync(campaign, ct);
+            goal = new CampaignGoalProgress(goalItem, campaign.GoalPercent ?? 100, share is { Audience: >= MinimumGroupSize } ? share.Value.Percent : null, campaign.GoalReachedAt);
+        }
+        return new CampaignDashboard(campaign.Id, MinimumGroupSize, total, bySteps, unitRows, Breakdown(byLocation), goal);
     }
 
     /// <summary>The raw funnel of a campaign for the analytics workspace (spec 021 US2); the same rights as the dashboard.</summary>

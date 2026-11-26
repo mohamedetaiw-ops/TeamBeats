@@ -250,4 +250,173 @@ public sealed class ContentCampaignTests(TenantWorld world)
         Assert.Equal(HttpStatusCode.Forbidden, (await small.T["pia"].Client.PostAsJsonAsync(Campaigns, new { name = "Small" })).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await small.T["pia"].Client.GetAsync(Campaigns)).StatusCode);
     }
+
+    // ---- R3 US11: follow-ups and goals (spec 009 T040) ----
+
+    [Fact]
+    public async Task A_follow_up_goes_after_its_delay_only_to_those_the_earlier_step_reached_who_have_not_acted()
+    {
+        var o = await FreshAsync("enterprise_gov");
+        var pia = o.T["pia"].Client;
+        var item = await PublishedAsync(pia, "Enrol in benefits");
+        var reminder = await PublishedAsync(pia, "Reminder: enrol in benefits");
+        var now = DateTimeOffset.UtcNow;
+        var campaign = await OkAsync(pia.PostAsJsonAsync(Campaigns, new
+        {
+            name = "Benefits",
+            audience = DubaiAudience(o.Dubai),
+            steps = new object[]
+            {
+                new { itemId = item, at = now.AddMinutes(-1) },
+                new { itemId = reminder, at = now, follows = 1, delayDays = 3 },
+            },
+        }), HttpStatusCode.Created);
+        var id = Id(campaign);
+        var steps = campaign.GetProperty("steps");
+        Assert.Equal(1, steps[1].GetProperty("follows").GetInt32());
+        Assert.Equal(3, steps[1].GetProperty("delayDays").GetInt32());
+        var first = Id(steps[0]);
+        await OkAsync(pia.PostAsync($"{Campaigns}/{id}/start", null));
+
+        await RunAsync(o.T, now);
+        await DispatchAsync();
+        // s7 joins after the first step: a follow-up goes only to the people the earlier step reached.
+        await world.SeedUserAsync(o.T, "s7", MembershipTypes.Employee);
+        await world.AddMembershipAsync(o.T, "s7", "Dubai");
+        await OkAsync(o.T["s1"].Client.GetAsync($"{Items}/{item}/view?campaign={first:N}"));
+        await OkAsync(o.T["s2"].Client.GetAsync($"{Items}/{item}/view"));
+
+        // Not before the delay since the earlier step went.
+        await RunAsync(o.T, now.AddDays(2));
+        await DispatchAsync();
+        Assert.Null(await CampaignNoticeAsync(o.T["s3"].Client, reminder));
+        Assert.Equal("pending", (await OkAsync(pia.GetAsync($"{Campaigns}/{id}"))).GetProperty("steps")[1].GetProperty("status").GetString());
+
+        await RunAsync(o.T, now.AddDays(3).AddMinutes(1));
+        await DispatchAsync();
+        foreach (var name in new[] { "s3", "s4", "s5", "s6" })
+        {
+            Assert.NotNull(await CampaignNoticeAsync(o.T[name].Client, reminder));
+        }
+        Assert.Null(await CampaignNoticeAsync(o.T["s1"].Client, reminder)); // Acted.
+        Assert.Null(await CampaignNoticeAsync(o.T["s2"].Client, reminder)); // Acted.
+        Assert.Null(await CampaignNoticeAsync(o.T["s7"].Client, reminder)); // Joined later.
+        var view = await OkAsync(pia.GetAsync($"{Campaigns}/{id}"));
+        Assert.Equal("completed", view.GetProperty("status").GetString());
+        Assert.Equal(4, view.GetProperty("steps")[1].GetProperty("recipients").GetInt32());
+    }
+
+    [Fact]
+    public async Task A_follow_up_of_a_skipped_step_is_skipped_too()
+    {
+        var o = await FreshAsync("enterprise_gov");
+        var pia = o.T["pia"].Client;
+        var draft = await PublishedAsync(pia, "Not live", publish: false);
+        var reminder = await PublishedAsync(pia, "Reminder");
+        var now = DateTimeOffset.UtcNow;
+        var id = Id(await OkAsync(pia.PostAsJsonAsync(Campaigns, new
+        {
+            name = "Skipped",
+            audience = DubaiAudience(o.Dubai),
+            steps = new object[] { new { itemId = draft, at = now.AddMinutes(-1) }, new { itemId = reminder, at = now, follows = 1, delayDays = 1 } },
+        }), HttpStatusCode.Created));
+        await OkAsync(pia.PostAsync($"{Campaigns}/{id}/start", null));
+        await RunAsync(o.T, now);
+        await RunAsync(o.T, now.AddDays(2));
+        var view = await OkAsync(pia.GetAsync($"{Campaigns}/{id}"));
+        Assert.Equal(["skipped", "skipped"], view.GetProperty("steps").EnumerateArray().Select(s => s.GetProperty("status").GetString()));
+        Assert.Equal("completed", view.GetProperty("status").GetString());
+    }
+
+    [Fact]
+    public async Task Reaching_the_goal_skips_the_pending_steps_completes_the_campaign_and_tells_the_publishers()
+    {
+        var o = await FreshAsync("enterprise_gov");
+        var pia = o.T["pia"].Client;
+        var item = await PublishedAsync(pia, "Enrol now");
+        var later = await PublishedAsync(pia, "Last call");
+        var now = DateTimeOffset.UtcNow;
+        var created = await OkAsync(pia.PostAsJsonAsync(Campaigns, new
+        {
+            name = "Goal",
+            audience = DubaiAudience(o.Dubai),
+            steps = new object[] { new { itemId = item, at = now.AddMinutes(-1) }, new { itemId = later, at = now.AddDays(10) } },
+            goal = new { itemId = item, percent = 50 },
+        }), HttpStatusCode.Created);
+        var id = Id(created);
+        Assert.Equal(50, created.GetProperty("goal").GetProperty("percent").GetInt32());
+        var first = Id(created.GetProperty("steps")[0]);
+        await OkAsync(pia.PostAsync($"{Campaigns}/{id}/start", null));
+        await RunAsync(o.T, now);
+
+        // Two of six acted: not yet.
+        await OkAsync(o.T["s1"].Client.GetAsync($"{Items}/{item}/view?campaign={first:N}"));
+        await OkAsync(o.T["s2"].Client.GetAsync($"{Items}/{item}/view"));
+        await RunAsync(o.T, now.AddMinutes(5));
+        var dashboard = await OkAsync(pia.GetAsync($"{Campaigns}/{id}/dashboard"));
+        Assert.Equal(33, dashboard.GetProperty("goal").GetProperty("actedPercent").GetInt32());
+        Assert.Equal("scheduled", (await OkAsync(pia.GetAsync($"{Campaigns}/{id}"))).GetProperty("status").GetString());
+
+        await OkAsync(o.T["s3"].Client.GetAsync($"{Items}/{item}/view"));
+        await RunAsync(o.T, now.AddMinutes(10));
+        await DispatchAsync();
+        var view = await OkAsync(pia.GetAsync($"{Campaigns}/{id}"));
+        Assert.Equal("completed", view.GetProperty("status").GetString());
+        Assert.Equal("skipped", view.GetProperty("steps")[1].GetProperty("status").GetString());
+        Assert.NotEqual(JsonValueKind.Null, view.GetProperty("goal").GetProperty("reachedAt").ValueKind);
+        await world.Database.AssertAuditedAsync(o.T.Id, AuditActions.CampaignGoalReached, id.ToString());
+        Assert.Contains(await NotificationsAsync(pia), n => n.GetProperty("link").GetString() == $"/content/campaigns/{id}");
+        Assert.DoesNotContain(await NotificationsAsync(o.T["s1"].Client), n => n.GetProperty("link").GetString() == $"/content/campaigns/{id}");
+
+        // The last step is never sent.
+        await RunAsync(o.T, now.AddDays(11));
+        await DispatchAsync();
+        Assert.Null(await CampaignNoticeAsync(o.T["s4"].Client, later));
+    }
+
+    [Fact]
+    public async Task Follow_ups_and_goals_are_refused_without_the_feature_and_checked_with_it()
+    {
+        var plain = await FreshAsync();
+        var item = await PublishedAsync(plain.T["pia"].Client, "Item");
+        var now = DateTimeOffset.UtcNow;
+        Assert.Equal("validation.content.campaign_automation", await ProblemKeyAsync(await plain.T["pia"].Client.PostAsJsonAsync(Campaigns, new
+        {
+            name = "Follow",
+            steps = new object[] { new { itemId = item, at = now }, new { itemId = item, at = now, follows = 1, delayDays = 2 } },
+        }), HttpStatusCode.BadRequest));
+        Assert.Equal("validation.content.campaign_automation", await ProblemKeyAsync(await plain.T["pia"].Client.PostAsJsonAsync(Campaigns, new
+        {
+            name = "Goal", steps = new object[] { new { itemId = item, at = now } }, goal = new { itemId = item, percent = 50 },
+        }), HttpStatusCode.BadRequest));
+
+        var o = await FreshAsync("enterprise_gov");
+        var pia = o.T["pia"].Client;
+        var mine = await PublishedAsync(pia, "Mine");
+        var other = await PublishedAsync(pia, "Other");
+        foreach (var bad in new[] { new { follows = 2, delayDays = 2 }, new { follows = 1, delayDays = 0 }, new { follows = 1, delayDays = 61 }, new { follows = 0, delayDays = 2 } })
+        {
+            Assert.Equal("validation.content.campaign_follows", await ProblemKeyAsync(await pia.PostAsJsonAsync(Campaigns, new
+            {
+                name = "Bad", steps = new object[] { new { itemId = mine, at = now }, new { itemId = mine, at = now, bad.follows, bad.delayDays } },
+            }), HttpStatusCode.BadRequest));
+        }
+        Assert.Equal("validation.content.campaign_goal", await ProblemKeyAsync(await pia.PostAsJsonAsync(Campaigns, new
+        {
+            name = "Bad goal", steps = new object[] { new { itemId = mine, at = now } }, goal = new { itemId = other, percent = 50 },
+        }), HttpStatusCode.BadRequest));
+        Assert.Equal("validation.content.campaign_goal", await ProblemKeyAsync(await pia.PostAsJsonAsync(Campaigns, new
+        {
+            name = "Bad share", steps = new object[] { new { itemId = mine, at = now } }, goal = new { itemId = mine, percent = 101 },
+        }), HttpStatusCode.BadRequest));
+
+        // A draft keeps its goal when only its name changes, and loses it when its steps are replaced without one.
+        var id = Id(await OkAsync(pia.PostAsJsonAsync(Campaigns, new
+        {
+            name = "Kept", steps = new object[] { new { itemId = mine, at = now } }, goal = new { itemId = mine, percent = 80 },
+        }), HttpStatusCode.Created));
+        Assert.Equal(80, (await OkAsync(pia.PutAsJsonAsync($"{Campaigns}/{id}", new { name = "Renamed" }))).GetProperty("goal").GetProperty("percent").GetInt32());
+        Assert.Equal(JsonValueKind.Null, (await OkAsync(pia.PutAsJsonAsync($"{Campaigns}/{id}", new { steps = new object[] { new { itemId = other, at = now } } })))
+            .GetProperty("goal").ValueKind);
+    }
 }

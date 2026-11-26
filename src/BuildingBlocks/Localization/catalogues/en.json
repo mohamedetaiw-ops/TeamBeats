@@ -3289,5 +3289,10 @@
   "validation.content.share_days": "Share for 1 to 365 days.",
   "validation.content.share_space": "Choose an active space that you own.",
   "conflict.content.already_shared": "This site is already shared with that space.",
-  "conflict.content.share_revoked": "This share was already ended."
+  "conflict.content.share_revoked": "This share was already ended.",
+  "validation.content.campaign_automation": "Follow-up steps and campaign goals need the campaign automation feature.",
+  "validation.content.campaign_follows": "A follow-up step follows an earlier step after 1 to 60 days.",
+  "validation.content.campaign_goal": "A goal is an item of the campaign's steps and a share from 1 to 100 percent.",
+  "notifications.template.content.campaign.goal_reached.title": "Campaign goal reached",
+  "notifications.template.content.campaign.goal_reached.body": "A campaign at your site reached its goal. Its remaining steps will not be sent."
 }
