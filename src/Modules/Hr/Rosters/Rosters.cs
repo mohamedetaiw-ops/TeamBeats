@@ -343,19 +343,19 @@ public sealed class Rosters(
             throw AppException.Conflict("conflict.hr.roster_unchanged");
         }
         var now = clock.UtcNow;
-        await session.ExecAsync(
-            "update hr.roster_week set status = 'published', published = @snapshot, published_at = @now, version = version + 1, updated_by = @me, updated_at = @now where id = @id",
+        // The version names this publication, so two publications in the same second are still told apart.
+        var version = await session.ScalarAsync<int>(
+            "update hr.roster_week set status = 'published', published = @snapshot, published_at = @now, version = version + 1, updated_by = @me, updated_at = @now where id = @id returning version",
             new { id = week.Id, snapshot = Jsonb.From(current), now, me }, ct);
         var first = week.Published is null;
         await audit.WriteAsync(new AuditEntry(first ? AuditActions.HrRosterPublished : AuditActions.HrRosterChanged, "roster_week", week.Id.ToString(),
             Changes: new { manager = me, week = weekStart, people = changed.Count }), ct);
-        var stamp = now.ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture);
         var to = changed.Where(u => u != me).ToList();
         if (to.Count > 0)
         {
             await notifications.SendAsync(new NotificationRequest(to, NotificationCategories.RequestUpdate, first ? PublishedTemplate : ChangedTemplate, "/attendance",
                 new Dictionary<string, string> { ["week"] = weekStart.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) },
-                DedupeKey: $"hr.roster:{week.Id:N}:{stamp}"), ct);
+                DedupeKey: $"hr.roster:{week.Id:N}:v{version}"), ct);
         }
         return await ViewAsync(me, weekStart, true, ct);
     }
