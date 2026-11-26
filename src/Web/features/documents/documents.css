@@ -535,6 +535,13 @@
   align-items: center;
 }
 
+/* Each count is a link: 24px high at least in the compact density too (WCAG 2.5.8). */
+.documents-import-counts a:any-link {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 1.5rem;
+}
+
 .documents-import-counts a[aria-current="page"] {
   font-weight: var(--tb-font-weight-semibold);
 }
