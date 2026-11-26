@@ -5371,7 +5371,21 @@
       "tags": "Topics",
       "tag": "#{tag}",
       "published": "Published {date}",
-      "readTime": "{minutes} min read"
+      "readTime": "{minutes} min read",
+      "event": {
+        "when": "When",
+        "where": "Where",
+        "online": "Online",
+        "join": "Join online",
+        "registration": "Registration",
+        "registered": "You are registered",
+        "waiting": "You are on the waiting list, number {position}",
+        "seats": "{count, plural, =0 {No seats left} one {# seat left} other {# seats left}}",
+        "closed": "Registration is closed",
+        "cancelled": "Cancelled",
+        "register": "Register in the calendar",
+        "inCalendar": "See it in the calendar"
+      }
     },
     "social": {
       "title": "Reactions and comments",
@@ -5505,7 +5519,8 @@
       "typeValue": {
         "news": "News",
         "announcement": "Announcement",
-        "page": "Page"
+        "page": "Page",
+        "event": "Event"
       },
       "language": {
         "en": "English",
@@ -5608,7 +5623,10 @@
       "machineTranslatedNote": "Machine translated. A person must edit or approve this language before the item can be published.",
       "approveTranslation": "Approve translation",
       "translationApproved": "Translation approved.",
-      "campaignsLink": "Campaigns"
+      "campaignsLink": "Campaigns",
+      "event": "Calendar event",
+      "eventHint": "The item shows the event's time, place and registration from the calendar.",
+      "noEvents": "There are no coming company events. Create the event in the calendar first."
     },
     "history": {
       "title": "History",

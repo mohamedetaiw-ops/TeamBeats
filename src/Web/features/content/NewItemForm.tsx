@@ -9,8 +9,14 @@ import { problemMessages } from "@/lib/notifications/types";
 import { contentTypes, editHref, pickName, type ItemView, type SiteView } from "@/lib/content/types";
 import "./content.css";
 
-/** Starts an item (spec 009 US1): the site, the type and a title in the primary language; the rest is set in the editor. */
-export function NewItemForm({ sites, locales, defaultLocale }: { sites: SiteView[]; locales: string[]; defaultLocale: string }) {
+/** A company event the author may link to an event item. */
+export type EventChoice = { id: string; title: string; when: string };
+
+/**
+ * Starts an item (spec 009 US1): the site, the type and a title in the primary language; the rest is set in the editor.
+ * An event item (FR-018 R3) links one company event of the calendar, chosen from the events the author sees.
+ */
+export function NewItemForm({ sites, locales, defaultLocale, events = [] }: { sites: SiteView[]; locales: string[]; defaultLocale: string; events?: EventChoice[] }) {
   const t = useTranslations("content.items");
   const viewer = useLocale();
   const router = useRouter();
@@ -19,6 +25,7 @@ export function NewItemForm({ sites, locales, defaultLocale }: { sites: SiteView
   const [type, setType] = useState<string>("news");
   const [primary, setPrimary] = useState(locales.includes(viewer) ? viewer : defaultLocale);
   const [title, setTitle] = useState("");
+  const [eventId, setEventId] = useState(events[0]?.id ?? "");
   const [busy, setBusy] = useState(false);
   const [messages, setMessages] = useState<string[]>([]);
 
@@ -30,7 +37,7 @@ export function NewItemForm({ sites, locales, defaultLocale }: { sites: SiteView
       const response = await fetch("/api/v1/content/items", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ siteId: site, type, variants: { [primary]: { title, body: { blocks: [] } } } }),
+        body: JSON.stringify({ siteId: site, type, ...(type === "event" ? { eventId: eventId || null } : {}), variants: { [primary]: { title, body: { blocks: [] } } } }),
       });
       if (!response.ok) {
         setMessages(await problemMessages(response));
@@ -74,6 +81,21 @@ export function NewItemForm({ sites, locales, defaultLocale }: { sites: SiteView
           ))}
         </select>
       </div>
+      {type === "event" ? (
+        <div className="field">
+          <label htmlFor={`${ids}-event`}>{t("event")}</label>
+          <select id={`${ids}-event`} value={eventId} onChange={(e) => setEventId(e.target.value)} aria-describedby={`${ids}-event-hint`}>
+            {events.map((ev) => (
+              <option key={ev.id} value={ev.id}>
+                {ev.title} ({ev.when})
+              </option>
+            ))}
+          </select>
+          <p className="field-hint" id={`${ids}-event-hint`}>
+            {events.length === 0 ? t("noEvents") : t("eventHint")}
+          </p>
+        </div>
+      ) : null}
       <div className="field">
         <label htmlFor={`${ids}-primary`}>{t("primaryLanguage")}</label>
         <select id={`${ids}-primary`} value={primary} onChange={(e) => setPrimary(e.target.value)}>

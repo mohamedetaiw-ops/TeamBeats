@@ -80,7 +80,7 @@ Depends on 003 (groups, `UserDeprovisioned`), 004, 005, 006, 007, 008 (shell slo
 - [x] T041 [US11] Step follows and delay, campaign goal, scheduler, editor and dashboard, English and Arabic, e2e with axe
 
 ### Phase 15: event items (FR-018 R3)
-- [ ] T042 Event content type linked to a Calendar event through a Calendar contract, reading view with the event card; tests and e2e
+- [x] T042 Event content type linked to a Calendar event through a Calendar contract, reading view with the event card; tests and e2e
 
 ### R3 final phase
-- [ ] T043 OpenAPI; R3 implementation notes; spec evidence for R3
+- [x] T043 OpenAPI; R3 implementation notes; spec evidence for R3

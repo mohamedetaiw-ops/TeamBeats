@@ -261,6 +261,9 @@ public static class ContentModule
             return Results.Ok(view);
         });
 
+        // Coming company events the author sees, for an event item to link (FR-018 R3).
+        items.MapGet("/event-choices", async (Items service, CancellationToken ct) => Results.Ok(await service.EventChoicesAsync(ct)));
+
         items.MapGet("/{id:guid}/view", async (Guid id, string? campaign, Items service, ContentCampaigns campaigns, IDbSession session, CancellationToken ct) =>
         {
             var view = await service.ReadAsync(id, ct);

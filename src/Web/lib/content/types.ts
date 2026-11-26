@@ -56,6 +56,8 @@ export type ReaderView = {
   siteArchived?: boolean;
   /** The hashtags of the live version (spec 009 US9 scenario 3), each opening its topic page. */
   tags?: string[] | null;
+  /** For an event item (spec 009 FR-018 R3): the calendar event as the reader sees it, null outside its audience. */
+  event?: EventCard | null;
 };
 
 export type CriticalNotice = {
@@ -222,7 +224,27 @@ export type ScreenWithAddress = { screen: ScreenView; path: string };
 export type SignageFeed = { name: string; siteNames: Record<string, string>; items: { id: string; locale: string; title: string; summary: string | null; publishedAt: string }[] };
 export type HealthItem = { id: string; siteId: string; type: string; status: string; title: string; ownerId: string | null; reviewDueAt: string | null; expiredAt: string | null };
 
-export const contentTypes = ["news", "announcement", "page"] as const;
+export const contentTypes = ["news", "announcement", "page", "event"] as const;
+
+/** A company event of the calendar shown on an event item; the event itself stays in the calendar (spec 037). */
+export type EventCard = {
+  id: string;
+  titles: Record<string, string>;
+  status: string;
+  allDay: boolean;
+  start: string | null;
+  end: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  timeZone: string;
+  location: string | null;
+  onlineUrl: string | null;
+  occurrenceKey: string;
+  registration: { state: string | null; position: number | null; seatsLeft: number; open: boolean; waitlist: boolean } | null;
+};
+
+/** The calendar, where the event's registration is. */
+export const eventCalendarHref = "/calendar";
 export const contentStatuses = ["draft", "in_review", "approved", "scheduled", "published", "expired", "archived"] as const;
 export const classifications = ["public", "internal", "confidential", "restricted"] as const;
 export const membershipTypes = ["employee", "contractor", "guest"] as const;

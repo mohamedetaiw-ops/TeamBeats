@@ -3294,5 +3294,7 @@
   "validation.content.campaign_follows": "تأتي خطوة المتابعة بعد خطوة سابقة بمدة من 1 إلى 60 يومًا.",
   "validation.content.campaign_goal": "الهدف عنصر من خطوات الحملة ونسبة من 1 إلى 100 بالمئة.",
   "notifications.template.content.campaign.goal_reached.title": "بلغت الحملة هدفها",
-  "notifications.template.content.campaign.goal_reached.body": "بلغت حملة في موقعك هدفها. لن تُرسل خطواتها المتبقية."
+  "notifications.template.content.campaign.goal_reached.body": "بلغت حملة في موقعك هدفها. لن تُرسل خطواتها المتبقية.",
+  "validation.content.event": "اختر فعالية منشورة للشركة من التقويم.",
+  "validation.content.event_type": "عنصر الفعالية وحده يرتبط بفعالية في التقويم."
 }

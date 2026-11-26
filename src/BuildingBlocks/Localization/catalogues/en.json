@@ -3294,5 +3294,7 @@
   "validation.content.campaign_follows": "A follow-up step follows an earlier step after 1 to 60 days.",
   "validation.content.campaign_goal": "A goal is an item of the campaign's steps and a share from 1 to 100 percent.",
   "notifications.template.content.campaign.goal_reached.title": "Campaign goal reached",
-  "notifications.template.content.campaign.goal_reached.body": "A campaign at your site reached its goal. Its remaining steps will not be sent."
+  "notifications.template.content.campaign.goal_reached.body": "A campaign at your site reached its goal. Its remaining steps will not be sent.",
+  "validation.content.event": "Choose a published company event of the calendar.",
+  "validation.content.event_type": "Only an event item links a calendar event."
 }

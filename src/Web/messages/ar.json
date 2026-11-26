@@ -5371,7 +5371,21 @@
       "tags": "الموضوعات",
       "tag": "#{tag}",
       "published": "نُشر في {date}",
-      "readTime": "قراءة {minutes} د"
+      "readTime": "قراءة {minutes} د",
+      "event": {
+        "when": "الموعد",
+        "where": "المكان",
+        "online": "عبر الإنترنت",
+        "join": "الانضمام عبر الإنترنت",
+        "registration": "التسجيل",
+        "registered": "أنت مسجل",
+        "waiting": "أنت في قائمة الانتظار، رقم {position}",
+        "seats": "{count, plural, zero {لا توجد مقاعد متبقية} one {مقعد واحد متبقٍ} two {مقعدان متبقيان} few {# مقاعد متبقية} many {# مقعدًا متبقيًا} other {# مقعد متبقٍ}}",
+        "closed": "التسجيل مغلق",
+        "cancelled": "أُلغيت",
+        "register": "التسجيل في التقويم",
+        "inCalendar": "عرض في التقويم"
+      }
     },
     "social": {
       "title": "التفاعلات والتعليقات",
@@ -5505,7 +5519,8 @@
       "typeValue": {
         "news": "خبر",
         "announcement": "إعلان",
-        "page": "صفحة"
+        "page": "صفحة",
+        "event": "فعالية"
       },
       "language": {
         "en": "الإنجليزية",
@@ -5608,7 +5623,10 @@
       "machineTranslatedNote": "ترجمة آلية. يجب أن يحرر شخص هذه اللغة أو يعتمدها قبل نشر العنصر.",
       "approveTranslation": "اعتماد الترجمة",
       "translationApproved": "تم اعتماد الترجمة.",
-      "campaignsLink": "الحملات"
+      "campaignsLink": "الحملات",
+      "event": "فعالية التقويم",
+      "eventHint": "يعرض العنصر وقت الفعالية ومكانها والتسجيل فيها من التقويم.",
+      "noEvents": "لا توجد فعاليات قادمة للشركة. أنشئ الفعالية في التقويم أولًا."
     },
     "history": {
       "title": "السجل",
