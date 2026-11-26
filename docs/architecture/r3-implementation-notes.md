@@ -196,3 +196,17 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - A person whose address is outside the Google domain gets `no_mailbox` and no token is asked for. The connection test checks the mail delegation with the administrator's address.
 - The home offers `google.my_mail` (capability `integration.connectors`, connection feature `google_workspace:mail`) and renders it with the Outlook My mail placement. `IConnectionFeatures` answers Google features from the pack settings, and the component registry allows an underscore in the connection kind.
 - Calendar: Google Calendar already sits behind the meeting calendar port (spec 037 FR-012), and My calendar placements render the spec 037 calendar card, so Google meetings show there with no new code. Recorded defaults: colleague free and busy, rooms, invitation answers and assistant mail summaries stay Microsoft 365 only until a spec asks for Google versions.
+
+## Spec 013 R3 slice 1: tenant provider keys (T031, T032)
+- `Ai:TenantProviderKeys` is an install setting, off by default, so shared installs never offer it; there a save is refused with `conflict.ai.provider_keys_not_offered` and any row left behind is ignored.
+- `ai.provider_key` holds one secret manager reference per tenant for OpenRouter. A new or changed reference is untested; calls use the key only after `POST /api/v1/ai/provider-keys/openrouter/test` passed. The test reads OpenRouter's own key record (`GET /key`), which costs nothing.
+- The gateway reads the key once per request scope and passes it in the provider target; the OpenRouter adapter keeps its own address. A tested tenant key makes OpenRouter reachable for that tenant even when the install has no platform key, but never where egress is blocked.
+- `ai.usage_record.key_owner` says who paid: `tenant` for the tenant's own key or a private endpoint, else `platform`.
+- The section sits on the Private endpoints page, beside the other tenant-owned model access. Audited as `ai.provider_key_set`, `ai.provider_key_tested` and `ai.provider_key_removed`; the key is never returned or logged.
+
+## Spec 013 R3 slice 2: air-gapped model hosting (T033, T034)
+- `Ai:AirGapped` makes the OpenRouter adapter unreachable whatever its key, and a tenant's own key cannot change that. The catalogue page leaves unreachable providers off as before.
+- The install's own OpenAI-compatible server is the `local` provider (`LocalModelProvider` in `AiGateway.OpenAiCompatible`), configured by `Ai:Local:BaseUrl` and `Ai:Local:ApiKey`. Its address is operator configuration, so its client may reach private addresses; tenant endpoints keep the `SafeHttp` rules. The platform operator lists its models as `local/{model}`; only `local` models may have a Restricted ceiling (a database check enforces it too).
+- The gateway treats `local` like a private endpoint for Restricted content and the sovereign rule (`ModelCatalogue.InOwnNetwork`). Hosted models are metered like any model, with `key_owner = platform`.
+- The policy view carries `airGapped`, shown as a note on the Model policy page, and a customer-hosted install that is air-gapped shows `install_ai_air_gapped` as a passed posture check.
+- Recorded defaults: one hosted server per install; hosted models are shared by every tenant of the install, each choosing them through its own policy.

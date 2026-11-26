@@ -172,5 +172,28 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByRole("status").filter({ hasText: m("ai.endpoints.removed", { name }) })).toBeVisible();
       await expect(page.getByText(m("ai.endpoints.emptyTitle"))).toBeVisible();
     });
+
+    test("own OpenRouter key", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/admin/ai/endpoints`);
+      const section = page.getByTestId("ai-provider-key");
+      await expect(section.getByRole("heading", { level: 2 })).toHaveText(m("ai.providerKey.title"));
+      await section.getByLabel(m("ai.providerKey.secretRef"), { exact: true }).fill(`secret://tenants/${tenant.id}/openrouter-key`);
+      await section.getByRole("button", { name: m("ai.providerKey.save") }).click();
+      await expect(section.getByRole("status")).toHaveText(m("ai.providerKey.saved"));
+      await expect(section).toContainText(m("ai.providerKey.notInUse"));
+      await expect(section).toContainText(m("ai.providerKey.neverTested"));
+      await expectAccessible(page, testInfo, `ai-provider-key-${locale}`);
+
+      // The key is not in this stack's secret manager, so the test fails and calls keep the platform key.
+      await section.getByRole("button", { name: m("ai.providerKey.test") }).click();
+      await expect(section.getByRole("alert")).toHaveText(m("ai.providerKey.testFailed"));
+      await expect(section).toContainText(m("ai.providerKey.notInUse"));
+
+      await section.getByRole("button", { name: m("ai.providerKey.remove") }).click();
+      await expect(section.getByRole("status")).toHaveText(m("ai.providerKey.removed"));
+      await expect(section.getByRole("button", { name: m("ai.providerKey.test") })).toHaveCount(0);
+      await expectAccessible(page, testInfo, `ai-provider-key-removed-${locale}`);
+    });
   });
 }

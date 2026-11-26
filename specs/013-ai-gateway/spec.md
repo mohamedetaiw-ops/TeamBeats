@@ -110,6 +110,8 @@ A government tenant runs its own inference servers and must never send Confident
 2. **Given** a sovereign routing rule "Confidential and Restricted only to private endpoints", **When** an agent or the assistant sends such content, **Then** only the private endpoint is eligible, and if it is down the call fails instead of falling back to OpenRouter.
 3. **Given** a dedicated or on-premises install with egress blocked, **When** OpenRouter is configured, **Then** the gateway reports it as unreachable by design and the policy page hides it.
 4. **Given** embeddings for search, **When** a sovereign tenant indexes Confidential content, **Then** embeddings are produced only by an allowed private endpoint.
+5. **Given** an air-gapped install whose operator hosts a model server inside the install network, **When** any tenant of that install makes a call, **Then** only the install's hosted models and the tenant's private endpoints are candidates, no shared provider is ever tried, and the AI policy page says the install is air-gapped. *(R3)*
+6. **Given** a dedicated or on-premises install that allows tenant provider keys, **When** the AI Policy Administrator saves a secret manager reference to the tenant's own OpenRouter key and its test passes, **Then** the tenant's OpenRouter calls use that key, usage records say the tenant's key was used, and the key itself is never shown or logged. In a shared install the setting is not offered. *(R3)*
 
 ### User Story 7: Restrict policy for an organization unit (Priority: P2, R2)
 
@@ -154,6 +156,8 @@ A government tenant runs its own inference servers and must never send Confident
 - **AIG-017 / FR-017**: The gateway MUST support the use case `evaluation` for judge calls from spec 034, with no tools, a tenant default judge model per classification, and a check that the judge differs from the model under test named in the request. Calls MUST be metered as evaluation, charged to the platform for platform and mandatory suites run by a release gate, and to the tenant otherwise.
 - **AIG-018 / FR-018**: The gateway MUST offer an internal OpenAI-compatible facade for sandboxed evaluator workers (ADR-0015), reachable only inside the deployment, accepting only short-lived tokens scoped to one tenant and the `evaluation` use case, and applying the full pipeline of FR-002. *(R2)*
 - **AIG-019 / FR-019**: Changes to the model or fallback chain behind a use case MUST publish `AiModelRouteChangeProposed` and apply only after `EvaluationGateDecided` from spec 034 reports no critical failure, or after an audited override for blocking failures. Catalogue removals and provider deprecations MUST run the same gate before the removal date.
+- **AIG-020 / FR-020**: Dedicated and on-premises installs MAY allow tenant provider keys (`Ai:TenantProviderKeys`). Where allowed, the AI Policy Administrator MUST be able to set, test, replace and remove a secret manager reference to the tenant's own OpenRouter key; a key MUST pass a test before calls use it; the tenant's calls MUST then use it instead of the platform key, and usage records MUST record which key paid. The key MUST never be returned, logged or sent to another tenant's calls. Shared installs MUST refuse the setting. *(R3)*
+- **AIG-021 / FR-021**: An air-gapped install (`Ai:AirGapped`) MUST treat every shared provider as unreachable by design, MAY host OpenAI-compatible model servers inside the install network as the `local` provider of the platform catalogue (models with capabilities, context size and a ceiling up to Restricted), and MUST keep every call on hosted models or the tenant's private endpoints. Hosted models MUST pass the same pipeline steps as any model. *(R3)*
 
 ## 6. Business and validation rules
 - Platform baseline rules (Restricted never to shared providers, metadata-only logging default, classification required) cannot be changed by any tenant.
@@ -228,7 +232,7 @@ Publishes `AiPolicyChanged`, `AiModelRouteChangeProposed`, `AiBudgetThresholdRea
 - **SC-003**: Switching a tenant from OpenRouter to a private endpoint requires no code change and no restart.
 
 ## 17. Open questions
-1. AI credentials model (foundation open decision): does the platform hold one OpenRouter key for shared installs, or can tenants bring their own key? Default: platform key in shared installs, tenant key allowed in dedicated and on-premises installs (R3).
+1. AI credentials model (foundation open decision): does the platform hold one OpenRouter key for shared installs, or can tenants bring their own key? Resolved by FR-020: platform key in shared installs, tenant key allowed in dedicated and on-premises installs (R3).
 2. Should Workplace tenants be able to set org unit budgets? Default: no, tenant budget only.
 
 ## 18. Traceability

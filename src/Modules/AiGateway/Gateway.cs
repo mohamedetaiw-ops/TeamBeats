@@ -49,6 +49,7 @@ public sealed class AiGatewayService(
     BudgetGuard budgets,
     OrgPolicies orgPolicies,
     PrivateEndpoints endpoints,
+    ProviderKeys providerKeys,
     IDbSession session,
     IOrganizationHierarchy hierarchy,
     IClock clock,
@@ -149,12 +150,13 @@ public sealed class AiGatewayService(
         // Restricted content goes only to a tenant's own private endpoint whose ceiling is Restricted, never to a shared
         // provider under any setting (FR-007); Confidential needs a model the tenant allowed for it. A classification the
         // tenant keeps on private endpoints (sovereign routing, US6 scenario 2) has no shared provider among its candidates,
-        // so a failure ends the call instead of falling back.
+        // so a failure ends the call instead of falling back. Models the install hosts in its own network (FR-021) count as
+        // private for both rules.
         var sovereign = policy.Sovereign?.Contains(Classifications.Key(level)) == true;
         bool Classified(CatalogueEntry e) => e.Ceiling >= level
             && (level < DataClassification.Confidential || (e.ConfidentialEligible && policy.Confidential.Contains(e.Model)))
-            && (level < DataClassification.Restricted || e.Provider == PrivateEndpoints.ProviderKey)
-            && (!sovereign || e.Provider == PrivateEndpoints.ProviderKey);
+            && (level < DataClassification.Restricted || ModelCatalogue.InOwnNetwork(e.Provider))
+            && (!sovereign || ModelCatalogue.InOwnNetwork(e.Provider));
         if (level >= DataClassification.Confidential && !policy.Confidential.Any(m => snapshot.Models.TryGetValue(m, out var e) && Classified(e)))
         {
             return (null, AiDenials.ClassificationBlocked);
@@ -213,7 +215,8 @@ public sealed class AiGatewayService(
                 return (null, AiDenials.RegionBlocked);
             }
         }
-        candidates = [.. candidates.Where(e => byKey.TryGetValue(e.Provider, out var p) && p.Reachable)];
+        var tenantKey = await providerKeys.ActiveAsync(ct) is not null;
+        candidates = [.. candidates.Where(e => byKey.TryGetValue(e.Provider, out var p) && (p.Reachable || tenantKey && p.AcceptsTenantKey && e.Provider == ProviderKeys.OpenRouter))];
         if (candidates.Count == 0)
         {
             return (null, AiDenials.ProviderUnavailable);
@@ -565,6 +568,11 @@ public sealed class AiGatewayService(
     /// <summary>For a private model, where its endpoint is and its key; a model whose endpoint cannot be reached now is skipped like a failed one.</summary>
     private async Task<(bool Reachable, ProviderTarget? Target)> TargetAsync(CatalogueEntry e, CancellationToken ct)
     {
+        if (e.Provider == ProviderKeys.OpenRouter)
+        {
+            // FR-020: a tenant's own tested key replaces the platform key; the adapter keeps its own address.
+            return await providerKeys.ActiveAsync(ct) is { } own ? (true, new ProviderTarget(string.Empty, own, e.Model)) : (true, null);
+        }
         if (e.Provider != PrivateEndpoints.ProviderKey)
         {
             return (true, null);
@@ -621,7 +629,8 @@ public sealed class AiGatewayService(
             latency, Classifications.Key(plan.Classification), completion.FallbackUsed, completion.Partial, Correlation.Id);
         await usage.RecordAsync(new CallRecord(meta.UseCase, await UnitAsync(meta, ct), meta.AgentId, meta.AgentVersion, completion.Model, meta.ModelRequested,
             completion.Provider, completion.Usage, latency, UsageRecorder.Cost(model, completion.Usage), null, meta.Classification, completion.FallbackUsed,
-            completion.Partial, meta.PlatformCharged, meta.Messages, completion.Content), ct);
+            completion.Partial, meta.PlatformCharged, meta.Messages, completion.Content,
+            TenantKey: completion.Provider == PrivateEndpoints.ProviderKey || completion.Provider == ProviderKeys.OpenRouter && await providerKeys.ActiveAsync(ct) is not null), ct);
         if (plan.Budget is { } budget)
         {
             await budgets.AlertAsync(budget);

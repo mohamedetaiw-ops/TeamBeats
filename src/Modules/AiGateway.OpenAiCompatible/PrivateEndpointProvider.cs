@@ -180,6 +180,9 @@ public static class OpenAiCompatibleModule
         services.AddSingleton<PrivateEndpointProvider>();
         services.AddSingleton<IModelProvider>(sp => sp.GetRequiredService<PrivateEndpointProvider>());
         services.AddSingleton<IPrivateEndpointProbe>(sp => sp.GetRequiredService<PrivateEndpointProvider>());
+        // Spec 013 FR-021: the install's own model server; its address is operator configuration inside the install network.
+        services.AddHttpClient(LocalModelProvider.ClientName).ConfigurePrimaryHttpMessageHandler(() => SafeHttp.CreateHandler(allowPrivate: true));
+        services.AddSingleton<IModelProvider, LocalModelProvider>();
         return services;
     }
 }

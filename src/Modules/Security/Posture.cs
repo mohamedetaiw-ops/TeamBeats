@@ -92,12 +92,17 @@ public sealed class InstallationPosture(Microsoft.Extensions.Configuration.IConf
     public static IReadOnlyList<PostureCheck> Evaluate(Microsoft.Extensions.Configuration.IConfiguration configuration, string environmentName)
     {
         static string State(bool ok) => ok ? PostureService.Passed : PostureService.Failed;
+        // Spec 013 FR-021: an air-gapped install says so, as a passed check, so a review sees no shared model provider is reachable.
+        IEnumerable<PostureCheck> airGapped = bool.TryParse(configuration["Ai:AirGapped"], out var gapped) && gapped
+            ? [new("install_ai_air_gapped", PostureService.Passed, null)]
+            : [];
         return
         [
             new("install_production_mode", State(string.Equals(environmentName, "Production", StringComparison.OrdinalIgnoreCase)), null),
             new("install_database_tls", State(DatabaseEncrypted(configuration["ConnectionStrings:App"])), null),
             new("install_durable_messaging", State(string.Equals(configuration["Messaging:Transport"], "RabbitMq", StringComparison.OrdinalIgnoreCase)), null),
             new("install_private_addresses_blocked", State(!bool.TryParse(configuration[SafeHttp.AllowPrivateSetting], out var allow) || !allow), null),
+            .. airGapped,
         ];
     }
 

@@ -10,7 +10,7 @@ import { AdminHeader } from "@/components/shell/AdminHeader";
 
 const CHECKS = ["sso_configured", "mfa_required", "ip_rules", "admin_area_rule", "step_up_window", "idle_timeout", "absolute_timeout", "dev_sign_in_absent", "no_platform_access",
   // Customer-hosted installs only (spec 026 R3 hardening pack); the API sends these only there.
-  "install_production_mode", "install_database_tls", "install_durable_messaging", "install_private_addresses_blocked"];
+  "install_production_mode", "install_database_tls", "install_durable_messaging", "install_private_addresses_blocked", "install_ai_air_gapped"];
 
 /** Security posture (spec 026 FR-017, T016): settings weaker than the recommended baseline, each with a way to fix it. */
 export default async function SecurityPosturePage() {

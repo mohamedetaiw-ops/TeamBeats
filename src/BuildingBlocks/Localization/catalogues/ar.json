@@ -3097,5 +3097,12 @@
   "experience.component.google_my_mail.props.top": "عدد الرسائل المعروضة",
   "experience.component.google_my_mail.props.view": "العرض الافتراضي",
   "experience.component.google_my_mail.props.view.all": "كل البريد",
-  "experience.component.google_my_mail.props.view.focused": "الرئيسي"
+  "experience.component.google_my_mail.props.view.focused": "الرئيسي",
+  "validation.ai.provider_key_secret": "اختر سراً لهذه المؤسسة من مدير الأسرار.",
+  "conflict.ai.provider_keys_not_offered": "هذا التثبيت لا يقبل مفاتيح مزوّد خاصة بالمؤسسة. يُستخدم مفتاح المنصة.",
+  "ai.provider_key.checks.secret_missing": "لا يوجد سر في مدير الأسرار بهذا المرجع.",
+  "ai.provider_key.checks.no_adapter": "لا يوجد محوّل يستطيع اختبار هذا المزوّد.",
+  "ai.provider_key.checks.rejected": "رفض OpenRouter المفتاح.",
+  "ai.provider_key.checks.unreachable": "لم يستجب OpenRouter.",
+  "ai.provider_key.checks.egress_blocked": "لا يستطيع هذا التثبيت الوصول إلى OpenRouter بحكم تصميمه."
 }

@@ -105,7 +105,8 @@ public sealed record ModelPolicyView(
     string? ReadOnlyReason,
     PolicyDocument Policy,
     IReadOnlyDictionary<string, IReadOnlyList<string>> EffectiveRoutes,
-    RouteChangeView? Pending)
+    RouteChangeView? Pending,
+    bool AirGapped = false)
 {
     public string ETag => ModelPolicies.ETag(Version);
 }
@@ -131,10 +132,15 @@ public sealed class ModelPolicies(
     IOutbox outbox,
     IClock clock,
     PrivateEndpoints endpoints,
-    IEnumerable<IModelProvider> providers)
+    IEnumerable<IModelProvider> providers,
+    ProviderKeys providerKeys,
+    Microsoft.Extensions.Configuration.IConfiguration configuration)
 {
     public static readonly TimeSpan CacheFor = TimeSpan.FromSeconds(30);
     public const int MaxModels = 50;
+
+    /// <summary>The install setting of an air-gapped install (spec 013 FR-021); the OpenRouter adapter reads the same key.</summary>
+    public const string AirGappedSetting = "Ai:AirGapped";
     public const int MaxRegions = 10;
     public const int MinReason = 10;
     public const int MaxReason = 1000;
@@ -193,7 +199,10 @@ public sealed class ModelPolicies(
     {
         await DemandViewAsync(ct);
         // US6 scenario 3: a provider the installation cannot reach by design (egress blocked) is left off the page.
-        var unreachable = providers.Where(p => !p.Reachable).Select(p => p.Key).ToHashSet(StringComparer.Ordinal);
+        // FR-020: a tenant's own tested key makes OpenRouter reachable for that tenant where egress is open.
+        var tenantKey = await providerKeys.ActiveAsync(ct) is not null;
+        var unreachable = providers.Where(p => !p.Reachable && !(tenantKey && p.AcceptsTenantKey && p.Key == ProviderKeys.OpenRouter))
+            .Select(p => p.Key).ToHashSet(StringComparer.Ordinal);
         return [.. (await catalogue.ForTenantAsync(ct)).Models.Values.Where(m => m.Active && !unreachable.Contains(m.Provider))];
     }
 
@@ -210,7 +219,9 @@ public sealed class ModelPolicies(
         var choice = await entitlements.IsEnabledAsync(Capabilities.AiModelChoice, ct);
         var reason = !manage ? "ai.policy.read_only_permission" : !choice ? "ai.policy.read_only_package" : null;
         var pending = (await ChangesAsync("where status = 'proposed'", null, ct)).FirstOrDefault();
-        return new ModelPolicyView(policy.Version, policy.Source, reason is null, reason, policy.Document, policy.Document.EffectiveRoutes(snapshot), pending);
+        return new ModelPolicyView(policy.Version, policy.Source, reason is null, reason, policy.Document, policy.Document.EffectiveRoutes(snapshot), pending,
+            // FR-021: the page says when the install is air-gapped, so only hosted models and private endpoints are offered.
+            Microsoft.Extensions.Configuration.ConfigurationBinder.GetValue<bool>(configuration, AirGappedSetting));
     }
 
     public async Task<IReadOnlyList<RouteChangeView>> RouteChangesAsync(CancellationToken ct)
@@ -253,7 +264,11 @@ public sealed class ModelPolicies(
             // Section 6: a classification is kept on private endpoints only when an enabled endpoint that may take it
             // passed its test in the last 24 hours.
             await entitlements.DemandAsync(Capabilities.AiModelsPrivateEndpoint, ct);
-            if (!await endpoints.CoversAsync(kept, ct))
+            // FR-021: models the install hosts in its own network cover a classification as a private endpoint does.
+            var hosted = providers.Any(p => p.Key == ModelCatalogue.LocalProvider && p.Reachable);
+            var uncovered = kept.Where(level => !(hosted && snapshot.Models.Values.Any(m => m.Provider == ModelCatalogue.LocalProvider && m.Active
+                && m.Ceiling >= (Classifications.Parse(level) ?? DataClassification.Restricted)))).ToList();
+            if (uncovered.Count > 0 && !await endpoints.CoversAsync(uncovered, ct))
             {
                 throw AppException.Validation("sovereign", "validation.ai.sovereign_untested");
             }

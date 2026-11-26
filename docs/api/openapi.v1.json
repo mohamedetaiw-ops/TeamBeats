@@ -25014,6 +25014,100 @@
         }
       }
     },
+    "/api/v1/ai/provider-keys/{provider}": {
+      "get": {
+        "tags": [
+          "AI gateway"
+        ],
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "AI gateway"
+        ],
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProviderKeyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "AI gateway"
+        ],
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/ai/provider-keys/{provider}/test": {
+      "post": {
+        "tags": [
+          "AI gateway"
+        ],
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/ai/route-changes": {
       "get": {
         "tags": [
@@ -44901,6 +44995,20 @@
               "string"
             ],
             "format": "date"
+          }
+        }
+      },
+      "ProviderKeyRequest": {
+        "required": [
+          "secretRef"
+        ],
+        "type": "object",
+        "properties": {
+          "secretRef": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

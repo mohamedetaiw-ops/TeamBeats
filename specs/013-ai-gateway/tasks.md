@@ -59,3 +59,18 @@ Depends on 005 (quota tolerance), 015 (budget notifications), 017 (address check
 
 ### Final phase R2
 - [x] T030 OpenAPI; R2 implementation notes; spec evidence
+
+## R3
+
+Depends on 026 (posture, install hardening pack). R3 covers FR-020 and FR-021 (User Story 6 scenarios 5 and 6).
+
+### Phase 11: FR-020, tenant provider keys
+- [x] T031 [P] Tests: refused in shared installs; permission; key never returned; untested key unused; tenant key used after a passed test; usage `key_owner`; removal; cross-tenant; audit
+- [x] T032 `ai.provider_key`, key endpoints and test, gateway provider target with the tenant key, `key_owner` on usage, own key section on the Private endpoints page in English and Arabic, RTL; e2e with axe
+
+### Phase 12: FR-021, air-gapped model hosting
+- [x] T033 [P] Tests: shared providers unreachable and hidden; hosted models route and meter; Restricted only on hosted models; sovereign rule met by hosted models; hosted server down gives `provider_unavailable`; cross-tenant
+- [x] T034 `Ai:AirGapped`, `local` provider adapter, catalogue provider `local`, posture check, page notes
+
+### Final phase R3
+- [x] T035 OpenAPI; R3 implementation notes; spec evidence

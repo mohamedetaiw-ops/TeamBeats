@@ -63,6 +63,8 @@ export default defineConfig({
             Http__TrustForwardedHeaders: "true",
             // The suite builds its own data; the demo data package would change what pages show.
             Dev__SeedDemo__Folder: "",
+            // Spec 013 FR-020: play a dedicated install, which offers the organization's own provider key.
+            Ai__TenantProviderKeys: "true",
           },
         },
         {

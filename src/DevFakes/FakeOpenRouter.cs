@@ -60,6 +60,11 @@ public sealed partial class FakeOpenRouter(string apiKey, string basePath, IRead
 
     public bool Unavailable { get; set; }
 
+    /// <summary>Tenant keys (spec 013 FR-020) the fake also accepts, and the key of the last accepted request.</summary>
+    public System.Collections.Concurrent.ConcurrentDictionary<string, bool> TenantKeys { get; } = new(StringComparer.Ordinal);
+
+    public string? LastKey { get; private set; }
+
     public int Requests;
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -69,11 +74,17 @@ public sealed partial class FakeOpenRouter(string apiKey, string basePath, IRead
         {
             return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
         }
-        if (request.Headers.Authorization?.Parameter != apiKey)
+        var presented = request.Headers.Authorization?.Parameter;
+        if (presented != apiKey && (presented is null || !TenantKeys.ContainsKey(presented)))
         {
             return Error(HttpStatusCode.Unauthorized, "No auth credentials found");
         }
+        LastKey = presented;
         var path = request.RequestUri!.AbsolutePath;
+        if (path == $"{basePath}/key" && request.Method == HttpMethod.Get)
+        {
+            return Json(new { data = new { label = "fictional", usage = 0 } });
+        }
         if (path == $"{basePath}/models" && request.Method == HttpMethod.Get)
         {
             return Json(new { data = models.Select(m => new { id = m, name = m, context_length = 32_000 }) });

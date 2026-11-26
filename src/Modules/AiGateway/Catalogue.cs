@@ -99,7 +99,13 @@ public sealed record PlatformRouteRequest(List<string>? Models);
 public sealed class ModelCatalogue(IDbSession session, IAuditWriter audit, IClock clock, TeamBeats.TenantContext.ITenantContext context)
 {
     public static readonly TimeSpan CacheFor = TimeSpan.FromSeconds(30);
-    public static readonly IReadOnlySet<string> Providers = new HashSet<string>(StringComparer.Ordinal) { "openrouter" };
+    public static readonly IReadOnlySet<string> Providers = new HashSet<string>(StringComparer.Ordinal) { "openrouter", LocalProvider };
+
+    /// <summary>Models an install hosts in its own network (spec 013 FR-021), served by its own model server.</summary>
+    public const string LocalProvider = "local";
+
+    /// <summary>A tenant's private endpoint or the install's hosted models: content never leaves the customer's network.</summary>
+    public static bool InOwnNetwork(string provider) => provider is PrivateEndpoints.ProviderKey or LocalProvider;
     public const int MaxRouteLength = 10;
 
     private static readonly Lock Gate = new();
@@ -196,9 +202,10 @@ public sealed class ModelCatalogue(IDbSession session, IAuditWriter audit, ICloc
             errors.Add("regions", "validation.ai.region");
         }
         var ceiling = request.MaxClassification ?? "internal";
-        if (ceiling is not ("public" or "internal" or "confidential"))
+        if (ceiling is not ("public" or "internal" or "confidential") && !(ceiling == "restricted" && request.Provider == LocalProvider))
         {
-            // Restricted never goes to a shared provider (FR-007), so the catalogue cannot say otherwise.
+            // Restricted never goes to a shared provider (FR-007), so the catalogue cannot say otherwise; only models the
+            // install hosts in its own network may take it (FR-021).
             errors.Add("maxClassification", "validation.ai.classification");
         }
         if (request.InputPrice is < 0 || request.OutputPrice is < 0)
