@@ -23,6 +23,8 @@ export type Letter = {
   issuedAt: string | null;
   fields: LetterField[] | null;
   rights: { withdraw: boolean; decide: boolean; editValues: boolean; download: boolean };
+  /** Why an approved letter is not printed yet (spec 019 R3 FR-022); given to HR only. */
+  issueProblem?: "compensation_unavailable" | "compensation_missing" | "pdf_unavailable" | "data_missing" | null;
 };
 
 export type LetterManualField = { key: string; names: Names };
@@ -47,7 +49,7 @@ export type LetterSettings = { verificationEnabled: boolean; version: number; ca
 export type LetterVerification = { reference: string; typeNames: Names; issuedOn: string; companyName: string };
 
 /** Placeholders a template may use besides the type's own fields; the API checks them again. */
-export const LETTER_PLACEHOLDERS = ["name", "employee_number", "job_title", "grade", "hire_date", "company", "addressee", "date", "reference"] as const;
+export const LETTER_PLACEHOLDERS = ["name", "employee_number", "job_title", "grade", "hire_date", "employment_type", "company", "addressee", "date", "reference", "salary_basic", "salary_total", "salary_currency"] as const;
 
 export const letterTone: Record<LetterStatus, "neutral" | "info" | "success" | "danger" | "warning"> = {
   pending: "info",

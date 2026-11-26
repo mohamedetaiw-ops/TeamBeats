@@ -33,8 +33,8 @@ public sealed class HrDataChange(
         {
             return null;
         }
-        var rows = await session.QueryAsync("select id, settings::text from integrations.connection where kind = @kind and enabled order by created_at, id",
-            new { kind = HrRestPack.KindName }, r => (Id: r.GetGuid(0), Settings: r.GetString(1)), ct);
+        var rows = await session.QueryAsync("select id, settings::text from integrations.connection where kind = any(@kinds) and enabled order by created_at, id",
+            new { kinds = HrNamedPack.RestKinds.ToArray() }, r => (Id: r.GetGuid(0), Settings: r.GetString(1)), ct);
         return rows.Where(r => HrRestPack.Parse(JsonDocument.Parse(r.Settings).RootElement)?.DataChangePath is not null).Select(r => (Guid?)r.Id).FirstOrDefault();
     }
 

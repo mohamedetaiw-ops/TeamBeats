@@ -133,6 +133,9 @@ public static class HrMapping
     private static bool EmailLike(string? email) =>
         email is null || email.Count(c => c == '@') == 1 && !email.StartsWith('@') && !email.EndsWith('@') && !email.Contains(' ');
 
+    /// <summary>A date as HR systems write it: ISO, the connection's format, an OData <c>/Date(ms)/</c> or an ISO time stamp.</summary>
+    public static DateOnly? ReadDate(string text, string? format) => Date(text, format);
+
     private static DateOnly? Date(string text, string? format)
     {
         if (DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var iso))
@@ -142,6 +145,16 @@ public static class HrMapping
         if (format is not null && DateOnly.TryParseExact(text, format, CultureInfo.InvariantCulture, DateTimeStyles.None, out var d))
         {
             return d;
+        }
+        // An OData v2 date such as SAP SuccessFactors sends: /Date(1388534400000)/, milliseconds since 1970 in UTC.
+        if (text.StartsWith("/Date(", StringComparison.Ordinal) && text.EndsWith(")/", StringComparison.Ordinal))
+        {
+            var inner = text[6..^2];
+            var cut = inner.IndexOfAny(['+', '-'], 1);
+            return long.TryParse(cut > 0 ? inner[..cut] : inner, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var ms)
+                && ms is > -62135596800000 and < 253402300799000
+                ? DateOnly.FromDateTime(DateTimeOffset.FromUnixTimeMilliseconds(ms).UtcDateTime)
+                : null;
         }
         // An ISO time stamp from an API: the date part counts.
         return text.Length > 10 && text[10] == 'T' && DateOnly.TryParseExact(text[..10], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var stamp)

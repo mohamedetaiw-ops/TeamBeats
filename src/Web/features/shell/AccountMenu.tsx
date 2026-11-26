@@ -21,6 +21,7 @@ export function AccountMenu({ name, administration = false }: { name: string; ad
   const t = useTranslations("shell");
   const [details, setDetails] = useState<{ title: string | null; email: string | null } | null>(null);
   const [payslips, setPayslips] = useState(false);
+  const [compensation, setCompensation] = useState(false);
   const [open, setOpen] = useState(false);
   const loaded = useRef(false);
 
@@ -32,6 +33,10 @@ export function AccountMenu({ name, administration = false }: { name: string; ad
     void fetch("/api/v1/me/payslips-available", { cache: "no-store" })
       .then(async (r) => (r.ok ? ((await r.json()) as { available: boolean }).available : false))
       .then(setPayslips, () => setPayslips(false));
+    // My compensation likewise (spec 019 R3 US10).
+    void fetch("/api/v1/me/compensation-available", { cache: "no-store" })
+      .then(async (r) => (r.ok ? ((await r.json()) as { available: boolean }).available : false))
+      .then(setCompensation, () => setCompensation(false));
     void fetch("/api/v1/me/profile", { cache: "no-store" })
       .then(async (response) => {
         if (!response.ok) return setDetails({ title: null, email: null });
@@ -76,6 +81,12 @@ export function AccountMenu({ name, administration = false }: { name: string; ad
           <Link className="ui-menu-item" href="/payslips">
             <Icon name="files" size={16} />
             {t("payslips")}
+          </Link>
+        ) : null}
+        {compensation ? (
+          <Link className="ui-menu-item" href="/compensation">
+            <Icon name="files" size={16} />
+            {t("compensation")}
           </Link>
         ) : null}
         <Link className="ui-menu-item" href="/settings">

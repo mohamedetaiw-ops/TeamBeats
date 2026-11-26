@@ -21,12 +21,30 @@ public static partial class LetterRender
     public const string Addressee = "addressee";
     public const string Date = "date";
     public const string Reference = "reference";
+    public const string EmploymentType = "employment_type";
+    public const string SalaryBasic = "salary_basic";
+    public const string SalaryTotal = "salary_total";
+    public const string SalaryCurrency = "salary_currency";
 
     /// <summary>Placeholders filled from HR, the request and the letter itself.</summary>
-    public static readonly IReadOnlyList<string> Known = [Name, EmployeeNumber, JobTitle, Grade, HireDate, Company, Addressee, Date, Reference];
+    public static readonly IReadOnlyList<string> Known =
+        [Name, EmployeeNumber, JobTitle, Grade, HireDate, EmploymentType, Company, Addressee, Date, Reference, SalaryBasic, SalaryTotal, SalaryCurrency];
 
     /// <summary>Placeholders that come from the person's HR record; HR types the value in when HR has none.</summary>
-    public static readonly IReadOnlyList<string> FromHr = [Name, EmployeeNumber, JobTitle, Grade, HireDate];
+    public static readonly IReadOnlyList<string> FromHr = [Name, EmployeeNumber, JobTitle, Grade, HireDate, EmploymentType];
+
+    /// <summary>
+    /// Salary placeholders (spec 019 R3 US9, FR-021, FR-024): read live from HR when the letter is printed, for that
+    /// letter only. Nobody types them, approvers never see them, and they are kept nowhere but in the PDF.
+    /// </summary>
+    public static readonly IReadOnlyList<string> FromCompensation = [SalaryBasic, SalaryTotal, SalaryCurrency];
+
+    /// <summary>An amount with two decimals and grouping, in Arabic-Indic digits when the letter uses them.</summary>
+    public static string FormatAmount(decimal amount, string language, bool arabicDigits)
+    {
+        var text = amount.ToString("#,##0.00", CultureInfo.InvariantCulture);
+        return language == "ar" && arabicDigits ? ArabicDigits(text) : text;
+    }
 
     [GeneratedRegex(@"\{([a-z][a-z0-9_]{0,39})\}", RegexOptions.CultureInvariant)]
     private static partial Regex PlaceholderPattern();

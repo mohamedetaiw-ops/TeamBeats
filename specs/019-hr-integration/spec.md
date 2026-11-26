@@ -38,7 +38,6 @@
 **Out of scope:**
 - Writing back to the HR system, except the hand-offs specified by 022 (for example an approved leave request) through 017.
 - Payroll calculation, tax, compensation planning, performance reviews.
-- Oracle HCM and SAP SuccessFactors named packs (R3).
 - Recruitment and applicant tracking.
 
 ## 3. Actors and permissions
@@ -118,6 +117,33 @@ Omar moves from Finance to Procurement with a new manager on 1 January.
 1. **Given** the tenant chose HR as the leave balance source, **Then** spec 022 shows balances read from HR, hands approved requests to HR through 017, and shows "pending in HR" until HR confirms.
 2. **Given** the HR read fails, **Then** the request form shows the last known balance with its time and allows submission only if the tenant allows it.
 
+### User Story 8: Connect Oracle HCM or SAP SuccessFactors without a mapping (Priority: P2, R3)
+
+Ahmed's group runs Oracle HCM Cloud in the Gulf and SAP SuccessFactors in Africa. Each subsidiary tenant connects its system by choosing the named pack and giving the address and sign-in; the field mapping is already filled.
+
+**Acceptance scenarios:**
+1. **Given** Enterprise and Government, **When** Ahmed adds an Oracle HCM connection with its address and sign-in, **Then** the pack reads workers with their names, emails, work relationships, assignments and managers page by page, maps them to the canonical contract without a hand-made mapping, and the run results of US1 follow.
+2. **Given** a SAP SuccessFactors connection, **Then** the pack reads users through OData with the next links SuccessFactors returns, includes inactive users so leavers are seen, and reads SuccessFactors dates as dates.
+3. **Given** a field the tenant maps differently (for example the Arabic name in a custom field), **Then** the administrator overrides that one field and keeps the rest of the preset.
+4. **Given** Workplace Plus, **Then** the named packs are listed as needing another package and the generic HR REST pack remains available.
+
+### User Story 9: Employment letters filled from HR data (Priority: P2, R3)
+
+Laila asks for a salary certificate for her bank. The letter carries her hire date, job title, grade and salary as HR holds them.
+
+**Acceptance scenarios:**
+1. **Given** a letter type (spec 022) whose template uses HR placeholders, **When** the letter is generated, **Then** employment placeholders (employee number, hire date, job title, grade, employment type) come from Laila's matched HR record, and salary placeholders come from a live compensation read for Laila only.
+2. **Given** Laila is not matched to an HR record, or the compensation read fails, **Then** no letter is generated with a blank or stale value; the request waits and is tried again, and HR officers see why.
+3. **Given** a letter with salary values, **Then** the values appear only in that letter's PDF; they are not stored on the request, not shown to approvers, not indexed and not sent to models.
+
+### User Story 10: Read my compensation statement (Priority: P2, R3)
+
+**Acceptance scenarios:**
+1. **Given** compensation in the HR system, **When** Laila opens My compensation, **Then** after step-up she sees her current pay components (for example basic salary, housing and transport allowances) with amounts, currency, frequency and the effective date, and the total.
+2. **Given** anyone other than Laila, including her manager, HR officers and tenant administrators, **Then** they cannot read her compensation in TeamBeats; there is no override.
+3. **Given** the HR system is unavailable, **Then** the page says so and shows nothing stale.
+4. **Given** a compensation statement, **Then** it is never indexed, cached on shared devices, sent to models or placed in notifications, and every read is audited.
+
 ### Edge cases and exception flows
 - HR record arrives before the directory user: held as unmatched and retried at each sync for 30 days.
 - Manager loop in HR data (A manages B, B manages A): the change is refused for both and reported.
@@ -146,12 +172,20 @@ Omar moves from Finance to Procurement with a new manager on 1 January.
 - **HRI-016 / FR-016**: The HR REST pack MUST be configurable without code from a mapping template; the SFTP and CSV pack MUST support the same canonical contract.
 - **HRI-017 / FR-017**: HR fields shown on profiles MUST follow the visibility rules of spec 010 (self, manager, HR officer in scope).
 - **HRI-018 / FR-018**: Every applied change MUST be traceable to its HR run and source record ID.
+- **HRI-019 / FR-019**: The Oracle HCM and SAP SuccessFactors packs MUST be presets of the HR REST pack: the administrator gives the address, sign-in and schedule, the preset gives the paths, paging and field mapping, and single fields MAY be overridden. They MUST need `hr.named_packs`.
+- **HRI-020 / FR-020**: A named pack MUST read leavers as well as active workers, so a full sync never makes a leaver look absent.
+- **HRI-021 / FR-021**: Letter templates MAY use HR placeholders; employment values MUST come from the matched HR record and salary values from a live compensation read at generation time.
+- **HRI-022 / FR-022**: A letter MUST NOT be generated while an HR placeholder it uses has no value; the request is retried and the reason shown to HR officers.
+- **HRI-023 / FR-023**: Compensation MUST follow the payslip rules of FR-010 to FR-012: self only after step-up, no override, audited reads, not stored, not indexed, not sent to models, not on shared devices.
+- **HRI-024 / FR-024**: Salary values placed in a letter MUST appear only in its PDF, never on the stored request, in approver views or in audit details.
 
 ## 6. Business and validation rules
 - Default schedule: full sync nightly, change events as they arrive; payslip list read live with a 10 minute cache per user (never shared).
 - Onboarding lead time default 5 working days, range 0 to 30.
 - Change threshold default 10% of active employees for terminations or moves in one run.
 - Payslip retention in TeamBeats: none; summaries are read live and not stored, PDFs are streamed.
+- The compensation statement and salary placeholders in letters (R3) are payroll data and come with `hr.payslips`; employment placeholders in letters come with `hr.integration` and `hr.letters` (spec 022).
+- A compensation statement lists at most 30 components; it is read live and never cached across users.
 
 ## 7. Tenant and organization scope
 - Tenant-owned data: HR connection, mappings, match links, run results, held changes.
@@ -167,6 +201,7 @@ Omar moves from Finance to Procurement with a new manager on 1 January.
 | Match link | Product | Internal | Life of the user | Yes (IDs) |
 | Held future-dated changes | Product | Confidential | Until applied or cancelled | Yes |
 | Payslip summary and PDF | Payroll or HR | Confidential | Not stored | Yes |
+| Compensation statement (R3) | HR system | Confidential | Not stored | Yes |
 | Run results | Product | Internal | 90 days | Yes (IDs) |
 
 ## 9. Package entitlements

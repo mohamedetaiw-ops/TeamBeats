@@ -3075,5 +3075,9 @@
   "process.import.dropped": "أزيل إعداد يخص المحرك الآخر فقط.",
   "process.import.vendor_attribute": "إعداد في الأداة الأخرى ليس له معنى في TeamBeats.",
   "process.import.vendor_extension": "امتداد في الأداة الأخرى، مثل نموذج أو مستمع، لا يمكن تشغيله في TeamBeats.",
-  "conflict.process.model_exists": "توجد عملية بهذا المفتاح. استورد باستخدام مفتاح جديد."
+  "conflict.process.model_exists": "توجد عملية بهذا المفتاح. استورد باستخدام مفتاح جديد.",
+  "validation.hr.compensation_path": "يجب أن يبدأ عنوان التعويضات بـ / وأن يذكر {record_id} مرة واحدة في المسار أو الاستعلام.",
+  "validation.hr.compensation_fields_required": "حدّد موضع الرمز والمبلغ في كل بند من بنود الأجر.",
+  "validation.hr.compensation_basic_code": "استخدم حروفًا أو أرقامًا أو نقاطًا أو شرطات أو مسافات لرمز الراتب الأساسي، بحد أقصى 60.",
+  "validation.letters.salary_needs_payroll": "تحتاج عناصر الراتب إلى كشوف الرواتب في باقتك، لأن الراتب يُقرأ من تعويضات الموارد البشرية."
 }

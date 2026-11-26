@@ -2587,7 +2587,8 @@
       "showHint": "Show this hint again",
       "shownHint": "Shown on this page"
     },
-    "organizationNavShared": "{name}, shared with you"
+    "organizationNavShared": "{name}, shared with you",
+    "compensation": "My compensation"
   },
   "shell_settings": {
     "title": "Shell and footer",
@@ -10532,7 +10533,9 @@
       "hr_rest": "HR system (REST API)",
       "hr_sftp": "HR system (SFTP and CSV)",
       "microsoft365": "Microsoft 365",
-      "lms_rest": "Learning management system (LMS)"
+      "lms_rest": "Learning management system (LMS)",
+      "hr_oracle_hcm": "Oracle HCM Cloud",
+      "hr_sap_successfactors": "SAP SuccessFactors"
     },
     "status": {
       "healthy": "Healthy",
@@ -10569,7 +10572,9 @@
       "jira_service_management": "Services and agents create requests in Jira Service Management and read their status.",
       "camunda8": "Camunda user tasks assigned to TeamBeats people appear in their task inbox and are completed from TeamBeats.",
       "mcp_server": "Agents use the tools of an external MCP server after an integration administrator approves each one.",
-      "lms_rest": "Brings your LMS courses into the catalogue, sends assignments of them to the LMS and reads completions back."
+      "lms_rest": "Brings your LMS courses into the catalogue, sends assignments of them to the LMS and reads completions back.",
+      "hr_oracle_hcm": "Reads Oracle HCM workers, their assignments and managers every night, with the mapping already filled.",
+      "hr_sap_successfactors": "Reads SAP SuccessFactors users and their managers every night, leavers included, with the mapping already filled."
     },
     "add": {
       "title": "Add a custom REST connection",
@@ -11346,7 +11351,8 @@
       "pagings": {
         "none": "One answer holds every employee",
         "page": "Page numbers",
-        "next": "A link to the next page"
+        "next": "A link to the next page",
+        "offset": "Offset and limit"
       },
       "pageParam": "Page number parameter",
       "pageSizeParam": "Page size parameter",
@@ -11422,7 +11428,24 @@
       "dataChangeTitle": "Employee data changes (optional)",
       "dataChangePath": "Data change address",
       "dataChangePathHint": "Approved changes to an employee's details are sent here, for example /data-changes.",
-      "dataChangeReferencePathHint": "For example $.id. HR must answer with a reference for the change to show as recorded."
+      "dataChangeReferencePathHint": "For example $.id. HR must answer with a reference for the change to show as recorded.",
+      "named": {
+        "scheduleTitle": "Nightly sync",
+        "hr_oracle_hcm": {
+          "addTitle": "Add Oracle HCM Cloud",
+          "addIntro": "Give the address of your Oracle HCM Cloud service and how TeamBeats signs in. The paths, paging and field mapping are set for Oracle HCM.",
+          "formLabel": "Oracle HCM Cloud settings",
+          "presetHint": "Workers are read with their names, emails, work relationships, assignments and managers. After saving you can change any one field.",
+          "fieldsHint": "Where each field is in an Oracle HCM worker. Change one to use your own field, or empty it to leave it out."
+        },
+        "hr_sap_successfactors": {
+          "addTitle": "Add SAP SuccessFactors",
+          "addIntro": "Give the address of your SuccessFactors API server and how TeamBeats signs in. The paths, paging and field mapping are set for SuccessFactors.",
+          "formLabel": "SAP SuccessFactors settings",
+          "presetHint": "Users are read with their managers, inactive users included so leavers are seen. After saving you can change any one field.",
+          "fieldsHint": "Where each field is in a SuccessFactors user. Change one to use your own field, or empty it to leave it out."
+        }
+      }
     },
     "overview": {
       "add": "Add connection",
@@ -12538,7 +12561,9 @@
     "none": "None",
     "kinds": {
       "hr_rest": "REST API",
-      "hr_sftp": "SFTP file"
+      "hr_sftp": "SFTP file",
+      "hr_oracle_hcm": "Oracle HCM Cloud",
+      "hr_sap_successfactors": "SAP SuccessFactors"
     },
     "status": {
       "title": "Status",
@@ -13688,7 +13713,8 @@
       "employee_number": "Employee number",
       "job_title": "Job title",
       "grade": "Grade",
-      "hire_date": "Hire date"
+      "hire_date": "Hire date",
+      "employment_type": "Employment type"
     },
     "detail": {
       "title": "Letter",
@@ -13776,6 +13802,12 @@
         "empty": "No letters yet",
         "asked": "Asked on"
       }
+    },
+    "issueProblems": {
+      "compensation_unavailable": "HR did not answer with this person's compensation. The letter is tried again shortly.",
+      "compensation_missing": "HR has no salary figure the letter needs, such as the basic salary code or a single currency. Fix it in HR and the letter is tried again.",
+      "pdf_unavailable": "The letter could not be printed yet. It is tried again shortly.",
+      "data_missing": "A value the letter needs is missing. It is tried again once the value is there."
     }
   },
   "data_changes": {
@@ -17476,5 +17508,37 @@
     "published": "Help published as version {version}.",
     "refused": "Help wasn't published",
     "failed": "Help couldn't be published. Try again."
+  },
+  "compensation": {
+    "title": "My compensation",
+    "intro": "Your current pay components from HR. Only you can see them.",
+    "caption": "Pay components",
+    "component": "Component",
+    "frequency": "Paid",
+    "from": "Since",
+    "amount": "Amount",
+    "none": "Not given",
+    "total": "Total: {amount}",
+    "noTotal": "No total is shown because the components are in different currencies or paid at different times.",
+    "effective": "Effective from {date}",
+    "privacy": "Your compensation is read from HR each time and is not kept in TeamBeats. Each view is recorded, without the amounts.",
+    "failed": "Your compensation could not be loaded. Try again.",
+    "stepUp": {
+      "title": "Confirm it is you",
+      "message": "Compensation needs a recent sign-in. Sign in again to see it.",
+      "action": "Sign in again"
+    },
+    "unavailable": {
+      "title": "HR is not available",
+      "message": "Your compensation cannot be read from HR right now, so nothing is shown. Try again later."
+    },
+    "notMatched": {
+      "title": "No HR record yet",
+      "message": "Your account is not linked to an HR record yet. Ask HR if you expected to see your compensation."
+    },
+    "empty": {
+      "title": "No pay components",
+      "message": "HR has no current pay components for you."
+    }
   }
 }

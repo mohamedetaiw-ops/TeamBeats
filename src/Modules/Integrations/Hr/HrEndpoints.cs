@@ -50,6 +50,17 @@ public static class HrEndpoints
             return Results.File(pdf, "application/pdf", $"payslip-{period}.pdf");
         }).RequireStepUp();
 
+        // My compensation (spec 019 R3 US10): the signed-in person's own only, after step-up, never cached.
+        app.MapGet("/api/v1/me/compensation-available", async (HrCompensation service, CancellationToken ct) =>
+            Results.Ok(new { available = await service.AvailableAsync(ct) })).RequireTenantUser().WithTags("Payslips");
+        app.MapGet("/api/v1/me/compensation", async (HrCompensation service, IDbSession session, HttpResponse response, CancellationToken ct) =>
+        {
+            var read = await service.MineAsync(ct);
+            await session.CommitAsync(ct);
+            NoStore(response);
+            return Results.Ok(read);
+        }).RequireTenantUser().RequiresCapability(Capabilities.HrPayslips).RequireStepUp().WithTags("Payslips");
+
         api.MapGet("", async (IAuthorizationService authz, HrSync hr, HttpResponse response, CancellationToken ct) =>
         {
             await Demand(authz, ct);

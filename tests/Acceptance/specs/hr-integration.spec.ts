@@ -8,7 +8,7 @@ import { hostOrigin } from "../support/stack";
  * connection exists yet and no records, org codes or lifecycle changes are waiting, changes the matching rule, threshold,
  * joiner lead time and rehire setting, and finds both HR packs in the
  * Connections catalogue with their add forms, in English and Arabic with axe. My payslips tells a person with no HR
- * record why there are none (spec 019 US6). Nothing calls an HR system: syncing,
+ * record why there are none (spec 019 US6), and My compensation likewise (R3 US10). Nothing calls an HR system: syncing,
  * matching and held runs are covered by the API tests. The API decides every rule.
  */
 for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
@@ -67,6 +67,14 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, "payslips.title"));
       await expect(page.getByText(msg(locale, "payslips.notMatched.title"))).toBeVisible();
       await expectAccessible(page, testInfo, `payslips-${locale}`);
+    });
+
+    test("a person with no HR record opens My compensation and is told why there is none", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/compensation`);
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, "compensation.title"));
+      await expect(page.getByText(msg(locale, "compensation.notMatched.title"))).toBeVisible();
+      await expectAccessible(page, testInfo, `compensation-${locale}`);
     });
   });
 }

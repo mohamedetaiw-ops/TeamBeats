@@ -114,7 +114,7 @@ public sealed class HrSync(
     public const int RunRetentionDays = 90;
     public const int MaxProblemsKept = 500;
 
-    public static readonly IReadOnlyList<string> PackKinds = [HrRestPack.KindName, HrSftpPack.KindName];
+    public static readonly IReadOnlyList<string> PackKinds = [HrRestPack.KindName, HrSftpPack.KindName, HrOracleHcmPack.KindName, HrSuccessFactorsPack.KindName];
 
     // ---- canonical form ----
 

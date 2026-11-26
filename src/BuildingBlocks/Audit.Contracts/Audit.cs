@@ -265,6 +265,8 @@ public static class AuditActions
     public const string HrChangeApplied = "hr.change_applied";
     public const string HrPayslipViewed = "hr.payslip_viewed";
     public const string HrPayslipDownloaded = "hr.payslip_downloaded";
+    public const string HrCompensationViewed = "hr.compensation_viewed";
+    public const string HrCompensationReadForLetter = "hr.compensation_read_for_letter";
     public const string HrOrgCodeMapped = "hr.org_code_mapped";
 
     // 010
@@ -726,7 +728,7 @@ public static class AuditActions
         ThemePublished, ThemeDrafted, ThemeSubmitted, ThemeApproved, ThemeReturned, ThemeScheduled, ThemeRolledBack, ThemeTokensImported, ThemeExtensionProposed, ThemeExtensionApproved, ThemeExtensionRejected, ThemeExtensionRemoved, BrandAssigned, BrandUnassigned, ExperienceLockChanged,
         NotificationSettingsChanged, NotificationRelayTested, NotificationTemplateOverridden, NotificationSignageScreenRegistered, NotificationSignageScreenRotated, NotificationSignageScreenRevoked, NotificationQuickActionUsed,
         HrCalendarChanged, HrSettingsChanged, HrMatchLinked, HrMatchUnlinked, HrSyncHeld, HrSyncConfirmed, HrChangeApplied, HrOrgCodeMapped, DisabledByHr, ReenabledByHr,
-        HrPayslipViewed, HrPayslipDownloaded,
+        HrPayslipViewed, HrPayslipDownloaded, HrCompensationViewed, HrCompensationReadForLetter,
         HrLeaveSubmitted, HrLeaveApproved, HrLeaveRejected, HrLeaveCancelled, HrLeaveShortened, HrLeaveOnBehalf, HrBalanceAdjusted, HrLeaveTypeChanged, HrLeavePolicyChanged,
         HrLeaveRecounted, HrLeaveSourceChanged, HrLeaveHandOffRetried,
         HrJourneyTemplateChanged, HrJourneyStarted, HrJourneyRescheduled, HrJourneyStepCompleted, HrJourneyCancelled, HrAccessRemovalConfirmed, HrAccessRemovalEscalated, HrExitInterviewRecorded, HrJourneySettingsChanged, HrPreboardingSent, HrAttendanceSettingsChanged, HrWorkRuleChanged, HrAttendanceExported, HrAttendanceRequested, HrAttendanceCorrected, HrCompensationCredited, HrAttendanceRequestRejected, HrLetterTypeChanged, HrLetterSettingsChanged, HrLetterRequested, HrLetterIssued, HrLetterRejected, HrLetterVerified, HrDataChangeSettingsChanged, HrDataChangeRequested, HrDataChangeApproved, HrDataChangeRejected, HrDataChangeWrittenBack, HrDataChangeWriteFailed, HrExpensePolicyChanged, HrExpenseRatesChanged, HrExpenseSubmitted, HrExpenseApproved, HrExpenseRejected, HrExpenseHandedOff,

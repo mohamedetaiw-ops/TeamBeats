@@ -28,3 +28,15 @@ The spec stays Approved, not Implemented. Every R2 user story is built: connect 
 | SC-001 99% of joiners ready on their first day | Not proven | Needs a pilot tenant; joiners are prepared the lead time ahead (`HrLifecycleTests`) |
 | SC-002 leavers disabled by the end of their last working day in 100% of test cases | Met | `HrLifecycleTests.Movers_wait_...`, `HrLifecyclePlanTests` (unit) |
 | Cross-tenant, org boundary and package denial | Met | `HrSyncTests.Settings_permissions_the_package_and_the_tenant_boundary_hold`, the other tenant cases in `HrSyncTests.The_first_sync_matches_...`, and the plan cases in every class above |
+
+## R3
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| FR-019 named packs as presets of the REST pack, single fields overridable, `hr.named_packs` | Met | `HrNamedPackTests.Oracle_HCM_workers_sync_...` (preset paths kept over a tenant value, one field overridden, one dropped), `HrNamedPackTests.Without_hr_named_packs_...`, `hr-named-packs.spec.ts` |
+| FR-020 named packs read leavers | Met | `HrNamedPackTests.Oracle_HCM_workers_sync_...` (inactive assignment read as terminated), `HrNamedPackTests.SuccessFactors_users_sync_...` (status filter, inactive user read) |
+| US8 scenario 2 SuccessFactors next links and dates | Met | `HrNamedPackTests.SuccessFactors_users_sync_...`, `HrMappingTests.OData_dates_are_read_as_dates` (unit) |
+| FR-021 employment placeholders from the HR record, salary from a live compensation read | Met | `HrSyncTests.A_salary_certificate_reads_compensation_live_...` (employment type, basic and total in the PDF; a later figure after HR answers again) |
+| FR-022 no letter with a blank or stale value; retried, reason shown to HR | Met | `HrSyncTests.A_salary_certificate_...` (HR down and a missing basic code each wait with their reason, the worker prints after), `LetterTests` (R2 missing values) |
+| FR-023 compensation on the payslip rules | Met | `HrSyncTests.People_read_only_their_own_compensation_...` (self only, step-up metadata, no-store, audit without amounts, HR down shows nothing, package denial), `HrSyncTests.A_compensation_answer_that_cannot_be_read_whole_shows_nothing`, `hr-integration.spec.ts` |
+| FR-024 salary only in the PDF | Met | `HrSyncTests.A_salary_certificate_...` (no salary field for approvers, none on any stored letter row or audit detail) |

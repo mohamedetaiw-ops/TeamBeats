@@ -3075,5 +3075,9 @@
   "process.import.dropped": "A setting that only tunes the other engine was removed.",
   "process.import.vendor_attribute": "A setting of the other tool has no TeamBeats meaning.",
   "process.import.vendor_extension": "An extension of the other tool, such as a form or a listener, cannot run in TeamBeats.",
-  "conflict.process.model_exists": "A process with this key already exists. Import under a new key."
+  "conflict.process.model_exists": "A process with this key already exists. Import under a new key.",
+  "validation.hr.compensation_path": "The compensation address must start with / and name {record_id} once, in the path or the query.",
+  "validation.hr.compensation_fields_required": "Say where the code and the amount are in each pay component.",
+  "validation.hr.compensation_basic_code": "Use letters, digits, dots, dashes or spaces for the basic salary code, up to 60.",
+  "validation.letters.salary_needs_payroll": "Salary placeholders need payslips in your plan, because salary comes from HR compensation."
 }

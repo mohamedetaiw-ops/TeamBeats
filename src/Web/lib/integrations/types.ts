@@ -188,7 +188,7 @@ export const CHECK_RESULTS = [
 ] as const;
 
 /** Connector pack kinds with their own name on these pages. */
-export const PACK_KINDS = ["custom_rest", "webhook", "onprem_ad", "servicenow", "jira_service_management", "camunda8", "mcp_server", "slack", "sms", "clock_import", "finance_rest", "finance_oracle_fusion", "finance_sap_s4", "google_workspace", "hr_rest", "hr_sftp", "lms_rest"] as const;
+export const PACK_KINDS = ["custom_rest", "webhook", "onprem_ad", "servicenow", "jira_service_management", "camunda8", "mcp_server", "slack", "sms", "clock_import", "finance_rest", "finance_oracle_fusion", "finance_sap_s4", "google_workspace", "hr_rest", "hr_sftp", "hr_oracle_hcm", "hr_sap_successfactors", "lms_rest"] as const;
 
 /** Settings of a clock data connection (spec 017 US7). Columns are header names, or numbers from 1 without a header row. */
 export type ClockColumns = {
@@ -538,9 +538,14 @@ export const HR_FIELDS = [
 ] as const;
 export const HR_REQUIRED = ["record_id", "status"] as const;
 export const HR_STATUSES = ["active", "terminated"] as const;
-export const HR_PAGING = ["none", "page", "next"] as const;
+export const HR_PAGING = ["none", "page", "offset", "next"] as const;
 export const HR_AUTH = ["api_key", "bearer", "basic", "oauth_client_credentials"] as const;
-export const HR_PACK_KINDS = ["hr_rest", "hr_sftp"] as const;
+export const HR_PACK_KINDS = ["hr_rest", "hr_sftp", "hr_oracle_hcm", "hr_sap_successfactors"] as const;
+/** The named HR packs of spec 019 R3 (US8): presets of the HR REST pack; the API holds the preset. */
+export const HR_NAMED_KINDS = ["hr_oracle_hcm", "hr_sap_successfactors"] as const;
+export type HrNamedKind = (typeof HR_NAMED_KINDS)[number];
+export const isHrNamed = (kind: string): kind is HrNamedKind => (HR_NAMED_KINDS as readonly string[]).includes(kind);
+export const isHrPack = (kind: string): boolean => (HR_PACK_KINDS as readonly string[]).includes(kind);
 
 /** Mapping shared by the HR REST and SFTP packs (spec 019 FR-016). */
 export type HrMappingSettings = {

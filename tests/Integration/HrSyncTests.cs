@@ -47,6 +47,9 @@ public sealed partial class HrSyncTests(TenantWorld world)
         /// <summary>How long payroll takes to list payslips, for the section 15 check.</summary>
         public TimeSpan PayslipDelay { get; set; }
 
+        /// <summary>Current pay components by record ID, as HR reports them (spec 019 R3 US10).</summary>
+        public Dictionary<string, List<Dictionary<string, object?>>> Pay { get; } = [];
+
         /// <summary>Leave balances by record ID, as HR reports them (spec 019 US7).</summary>
         public Dictionary<string, List<Dictionary<string, object?>>> Leave { get; } = [];
 
@@ -111,6 +114,7 @@ public sealed partial class HrSyncTests(TenantWorld world)
                     [var id] => Employees.FirstOrDefault(e => (string?)e["id"] == id) is { } one
                         ? FakeRestApi.Json(HttpStatusCode.OK, JsonSerializer.Serialize(new { data = one }))
                         : new HttpResponseMessage(HttpStatusCode.NotFound),
+                    [var id, "pay"] => FakeRestApi.Json(HttpStatusCode.OK, JsonSerializer.Serialize(new { components = Pay.GetValueOrDefault(id) ?? [] })),
                     [var id, "leave"] => FakeRestApi.Json(HttpStatusCode.OK, JsonSerializer.Serialize(new { items = Leave.GetValueOrDefault(id) ?? [] })),
                     [var id, "payslips"] => Wait(PayslipDelay) ?? FakeRestApi.Json(HttpStatusCode.OK, JsonSerializer.Serialize(new { items = Payslips.GetValueOrDefault(id) ?? [] })),
                     [var id, "payslips", var period, "pdf"] when Pdf is not null && Payslips.GetValueOrDefault(id)?.Any(p => (string?)p["month"] == period) == true =>
@@ -164,7 +168,8 @@ public sealed partial class HrSyncTests(TenantWorld world)
         return t;
     }
 
-    private async Task<(Guid Id, FakeHr Hr)> RestConnectionAsync(TestTenant t, bool payslips = false, bool leave = false, bool dataChange = false, int pageSize = 2)
+    private async Task<(Guid Id, FakeHr Hr)> RestConnectionAsync(TestTenant t, bool payslips = false, bool leave = false, bool dataChange = false, int pageSize = 2,
+        bool compensation = false)
     {
         var host = $"hr-{Guid.NewGuid():N}"[..20] + ".hr.test";
         var fake = new FakeHr();
@@ -200,6 +205,12 @@ public sealed partial class HrSyncTests(TenantWorld world)
                 dataChangePath = dataChange ? "/data-changes" : null,
                 dataChangeReferencePath = dataChange ? "$.result.id" : null,
                 dataChangeIdempotencyHeader = dataChange ? "Idempotency-Key" : null,
+                compensationPath = compensation ? "/employees/{record_id}/pay" : null,
+                compensationRecordsPath = compensation ? "$.components" : null,
+                compensationFields = compensation
+                    ? new Dictionary<string, string> { ["code"] = "$.code", ["name"] = "$.label", ["amount"] = "$.amount", ["currency"] = "$.cur", ["frequency"] = "$.per", ["start_date"] = "$.from" }
+                    : null,
+                compensationBasicCode = compensation ? "BASIC" : null,
                 paging = "page",
                 pageSizeParam = "size",
                 pageSize,

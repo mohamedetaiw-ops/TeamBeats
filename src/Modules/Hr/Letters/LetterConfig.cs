@@ -153,6 +153,12 @@ public sealed class LetterConfig(IDbSession session, ITenantContext context, ICl
         {
             errors.Add("templates", "validation.letters.placeholder");
         }
+        else if (templates.Values.SelectMany(LetterRender.Placeholders).Any(LetterRender.FromCompensation.Contains)
+            && !await entitlements.IsEnabledAsync(Capabilities.HrPayslips, ct))
+        {
+            // Salary comes from HR compensation, which is payroll data (spec 019 section 6).
+            errors.Add("templates", "validation.letters.salary_needs_payroll");
+        }
         var needsApproval = request.NeedsApproval ?? true;
         if (manual.Count > 0 && !needsApproval)
         {

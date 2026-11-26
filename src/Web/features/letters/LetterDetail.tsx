@@ -109,6 +109,11 @@ export function LetterDetail({ initial, taskId }: { initial: Letter; taskId: str
           ) : null}
         </dl>
         {letter.status === "approved" ? <p className="field-hint">{t("detail.printing")}</p> : null}
+        {letter.status === "approved" && letter.issueProblem ? (
+          <p className="notice" role="status" data-testid="letter-issue-problem">
+            {t(`issueProblems.${letter.issueProblem}`)}
+          </p>
+        ) : null}
         <div className="ui-control-row">
           {letter.rights.download ? (
             <a className="letters-download" href={`/api/v1/hr/letters/${letter.id}/pdf`} download>

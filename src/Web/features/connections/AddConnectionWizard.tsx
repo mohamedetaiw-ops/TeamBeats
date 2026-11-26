@@ -15,6 +15,7 @@ import {
   TICKETING_KINDS,
   checkResult,
   isErpFinance,
+  isHrNamed,
   isTicketing,
   known,
   type AllowlistEntry,
@@ -34,7 +35,7 @@ import { ErpFinanceSettingsForm } from "./ErpFinanceSettingsForm";
 import { FinanceSettingsForm } from "./FinanceSettingsForm";
 import { LmsSettingsForm } from "./LmsSettingsForm";
 import { GoogleSettingsForm, type GoogleBody } from "./GoogleSettingsForm";
-import { HrRestSettingsForm, HrSftpSettingsForm, type HrSftpBody } from "./HrSettingsForm";
+import { HrNamedSettingsForm, HrRestSettingsForm, HrSftpSettingsForm, type HrSftpBody } from "./HrSettingsForm";
 import { OnPremSettingsForm, type OnPremBody } from "./OnPremSettingsForm";
 import { SlackSettingsForm, type SlackBody } from "./SlackSettingsForm";
 import { SmsSettingsForm, type SmsBody } from "./SmsSettingsForm";
@@ -193,6 +194,9 @@ function setupHeading(kind: ConnectionType): { title: string; intro: string } {
       return { title: "hr.addRestTitle", intro: "hr.addIntro" };
     case "hr_sftp":
       return { title: "hr.addSftpTitle", intro: "hr.addIntro" };
+    case "hr_oracle_hcm":
+    case "hr_sap_successfactors":
+      return { title: `hr.named.${kind}.addTitle`, intro: `hr.named.${kind}.addIntro` };
     case "webhook":
       return { title: "webhooks.addTitle", intro: "webhooks.addIntro" };
     case "onprem_ad":
@@ -255,6 +259,7 @@ export function SetupStep({ kind, catalogue, webhookEvents }: { kind: Connection
   else if (isErpFinance(kind)) form = <ErpFinanceSettingsForm kind={kind} submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;
   else if (kind === "lms_rest") form = <LmsSettingsForm submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;
   else if (kind === "hr_rest") form = <HrRestSettingsForm submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;
+  else if (isHrNamed(kind)) form = <HrNamedSettingsForm kind={kind} submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;
   else if (kind === "hr_sftp") form = <HrSftpSettingsForm submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;
   else if (kind === "webhook") form = <WebhookSettingsForm events={webhookEvents} submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;
   else if (kind === "onprem_ad") form = <OnPremSettingsForm submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;

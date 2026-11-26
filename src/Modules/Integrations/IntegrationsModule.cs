@@ -111,12 +111,18 @@ public static class IntegrationsModule
         services.AddScoped<Hr.HrSchedule>();
         services.AddScoped<Hr.HrLifecycle>();
         services.AddScoped<Hr.HrPayslips>();
+        services.AddScoped<Hr.HrCompensation>();
+        services.AddScoped<IHrCompensation>(sp => sp.GetRequiredService<Hr.HrCompensation>());
         services.AddScoped<Hr.HrRestPack>();
         services.AddScoped<Hr.HrLeave>();
         services.AddScoped<IHrLeave>(sp => sp.GetRequiredService<Hr.HrLeave>());
         services.AddScoped<Hr.HrDataChange>();
         services.AddScoped<IHrDataChange>(sp => sp.GetRequiredService<Hr.HrDataChange>());
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Hr.HrRestPack>());
+        services.AddScoped<Hr.HrOracleHcmPack>();
+        services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Hr.HrOracleHcmPack>());
+        services.AddScoped<Hr.HrSuccessFactorsPack>();
+        services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Hr.HrSuccessFactorsPack>());
         services.AddScoped<Hr.HrSftpPack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Hr.HrSftpPack>());
         services.AddScoped<Webhooks.KpiFeed>();

@@ -181,6 +181,30 @@
         }
       }
     },
+    "/api/v1/me/compensation-available": {
+      "get": {
+        "tags": [
+          "Payslips"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/compensation": {
+      "get": {
+        "tags": [
+          "Payslips"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/integrations/inbound/{connectionId}": {
       "post": {
         "tags": [

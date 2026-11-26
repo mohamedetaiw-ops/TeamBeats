@@ -25,3 +25,9 @@ Depends on 002, 003, 010, 016, 017, 022, 026. R2.
 
 ## Final phase
 - [x] T014 Performance test with 20,000 employees; OpenAPI; R2 implementation notes; spec evidence
+
+## R3
+- [x] T015 [US8] Oracle HCM and SAP SuccessFactors named packs as presets of the HR REST pack; offset paging, query addresses, OData dates; admin setup and detail forms; tests `HrNamedPackTests`, `HrMappingTests`, `hr-named-packs.spec.ts`
+- [x] T016 [US10] My compensation: live, self only, step-up, audited, not stored or indexed; tests `HrSyncTests.People_read_only_their_own_compensation_...`, `HrSyncTests.A_compensation_answer_...`, `hr-integration.spec.ts`
+- [x] T017 [US9] HR placeholders in letters (employment values from the HR record, salary values from a live compensation read); letters wait while a value is missing; test `HrSyncTests.A_salary_certificate_...`
+- [x] T018 R3 evidence, OpenAPI and implementation notes

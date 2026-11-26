@@ -166,3 +166,12 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - The admin page is `/admin/analytics/kpi-tiles`; the permission picker offers the permissions the workspace's roles grant.
 - Gaps: a location dashboard e2e with readings is not possible yet, since locations come only from directory sync; the integration suite covers the tiles on the dashboard. Tiles show the latest value only, without a trend.
 
+## Spec 019 R3 slice 1: Oracle HCM and SAP SuccessFactors packs (T015)
+- The named packs are presets, not new adapters: the stored settings are HR REST settings, so every HR path (sync, live read, payslips, leave, data change) keeps one implementation. The preset decides the paths and paging; a tenant may override single fields. Recorded default: the first entry of each Oracle list (names, emails, work relationships, assignments, managers) is used, as Oracle lists the primary first; a suspended assignment counts as active.
+- SuccessFactors returns active users only unless asked, so the preset filters on `status in 't','f','T','F'` to see leavers (FR-020). Its `/Date(ms)/` values are read by `HrMapping` for every HR pack.
+- The generic REST pack gained offset paging and list addresses with a fixed query (characters limited, percent encoded); the record ID stays escaped wherever it is placed.
+
+## Spec 019 R3 slices 2 and 3: compensation statement and salary letters (T016 to T018)
+- Compensation is a live read like payslips and comes with `hr.payslips` (recorded default: section 9 lists no separate key). Kiosks block `/compensation` because the shared device allow list never names it.
+- Letters read compensation only at print time through `IHrCompensation`, so approvers see no salary field and nothing is stored; a letter that cannot be printed keeps a reason key (`hr.letter.issue_problem`) shown to HR, and the existing worker retries it up to 20 times.
+- Recorded defaults: the basic salary is the component with the connection's basic salary code; the total needs one currency and one frequency; amounts print with two decimals and grouping, in Arabic-Indic digits when the tenant uses them. Oracle HCM has no compensation preset because salaries there follow each tenant's salary basis.
