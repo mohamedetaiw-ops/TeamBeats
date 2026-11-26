@@ -556,3 +556,29 @@ public interface IAgentOutcomeFigures
 {
     Task<IReadOnlyList<AgentOutcomeFigure>> ForAgentsAsync(IReadOnlyCollection<Guid> agentIds, DateTimeOffset from, DateTimeOffset to, CancellationToken ct = default);
 }
+
+/// <summary>
+/// The facts of one L4 agent task run of an approved process (spec 034 R3, with spec 027 US1 scenario 5), for its end to end
+/// evaluation. Published once per step run by Agents, after the run, with no content: counts of the calls the gateway
+/// refused, those outside the step's tools and those that needed an approver, and the time against the step's limit.
+/// <see cref="RunId"/> is null when the run was refused before it started.
+/// </summary>
+public sealed record AgentTaskRunRecorded(
+    Guid ServiceTaskId,
+    Guid InstanceId,
+    string DefinitionKey,
+    int DefinitionVersion,
+    string ElementId,
+    Guid AgentId,
+    int? AgentVersion,
+    Guid OrgUnitId,
+    Guid? RunId,
+    string Outcome,
+    string? Reason,
+    int ToolCalls,
+    int Refused,
+    int OutOfScope,
+    int NeedsApproval,
+    int DurationMs,
+    int MaxMinutes) : IIntegrationEvent;
+

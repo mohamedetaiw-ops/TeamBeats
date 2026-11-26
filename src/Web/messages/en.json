@@ -8579,6 +8579,7 @@
     "tabsLabel": "Evaluation pages",
     "tabs": {
       "agents": "Agents",
+      "estate": "Estate trends",
       "calibration": "Judge calibration",
       "settings": "Settings",
       "production": "Production",
@@ -9205,6 +9206,26 @@
       "save": "Save unit settings",
       "saved": "The unit settings are saved.",
       "created": "The dataset is created. Open it to add cases."
+    },
+    "estate": {
+      "title": "Estate trends",
+      "intro": "Each agent's latest evaluated version compared with the one before it, and the monthly benchmarks of all the agents you can see. A drop counts only when it is larger than the noise margin of {margin}. Languages are never averaged together.",
+      "unavailable": "Estate trends are not included in your organization's package.",
+      "summary": "Summary",
+      "summaryNone": "None of the agents you can see has an evaluation result yet.",
+      "summaryText": "{agents} agents have results. {regressed} dropped in their latest version.",
+      "agents": "Agents",
+      "noAgents": "You can see no agents.",
+      "agent": "Agent",
+      "version": "Latest evaluated",
+      "previous": "Before it",
+      "verdict": "Verdict",
+      "drops": "Drops beyond the margin",
+      "noDrop": "No drop",
+      "drop": "{metric} in {language}: {from} to {to}",
+      "benchmarks": "Monthly benchmarks",
+      "benchmarksCaption": "The mean of each agent's latest evaluation run in the month, per metric and language, with the number of agents.",
+      "point": "{value} ({agents} agents)"
     }
   },
   "analytics": {
@@ -17029,6 +17050,37 @@
       "working": "Saving…",
       "failed": "The approval could not be saved. Try again.",
       "note": "Each new version needs both approvals again. A run that passes its limits stops, the step raises an incident, and a security incident is opened."
+    },
+    "evaluation": {
+      "title": "Agent task evaluation",
+      "intro": "Every agent task of this process is checked after it runs: it finished, kept to the step's tools, needed no approver, stayed within its time and was refused nothing. A call outside the step's tools or one that needed an approver fails the step as critical.",
+      "none": "None",
+      "listSeparator": ", ",
+      "versionsCaption": "Agent tasks per process version",
+      "version": "Version",
+      "versionNumber": "Version {number}",
+      "instances": "Instances (ended, closed, all)",
+      "instancesValue": "{ended} of {closed} of {total}",
+      "steps": "Agent task runs",
+      "passed": "Passed every check",
+      "critical": "Critical failures",
+      "checks": {
+        "step_completed": "Finished",
+        "scope_held": "Kept to the step's tools",
+        "no_approval_needed": "Needed no approver",
+        "within_limit": "Within its time",
+        "no_denials": "Nothing refused"
+      },
+      "recentCaption": "Latest agent task runs",
+      "recorded": "Recorded",
+      "element": "Step",
+      "result": "Result",
+      "failedChecks": "Failed checks",
+      "results": {
+        "passed": "Passed",
+        "failed": "Failed",
+        "critical": "Critical failure"
+      }
     }
   },
   "records": {

@@ -38,3 +38,7 @@ The spec stays Approved, not Implemented, until its R2 parts are built: the opti
 | Pages (T016) | Met | `evaluation.spec.ts` (en and ar, axe on every screen) |
 | R2 pages (T025) | Met | `evaluation-production.spec.ts` (en and ar, axe on every screen): production policy, agent production and drift, comparisons, review queue, outcomes, units, opt-out in personal settings |
 | Navigation and permissions | Met | `EvaluationResultsTests.The_evaluation_section_opens_for_designers_reviewers_and_readers_only`, `AdminShellTests.Navigation_is_server_driven_per_permission` |
+| R3 L4 process runs end to end (T026) | Met | `EvaluationProcessRunTests` (step checks, critical approval attempt, limit breach, refused run recorded, instance outcome, unit scope, cross-tenant) |
+| R3 estate trend benchmarks (T027) | Met | `EvaluationEstateTests` (version deltas beyond the noise margin in each metric's direction, monthly benchmarks per locale, readable agents only, package, cross-tenant) |
+| R3 pages (T028) | Met | `evaluation-estate.spec.ts` (en and ar, axe, package refusal); the process panel renders the API view checked in `EvaluationProcessRunTests` |
+

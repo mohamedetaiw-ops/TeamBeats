@@ -30,7 +30,7 @@ public static class DefinitionKinds
 public sealed partial class ProcessEngine
 {
     /// <summary>Definitions published from process models are named <c>process:&lt;model key&gt;</c>.</summary>
-    public const string ModelPrefix = "process:";
+    public const string ModelPrefix = ProcessKeys.ModelPrefix;
 
     /// <summary>Spec 024 section 12: call activities nest at most 10 deep.</summary>
     public const int MaxCallDepth = 10;

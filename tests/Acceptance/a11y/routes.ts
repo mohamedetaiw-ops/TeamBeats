@@ -61,6 +61,7 @@ export const routes: readonly Route[] = [
   { path: "/admin/evaluation/agents/[id]/suite", tier: "detail" },
   { path: "/admin/evaluation/calibration", tier: "other" },
   { path: "/admin/evaluation/compare", tier: "other" },
+  { path: "/admin/evaluation/estate", tier: "other" },
   { path: "/admin/evaluation/outcomes", tier: "other" },
   { path: "/admin/evaluation/production", tier: "other" },
   { path: "/admin/evaluation/review", tier: "other" },

@@ -400,3 +400,56 @@ export const REVIEW_VERDICTS = ["pass", "fail"] as const;
 export const LOCALES = ["en", "ar"] as const;
 export const SEVERITIES = ["warning", "blocking", "critical"] as const;
 export const CLASSIFICATIONS = ["public", "internal", "confidential", "restricted"] as const;
+
+/** An agent in the estate (spec 034 R3): its latest evaluated version against the one before, per metric and locale. */
+export type EstateMetric = { metric: string; locale: string; value: number | null; previous: number | null; delta: number | null; regressed: boolean };
+
+export type EstateAgent = {
+  agentId: string;
+  name: Localized | null;
+  orgUnitId: string;
+  version: number | null;
+  previousVersion: number | null;
+  verdict: string | null;
+  evaluatedAt: string | null;
+  metrics: EstateMetric[];
+  regressed: boolean;
+};
+
+/** A monthly estate benchmark: the mean over agents of their latest run that month, in one locale. */
+export type EstateSeries = { metric: string; locale: string; points: { month: string; value: number; agents: number }[] };
+
+export type EstateTrendsView = { months: string[]; benchmarks: EstateSeries[]; agents: EstateAgent[]; noiseMargin: number };
+
+/** The L4 steps of a process (spec 034 R3): deterministic trajectory checks per step run, per process version. */
+export const PROCESS_STEP_CHECKS = ["step_completed", "scope_held", "no_approval_needed", "within_limit", "no_denials"] as const;
+
+export type ProcessStepEval = {
+  serviceTaskId: string;
+  instanceId: string;
+  elementId: string;
+  agentId: string;
+  agentVersion: number | null;
+  agentRunId: string | null;
+  outcome: "completed" | "failed";
+  reason: string | null;
+  metrics: Record<string, boolean>;
+  passed: boolean;
+  critical: boolean;
+  toolCalls: number;
+  durationMs: number;
+  recordedAt: string;
+};
+
+export type ProcessVersionEval = {
+  version: number;
+  instances: number;
+  closed: number;
+  completedInstances: number;
+  steps: number;
+  passedSteps: number;
+  criticalSteps: number;
+  rates: Record<string, number | null>;
+};
+
+export type ProcessEvalView = { key: string; versions: ProcessVersionEval[]; recent: ProcessStepEval[] };

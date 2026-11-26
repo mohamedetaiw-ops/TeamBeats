@@ -141,3 +141,11 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - Templates 13 to 15 are in `Templates/advanced.json` under `ai.agents.advanced`, with platform suites in the five suite locales. No analytics tool exists yet, so Executive Intelligence uses search, news and pages. Process Automation is not ready without `ai.agents.autonomous`, whatever the agent policy says.
 - The editor offers the tenant's published agents as handoff targets (by agent ID); a template target shows the name of the agent installed from it.
 - Gaps: the target gets only the request the first agent wrote, not the conversation; handoffs are not offered in L4 process tasks, briefings or evaluation runs; there is no picker for template targets in the editor, since platform templates declare those themselves.
+
+## Spec 034 R3: L4 process runs and estate trends (T026 to T028)
+
+- Defaults are in the spec 034 R3 plan. Evaluation migration 0016 adds `process_step_eval` (one row per L4 step run, counts and checks only) and `process_instance_eval` (instances that had an agent task, closed by `ProcessInstanceCompleted` or `ProcessInstanceWithdrawn`).
+- Agents publishes `AgentTaskRunRecorded` in the same transaction as `AgentTaskFinished`, with counts read from its own run steps. Evaluation reads no table of Agents or Workflow. Modeled process keys carry `ProcessKeys.ModelPrefix` in events (now in Workflow.Contracts); the API takes the key without it.
+- Estate trends (`GET /api/v1/evaluation/estate/trends`, `ai.evals.advanced`) reuse the dashboard rule for a version's result: its latest completed run, leaving route and comparison runs out. The noise margin is the platform default (2 points), since repeat runs are not kept per version for every agent.
+- Pages: Estate trends tab under Evaluation, and the agent task evaluation panel on the process model page. The panel shows only when the person reads evaluations of the process's agents.
+- Gaps: L4 steps have deterministic checks only, with no judged answer quality until process datasets exist. An instance outcome that is processed before its step facts is not kept. Estate benchmarks cover the last 12 months.

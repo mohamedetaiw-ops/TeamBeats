@@ -28529,6 +28529,40 @@
         }
       }
     },
+    "/api/v1/evaluation/estate/trends": {
+      "get": {
+        "tags": [
+          "Evaluation"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/evaluation/processes/{key}": {
+      "get": {
+        "tags": [
+          "Evaluation"
+        ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/evaluation/agents/{agentId}/drift": {
       "get": {
         "tags": [

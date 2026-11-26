@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using TeamBeats.Messaging;
+using TeamBeats.Modules.Agents.Contracts;
 using TeamBeats.Modules.Identity.Contracts;
 using TeamBeats.Modules.Workflow.Contracts;
 using TeamBeats.Persistence;
@@ -52,10 +53,10 @@ public sealed class AgentProcessTaskHandler(IServiceScopeFactory scopes, ITenant
         var reason = completed ? null
             : refusal ?? (run!.Outcome == RunOutcomes.LimitReached ? "limit_" + (run.Reason ?? "reached") : run.Outcome ?? "failed");
         reason = reason is { Length: > 100 } ? reason[..100] : reason;
-        if (run is { Outcome: RunOutcomes.LimitReached })
+        var unit = await session.ScalarAsync<Guid?>("select org_unit_id from agents.agent where id = @id", new { id = task.AgentId }, ct);
+        if (run is { Outcome: RunOutcomes.LimitReached } && unit is { } agentUnit)
         {
-            var unit = await session.ScalarAsync<Guid>("select org_unit_id from agents.agent where id = @id", new { id = task.AgentId }, ct);
-            await sp.GetRequiredService<AgentSecurityCenter>().OpenAutomaticAsync("l4_limit", task.AgentId, unit, run.Id, ct);
+            await sp.GetRequiredService<AgentSecurityCenter>().OpenAutomaticAsync("l4_limit", task.AgentId, agentUnit, run.Id, ct);
         }
         await session.ExecAsync(
             """
@@ -70,6 +71,23 @@ public sealed class AgentProcessTaskHandler(IServiceScopeFactory scopes, ITenant
             }, ct);
         await sp.GetRequiredService<IOutbox>().EnqueueAsync(new AgentTaskFinished(task.ServiceTaskId, task.InstanceId,
             completed ? AgentTaskOutcomes.Completed : AgentTaskOutcomes.Failed, completed ? run!.Answer : null, reason, run?.Id), ct);
+        if (unit is { } owner)
+        {
+            // The step's facts for its end to end evaluation (spec 034 R3): counts only, no content.
+            var facts = run is null ? (Calls: 0, Refused: 0, Scope: 0, Approval: 0, Ms: 0) : await session.QuerySingleOrDefaultAsync(
+                """
+                select count(*) filter (where kind = 'tool' and decision <> 'refused')::int,
+                  count(*) filter (where kind = 'tool' and decision = 'refused')::int,
+                  count(*) filter (where reason = 'tool.not_in_process')::int,
+                  count(*) filter (where reason = 'tool.approval_not_available')::int,
+                  coalesce(sum(duration_ms), 0)::int
+                from agents.run_step where run_id = @run
+                """, new { run = run.Id }, r => (Calls: r.GetInt32(0), Refused: r.GetInt32(1), Scope: r.GetInt32(2), Approval: r.GetInt32(3), Ms: r.GetInt32(4)), ct);
+            var version = run?.AgentVersion;
+            await sp.GetRequiredService<IOutbox>().EnqueueAsync(new AgentTaskRunRecorded(task.ServiceTaskId, task.InstanceId, task.DefinitionKey, task.DefinitionVersion,
+                task.ElementId, task.AgentId, version, owner, run?.Id, completed ? AgentTaskOutcomes.Completed : AgentTaskOutcomes.Failed, reason,
+                facts.Calls, facts.Refused, facts.Scope, facts.Approval, facts.Ms, task.MaxMinutes), ct);
+        }
         await session.CommitAsync(ct);
     }
 }
