@@ -53,7 +53,7 @@ Depends on 002 (hierarchy), 004 (authorization), 006 (audit and admin shell), 00
 Depends on 019 (HR fields and data change write-back), 016 (task inbox), 015 (notifications). R3 covers User Stories 9 and 10 and FR-027 to FR-030.
 
 ### Slice 7: Receipt reading for every package (FR-030)
-- [ ] T025 `ai.receipt_reading` on for Workplace; test
+- [x] T025 `ai.receipt_reading` on for Workplace; test
 
 ### Slice 8: Probation and contract milestones (US9, FR-027, FR-028)
 - [ ] T026 [P] Tests: HR and manual dates, review task timing and reminder, outcomes and write-back without the comment, no connection, moved dates, contract alert once, sibling unit refused, entitlement, cross-tenant
