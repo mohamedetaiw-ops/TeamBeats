@@ -219,6 +219,8 @@ public static class Capabilities
     public const string ContentMaxSites = "content.max_sites";
     public const string ContentCampaigns = "content.campaigns";
     public const string ContentAiTranslation = "content.ai_translation";
+    public const string ContentGuestSites = "content.guest_sites";
+    public const string ContentCampaignAutomation = "content.campaign_automation";
     public const string AiAuthoring = "ai.authoring";
     public const string DocsCore = "docs.core";
     public const string DocsControlled = "docs.controlled";

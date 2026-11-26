@@ -50,7 +50,7 @@
   "conflict.content.not_published": "This item is not published.",
   "conflict.content.nothing_to_publish": "There are no unpublished changes.",
   "conflict.content.remind_limit": "You cannot put this announcement off again. Please read and confirm it.",
-  "conflict.content.site_archived": "This site is archived.",
+  "conflict.content.site_archived": "This site is archived. Restore it first.",
   "conflict.content.share_not_published": "Only published content can be shared.",
   "conflict.content.share_restricted": "Only Public or Internal content aimed at everyone can be shared to Slack, because channel members are not checked against the audience.",
   "conflict.directory.no_connection": "Turn on directory sync in the Microsoft 365 connection first",
@@ -3283,5 +3283,11 @@
   "validation.policies.regulator_status": "Choose new, dismissed or actioned.",
   "validation.policies.regulator_policies": "Choose 1 to 20 policies that you manage.",
   "validation.policies.regulator_note": "The note can be up to 2,000 characters.",
-  "conflict.policies.regulator_decided": "Someone already decided on this regulator change."
+  "conflict.policies.regulator_decided": "Someone already decided on this regulator change.",
+  "capability.content.guest_sites": "Sites shared with guest spaces",
+  "capability.content.campaign_automation": "Campaign follow-ups and goals",
+  "validation.content.share_days": "Share for 1 to 365 days.",
+  "validation.content.share_space": "Choose an active space that you own.",
+  "conflict.content.already_shared": "This site is already shared with that space.",
+  "conflict.content.share_revoked": "This share was already ended."
 }
