@@ -14357,7 +14357,12 @@
       "decline": "Decline",
       "sendAnswer": "Send answer",
       "confirmDecline": "Decline",
-      "reportMessage": "Report this message"
+      "reportMessage": "Report this message",
+      "aiTitle": "AI and anonymous posts",
+      "aiAnonymous": "Let AI read anonymous Speak Up posts",
+      "aiAnonymousHint": "Summaries and sentiment trends then include anonymous posts, never with anything about who wrote them.",
+      "aiSaved": "AI setting saved",
+      "saveAi": "Save AI setting"
     },
     "speakUp": {
       "anonymous": "Anonymous",
@@ -14850,6 +14855,15 @@
       "removed": "Mirroring is off.",
       "failed": "That did not work",
       "working": "Working…"
+    },
+    "summary": {
+      "ask": "Summarize",
+      "working": "Summarizing…",
+      "title": "Summary",
+      "note": "Written by AI from what you can read. Check the discussion before you act on it.",
+      "failed": "No summary",
+      "blocked": "Your organization's AI policy does not allow this content to be summarized.",
+      "unavailable": "The AI service is not available right now. Try again later."
     }
   },
   "learning": {

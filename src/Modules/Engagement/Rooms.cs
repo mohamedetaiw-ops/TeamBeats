@@ -18,7 +18,8 @@ public sealed record RoomRequest(Dictionary<string, string>? Names);
 public sealed record RoomMessageRequest(string? Body, IReadOnlyList<Guid>? Mentions);
 
 /// <summary>What the viewer may do in a room; worked out on the server so the page only shows it.</summary>
-public sealed record RoomRights(bool CanWrite, bool CanArchive, bool CanModerate);
+/// <summary>What the reader may do in a room; <see cref="CanSummarize"/> is set on the room itself for a reader with the AI assistant.</summary>
+public sealed record RoomRights(bool CanWrite, bool CanArchive, bool CanModerate, bool CanSummarize = false);
 
 public sealed record RoomView(Guid Id, Guid CommunityId, IReadOnlyDictionary<string, string> Names, IReadOnlyDictionary<string, string> CommunityNames, string Status,
     DateTimeOffset CreatedAt, DateTimeOffset? LastMessageAt, RoomRights Rights);
@@ -134,7 +135,8 @@ public sealed class Rooms(
     public async Task<RoomView> GetAsync(Guid id, CancellationToken ct)
     {
         var (room, s) = await ReadableAsync(id, ct);
-        return View(room, s);
+        var view = View(room, s);
+        return await entitlements.IsEnabledAsync(Capabilities.AiAssistant, ct) ? view with { Rights = view.Rights with { CanSummarize = true } } : view;
     }
 
     public async Task<RoomView> CreateAsync(Guid communityId, RoomRequest request, CancellationToken ct)

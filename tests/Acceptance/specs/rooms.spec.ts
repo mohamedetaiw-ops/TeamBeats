@@ -17,7 +17,7 @@ async function signedIn(tenant: TestTenant, email: string): Promise<APIRequestCo
 /**
  * Spec 023 R3 T017 (US9 scenarios 1 and 2): the administrator opens a discussion room from the community's rooms page;
  * Layla, a member, opens it in her own browser and sees the administrator's message arrive live without reloading,
- * then answers. The rules behind rooms (moderation, mentions, lost access) are covered by RoomTests. In English and
+ * then answers. A member asks for an AI summary of a busy room (US11 scenario 2). The rules behind rooms (moderation, mentions, lost access) are covered by RoomTests. In English and
  * Arabic, with axe. Names are fictional.
  */
 for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
@@ -74,6 +74,26 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await other.getByRole("button", { name: m("engagement.rooms.send") }).click();
       await expect(page.getByRole("list", { name: m("engagement.rooms.messagesLabel") }).getByText("Thanks, noted")).toBeVisible({ timeout: 10_000 });
       await otherContext.close();
+    });
+
+    test("a member summarizes a busy room with AI", async ({ page }, testInfo) => {
+      const admin = await signedIn(tenant, tenant.adminEmail);
+      const created = await admin.post(`/api/v1/engagement/communities/${community}/rooms`, { data: { names: { en: "Busy desk", ar: "مكتب مزدحم" } } });
+      expect(created.status(), await created.text()).toBe(201);
+      const room = ((await created.json()) as { id: string }).id;
+      for (let i = 0; i < 20; i++) {
+        const sent = await admin.post(`/api/v1/engagement/rooms/${room}/messages`, { data: { body: `Ticket ${i} is waiting on parts` } });
+        expect(sent.status(), await sent.text()).toBe(201);
+      }
+      await admin.dispose();
+
+      await signInWithDevForm(page, tenant.key, laylaEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/communities/${community}/rooms/${room}`);
+      await expect(page.getByText(m("engagement.rooms.live"), { exact: true })).toBeVisible();
+      await page.getByRole("button", { name: m("engagement.summary.ask") }).click();
+      await expect(page.getByText(m("engagement.summary.title"), { exact: true })).toBeVisible({ timeout: 15_000 });
+      await expect(page.getByText(m("engagement.summary.note"))).toBeVisible();
+      await expectAccessible(page, testInfo, `rooms-summary-${locale}`);
     });
   });
 }

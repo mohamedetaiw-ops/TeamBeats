@@ -151,3 +151,12 @@
   flex: 1 1 12rem;
   min-inline-size: 0;
 }
+
+/* An AI summary takes the full width under the actions it was asked from (spec 023 R3 FR-031). */
+.engagement-summary {
+  flex-basis: 100%;
+}
+
+.engagement-summary:empty {
+  display: none;
+}

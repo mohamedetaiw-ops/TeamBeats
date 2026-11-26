@@ -37,6 +37,8 @@ public static class EngagementModule
         services.AddSingleton<RoomSignals>();
         services.AddScoped<Rooms>();
         services.AddSingleton<RoomStream>();
+        services.AddScoped<EngagementAiSettings>();
+        services.AddScoped<ThreadSummaries>();
         services.AddMessageHandler<Contracts.PostPublished, Points>("engagement.points_post");
         services.AddMessageHandler<Contracts.PostPublished, Mirrors>("engagement.mirror_post");
         services.AddScoped<Search.Contracts.ISearchSource, EngagementSearchSource>();
@@ -763,6 +765,27 @@ public static class EngagementModule
         {
             var view = await filters.GetAsync(ct);
             response.Headers.ETag = KeywordFilters.ETag(view.Version);
+            return Results.Ok(view);
+        });
+
+        // ---- AI summaries and the anonymous content setting (R3 US11) ----
+
+        root.MapPost("/posts/{id:guid}:summarize", async (Guid id, ThreadSummaries summaries, CancellationToken ct) => Results.Ok(await summaries.PostAsync(id, ct)));
+
+        root.MapPost("/rooms/{id:guid}:summarize", async (Guid id, ThreadSummaries summaries, CancellationToken ct) => Results.Ok(await summaries.RoomAsync(id, ct)));
+
+        root.MapGet("/settings/ai", async (EngagementAiSettings settings, HttpResponse response, CancellationToken ct) =>
+        {
+            var view = await settings.GetAsync(ct);
+            response.Headers.ETag = EngagementAiSettings.ETag(view.Version);
+            return Results.Ok(view);
+        });
+
+        root.MapPut("/settings/ai", async (EngagementAiSettingRequest request, HttpRequest http, EngagementAiSettings settings, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await settings.SetAsync(request, IfMatch(http), ct);
+            await session.CommitAsync(ct);
+            http.HttpContext.Response.Headers.ETag = EngagementAiSettings.ETag(view.Version);
             return Results.Ok(view);
         });
 

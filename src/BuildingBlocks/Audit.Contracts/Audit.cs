@@ -675,6 +675,7 @@ public static class AuditActions
     public const string EngagementRoomArchived = "engagement.room_archived";
     public const string EngagementMirrorSet = "engagement.mirror_set";
     public const string EngagementMirrorRemoved = "engagement.mirror_removed";
+    public const string EngagementAiSettingChanged = "engagement.ai_setting_changed";
 
     // 028
     public const string LearningCoursePublished = "learning.course_published";
@@ -791,7 +792,7 @@ public static class AuditActions
         EngagementContentApproved, EngagementContentHidden, EngagementContentRemoved, EngagementMemberMuted, EngagementMemberUnmuted, EngagementKeywordsChanged, EngagementSpeakUpAnswered, EngagementSpeakUpDeclined,
         EngagementSurveyPublished, EngagementSurveyClosed, EngagementSurveyThresholdChanged, EngagementPointsConfigChanged, EngagementRecognitionCatalogueChanged,
         EngagementAwardOpened, EngagementAwardDecided, EngagementCelebrationSettingsChanged,
-        EngagementRoomCreated, EngagementRoomArchived, EngagementMirrorSet, EngagementMirrorRemoved,
+        EngagementRoomCreated, EngagementRoomArchived, EngagementMirrorSet, EngagementMirrorRemoved, EngagementAiSettingChanged,
         LearningCoursePublished, LearningCourseRetired, LearningPathPublished, LearningAttemptsGranted, LearningAssignmentCreated, LearningAssignmentWithdrawn, LearningEvidenceExported,
         SpacesCreated, SpacesChanged, SpacesArchived, SpacesRestored, SpacesMemberAdded, SpacesMemberRemoved, SpacesOwnerReassigned, SpacesSettingsChanged,
         SpacesTemplateChanged, SpacesEventChanged, SpacesGuestInvited, SpacesGuestExpired,

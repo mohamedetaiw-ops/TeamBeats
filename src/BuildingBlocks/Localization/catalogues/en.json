@@ -3146,5 +3146,8 @@
   "engagement.mirror.notice": "{author} posted in {community}",
   "engagement.mirror.open": "Open in TeamBeats",
   "conflict.engagement.mirror_not_allowed": "Only an open, internal community without a unit or space can be mirrored, because everyone in the channel would see it.",
-  "validation.engagement.teams_channel": "Enter the Teams channel ID. It starts with 19: and ends with @thread.tacv2."
+  "validation.engagement.teams_channel": "Enter the Teams channel ID. It starts with 19: and ends with @thread.tacv2.",
+  "conflict.engagement.ai_anonymous_off": "AI is not allowed to read anonymous posts in your organization.",
+  "conflict.engagement.summary_short": "This conversation is short enough to read. Summaries are for longer threads.",
+  "conflict.engagement.ai_setting_changed": "Someone else changed the AI setting. Reload it and try again."
 }

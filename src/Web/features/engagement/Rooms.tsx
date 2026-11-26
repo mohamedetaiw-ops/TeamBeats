@@ -23,6 +23,7 @@ import {
   type RoomView,
 } from "@/lib/engagement";
 import { MentionPicker, NotReachable } from "./PostCard";
+import { SummaryControl } from "./Summary";
 import { ReportControl, StatusNote } from "./ModerationNotes";
 import "./engagement.css";
 
@@ -235,6 +236,7 @@ export function RoomChat({ initialRoom, initial }: { initialRoom: RoomView; init
       <div className="engagement-row">
         {live === "live" ? <Badge tone="success">{t("live")}</Badge> : live === "connecting" ? <Badge tone="neutral">{t("connecting")}</Badge> : null}
         {room.status === "archived" ? <Badge tone="warning">{t("archived")}</Badge> : null}
+        {room.rights.canSummarize ? <SummaryControl url={`${engagementApi}/rooms/${room.id}:summarize`} /> : null}
         {room.rights.canArchive ? (
           <Button size="sm" variant="quiet" icon="lock" busy={busy} busyLabel={t("working")} onClick={() => void archive()}>
             {t("archive")}

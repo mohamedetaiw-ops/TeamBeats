@@ -27,6 +27,7 @@ import {
   type ReactionCounts,
   type ReactionKind,
 } from "@/lib/engagement";
+import { SummaryControl } from "./Summary";
 import { ReportControl, StatusNote } from "./ModerationNotes";
 import { PostAttachmentList } from "./Attachments";
 
@@ -384,6 +385,7 @@ export function PostCard({
             {post.pinned ? t("post.unpin") : t("post.pin")}
           </Button>
         ) : null}
+        {post.canSummarize ? <SummaryControl url={`${engagementApi}/posts/${post.id}:summarize`} /> : null}
         {post.canReport ? <ReportControl type="post" id={post.id} /> : null}
         {post.canEdit && !editing ? (
           <>

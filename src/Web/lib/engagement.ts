@@ -104,6 +104,7 @@ export type PostView = {
   anonymous: boolean;
   editedByModerator: boolean;
   attachments?: AttachmentView[];
+  canSummarize?: boolean;
 };
 
 export type AttachmentView = { id: string; kind: "image" | "file"; name: string; contentType: string; bytes: number; width: number | null; height: number | null };
@@ -363,7 +364,7 @@ export type RoomView = {
   status: "active" | "archived";
   createdAt: string;
   lastMessageAt: string | null;
-  rights: { canWrite: boolean; canArchive: boolean; canModerate: boolean };
+  rights: { canWrite: boolean; canArchive: boolean; canModerate: boolean; canSummarize?: boolean };
 };
 
 export type RoomMessageView = {
@@ -401,3 +402,9 @@ export type MirrorsView = {
   slackChannels: { id: string; name: string; member: boolean }[];
   teamsAvailable: boolean;
 };
+
+/** An AI summary of a thread or room, or why there is none (spec 023 R3 FR-031). */
+export type ThreadSummaryView = { outcome: "summarized" | "policy_blocked" | "unavailable"; summary: string | null; denial: string | null };
+
+/** Whether AI may read anonymous content, a versioned tenant setting (spec 023 R3 FR-032). */
+export type EngagementAiSettingView = { anonymousContent: boolean; version: number };

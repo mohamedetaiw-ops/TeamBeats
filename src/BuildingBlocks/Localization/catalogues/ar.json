@@ -3146,5 +3146,8 @@
   "engagement.mirror.notice": "نشر {author} في {community}",
   "engagement.mirror.open": "افتح في TeamBeats",
   "conflict.engagement.mirror_not_allowed": "لا يمكن نسخ إلا مجتمع مفتوح وداخلي غير مرتبط بوحدة أو مساحة، لأن كل من في القناة سيراه.",
-  "validation.engagement.teams_channel": "أدخل معرّف قناة Teams. يبدأ بـ 19: وينتهي بـ ‎@thread.tacv2."
+  "validation.engagement.teams_channel": "أدخل معرّف قناة Teams. يبدأ بـ 19: وينتهي بـ ‎@thread.tacv2.",
+  "conflict.engagement.ai_anonymous_off": "لا يُسمح للذكاء الاصطناعي بقراءة المنشورات المجهولة في مؤسستك.",
+  "conflict.engagement.summary_short": "هذه المحادثة قصيرة بما يكفي لقراءتها. الملخصات مخصصة للنقاشات الأطول.",
+  "conflict.engagement.ai_setting_changed": "غيّر شخص آخر إعداد الذكاء الاصطناعي. أعد تحميله وحاول مرة أخرى."
 }

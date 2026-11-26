@@ -58,6 +58,9 @@ public sealed partial class FakeOpenRouter(string apiKey, string basePath, IRead
     /// <summary>The model of the last chat or embedding request, for tests that check routing.</summary>
     public string? LastModel { get; private set; }
 
+    /// <summary>The last user message of every chat call, oldest first, for tests that check what was sent.</summary>
+    public System.Collections.Concurrent.ConcurrentQueue<string> UserPrompts { get; } = new();
+
     public bool Unavailable { get; set; }
 
     /// <summary>Tenant keys (spec 013 FR-020) the fake also accepts, and the key of the last accepted request.</summary>
@@ -151,6 +154,7 @@ public sealed partial class FakeOpenRouter(string apiKey, string basePath, IRead
         var messages = body["messages"]?.AsArray() ?? [];
         var prompt = string.Join("\n", messages.Select(m => Text(m?["content"])));
         var last = messages.LastOrDefault(m => m?["role"]?.GetValue<string>() == "user") is { } u ? Text(u["content"]) : string.Empty;
+        UserPrompts.Enqueue(last);
 
         if (last.Contains("[fake:429]", StringComparison.Ordinal))
         {
