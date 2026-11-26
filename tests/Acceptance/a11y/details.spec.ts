@@ -54,6 +54,7 @@ const finders: Finder[] = [
   { route: "/communities/[id]/posts/[postId]", list: "/communities/[id]" },
   { route: "/communities/hashtags/[tag]", list: "/communities/[id]" },
   { route: "/communities/[id]/albums/[albumId]", list: "/communities/[id]/albums" },
+  { route: "/communities/[id]/rooms/[roomId]", list: "/communities/[id]/rooms" },
   { route: "/communities/surveys/[id]", list: "/communities/surveys" },
   { route: "/learning/courses/[id]", list: "/learning/catalogue" },
   { route: "/learning/manage/courses/[id]", list: "/learning/manage" },
