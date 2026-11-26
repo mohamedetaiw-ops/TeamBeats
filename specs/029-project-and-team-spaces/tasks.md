@@ -26,5 +26,5 @@ Depends on 004, 011, 015, 016, 022, 023, 026. R2, with R3 in the last phase (als
 - [x] T013 [US8] Start dates, estimates, "blocked by" links with loop check, timeline API and page with conflicts and a dates form; tests
 - [x] T014 [US9] Time entries, owner totals and CSV export; tests
 - [x] T015 [US11] Status summaries through 013 from the reader's space only; owner status note can start from it; tests
-- [ ] T016 [US10] Task tracker contract, Planner and Jira Software packs, sync links, two way sync with history; tests with fake trackers
-- [ ] T017 OpenAPI, R3 implementation notes, spec evidence
+- [x] T016 [US10] Task tracker contract, Planner and Jira Software packs, sync links, two way sync with history; tests with fake trackers
+- [x] T017 OpenAPI, R3 implementation notes, spec evidence

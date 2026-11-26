@@ -33,3 +33,22 @@ The spec stays Approved, not Implemented. Everything in its R2 scope is built: p
 | Demo data | Met | `09-spaces.json` in the demo package, checked by `DemoDataSeedTests` |
 
 Known gaps, recorded in the implementation notes: the reduced guest shell waits for spec 026; guests are admitted to the tenant's identity provider by the tenant; events are not sent to Outlook and have no recurrence.
+
+## R3
+
+The R3 rows below cover US8 to US11. Defaults and gaps are in the spec 029 R3 section of `docs/architecture/r3-implementation-notes.md`.
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| FR-019 start dates and "blocked by" links in the same space, at most 20, no loops | Met | `SpaceScheduleTests.Blockers_are_kept_without_loops_and_the_timeline_shows_conflicts` (start after due refused, loop refused with `conflict.spaces.task_loop`, other space refused, viewer refused); `spaces-plan.spec.ts` |
+| FR-020 timeline by start and due date, by milestone, with links, conflicts and a dates form | Met | Same test (conflict when a task starts before its blocker is due, undated tasks listed apart, finishing before a blocker noted); `spaces-plan.spec.ts` (timeline in English and Arabic, dates form on the task page) |
+| FR-021 estimates and time entries; authors change theirs, owners remove any | Met | `SpaceScheduleTests.Members_log_time_authors_change_it_and_owners_see_totals` (1 to 1,440 minutes, no future day, other author refused, owner removes); `spaces-plan.spec.ts` |
+| FR-022 owner totals per person and task for a range, with CSV | Met | Same test (members refused, range over 366 days refused, CSV columns); `spaces-plan.spec.ts` |
+| FR-023 one list linked to one Planner plan or Jira project through a 017 connection | Met | `SpaceSyncTests.A_list_and_a_Jira_project_stay_in_step_...` (unknown project refused, list or project linked twice refused); `A_Planner_plan_syncs_with_etags_...` (Planner connection needs its group); `spaces-plan.spec.ts` (sync page) |
+| FR-024 title, due date, done, assignees by work email and Jira descriptions both ways; later change wins; history | Met | `A_list_and_a_Jira_project_stay_in_step_...` (first sync matches by title and creates on both sides, changes in and out, conflict kept as `space_won`, assignee outside the space named, deleted issue unlinks without deleting); `A_Planner_plan_syncs_with_etags_...` (done column, If-Match etag, assignee removed) |
+| FR-025 a failed or refused change does not block the space and is retried | Met | `A_list_and_a_Jira_project_stay_in_step_...` (Jira down: run `unavailable`, refused: `failed` and `partial`, the scheduled run sends the change afterwards) |
+| FR-026 summaries through 013 from the reader's space only | Met | `SpaceScheduleTests.Status_summaries_use_only_the_readers_space_and_respect_the_ai_policy` (the prompt holds only this space's tasks, not another space's); `spaces-plan.spec.ts` |
+| FR-027 marked as AI generated, policy and outage handled, owners start the note from it | Met | Same test (Confidential blocked by the default policy, gateway down answers `unavailable`, `spaces.status_summarized` audited); `spaces-plan.spec.ts` |
+| Package entitlements (R3) | Met | `Sync_is_for_owners_in_the_package_and_stays_inside_the_tenant` (without `spaces.task_sync` the page says so and linking is refused); summaries need `ai.assistant` |
+| Audit events (R3) | Met | `spaces.sync_linked` and `spaces.sync_unlinked` in `A_list_and_a_Jira_project_stay_in_step_...`; `spaces.status_summarized` in the summary test |
+| Cross-tenant and role denial (R3) | Met | Each R3 class has a case for another tenant; members and viewers cannot manage sync; another tenant's connection is refused as `validation.spaces.sync_connection` |
