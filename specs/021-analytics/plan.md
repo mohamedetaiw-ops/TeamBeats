@@ -39,7 +39,15 @@ Defaults (spec silent):
 - The variant is an earlier immutable release, so an experiment never shows content nobody published.
 - Consent is opt in; the approver must differ from the proposer.
 
+R3 slice 4, **analytics API for customer BI tools (section 12):**
+- Public API routes `GET /api/public/v1/analytics/metrics` (catalogue and minimum group size) and `POST /api/public/v1/analytics/query` (the workspace query), under the delegated scope `analytics:read` and the capability `analytics.api`. The call runs as the person who consented, with their own `analytics.view` coverage, so units, the minimum group size and "other" merging are exactly the workspace's. Only weekly aggregates and breakdowns, never raw events or person keys.
+
+Defaults (spec silent):
+- The scope is delegated only and needs an administrator's consent; an application app cannot hold it, because analytics rights belong to a person's unit coverage.
+- No separate export format: the answer is the workspace JSON, which BI tools read directly; CSV stays the in-app export.
+
 ### R3 tests
+- Slice 4: the API answer equals the workspace answer; an unknown metric is refused; a person without analytics rights, a token without the scope, an application app, an employee's own consent, another tenant and a package without the analytics API are all refused.
 - Slice 3: proposal checks and permissions; approval only by another tenant administrator; only consenting people take part, each in the same arm every time; exposure counted once per person; results hide small arms and need analytics.view; stopping returns everyone to the current release; package and tenant boundaries; the page and preference in English and Arabic with axe.
 - Slice 2: people counted once per surface, an opening without a showing ignored, unknown surfaces dropped, small groups hidden; the assistant and learning owners send `shown`; the dashboard section in English and Arabic with axe.
 - The latest reading for the location with source and times; another location's reading never shows; a tile with a permission is left out for a viewer without it; the tile set is checked (metric once, names in both languages, a known permission, at most 12) and versioned; changes are audited; the package decides; another tenant sees nothing.

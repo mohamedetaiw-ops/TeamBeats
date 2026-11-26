@@ -182,6 +182,7 @@ public static class AnalyticsModule
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });
+        app.MapAnalyticsPublicEndpoints();
         return app;
     }
 }

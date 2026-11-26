@@ -47,6 +47,7 @@ public static class ScopeCatalogue
     public const string TasksRead = "tasks:read";
     public const string EventsSubscribe = "events:subscribe";
     public const string RolesRead = "roles:read";
+    public const string AnalyticsRead = "analytics:read";
 
     public static readonly IReadOnlyList<ScopeDefinition> All =
     [
@@ -67,6 +68,8 @@ public static class ScopeCatalogue
         new(EventsSubscribe, [Capabilities.ApiEventSubscriptions], false, ScopeHolder.Application),
         // Admin APIs beside SCIM (R3): read only (FR-012), for a person acting through an app with their own rights, admin consent only.
         new(RolesRead, [Capabilities.ApiPublic, Capabilities.ApiAdmin], false, ScopeHolder.Delegated),
+        // Spec 021 R3: the analytics API for customer BI tools, with the workspace's aggregation rules; admin consent only.
+        new(AnalyticsRead, [Capabilities.ApiPublic, Capabilities.AnalyticsApi], false, ScopeHolder.Delegated),
     ];
 
     private static readonly Dictionary<string, ScopeDefinition> ByKey = All.ToDictionary(s => s.Key, StringComparer.Ordinal);

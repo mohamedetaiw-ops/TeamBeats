@@ -17171,7 +17171,8 @@
       "requests_submit": "Submit service requests for you",
       "tasks_read": "See the tasks in your inbox",
       "events_subscribe": "Receive notifications of changes",
-      "roles_read": "See roles and who holds them, with your own rights"
+      "roles_read": "See roles and who holds them, with your own rights",
+      "analytics_read": "Read analytics figures you can see, as weekly totals for groups only"
     },
     "admin": {
       "title": "API and MCP access",

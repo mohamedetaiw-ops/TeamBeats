@@ -946,6 +946,54 @@
         }
       }
     },
+    "/api/public/v1/analytics/metrics": {
+      "get": {
+        "tags": [
+          "Public: analytics"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicMetricCatalogue"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/analytics/query": {
+      "post": {
+        "tags": [
+          "Public: analytics"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MetricQuery"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/public/v1/people": {
       "get": {
         "tags": [
@@ -1485,6 +1533,250 @@
               "string"
             ],
             "format": "uuid"
+          }
+        }
+      },
+      "MetricFilters": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "to": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "unitId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "subtree": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "location": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "channel": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "locale": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "membershipType": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "siteId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "contentType": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "MetricGroup": {
+        "required": [
+          "group",
+          "names",
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "group": {
+            "type": "string"
+          },
+          "names": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "value": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "MetricInfo": {
+        "required": [
+          "key",
+          "measure",
+          "filters",
+          "groupBy"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "measure": {
+            "type": "string"
+          },
+          "filters": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "groupBy": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "MetricQuery": {
+        "required": [
+          "metric",
+          "filters",
+          "groupBy"
+        ],
+        "type": "object",
+        "properties": {
+          "metric": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "filters": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/MetricFilters"
+              }
+            ]
+          },
+          "groupBy": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "MetricResult": {
+        "required": [
+          "metric",
+          "groupBy",
+          "from",
+          "to",
+          "minGroupSize",
+          "suppressed",
+          "total",
+          "weeks",
+          "groups"
+        ],
+        "type": "object",
+        "properties": {
+          "metric": {
+            "type": "string"
+          },
+          "groupBy": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "from": {
+            "type": "string",
+            "format": "date"
+          },
+          "to": {
+            "type": "string",
+            "format": "date"
+          },
+          "minGroupSize": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "suppressed": {
+            "type": "boolean"
+          },
+          "total": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "weeks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MetricWeek"
+            }
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MetricGroup"
+            }
+          }
+        }
+      },
+      "MetricWeek": {
+        "required": [
+          "week",
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "week": {
+            "type": "string",
+            "format": "date"
+          },
+          "value": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -2065,6 +2357,29 @@
               "string"
             ],
             "format": "uuid"
+          }
+        }
+      },
+      "PublicMetricCatalogue": {
+        "required": [
+          "minGroupSize",
+          "metrics"
+        ],
+        "type": "object",
+        "properties": {
+          "minGroupSize": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "metrics": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MetricInfo"
+            }
           }
         }
       },
@@ -3362,6 +3677,9 @@
     },
     {
       "name": "Public: assistant"
+    },
+    {
+      "name": "Public: analytics"
     },
     {
       "name": "Public: people"
