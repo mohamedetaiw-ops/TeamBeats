@@ -195,8 +195,10 @@ public sealed partial class FakeOpenRouter(string apiKey, string basePath, IRead
             // A policy change summary (spec 025 section 11) names how many clauses change and lists each one.
             // A quiz draft (spec 028 US8) writes the number of questions asked for, in every language asked for, cycling through
             // the three kinds; a lesson text with [fake:badquestion] puts first one single choice question with two correct options.
+            // A policy change impact (spec 025 R3 FR-023) ties every changed clause to every listed control and policy, and also to a
+            // control and a policy it was not given, which the service must drop.
             // Skill suggestions (spec 010 R3 FR-034) suggest each listed skill one of whose names appears in a quoted item, citing those items.
-            reply = properties?["expertise"] is not null ? Expertise(last) : properties?["questions"] is not null ? QuizDraft(last) : properties?["points"] is not null ? ChangeSummary(last) : properties?["sentiments"] is not null ? Sentiments(last) : properties?["figures"] is not null ? Summary(last)
+            reply = properties?["impacts"] is not null ? Impacts(last) : properties?["expertise"] is not null ? Expertise(last) : properties?["questions"] is not null ? QuizDraft(last) : properties?["points"] is not null ? ChangeSummary(last) : properties?["sentiments"] is not null ? Sentiments(last) : properties?["figures"] is not null ? Summary(last)
                 : properties?["texts"] is not null ? Translation(last) : properties?["safe"] is not null ? JsonSerializer.Serialize(new { safe = !Attached(messages).Any(t => t.Contains("[fake:unsafe]", StringComparison.Ordinal)) })
                 : properties?["merchant"] is not null ? Receipt(messages) : judging
                 ? JsonSerializer.Serialize(last.Contains("[fake:judge:fail]", StringComparison.Ordinal)
@@ -257,6 +259,21 @@ public sealed partial class FakeOpenRouter(string apiKey, string basePath, IRead
             choices = new[] { new { index = 0, message = new { role = "assistant", content = reply, tool_calls = toolCalls }, finish_reason = toolCalls is null ? finish : "tool_calls" } },
             usage,
         });
+    }
+
+    private static string Impacts(string request)
+    {
+        var node = JsonNode.Parse(request);
+        var controls = (node?["controls"] as JsonArray ?? []).Select(c => c?["key"]?.GetValue<string>()).Where(k => k is not null).Append("fake:UNKNOWN-1").ToArray();
+        var policies = (node?["policies"] as JsonArray ?? []).Select(p => p?["id"]?.GetValue<string>()).Where(k => k is not null).Append(Guid.Empty.ToString()).ToArray();
+        var impacts = (node?["changes"] as JsonArray ?? []).Select(c => new
+        {
+            clause = c?["clause"]?.GetValue<string>(),
+            controls,
+            policies,
+            reason = $"Fake reason for clause {c?["clause"]?.GetValue<string>()}.",
+        }).ToList();
+        return JsonSerializer.Serialize(new { summary = $"Fake impact: {impacts.Count} clauses reach {controls.Length - 1} controls and {policies.Length - 1} policies.", impacts });
     }
 
     private static string ChangeSummary(string request)

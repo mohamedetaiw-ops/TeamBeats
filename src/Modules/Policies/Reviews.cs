@@ -52,7 +52,11 @@ public sealed record ReviewView(
     PolicyPerson? Reviewer,
     DateTimeOffset? CompletedAt,
     Guid? DraftVersionId,
-    DateTimeOffset? NextReviewAt);
+    DateTimeOffset? NextReviewAt,
+    ReviewCause? Cause = null);
+
+/// <summary>The regulator change a review was started for (spec 025 R3 US10 scenario 3); the link only when it is https.</summary>
+public sealed record ReviewCause(Guid RegulatorChangeId, string Title, string? Link);
 
 /// <summary>What the current user may do on the review page: answer the open review, and retire directly as a compliance officer.</summary>
 public sealed record ReviewRights(bool Complete, bool Retire, bool Revise);
@@ -79,13 +83,14 @@ internal sealed record ReviewRow(
     Guid? Reviewer,
     DateTimeOffset? CompletedAt,
     Guid? DraftVersionId,
-    DateTimeOffset? NextReviewAt)
+    DateTimeOffset? NextReviewAt,
+    Guid? RegulatorChangeId)
 {
-    public const string Columns = "id, policy_id, version, due_at, opened_at, overdue_at, outcome, note, reviewer_user_id, completed_at, draft_version_id, next_review_at";
+    public const string Columns = "id, policy_id, version, due_at, opened_at, overdue_at, outcome, note, reviewer_user_id, completed_at, draft_version_id, next_review_at, regulator_change_id";
 
     public static ReviewRow Read(NpgsqlDataReader r) => new(r.GetGuid(0), r.GetGuid(1), r.GetInt32(2), r.GetFieldValue<DateTimeOffset>(3), r.GetFieldValue<DateTimeOffset>(4),
         r.Get<DateTimeOffset?>("overdue_at"), r.Get<string>("outcome"), r.Get<string>("note"), r.Get<Guid?>("reviewer_user_id"), r.Get<DateTimeOffset?>("completed_at"),
-        r.Get<Guid?>("draft_version_id"), r.Get<DateTimeOffset?>("next_review_at"));
+        r.Get<Guid?>("draft_version_id"), r.Get<DateTimeOffset?>("next_review_at"), r.Get<Guid?>("regulator_change_id"));
 }
 
 /// <summary>
@@ -175,7 +180,10 @@ public sealed class PolicyReviews(
 
     private async Task<ReviewView> ViewAsync(ReviewRow r, CancellationToken ct) =>
         new(r.Id, r.Version, r.DueAt, r.OpenedAt, r.OverdueAt, r.Outcome, r.Note, r.Reviewer is { } u ? await register.PersonAsync(u, ct) : null, r.CompletedAt,
-            r.DraftVersionId, r.NextReviewAt);
+            r.DraftVersionId, r.NextReviewAt, r.RegulatorChangeId is { } change
+                ? await session.QuerySingleOrDefaultAsync("select id, title, link from policies.regulator_change where id = @change", new { change },
+                    c => new ReviewCause(c.GetGuid(0), c.GetString(1), c.IsDBNull(2) ? null : c.GetString(2)), ct)
+                : null);
 
     /// <summary>The owner and the compliance officers of the policy see and answer its reviews.</summary>
     private async Task<(PolicyRow Policy, bool Manages)> ReviewerAsync(Guid id, bool forUpdate, CancellationToken ct)

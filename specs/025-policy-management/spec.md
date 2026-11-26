@@ -135,6 +135,24 @@ Ahmed asks the assistant "Can I accept a gift from a supplier?". The assistant a
 2. **Given** an auditor guest space (spec 026), **Then** the compliance officer can share the pack read-only with an expiry date.
 3. **Given** a control from the control library (spec 026) such as "A.5.10 Acceptable use of information", **Then** the policies mapped to it and their status are listed.
 
+### User Story 9: Know what a policy change touches (Priority: P3, R3)
+
+Nadia, a policy owner, is revising the Information Security Policy. Before she submits, she opens the impact of the change: 1,240 people attested the version in force and will need to attest again, two open exemptions and three comprehension questions sit on changed clauses, and the AI points out that clause 4.2 also bears on control A.8.12 and on the Acceptable Use Policy.
+
+**Acceptance scenarios:**
+1. **Given** a working version with changes against the version in force, **When** someone who may compare the versions opens its impact, **Then** they see the changed clauses, how many people attested the version in force, the open exemptions, the comprehension questions on changed clauses, the linked controls and related policies, and whether new joiners attest to it.
+2. **Given** the impact view, **When** they ask for the AI assessment, **Then** it names, per changed clause, which of the policy's linked controls and related policies the change may affect and why, labelled as AI-generated, and names nothing outside those lists.
+3. **Given** the AI policy keeps this policy's classification away from models, **Then** the facts still show and the assessment says it is not available.
+
+### User Story 10: Follow what regulators publish (Priority: P3, R3)
+
+Rami, a compliance officer, connects the national data protection authority's update feed. When the authority publishes new guidance, Rami is told, reads it in Regulator changes, links it to the Privacy Policy and starts a review of that policy for its owner.
+
+**Acceptance scenarios:**
+1. **Given** a regulator feed connection (spec 017) enabled by an administrator, **Then** new items are read every 6 hours and listed in Regulator changes for compliance officers, and they are told once per read that found new items.
+2. **Given** a new item, **When** a compliance officer marks it as not relevant, **Then** it leaves the open list and the decision is kept with who made it.
+3. **Given** a new item, **When** a compliance officer links it to policies and starts reviews, **Then** each linked policy without an open review gets a review task for its owner (US5) naming the regulator change, and the item shows as actioned.
+
 ### Edge cases and exception flows
 - A policy applies to an org unit that is deactivated: campaigns exclude it and the register flags the audience as needing update.
 - A user on long leave during a campaign: compliance can pause their deadline with a reason.
@@ -164,6 +182,10 @@ Ahmed asks the assistant "Can I accept a gift from a supplier?". The assistant a
 - **FR-016 / POL-016**: Evidence packs MUST be generated in the background in PDF and CSV, audited, and shareable to guest auditors with expiry.
 - **FR-017 / POL-017**: New joiners MUST get attestation tasks for policies flagged "onboarding required" through the onboarding journey of spec 022.
 - **FR-018 / POL-018**: Policy pages MUST be indexed for search with clause anchors, and superseded versions MUST be excluded from default search results.
+- **FR-022 / POL-019**: *(R3)* The impact of a working version MUST show, for people who may compare versions: the changed clauses, the number of people who attested the version in force, open exemptions, comprehension questions on changed clauses, linked controls, related policies and the onboarding flag.
+- **FR-023 / POL-020**: *(R3)* The AI impact assessment MUST go through the AI Gateway with the policy's classification, MUST name only controls and policies from the lists it was given, MUST be labelled as AI-generated, and MUST be kept per working version and locale until the draft changes.
+- **FR-024 / POL-021**: *(R3)* Regulator change feeds MUST come through a spec 017 connector, MUST keep only the item's id, title, link, date and summary, and MUST be read at most every 6 hours per connection.
+- **FR-025 / POL-022**: *(R3)* Compliance officers MUST be able to mark a regulator change as not relevant or link it to policies and start their reviews; every decision MUST be audited.
 - **FR-019**: The policy register MUST follow DLS-079: below 640px each policy is a stacked card with its name, status, owner and next review date, and no text breaks inside a word. Acceptance: at 390px the register shows every policy as a readable card with no horizontal page scroll.
 - **FR-020**: My policies MUST open with a status summary (spec 036 DLS-103, DLS-109): "You are up to date" with the date of the last acknowledgement, or the policies waiting for the reader, each with its key changes, its version and one action to read and acknowledge; then recently updated policies with what changed. An acknowledgement gives a receipt naming the policy and version.
 - **FR-021**: The policy register MUST open with what needs attention (reviews overdue or due within 30 days) before the full list, hide the status column while every listed policy shares one status and say it once above the table, support keyboard sorting, and use the filter toolbar (spec 036 DLS-106). The policy reader uses the reading column with a sticky "On this page" list and a scoped "Ask about this policy" action (spec 014 FR-027).
@@ -190,6 +212,8 @@ Ahmed asks the assistant "Can I accept a gift from a supplier?". The assistant a
 | Comprehension result | Product | Confidential | Same as attestation | Yes |
 | Exemption | Product | Confidential | 7 years after expiry | Yes |
 | Evidence pack | Product (object storage) | Confidential | 90 days, then deleted | Yes |
+| Impact assessment (R3) | Product | Per policy | Life of the policy version, like the change summary | No |
+| Regulator change (R3) | Regulator feed | Public | 2 years | No |
 
 ## 9. Package entitlements
 
@@ -201,6 +225,9 @@ Ahmed asks the assistant "Can I accept a gift from a supplier?". The assistant a
 | `policy.exemptions` | off | on | on |
 | `policy.evidence` (control mapping, evidence packs) | off | off | on |
 | `ai.policy_qa` (counts against AI quota) | on | on | on |
+| `policy.regulator_feeds` (regulator change feeds, R3) | off | off | on |
+
+The change impact (R3) comes with `policy.core`; its AI assessment counts against the AI quota like the change summary.
 
 ## 10. UX, localization and accessibility
 - My policies page: action needed, accepted, all policies, with search and categories.
@@ -213,11 +240,13 @@ Ahmed asks the assistant "Can I accept a gift from a supplier?". The assistant a
 - Answers quote clauses verbatim where possible and always cite; no-evidence answers say so (constitution VII).
 - AI may suggest a plain-language summary of a policy for the owner to approve; the approved summary is shown above the clauses and labelled.
 - AI comparison between versions (R2) produces a change summary for approvers; it does not replace the compare view.
+- The AI impact assessment (R3) receives the changed clauses, the linked controls with their titles and the related policies with their names as quoted data; any control or policy in its answer that was not given is dropped. Attestation counts, people and exemption details are never sent.
 
 ## 12. Integrations and events
 - Publishes: `PolicyPublished`, `PolicySuperseded`, `PolicyAttested`, `AttestationOverdue`, `PolicyReviewDue`, `ExemptionApproved`, `ExemptionExpired`.
 - Consumes: `UserProvisioned`, `OrganizationMembershipChanged`, `UserDeprovisioned`, onboarding events from spec 022, approval results from spec 024.
 - Optional push of attestation completion to HR (spec 019) or a GRC tool through the connector framework (spec 017).
+- Regulator change feeds (R3) through the `regulator_feed` connector pack of spec 017.
 
 ## 13. Audit, telemetry and analytics
 
@@ -229,12 +258,15 @@ Ahmed asks the assistant "Can I accept a gift from a supplier?". The assistant a
 | policy.exemption_requested / approved / expired | audit | policy, person or unit, approver |
 | policy.evidence_exported / shared | audit | policies, range, actor, guest space |
 | policy.review_completed | audit | policy, outcome, reviewer |
+| policy.impact_assessed | audit | policy, working version, outcome |
+| policy.regulator_change_decided | audit | change, decision, linked policies, actor |
 | policy.viewed, policy.qa_asked, policy.qa_no_answer | analytics | policy, unit (aggregated) |
 
 ## 14. Security and abuse cases
 - Forging attestations: records are written only by the attesting user's own session, never by API on behalf of another user, never by delegates or admins. The only exception is the paper import (R2): offline attestations are imported with source "paper", the importer recorded and the scanned evidence attached, and they are reported apart from online attestations. Bulk "mark as attested" does not exist.
 - Reading comprehension answers to embarrass staff: restricted to compliance officers, access audited.
 - The assistant leaking restricted policy names: retrieval is permission filtered before generation.
+- A regulator feed carrying instructions or scripts: items are kept as plain text and shown as text, and the link is shown only when it is https.
 
 ## 15. Non-functional requirements
 - Compliance view for a policy with 100,000 people loads p95 under 2 seconds.
@@ -259,6 +291,8 @@ Ahmed asks the assistant "Can I accept a gift from a supplier?". The assistant a
 | KNO-007 | FR-010, FR-011, US4 |
 | UC-04 | FR-006, US2 |
 | UC-06 | US4 |
+| R3 change impact | FR-022, FR-023, US9 |
+| R3 regulator change feeds | FR-024, FR-025, US10 |
 
 ## Review checklist
 - [x] No implementation details

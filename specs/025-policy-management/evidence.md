@@ -29,3 +29,14 @@ R1 and the R2 scope (User Stories 5 to 8, FR-012 to FR-017, the AI change summar
 | Section 7 cross-tenant and boundary cases | Met | `PolicyApprovalTests.A_unit_policy_stays_inside_its_unit_...`, `PolicyCampaignTests.Without_unlimited_campaigns_...`, `PolicyComplianceTests.Org_scoped_officers_...`, `PolicyQuestionTests` (another tenant cannot scope to a policy or read the conversation; an Egypt employee never sees the Gulf policy) |
 | Section 9 `policy.core`, `policy.campaigns`, `ai.policy_qa` | Met | `PolicyCampaignTests.Without_unlimited_campaigns_one_is_open_at_a_time_...`; `ai.policy_qa` is demanded for a policy-scoped conversation and decides the "Ask about this policy" entry (`rights.ask`), and is on in every package, so its off path is not testable today |
 | Pages (T011) | Met | `policies.spec.ts`, `policy-authoring.spec.ts` (en and ar, axe) |
+
+## R3
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| FR-022 change impact facts for the people who compare versions | Met | `PolicyImpactTests.Approvers_see_the_facts_of_a_change_and_one_kept_ai_assessment_of_what_it_touches`, `policy-impact.spec.ts` (en and ar, axe) |
+| FR-023 AI impact assessment through the AI Gateway, only listed controls and policies, kept and audited | Met | `PolicyImpactTests` (both), `policy-impact.spec.ts` |
+| FR-024 regulator feeds through a spec 017 connector, five fields kept, read at most every 6 hours | Met | `RegulatorChangeTests.Feeds_are_read_every_six_hours_and_officers_dismiss_or_link_changes_and_start_reviews`, `RegulatorChangeTests.Plain_text_drops_tags_and_links_must_be_https` |
+| FR-025 not relevant, or link and start reviews, every decision audited | Met | `RegulatorChangeTests.Feeds_are_read_every_six_hours_...` |
+| Section 9 `policy.regulator_feeds` | Met | `RegulatorChangeTests.Without_regulator_feeds_in_the_package_there_is_nothing_to_read_or_decide` |
+| Pages (T026) | Met | `policy-impact.spec.ts` (en and ar, axe) |

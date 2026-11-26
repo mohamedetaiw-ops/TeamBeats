@@ -88,6 +88,9 @@ public static class IntegrationsModule
         services.AddScoped<Occupancy.OccupancyRestPack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Occupancy.OccupancyRestPack>());
         services.AddScoped<IOccupancyReadings, Occupancy.OccupancyReadings>();
+        services.AddScoped<Regulators.RegulatorFeedPack>();
+        services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Regulators.RegulatorFeedPack>());
+        services.AddScoped<IRegulatorFeeds, Regulators.RegulatorFeeds>();
         services.AddScoped<Ticketing.Camunda8Pack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Ticketing.Camunda8Pack>());
         services.AddScoped<Mcp.McpServerPack>();

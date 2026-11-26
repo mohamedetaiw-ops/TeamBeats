@@ -213,3 +213,17 @@
 .policies-line {
   display: block;
 }
+
+/* Regulator changes (spec 025 R3 US10): one card per item. */
+.policies-regulator-list {
+  display: grid;
+  gap: var(--tb-space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.policies-regulator-list form {
+  display: grid;
+  gap: var(--tb-space-md);
+}

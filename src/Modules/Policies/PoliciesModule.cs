@@ -24,6 +24,8 @@ public static class PoliciesModule
         services.AddScoped<TeamBeats.Modules.Agents.Contracts.IAgentTool, GetPolicyTool>();
         services.AddScoped<PolicyApprovals>();
         services.AddScoped<PolicyChangeSummaries>();
+        services.AddScoped<PolicyImpacts>();
+        services.AddScoped<PolicyRegulatorChanges>();
         services.AddScoped<PolicyTaskSource>();
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<PolicyTaskSource>());
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, PolicyTaskSource>("policies.notify_approval");
@@ -146,6 +148,16 @@ public static class PoliciesModule
         root.MapPost("/{id:guid}/compare/summary", async (Guid id, PolicyChangeSummaries summaries, IDbSession session, CancellationToken ct) =>
         {
             var view = await summaries.SummarizeAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        // Change impact (spec 025 R3 US9): the facts, and the AI assessment on request.
+        root.MapGet("/{id:guid}/impact", async (Guid id, PolicyImpacts impacts, CancellationToken ct) => Results.Ok(await impacts.GetAsync(id, ct)));
+
+        root.MapPost("/{id:guid}/impact/assessment", async (Guid id, PolicyImpacts impacts, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await impacts.AssessAsync(id, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });
@@ -277,6 +289,24 @@ public static class PoliciesModule
             CancellationToken ct) =>
         {
             var view = await evidence.ShareAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapGet("/regulator-changes", async (string? status, PolicyRegulatorChanges changes, CancellationToken ct) => Results.Ok(await changes.ListAsync(status, ct)));
+
+        root.MapPost("/regulator-changes/{changeId:guid}:dismiss", async (Guid changeId, RegulatorDecisionRequest? request, PolicyRegulatorChanges changes, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var view = await changes.DismissAsync(changeId, request ?? new RegulatorDecisionRequest(null), ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapPost("/regulator-changes/{changeId:guid}:link", async (Guid changeId, RegulatorLinkRequest request, PolicyRegulatorChanges changes, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var view = await changes.LinkAsync(changeId, request, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });
