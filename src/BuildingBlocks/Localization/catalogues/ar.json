@@ -3296,5 +3296,8 @@
   "notifications.template.content.campaign.goal_reached.title": "بلغت الحملة هدفها",
   "notifications.template.content.campaign.goal_reached.body": "بلغت حملة في موقعك هدفها. لن تُرسل خطواتها المتبقية.",
   "validation.content.event": "اختر فعالية منشورة للشركة من التقويم.",
-  "validation.content.event_type": "عنصر الفعالية وحده يرتبط بفعالية في التقويم."
+  "validation.content.event_type": "عنصر الفعالية وحده يرتبط بفعالية في التقويم.",
+  "validation.experience.behavior_consent_mode": "اختر الموافقة المسبقة أو إمكانية الرفض.",
+  "validation.experience.behavior_unavailable": "التخصيص حسب الاستخدام ليس ضمن خطتك.",
+  "validation.experience.behavior_choice": "حدد ما إذا كنت توافق أو ترفض."
 }

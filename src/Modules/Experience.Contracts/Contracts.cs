@@ -244,3 +244,17 @@ public interface IShellCommands
 {
     IEnumerable<ShellCommand> Commands();
 }
+
+/// <summary>
+/// The signed-in person's own behavioral signals (spec 008 R3, FR-033), for other modules that rank or suggest from use
+/// (spec 012 personalized ranking, spec 014 proactive suggestions, spec 021 evaluation). Nothing is answered unless the
+/// package has the feature, the tenant turned it on and the person's consent allows it.
+/// </summary>
+public interface IBehaviorSignals
+{
+    /// <summary>Whether behavioral personalization applies to the signed-in person now.</summary>
+    Task<bool> ActiveAsync(CancellationToken ct);
+
+    /// <summary>The person's use in the last 90 days, by key, for one kind (<c>page</c>); empty when not active.</summary>
+    Task<IReadOnlyDictionary<string, int>> UsageAsync(string kind, CancellationToken ct);
+}

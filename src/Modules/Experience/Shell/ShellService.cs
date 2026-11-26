@@ -77,7 +77,8 @@ public sealed record Crumb(string Label, string Href);
 public sealed record ResolveResult(string Kind, string? PageSlug, string? RedirectTo, Guid? NodeId, IReadOnlyList<Crumb> Breadcrumbs,
     IReadOnlyList<NavLink> SectionMenu, IReadOnlyList<Crumb> Recovery);
 
-public sealed record QuickNavItem(string Label, string Href, string? Owner);
+/// <summary>A quick navigation match; <see cref="Ranked"/> marks one moved up by the person's own use (spec 008 R3, FR-033).</summary>
+public sealed record QuickNavItem(string Label, string Href, string? Owner, bool Ranked = false);
 
 /// <summary>
 /// The shell, menus and information architecture of spec 008 (R1). The shell and every menu publish on their own and
@@ -96,7 +97,8 @@ public sealed partial class ShellService(
     IEntitlementService entitlements,
     AudienceEvaluator audiences,
     ITenantMemberships tenantMemberships,
-    Sharing.OrgSharing sharing)
+    Sharing.OrgSharing sharing,
+    IBehaviorSignals behavior)
 {
     public const string TenantScope = "tenant";
     public static readonly IReadOnlyList<string> Regions =
@@ -567,6 +569,14 @@ public sealed partial class ShellService(
             {
                 result.Add(new QuickNavItem(page.Slug, "/p/" + page.Slug, null));
             }
+        }
+        // With behavioral personalization on for the person, their most used matches come first and say so.
+        var usage = await behavior.UsageAsync(Personalization.BehaviorPersonalization.PageKind, ct);
+        if (usage.Count > 0)
+        {
+            result = result.Select((item, index) => (Item: item, Index: index, Uses: usage.GetValueOrDefault(item.Href)))
+                .OrderByDescending(x => x.Uses).ThenBy(x => x.Index)
+                .Select(x => x.Uses > 0 ? x.Item with { Ranked = true } : x.Item).ToList();
         }
         return result.Take(20).ToList();
     }

@@ -3296,5 +3296,8 @@
   "notifications.template.content.campaign.goal_reached.title": "Campaign goal reached",
   "notifications.template.content.campaign.goal_reached.body": "A campaign at your site reached its goal. Its remaining steps will not be sent.",
   "validation.content.event": "Choose a published company event of the calendar.",
-  "validation.content.event_type": "Only an event item links a calendar event."
+  "validation.content.event_type": "Only an event item links a calendar event.",
+  "validation.experience.behavior_consent_mode": "Choose opt-in or opt-out.",
+  "validation.experience.behavior_unavailable": "Personalization from use is not part of your plan.",
+  "validation.experience.behavior_choice": "Say whether you agree or decline."
 }

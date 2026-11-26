@@ -20,10 +20,10 @@ public sealed record ExportedRecent(string Path, string Label, DateTimeOffset Vi
 /// personal layouts as operations over pages (by page id, never page content), favorites and recent visits.
 /// </summary>
 public sealed record PreferencesFile(string Format, int Version, DateTimeOffset ExportedAt, ExportedProfile? Profile, IReadOnlyList<ExportedLayout> Layouts,
-    IReadOnlyList<ExportedFavorite> Favorites, IReadOnlyList<ExportedRecent> Recents);
+    IReadOnlyList<ExportedFavorite> Favorites, IReadOnlyList<ExportedRecent> Recents, IReadOnlyList<ExportedSignal>? Signals = null);
 
 /// <summary>Export and reset of the person's own preferences (spec 008 FR-034, T022). Nothing here reads another person's rows.</summary>
-public sealed class PreferenceExport(IDbSession session, ITenantContext context, IClock clock)
+public sealed class PreferenceExport(IDbSession session, ITenantContext context, IClock clock, BehaviorPersonalization behavior)
 {
     public const string Format = "teambeats.preferences";
     public const int Version = 1;
@@ -49,7 +49,7 @@ public sealed class PreferenceExport(IDbSession session, ITenantContext context,
         var recents = await session.QueryAsync(
             "select path, label, visited_at from experience.recent_visit where user_id = @user order by visited_at desc",
             new { user }, r => new ExportedRecent(r.GetString(0), r.GetString(1), r.GetFieldValue<DateTimeOffset>(2)), ct);
-        return new PreferencesFile(Format, Version, clock.UtcNow, profile, layouts, favorites, recents);
+        return new PreferencesFile(Format, Version, clock.UtcNow, profile, layouts, favorites, recents, await behavior.ExportAsync(user, ct));
     }
 
     /// <summary>Resets the preference profile on every device and every personal layout; favorites and recents stay (FR-034).</summary>
