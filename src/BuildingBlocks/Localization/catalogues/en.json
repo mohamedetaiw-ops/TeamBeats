@@ -3312,5 +3312,8 @@
   "validation.experience.experiment_state": "The experiment can no longer be changed this way.",
   "validation.experience.experiment_own": "Another administrator must approve an experiment you proposed.",
   "validation.experience.experiment_choice": "Choose whether you take part in experiments.",
-  "validation.experience.experiment_unavailable": "Experiments are not part of your plan."
+  "validation.experience.experiment_unavailable": "Experiments are not part of your plan.",
+  "validation.analytics.benchmarks_choice": "Choose whether your organization takes part in benchmarks.",
+  "validation.analytics.benchmarks_package": "Benchmarks are not in your package.",
+  "capability.analytics.benchmarks": "Benchmarks with other organizations"
 }

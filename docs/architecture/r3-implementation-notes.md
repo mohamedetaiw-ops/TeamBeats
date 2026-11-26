@@ -182,6 +182,12 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 ## Spec 021 R3 slice 4: analytics API (T025)
 
 - Analytics module: `AnalyticsPublicEndpoints` maps `GET /api/public/v1/analytics/metrics` and `POST /api/public/v1/analytics/query` on the public API group, demanding `analytics.api` and the scope `analytics:read` (PublicApi.Contracts `ScopeCatalogue`, delegated only, admin consent, capabilities `api.public` and `analytics.api`). Both call `Workspace` as the consenting person, so coverage and small group rules are unchanged. Scope label `apiAccess.scope.analytics_read` in English and Arabic. Tests: `PublicAnalyticsApiTests` (2).
+## Spec 021 R3 slice 5: benchmarks across tenants (T026)
+
+- Analytics migration 0008: `analytics.policy.benchmarks` and `benchmarks_week`, the cross tenant table `analytics.benchmark_contribution` (no RLS, no grant to tb_app, listed in `docs/architecture/rls-exceptions.md`) and three security definer functions. Entitlements migration 0060 adds `analytics.benchmarks` for Enterprise and Government.
+- `AnalyticsBenchmarks` (routes `GET/PUT /api/v1/analytics/benchmarks`) and `ContributeAsync` in `AnalyticsMaintenanceWorker`, once per week per tenant. Members are the tenant's active memberships (`ITenantMemberships`); active people are the whole tenant row of `analytics.adoption_weekly`.
+- Web: Analytics > Benchmarks (`/analytics/benchmarks`) with the switch for tenant administrators and the figures table. Tests: `BenchmarkTests` (2), `benchmarks.spec.ts`.
+- Gap: the figures are for the last complete week only; no trend across weeks yet.
 ## Spec 019 R3 slice 1: Oracle HCM and SAP SuccessFactors packs (T015)
 - The named packs are presets, not new adapters: the stored settings are HR REST settings, so every HR path (sync, live read, payslips, leave, data change) keeps one implementation. The preset decides the paths and paging; a tenant may override single fields. Recorded default: the first entry of each Oracle list (names, emails, work relationships, assignments, managers) is used, as Oracle lists the primary first; a suspended assignment counts as active.
 - SuccessFactors returns active users only unless asked, so the preset filters on `status in 't','f','T','F'` to see leavers (FR-020). Its `/Date(ms)/` values are read by `HrMapping` for every HR pack.

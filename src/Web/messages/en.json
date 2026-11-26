@@ -1034,7 +1034,8 @@
         "policy_regulator_feeds": "Regulator change feeds",
         "content_guest_sites": "Sites shared with guest spaces",
         "content_campaign_automation": "Campaign follow-ups and goals",
-        "ai_assistant_suggestions": "Assistant suggestions"
+        "ai_assistant_suggestions": "Assistant suggestions",
+        "analytics_benchmarks": "Benchmarks with other organizations"
       },
       "searchLabel": "Search capabilities",
       "searchPlaceholder": "Search by name",
@@ -9752,7 +9753,8 @@
       "engagementLink": "Engagement",
       "hrLink": "HR",
       "securityLink": "Security trends",
-      "experimentsLink": "Experiments"
+      "experimentsLink": "Experiments",
+      "benchmarksLink": "Benchmarks"
     },
     "campaigns": {
       "workspace": "Analytics",
@@ -10757,6 +10759,38 @@
       "arm": {
         "control": "Current release",
         "variant": "Release tried"
+      }
+    },
+    "benchmarks": {
+      "title": "Benchmarks",
+      "workspace": "Analytics",
+      "intro": "Compare your organization with others that chose to take part. Figures are combined across organizations and no organization is ever named.",
+      "denied": "You cannot see benchmarks",
+      "deniedHint": "Benchmarks are for people who can see analytics for the whole organization.",
+      "error": "Benchmarks could not be loaded",
+      "errorHint": "Try again in a moment.",
+      "setting": "Taking part",
+      "switch": "Take part in benchmarks",
+      "switchHint": "Your organization gives one weekly figure per measure, already combined for the whole organization. Comparisons show once {count} organizations take part. Turning this off removes every figure you gave.",
+      "switchFailed": "The choice could not be saved.",
+      "unavailable": "Benchmarks are not in your package",
+      "unavailableHint": "Ask your provider about the benchmarks feature.",
+      "off": "Your organization does not take part",
+      "offHint": "Only organizations that take part see benchmarks.",
+      "figures": "Last complete week",
+      "figuresHint": "Quartiles show once at least {count} organizations gave a figure. Hidden figures are marked.",
+      "hidden": "Hidden",
+      "column": {
+        "metric": "Measure",
+        "week": "Week of",
+        "own": "Your organization",
+        "tenants": "Organizations",
+        "lower": "Lower quartile",
+        "median": "Median",
+        "upper": "Upper quartile"
+      },
+      "metric": {
+        "weekly_active_share": "Members active in the week"
       }
     }
   },

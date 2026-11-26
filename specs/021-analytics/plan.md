@@ -46,7 +46,19 @@ Defaults (spec silent):
 - The scope is delegated only and needs an administrator's consent; an application app cannot hold it, because analytics rights belong to a person's unit coverage.
 - No separate export format: the answer is the workspace JSON, which BI tools read directly; CSV stays the in-app export.
 
+R3 slice 5, **benchmarks across anonymized tenants with consent (section 7, open question default opt in only):**
+- A tenant administrator (`tenant.settings_manage`) opts the tenant in on Analytics > Benchmarks (`GET/PUT /api/v1/analytics/benchmarks`, audited `analytics.benchmarks_changed`), under the new capability `analytics.benchmarks`. While it takes part, the analytics maintenance job gives one figure per metric for the last complete week, aggregated for the whole tenant before it leaves the tenant: the share of active members who were active (`weekly_active_share`). Tenants with fewer members than the minimum group size give nothing.
+- Figures sit in `analytics.benchmark_contribution`, which the application role cannot read. They change only through the security definer functions `analytics.contribute_benchmark` and `analytics.withdraw_benchmarks` under the caller's tenant context, and are read only through `analytics.benchmark_figures`, which answers a tenant that takes part with the number of tenants and, from five tenants, the quartiles rounded to one decimal. No tenant is ever named or listed. Opting out deletes every figure the tenant gave.
+- Viewers: whole tenant `analytics.view` holders and tenant administrators.
+
+Defaults (spec silent):
+- Give to get: only a tenant that takes part sees benchmarks.
+- Five tenants at least before quartiles show, fixed in the database function so no setting lowers it; the count of tenants that take part is shown.
+- One metric first (weekly active share), since it is size neutral and exists in every package; more metrics are added to the same list.
+- Enterprise and Government only, like the other R3 analytics features.
+
 ### R3 tests
+- Slice 5: nothing given or shown before opting in; employees refused; four tenants show the count and own figure without quartiles, five show quartiles; the figures table is unreadable for the application role; opting out removes the tenant's figure; the package decides; the choice is checked; the job gives once a week; the page in English and Arabic with axe.
 - Slice 4: the API answer equals the workspace answer; an unknown metric is refused; a person without analytics rights, a token without the scope, an application app, an employee's own consent, another tenant and a package without the analytics API are all refused.
 - Slice 3: proposal checks and permissions; approval only by another tenant administrator; only consenting people take part, each in the same arm every time; exposure counted once per person; results hide small arms and need analytics.view; stopping returns everyone to the current release; package and tenant boundaries; the page and preference in English and Arabic with axe.
 - Slice 2: people counted once per surface, an opening without a showing ignored, unknown surfaces dropped, small groups hidden; the assistant and learning owners send `shown`; the dashboard section in English and Arabic with axe.

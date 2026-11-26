@@ -3312,5 +3312,8 @@
   "validation.experience.experiment_state": "لم يعد ممكنًا تغيير التجربة بهذه الطريقة.",
   "validation.experience.experiment_own": "يجب أن يوافق مسؤول آخر على تجربة اقترحتها.",
   "validation.experience.experiment_choice": "اختر ما إذا كنت تشارك في التجارب.",
-  "validation.experience.experiment_unavailable": "التجارب ليست ضمن خطتك."
+  "validation.experience.experiment_unavailable": "التجارب ليست ضمن خطتك.",
+  "validation.analytics.benchmarks_choice": "اختر ما إذا كانت مؤسستك تشارك في المقارنات المرجعية.",
+  "validation.analytics.benchmarks_package": "المقارنات المرجعية غير متاحة في باقتك.",
+  "capability.analytics.benchmarks": "المقارنات المرجعية مع مؤسسات أخرى"
 }

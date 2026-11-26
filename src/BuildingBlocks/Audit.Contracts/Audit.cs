@@ -740,6 +740,7 @@ public static class AuditActions
 
     // 021
     public const string AnalyticsPrivacySettingChanged = "analytics.privacy_setting_changed";
+    public const string AnalyticsBenchmarksChanged = "analytics.benchmarks_changed";
     public const string AnalyticsEstimatesChanged = "analytics.estimates_changed";
     public const string AnalyticsKpiTileConfigured = "analytics.kpi_tile_configured";
     public const string AnalyticsExportRequested = "analytics.export_requested";

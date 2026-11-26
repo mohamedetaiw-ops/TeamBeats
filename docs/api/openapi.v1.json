@@ -32209,6 +32209,38 @@
         }
       }
     },
+    "/api/v1/analytics/benchmarks": {
+      "get": {
+        "tags": [
+          "Analytics"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Analytics"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BenchmarksRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/analytics/experiments/{id}": {
       "get": {
         "tags": [
@@ -38929,6 +38961,20 @@
             "type": [
               "null",
               "string"
+            ]
+          }
+        }
+      },
+      "BenchmarksRequest": {
+        "required": [
+          "enabled"
+        ],
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": [
+              "null",
+              "boolean"
             ]
           }
         }

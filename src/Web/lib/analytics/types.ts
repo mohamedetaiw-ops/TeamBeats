@@ -365,3 +365,16 @@ export type AreaView = {
 
 /** Where something was ranked or suggested for a person (spec 021 R3, FR-024). */
 export type RecommendationSurface = "search" | "assistant" | "learning";
+
+/** Spec 021 R3 benchmarks: the tenant's own figure and, from the minimum number of tenants, quartiles across them. */
+export type BenchmarkFigure = {
+  metric: string;
+  week: string;
+  own: number | null;
+  tenants: number;
+  lower: number | null;
+  median: number | null;
+  upper: number | null;
+};
+
+export type BenchmarksView = { available: boolean; enabled: boolean; canChange: boolean; minTenants: number; figures: BenchmarkFigure[] };

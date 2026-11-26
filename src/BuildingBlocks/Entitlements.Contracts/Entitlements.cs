@@ -162,6 +162,8 @@ public static class Capabilities
     public const string AnalyticsExperience = "analytics.experience";
     public const string AnalyticsExperiments = "analytics.experiments";
     public const string AnalyticsApi = "analytics.api";
+    /// <summary>Spec 021 R3: benchmarks across anonymized tenants that opted in (Enterprise and Government).</summary>
+    public const string AnalyticsBenchmarks = "analytics.benchmarks";
     public const string AnalyticsSentiment = "analytics.sentiment";
     public const string DeploymentOnPrem = "deployment.on_prem";
     public const string ExperiencePageBuilder = "experience.page_builder";
