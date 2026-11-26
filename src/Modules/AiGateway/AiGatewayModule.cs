@@ -27,6 +27,7 @@ public static class AiGatewayModule
         services.AddScoped<AiBudgets>();
         services.AddScoped<OrgPolicies>();
         services.AddScoped<PrivateEndpoints>();
+        services.AddScoped<ProviderKeys>();
         services.AddScoped<UsageReports>();
         services.AddScoped<UsageRetention>();
         services.AddScoped<EvaluatorTokens>();
@@ -184,6 +185,30 @@ public static class AiGatewayModule
         ai.MapDelete("/private-endpoints/{id:guid}", async (Guid id, PrivateEndpoints endpoints, IDbSession session, CancellationToken ct) =>
         {
             await endpoints.DeleteAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        // Spec 013 R3 (FR-020): the tenant's own provider key, in installs that allow it.
+        ai.MapGet("/provider-keys/{provider}", async (string provider, ProviderKeys keys, CancellationToken ct) => Results.Ok(await keys.GetAsync(provider, ct)));
+
+        ai.MapPut("/provider-keys/{provider}", async (string provider, ProviderKeyRequest request, ProviderKeys keys, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await keys.PutAsync(provider, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        ai.MapPost("/provider-keys/{provider}/test", async (string provider, ProviderKeys keys, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await keys.TestAsync(provider, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        ai.MapDelete("/provider-keys/{provider}", async (string provider, ProviderKeys keys, IDbSession session, CancellationToken ct) =>
+        {
+            await keys.DeleteAsync(provider, ct);
             await session.CommitAsync(ct);
             return Results.NoContent();
         });

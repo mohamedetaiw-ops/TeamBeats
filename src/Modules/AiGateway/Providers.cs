@@ -56,6 +56,12 @@ public interface IModelProvider
     /// <summary>False when the installation cannot reach the provider by design (egress blocked, no key configured).</summary>
     bool Reachable { get; }
 
+    /// <summary>
+    /// True when a tenant's own key (spec 013 FR-020) makes the provider reachable for that tenant even without a platform
+    /// key. Never true where the install blocks egress.
+    /// </summary>
+    bool AcceptsTenantKey => false;
+
     Task<ProviderReply> ChatAsync(ProviderChat request, CancellationToken ct);
 
     IAsyncEnumerable<ProviderStreamPart> StreamAsync(ProviderChat request, CancellationToken ct);

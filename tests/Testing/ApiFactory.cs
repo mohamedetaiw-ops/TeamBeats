@@ -46,6 +46,12 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
     /// <summary>A tenant's private OpenAI-compatible endpoint (spec 013 US6).</summary>
     public FakeOpenRouter PrivateModels { get; } = FakeOpenRouter.Private();
 
+    /// <summary>The install's own model server (spec 013 FR-021); tests that play an air-gapped install point Ai:Local at it.</summary>
+    public FakeOpenRouter LocalModels { get; } = new(LocalModelKey, "/v1", ["llama-local", "bge-local"]);
+
+    public const string LocalModelKey = "fictional-local-model-key";
+    public const string LocalModelUrl = "https://llm.install.example/v1";
+
     public FakeGotenberg Gotenberg { get; } = new();
 
     public FakeTika Tika { get; } = new();
@@ -92,6 +98,8 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
         builder.UseSetting(TeamBeats.Persistence.TikaTextRecognizer.UrlKey, FakeTika.BaseUrl);
         builder.UseSetting(TeamBeats.Modules.AiGateway.OpenRouter.OpenRouterProvider.ApiKeySetting, FakeOpenRouter.ApiKey);
         builder.UseSetting(TeamBeats.Modules.AiGateway.OpenRouter.OpenRouterProvider.TimeoutSetting, "2");
+        // Spec 013 FR-020: the test install allows tenant provider keys; a test turns it off to play a shared install.
+        builder.UseSetting(TeamBeats.Modules.AiGateway.ProviderKeys.AllowedSetting, "true");
         builder.UseSetting(TeamBeats.Modules.AiGateway.DebugLogProtector.KeySetting, AiLogKey);
         builder.UseSetting(TeamBeats.Modules.AiGateway.EvaluatorTokens.EnabledSetting, "true");
         builder.ConfigureTestServices(services =>
@@ -123,6 +131,7 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
             services.AddHttpClient(TeamBeats.Persistence.TikaTextRecognizer.ClientName).ConfigurePrimaryHttpMessageHandler(() => Tika);
             services.AddHttpClient(TeamBeats.Modules.AiGateway.OpenRouter.OpenRouterProvider.ClientName).ConfigurePrimaryHttpMessageHandler(() => OpenRouter);
             services.AddHttpClient(TeamBeats.Modules.AiGateway.OpenAiCompatible.PrivateEndpointProvider.ClientName).ConfigurePrimaryHttpMessageHandler(() => PrivateModels);
+            services.AddHttpClient(TeamBeats.Modules.AiGateway.OpenAiCompatible.LocalModelProvider.ClientName).ConfigurePrimaryHttpMessageHandler(() => LocalModels);
             services.AddHttpClient(TeamBeats.Primitives.SafeHttp.ClientName).ConfigurePrimaryHttpMessageHandler(() => Rest);
             services.AddHttpClient(TeamBeats.Modules.Integrations.WebPush.WebPushClient.ClientName).ConfigurePrimaryHttpMessageHandler(() => Push);
             services.AddHttpClient(TeamBeats.Modules.Tenancy.Domains.DohTxtLookup.ClientName).ConfigurePrimaryHttpMessageHandler(() => Dns);

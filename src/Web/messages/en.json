@@ -4066,6 +4066,10 @@
         "install_private_addresses_blocked": {
           "title": "Connectors kept off your internal network",
           "why": "Connectors cannot reach private addresses unless your IT team allows them for a reason, such as an internal key service."
+        },
+        "install_ai_air_gapped": {
+          "title": "AI kept inside your network",
+          "why": "This installation is air-gapped for AI: only models it hosts itself and your private endpoints are used, and no shared model provider is reachable."
         }
       },
       "region": "Hosting region: {region}. Your data at rest, backups and search indexes stay in this region.",
@@ -7021,7 +7025,8 @@
       "sovereign": {
         "title": "Keep on private endpoints",
         "intro": "Content of these classifications goes only to your enabled private endpoints. If none can take it, the call fails instead of using a shared provider. A classification can be added only when an endpoint that may take it passed its test in the last 24 hours."
-      }
+      },
+      "airGapped": "This installation is air-gapped. Only the models it hosts in your network and your private endpoints are offered; no shared model provider is reachable."
     },
     "routing": {
       "title": "Routing rules",
@@ -7368,6 +7373,29 @@
         "confidential": "Confidential",
         "restricted": "Restricted"
       }
+    },
+    "providerKey": {
+      "title": "Your own OpenRouter key",
+      "intro": "This installation lets your organization pay for OpenRouter with its own key. Store the key in the secret manager and enter its reference here. Calls use it only after a test passes; until then the platform key is used.",
+      "secretRef": "Secret reference",
+      "secretRefHint": "The reference of the key in your secret manager. The key itself never reaches this page.",
+      "save": "Save reference",
+      "test": "Test the key",
+      "remove": "Remove",
+      "working": "Working",
+      "saved": "Reference saved. Test the key to start using it.",
+      "testPassed": "The key works. OpenRouter calls now use it.",
+      "testFailed": "The test failed, so OpenRouter calls keep the platform key.",
+      "removed": "Reference removed. OpenRouter calls use the platform key.",
+      "inUse": "In use",
+      "notInUse": "Not in use",
+      "status": "Status",
+      "lastTest": "Last test",
+      "passedAt": "Passed {when}",
+      "failedAt": "Failed {when}",
+      "neverTested": "Not tested yet",
+      "failed": "Something went wrong. Try again.",
+      "readOnly": "You can see this setting but not change it."
     }
   },
   "search": {
@@ -10329,7 +10357,8 @@
             "install_production_mode": "Production mode",
             "install_database_tls": "Encrypted database connection",
             "install_durable_messaging": "Durable message queue",
-            "install_private_addresses_blocked": "Connectors kept off your internal network"
+            "install_private_addresses_blocked": "Connectors kept off your internal network",
+            "install_ai_air_gapped": "AI kept inside your network"
           }
         }
       }

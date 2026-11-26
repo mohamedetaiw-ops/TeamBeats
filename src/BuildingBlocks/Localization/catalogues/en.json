@@ -3097,5 +3097,12 @@
   "experience.component.google_my_mail.props.top": "Messages to show",
   "experience.component.google_my_mail.props.view": "Starting view",
   "experience.component.google_my_mail.props.view.all": "All mail",
-  "experience.component.google_my_mail.props.view.focused": "Primary"
+  "experience.component.google_my_mail.props.view.focused": "Primary",
+  "validation.ai.provider_key_secret": "Choose a secret of this organization from the secret manager.",
+  "conflict.ai.provider_keys_not_offered": "This installation does not take organization provider keys. The platform key is used.",
+  "ai.provider_key.checks.secret_missing": "The secret manager has no secret under this reference.",
+  "ai.provider_key.checks.no_adapter": "No adapter can test this provider.",
+  "ai.provider_key.checks.rejected": "OpenRouter refused the key.",
+  "ai.provider_key.checks.unreachable": "OpenRouter did not answer.",
+  "ai.provider_key.checks.egress_blocked": "This installation cannot reach OpenRouter by design."
 }

@@ -29,7 +29,8 @@ internal sealed record CallRecord(
     bool Partial,
     bool PlatformCharged,
     IReadOnlyList<AiMessage>? Messages = null,
-    string? Answer = null);
+    string? Answer = null,
+    bool TenantKey = false);
 
 /// <summary>
 /// Writes call records (FR-011) in a transaction of their own as each call ends, so a caller that rolls back, or a
@@ -50,9 +51,9 @@ public sealed class UsageRecorder(IServiceScopeFactory scopes, ITenantContext co
             await session.ExecAsync(
                 """
                 insert into ai.usage_record (tenant_id, id, at, unit_id, user_id, use_case, agent_id, agent_version, model, model_requested, provider,
-                  input_tokens, output_tokens, latency_ms, cost, decision, denial, classification, fallback, partial, charged_to, correlation_id)
+                  input_tokens, output_tokens, latency_ms, cost, decision, denial, classification, fallback, partial, charged_to, correlation_id, key_owner)
                 values (platform.current_tenant_id(), @id, @at, @unit, @user, @useCase, @agent, @agentVersion, @model, @requested, @provider,
-                  @input, @output, @latency, @cost, @decision, @denial, @classification, @fallback, @partial, @charged, @correlation)
+                  @input, @output, @latency, @cost, @decision, @denial, @classification, @fallback, @partial, @charged, @correlation, @keyOwner)
                 """,
                 new
                 {
@@ -62,6 +63,7 @@ public sealed class UsageRecorder(IServiceScopeFactory scopes, ITenantContext co
                     decision = call.Denial is null ? "served" : "denied", denial = call.Denial,
                     classification = call.Classification is { } c ? Classifications.Key(c) : null, fallback = call.Fallback, partial = call.Partial,
                     charged = call.PlatformCharged ? "platform" : "tenant", correlation = Correlation.Id,
+                    keyOwner = call.TenantKey ? "tenant" : "platform",
                 },
                 CancellationToken.None);
             if (call.Denial is null && call.Messages is not null && call.Classification is { } level && call.Model is not null)

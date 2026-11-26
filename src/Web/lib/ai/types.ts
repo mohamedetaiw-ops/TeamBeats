@@ -58,6 +58,8 @@ export type ModelPolicyView = {
   policy: PolicyDocument;
   effectiveRoutes: Record<string, string[]>;
   pending: RouteChange | null;
+  /** Spec 013 FR-021: the install is air-gapped, so only hosted models and private endpoints are offered. */
+  airGapped: boolean;
 };
 
 export type PolicySaveResult = { applied: boolean; policy: ModelPolicyView; routeChange: RouteChange | null };
@@ -216,3 +218,15 @@ export type PrivateEndpoint = {
 };
 
 export type PrivateEndpointsView = { editable: boolean; readOnlyReason: string | null; endpoints: PrivateEndpoint[] };
+
+/** A tenant's own provider key (spec 013 FR-020): the secret reference and its last test, never the key. */
+export type ProviderKeyView = {
+  offered: boolean;
+  editable: boolean;
+  provider: string;
+  secretRef: string | null;
+  lastTestAt: string | null;
+  lastTestPassed: boolean | null;
+  inUse: boolean;
+  setAt: string | null;
+};

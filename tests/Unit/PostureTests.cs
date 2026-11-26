@@ -58,6 +58,15 @@ public sealed class PostureTests
         Assert.Equal(["install_production_mode", "install_database_tls", "install_durable_messaging", "install_private_addresses_blocked"], weak.Select(c => c.Key));
     }
 
+    [Fact]
+    public void An_air_gapped_install_says_so_as_a_passed_check()
+    {
+        // Spec 013 R3 FR-021: shown only where the install is air-gapped for AI.
+        var gapped = InstallationPosture.Evaluate(Config(("Ai:AirGapped", "true")), "Production");
+        Assert.Equal(PostureService.Passed, gapped.Single(c => c.Key == "install_ai_air_gapped").State);
+        Assert.DoesNotContain(InstallationPosture.Evaluate(Config(("Ai:AirGapped", "false")), "Production"), c => c.Key == "install_ai_air_gapped");
+    }
+
     [Theory]
     [InlineData("Host=/var/run/postgresql;Database=teambeats", true)]
     [InlineData("Host=localhost;Database=teambeats", true)]

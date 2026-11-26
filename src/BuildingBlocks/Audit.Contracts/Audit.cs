@@ -553,6 +553,10 @@ public static class AuditActions
     public const string AiEndpointTested = "ai.endpoint_tested";
     public const string AiEndpointEnabled = "ai.endpoint_enabled";
     public const string AiEndpointDisabled = "ai.endpoint_disabled";
+    // Spec 013 R3 (FR-020): a tenant's own provider key in dedicated and on-premises installs.
+    public const string AiProviderKeySet = "ai.provider_key_set";
+    public const string AiProviderKeyTested = "ai.provider_key_tested";
+    public const string AiProviderKeyRemoved = "ai.provider_key_removed";
     public const string AiUsageExported = "ai.usage_exported";
 
     // 012

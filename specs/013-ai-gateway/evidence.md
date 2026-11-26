@@ -29,3 +29,11 @@ The spec stays Approved, not Implemented. R1 covers User Stories 1 to 3, 4 (basi
 | SC-001 | Met | As FR-007 |
 | SC-002 usage question in under 5 minutes | Met by design | The usage view groups by provider, unit and period with cost: `ai-governance.spec.ts` |
 | SC-003 switch to a private endpoint without code change | R2 | Waits for the private endpoint adapter |
+
+## R3
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| FR-020 tenant provider keys in dedicated and on-premises installs | Met | `AiProviderKeyTests` (untested key unused, tenant key after a passed test, `key_owner`, removal, cross-tenant, shared install refused, no platform key, egress blocked); `ai-governance.spec.ts` "own OpenRouter key" with axe in English and Arabic |
+| FR-021 air-gapped model hosting | Met | `AiAirGappedTests` (shared providers hidden and never called, hosted models for Restricted, sovereign rule met by hosted models, hosted server down gives `provider_unavailable`, Restricted refused for shared providers); `PostureTests.An_air_gapped_install_says_so_as_a_passed_check` |
+| US6 scenarios 5 and 6 | Met | As FR-020 and FR-021 |

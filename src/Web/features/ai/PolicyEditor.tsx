@@ -94,6 +94,11 @@ export function PolicyEditor({ catalogue, initial }: { catalogue: CatalogueEntry
           {t(view.readOnlyReason === "ai.policy.read_only_package" ? "readOnly.package" : "readOnly.permission")}
         </p>
       ) : null}
+      {view.airGapped ? (
+        <p className="notice" data-testid="ai-air-gapped">
+          {t("airGapped")}
+        </p>
+      ) : null}
       <p>{t(view.source === "platform" ? "source.platform" : "source.tenant", { version: view.version })}</p>
 
       <section className="ai-section" aria-labelledby="ai-catalogue-title">
