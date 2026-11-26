@@ -4,11 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
 import { Alert } from "@/components/ui/Alert";
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { FormField, SelectField, TextAreaField } from "@/components/ui/FormField";
 import { Progress } from "@/components/ui/Status";
 import { StateView } from "@/components/ui/StateView";
-import { call, send, spacesApi, statusValues, taskHref, type MilestoneView, type SpaceOverview, type SpaceView } from "@/lib/spaces";
+import { call, send, spacesApi, statusValues, taskHref, type MilestoneView, type SpaceOverview, type SpaceView, type StatusSummary } from "@/lib/spaces";
 import { DueBadge, StatusBadge } from "./parts";
 import "./spaces.css";
 import { Widget } from "@/components/ui/Widget";
@@ -27,6 +28,8 @@ export function Overview({ space, initial }: { space: SpaceView; initial: SpaceO
   const [milestoneDue, setMilestoneDue] = useState("");
   const [messages, setMessages] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const [summary, setSummary] = useState<StatusSummary | null>(null);
+  const [summarizing, setSummarizing] = useState(false);
   const url = `${spacesApi}/${space.id}`;
 
   async function setSpaceStatus() {
@@ -37,6 +40,16 @@ export function Overview({ space, initial }: { space: SpaceView; initial: SpaceO
     setMessages([]);
     setNote("");
     setOverview(result.value);
+  }
+
+  // R3 US11: a summary written through the AI Gateway from this space only. It is shown, marked, and kept only if an owner saves it as a note.
+  async function summarize() {
+    setSummarizing(true);
+    const result = await call<StatusSummary>(() => send(`${url}/status-summary`, "POST"), t("failed"));
+    setSummarizing(false);
+    if (!result.ok) return setMessages(result.messages);
+    setMessages([]);
+    setSummary(result.value);
   }
 
   async function addMilestone() {
@@ -81,6 +94,35 @@ export function Overview({ space, initial }: { space: SpaceView; initial: SpaceO
           ) : (
             <p className="spaces-meta">{t("noStatus")}</p>
           )}
+          <div className="spaces-row">
+            <Button icon="spark" variant="secondary" size="sm" busy={summarizing} busyLabel={t("summarizing")} onClick={() => void summarize()}>
+              {t("summarize")}
+            </Button>
+          </div>
+          {summary?.outcome === "summarized" && summary.summary ? (
+            <section className="spaces-form" aria-label={t("summaryTitle")} data-testid="space-status-summary">
+              <div className="spaces-row">
+                <strong>{t("summaryTitle")}</strong>
+                <Badge tone="info" icon="spark">{t("aiGenerated")}</Badge>
+              </div>
+              <p>
+                <bdi>{summary.summary}</bdi>
+              </p>
+              <p className="spaces-meta">{t("summaryHint", { count: summary.tasks })}</p>
+              {overview.canSetStatus ? (
+                <div className="spaces-row">
+                  <Button size="sm" onClick={() => setNote(summary.summary ?? "")}>
+                    {t("useSummary")}
+                  </Button>
+                </div>
+              ) : null}
+            </section>
+          ) : null}
+          {summary && summary.outcome !== "summarized" ? (
+            <Alert tone="warning" title={t(summary.outcome === "policy_blocked" ? "summaryBlockedTitle" : "summaryUnavailableTitle")} live>
+              {t(summary.outcome === "policy_blocked" ? "summaryBlocked" : "summaryUnavailable")}
+            </Alert>
+          ) : null}
           {overview.canSetStatus ? (
             <form
               className="spaces-form"

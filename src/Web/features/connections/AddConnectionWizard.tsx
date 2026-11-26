@@ -187,6 +187,8 @@ function setupHeading(kind: ConnectionType): { title: string; intro: string } {
       return { title: "add.title", intro: "add.intro" };
     case "servicenow":
     case "jira_service_management":
+    case "tasks_planner":
+    case "tasks_jira":
     case "camunda8":
     case "mcp_server":
       return { title: `ticketing.${kind}.addTitle`, intro: `ticketing.${kind}.addIntro` };
@@ -250,7 +252,7 @@ export function SetupStep({ kind, catalogue, webhookEvents }: { kind: Connection
   let form: ReactNode;
   if (kind === "microsoft365") form = <Microsoft365SetupForm catalogue={catalogue} submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;
   else if (isTicketing(kind))
-    form = <ConnectionSettingsForm authTypes={TICKETING_KINDS[kind].auth} desk={TICKETING_KINDS[kind].desk} submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;
+    form = <ConnectionSettingsForm authTypes={TICKETING_KINDS[kind].auth} desk={TICKETING_KINDS[kind].desk} group={TICKETING_KINDS[kind].group} submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;
   else if (kind === "slack") form = <SlackSettingsForm submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;
   else if (kind === "sms") form = <SmsSettingsForm submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;
   else if (kind === "clock_import") form = <ClockSettingsForm submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;

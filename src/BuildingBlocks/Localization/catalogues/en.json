@@ -3194,5 +3194,22 @@
   "notifications.template.learning.session.seat.title": "You have a seat for {course}",
   "notifications.template.learning.session.seat.body": "A seat came free and is now yours. The session starts at {start}. Where: {place}.",
   "notifications.template.learning.session.cancelled.title": "A session of {course} was cancelled",
-  "notifications.template.learning.session.cancelled.body": "The session at {start} will not take place. Open the course to book another one."
+  "notifications.template.learning.session.cancelled.body": "The session at {start} will not take place. Open the course to book another one.",
+  "validation.spaces.task_dates": "The start date must be on or before the due date.",
+  "validation.spaces.task_estimate": "Give an estimate between 1 minute and 10,000 hours.",
+  "validation.spaces.task_blocker": "Choose another task of this space.",
+  "validation.spaces.task_blocker_count": "A task can wait for at most 20 other tasks.",
+  "conflict.spaces.task_loop": "That link would make these tasks wait for each other in a loop.",
+  "validation.spaces.time_day": "Choose a day from the last year, no later than today.",
+  "validation.spaces.time_minutes": "Give the time spent, from 1 minute to 24 hours.",
+  "validation.spaces.time_note": "Keep the note to 500 characters.",
+  "validation.spaces.time_range": "Choose a range of up to one year, with the start before the end.",
+  "authz.denied.spaces_time_entry": "Only the person who logged this time can change it. Space owners can remove it.",
+  "validation.spaces.sync_list": "Choose a task list of this space.",
+  "validation.spaces.sync_connection": "Choose a Planner or Jira connection your administrator set up.",
+  "validation.spaces.sync_container": "Choose a plan or project from this connection.",
+  "conflict.spaces.sync_unavailable": "The tracker did not answer. Try again later.",
+  "conflict.spaces.sync_linked": "This list or this plan is already linked. Unlink it first.",
+  "validation.tasks.planner_group": "Enter the Microsoft 365 group ID that owns the plans.",
+  "capability.spaces.task_sync": "Planner and Jira sync of task lists"
 }

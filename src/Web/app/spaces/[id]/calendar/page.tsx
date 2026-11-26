@@ -46,7 +46,7 @@ export default async function SpaceCalendarPage({ params, searchParams }: { para
       />
       <main id="main" className="page">
         <PageHeader title={t("calendarTitle")} eyebrow={space.data.name} icon="calendar"
-          nav={<SpaceNav id={id} current="calendar" settings={space.data.rights.owns || space.data.rights.manages} files={!!space.data.libraryId} discussion={!!space.data.communityId} />} />
+          nav={<SpaceNav id={id} current="calendar" settings={space.data.rights.owns || space.data.rights.manages} owns={space.data.rights.owns} files={!!space.data.libraryId} discussion={!!space.data.communityId} />} />
         {calendar?.ok ? (
           <TeamCalendar key={calendar.data.from} spaceId={id} initial={calendar.data} today={today} />
         ) : (

@@ -27,6 +27,10 @@ public static class SpacesModule
         services.AddScoped<SpaceTasks>();
         services.AddScoped<SpaceMilestones>();
         services.AddScoped<SpaceCalendar>();
+        services.AddScoped<SpaceSchedule>();
+        services.AddScoped<SpaceTime>();
+        services.AddScoped<SpaceSummaries>();
+        services.AddScoped<SpaceSync>();
         services.AddScoped<SpaceGuests>();
         services.AddScoped<IGuestInvitationSource>(sp => sp.GetRequiredService<SpaceGuests>());
         services.AddScoped<Contracts.ISpaceGuestReview>(sp => sp.GetRequiredService<SpaceGuests>());
@@ -205,6 +209,21 @@ public static class SpacesModule
             return Results.NoContent();
         });
 
+        // R3 US11: a status summary through the AI Gateway, from this space only. Nothing is stored, but the request is audited.
+        space.MapPost("/status-summary", async (Guid id, SpaceSummaries summaries, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await summaries.SummarizeAsync(id, ct), ct));
+
+        // R3 US10: a task list kept in step with a Planner plan or a Jira project, for owners. Runs also come every 10 minutes from the worker.
+        space.MapGet("/sync", async (Guid id, SpaceSync sync, CancellationToken ct) => Results.Ok(await sync.GetAsync(id, ct)));
+        space.MapGet("/sync/containers", async (Guid id, Guid connection, SpaceSync sync, CancellationToken ct) =>
+            Results.Ok(await sync.ContainersAsync(id, connection, ct)));
+        space.MapPost("/sync/links", async (Guid id, SyncLinkRequest request, SpaceSync sync, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await sync.LinkAsync(id, request, ct), ct));
+        space.MapPost("/sync/links/{linkId:guid}:run", async (Guid id, Guid linkId, SpaceSync sync, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await sync.RunNowAsync(id, linkId, ct), ct));
+        space.MapDelete("/sync/links/{linkId:guid}", async (Guid id, Guid linkId, SpaceSync sync, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await sync.UnlinkAsync(id, linkId, ct), ct));
+
         space.MapPost("/status", async (Guid id, StatusRequest request, SpaceMilestones milestones, IDbSession session, CancellationToken ct) =>
             await CommitAsync(session, await milestones.SetStatusAsync(id, request, ct), ct));
 
@@ -288,5 +307,40 @@ public static class SpacesModule
 
         space.MapDelete("/tasks/{taskId:guid}/files/{documentId:guid}", async (Guid id, Guid taskId, Guid documentId, SpaceTasks tasks, IDbSession session,
             CancellationToken ct) => await CommitAsync(session, await tasks.UnlinkFileAsync(id, taskId, documentId, ct), ct));
+
+        // R3 US8: the plan of the space, a task's dates and its "blocked by" links.
+        space.MapGet("/timeline", async (Guid id, SpaceSchedule schedule, CancellationToken ct) => Results.Ok(await schedule.TimelineAsync(id, ct)));
+
+        space.MapGet("/tasks/{taskId:guid}/schedule", async (Guid id, Guid taskId, SpaceSchedule schedule, CancellationToken ct) =>
+            Results.Ok(await schedule.GetAsync(id, taskId, ct)));
+
+        space.MapPut("/tasks/{taskId:guid}/schedule", async (Guid id, Guid taskId, ScheduleRequest request, SpaceSchedule schedule, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await schedule.SetAsync(id, taskId, request, ct), ct));
+
+        space.MapPost("/tasks/{taskId:guid}/blockers", async (Guid id, Guid taskId, BlockerRequest request, SpaceSchedule schedule, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await schedule.AddBlockerAsync(id, taskId, request, ct), ct));
+
+        space.MapDelete("/tasks/{taskId:guid}/blockers/{blockerId:guid}", async (Guid id, Guid taskId, Guid blockerId, SpaceSchedule schedule, IDbSession session,
+            CancellationToken ct) => await CommitAsync(session, await schedule.RemoveBlockerAsync(id, taskId, blockerId, ct), ct));
+
+        // R3 US9: time logged on tasks, and totals for owners.
+        space.MapGet("/tasks/{taskId:guid}/time", async (Guid id, Guid taskId, SpaceTime time, CancellationToken ct) => Results.Ok(await time.GetAsync(id, taskId, ct)));
+
+        space.MapPost("/tasks/{taskId:guid}/time", async (Guid id, Guid taskId, TimeEntryRequest request, SpaceTime time, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await time.LogAsync(id, taskId, request, ct), ct));
+
+        space.MapPut("/tasks/{taskId:guid}/time/{entryId:guid}", async (Guid id, Guid taskId, Guid entryId, TimeEntryRequest request, SpaceTime time, IDbSession session,
+            CancellationToken ct) => await CommitAsync(session, await time.UpdateAsync(id, taskId, entryId, request, ct), ct));
+
+        space.MapDelete("/tasks/{taskId:guid}/time/{entryId:guid}", async (Guid id, Guid taskId, Guid entryId, SpaceTime time, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await time.RemoveAsync(id, taskId, entryId, ct), ct));
+
+        space.MapGet("/time", async (Guid id, DateOnly? from, DateOnly? to, SpaceTime time, CancellationToken ct) => Results.Ok(await time.TotalsAsync(id, from, to, ct)));
+
+        space.MapGet("/time.csv", async (Guid id, DateOnly? from, DateOnly? to, SpaceTime time, CancellationToken ct) =>
+        {
+            var (name, content) = await time.ExportAsync(id, from, to, ct);
+            return Results.File(content, "text/csv; charset=utf-8", name);
+        });
     }
 }

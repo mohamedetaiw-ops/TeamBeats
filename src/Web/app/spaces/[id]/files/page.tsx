@@ -49,7 +49,7 @@ export default async function SpaceFilesPage({ params }: { params: Promise<{ id:
       />
       <main id="main" className="page">
         <PageHeader title={t("filesTitle")} eyebrow={space.data.name} icon="folder"
-          nav={<SpaceNav id={id} current="files" settings={space.data.rights.owns || space.data.rights.manages} files={!!libraryId} discussion={!!space.data.communityId} />} />
+          nav={<SpaceNav id={id} current="files" settings={space.data.rights.owns || space.data.rights.manages} owns={space.data.rights.owns} files={!!libraryId} discussion={!!space.data.communityId} />} />
         {library?.ok && folders?.ok && views?.ok ? (
           <LibraryBrowser library={library.data} folders={folders.data} views={views.data} />
         ) : !space.data.rights.reads ? (

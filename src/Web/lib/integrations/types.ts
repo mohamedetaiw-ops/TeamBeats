@@ -67,7 +67,7 @@ export type RestAuth = {
   expiresOn?: string | null;
 };
 
-export type RestSettings = { baseUrl: string; auth: RestAuth; serviceDeskId?: string | null; requestTypeId?: string | null };
+export type RestSettings = { baseUrl: string; auth: RestAuth; serviceDeskId?: string | null; requestTypeId?: string | null; groupId?: string | null };
 
 export type PackConnection = {
   id: string;
@@ -188,7 +188,7 @@ export const CHECK_RESULTS = [
 ] as const;
 
 /** Connector pack kinds with their own name on these pages. */
-export const PACK_KINDS = ["custom_rest", "webhook", "onprem_ad", "servicenow", "jira_service_management", "camunda8", "mcp_server", "slack", "sms", "clock_import", "finance_rest", "finance_oracle_fusion", "finance_sap_s4", "google_workspace", "hr_rest", "hr_sftp", "hr_oracle_hcm", "hr_sap_successfactors", "lms_rest"] as const;
+export const PACK_KINDS = ["custom_rest", "webhook", "onprem_ad", "servicenow", "jira_service_management", "tasks_planner", "tasks_jira", "camunda8", "mcp_server", "slack", "sms", "clock_import", "finance_rest", "finance_oracle_fusion", "finance_sap_s4", "google_workspace", "hr_rest", "hr_sftp", "hr_oracle_hcm", "hr_sap_successfactors", "lms_rest"] as const;
 
 /** Settings of a clock data connection (spec 017 US7). Columns are header names, or numbers from 1 without a header row. */
 export type ClockColumns = {
@@ -344,12 +344,14 @@ export type FinanceHandOff = {
 
 export type ClockProblem = { line: number; employeeNumber: string | null; reason: string };
 
-/** Ticketing packs (spec 017 T017) and the sign-in methods each offers in its form; the API checks them again. */
+/** Ticketing and task tracker packs (spec 017 T017, spec 029 US10) and the sign-in methods and fields each offers in its form; the API checks them again. */
 export const TICKETING_KINDS = {
-  servicenow: { auth: ["basic", "oauth_client_credentials"], desk: false },
-  jira_service_management: { auth: ["basic", "bearer"], desk: true },
-  camunda8: { auth: ["oauth_client_credentials", "bearer", "basic"], desk: false },
-  mcp_server: { auth: ["none", "bearer", "api_key", "oauth_client_credentials"], desk: false },
+  servicenow: { auth: ["basic", "oauth_client_credentials"], desk: false, group: false },
+  jira_service_management: { auth: ["basic", "bearer"], desk: true, group: false },
+  tasks_planner: { auth: ["oauth_client_credentials", "bearer"], desk: false, group: true },
+  tasks_jira: { auth: ["basic", "bearer"], desk: false, group: false },
+  camunda8: { auth: ["oauth_client_credentials", "bearer", "basic"], desk: false, group: false },
+  mcp_server: { auth: ["none", "bearer", "api_key", "oauth_client_credentials"], desk: false, group: false },
 } as const;
 export type TicketingKind = keyof typeof TICKETING_KINDS;
 export const isTicketing = (kind: string): kind is TicketingKind => Object.prototype.hasOwnProperty.call(TICKETING_KINDS, kind);

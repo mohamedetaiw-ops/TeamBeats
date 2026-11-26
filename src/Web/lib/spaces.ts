@@ -14,6 +14,9 @@ export const spaceDiscussionHref = (id: string) => `/spaces/${id}/discussion`;
 export const spaceCalendarHref = (id: string, month?: string) => `/spaces/${id}/calendar${month ? `?month=${month}` : ""}`;
 export const spaceSettingsHref = (id: string) => `/spaces/${id}/settings`;
 export const taskHref = (space: string, task: string) => `/spaces/${space}/tasks/${task}`;
+export const spaceTimelineHref = (id: string) => `/spaces/${id}/timeline`;
+export const spaceTimeHref = (id: string) => `/spaces/${id}/time`;
+export const spaceSyncHref = (id: string) => `/spaces/${id}/sync`;
 export const myTasksHref = "/tasks?tab=mine";
 
 export type SpaceKind = "project" | "team";
@@ -195,3 +198,75 @@ export async function call<T>(request: () => Promise<Response>, failed: string):
 }
 
 export const isGuid = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+
+// ---- R3: the plan and time (spec 029 US8, US9) ----
+
+export type LinkedTask = { id: string; title: string; status: "open" | "done"; startOn: string | null; dueOn: string | null; conflict: boolean };
+export type TaskSchedule = {
+  taskId: string;
+  startOn: string | null;
+  dueOn: string | null;
+  estimateMinutes: number | null;
+  blockedBy: LinkedTask[];
+  blocks: LinkedTask[];
+  conflict: boolean;
+  finishedBeforeBlocker: boolean;
+  version: number;
+  canEdit: boolean;
+};
+export type TimelineTask = {
+  id: string;
+  title: string;
+  status: "open" | "done";
+  startOn: string | null;
+  dueOn: string | null;
+  milestoneId: string | null;
+  assignees: PersonRef[];
+  overdue: boolean;
+  conflict: boolean;
+  version: number;
+};
+export type TimelineView = {
+  from: string | null;
+  to: string | null;
+  tasks: TimelineTask[];
+  links: { taskId: string; blockerId: string; conflict: boolean }[];
+  milestones: MilestoneView[];
+  undated: TimelineTask[];
+  canEdit: boolean;
+};
+export type TimeEntryView = { id: string; person: PersonRef; workedOn: string; minutes: number; note: string; canEdit: boolean; canRemove: boolean };
+export type TaskTime = { taskId: string; estimateMinutes: number | null; loggedMinutes: number; entries: TimeEntryView[]; canLog: boolean };
+export type TimeTotals = {
+  from: string;
+  to: string;
+  minutes: number;
+  people: { person: PersonRef; minutes: number }[];
+  tasks: { taskId: string; title: string; estimateMinutes: number | null; minutes: number }[];
+};
+
+/** The one event between the parts of a task page: a part changed the task, so the others read it again. */
+export const taskChangedEvent = "tb:spaces-task-changed";
+
+export function announceTaskChanged(taskId: string): void {
+  window.dispatchEvent(new CustomEvent<{ taskId: string }>(taskChangedEvent, { detail: { taskId } }));
+}
+
+/** Hours and minutes for a number of minutes, as numbers the messages format. */
+export const hoursOf = (minutes: number) => ({ hours: Math.floor(minutes / 60), minutes: minutes % 60 });
+
+/** A status summary written through the AI Gateway (spec 029 R3 US11). Never stored; always AI generated. */
+/** Task list sync with Planner or Jira (spec 029 R3 US10), for owners. Every rule is the API's; this is what it answers. */
+export type TrackerConnection = { id: string; kind: "tasks_planner" | "tasks_jira"; displayName: string };
+export type TrackerContainer = { id: string; name: string };
+export type SyncLink = {
+  id: string; listId: string; listName: string; connectionId: string; kind: TrackerConnection["kind"]; containerId: string; containerName: string; status: string;
+  lastRunAt: string | null; createdAt: string; tasks: number;
+};
+export type SyncEvent = {
+  id: string; runId: string; kind: "run" | "conflict" | "failed" | "skipped_assignee" | "unlinked_task"; outcome: string | null; taskTitle: string | null;
+  detail: string | null; pulled: number; pushed: number; at: string;
+};
+export type SpaceSync = { available: boolean; links: SyncLink[]; connections: TrackerConnection[]; history: SyncEvent[] };
+
+export type StatusSummary = { outcome: "summarized" | "policy_blocked" | "unavailable"; summary: string | null; denial: string | null; tasks: number; aiGenerated: boolean; at: string };

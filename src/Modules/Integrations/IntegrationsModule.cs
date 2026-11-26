@@ -80,6 +80,11 @@ public static class IntegrationsModule
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Ticketing.ServiceNowPack>());
         services.AddScoped<Ticketing.JiraServiceManagementPack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Ticketing.JiraServiceManagementPack>());
+        services.AddScoped<Ticketing.PlannerTaskPack>();
+        services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Ticketing.PlannerTaskPack>());
+        services.AddScoped<Ticketing.JiraTaskPack>();
+        services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Ticketing.JiraTaskPack>());
+        services.AddScoped<ITaskTrackers, Ticketing.TaskTrackers>();
         services.AddScoped<Ticketing.Camunda8Pack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Ticketing.Camunda8Pack>());
         services.AddScoped<Mcp.McpServerPack>();

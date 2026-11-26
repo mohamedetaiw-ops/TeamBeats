@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFormatter, useTranslations } from "next-intl";
 import { Alert } from "@/components/ui/Alert";
@@ -12,12 +12,14 @@ import { IconButton } from "@/components/ui/IconButton";
 import { Progress } from "@/components/ui/Status";
 import { documentHref } from "@/lib/documents/types";
 import {
+  announceTaskChanged,
   call,
   priorities,
   send,
   spaceTasksHref,
   spacesApi,
   taskBody,
+  taskChangedEvent,
   type MilestoneView,
   type SpaceMember,
   type TaskDetail,
@@ -65,6 +67,20 @@ export function TaskView({
   const edit = detail.canEdit;
   const workers = members.filter((m) => m.role !== "viewer");
 
+  // The task's plan part changes dates and the version: read the task again so the next save is current.
+  useEffect(() => {
+    const listen = (e: Event) => {
+      if ((e as CustomEvent<{ taskId: string }>).detail.taskId !== initial.task.id) return;
+      void call<TaskDetail>(() => fetch(url), t("failed")).then((result) => {
+        if (!result.ok) return;
+        setDetail(result.value);
+        setDueOn(result.value.task.dueOn ?? "");
+      });
+    };
+    window.addEventListener(taskChangedEvent, listen);
+    return () => window.removeEventListener(taskChangedEvent, listen);
+  }, [initial.task.id, url, t]);
+
   async function run(request: () => Promise<Response>, after?: () => void) {
     const result = await call<TaskDetail>(request, t("failed"));
     if (!result.ok) {
@@ -90,6 +106,7 @@ export function TaskView({
       milestoneId: milestoneId || null,
     };
     const ok = await run(() => send(url, "PUT", body));
+    if (ok) announceTaskChanged(initial.task.id);
     setBusy(false);
     setSaved(ok);
   }
@@ -117,7 +134,7 @@ export function TaskView({
           <DueBadge dueOn={detail.task.dueOn} overdue={detail.task.overdue} />
           {edit ? (
             <Button variant={done ? "secondary" : "primary"} icon={done ? undefined : "check"}
-              onClick={() => void run(() => send(`${url}:${done ? "reopen" : "complete"}`, "POST"))}>
+              onClick={() => void run(() => send(`${url}:${done ? "reopen" : "complete"}`, "POST")).then((ok) => ok && announceTaskChanged(initial.task.id))}>
               {done ? t("reopen") : t("complete")}
             </Button>
           ) : null}

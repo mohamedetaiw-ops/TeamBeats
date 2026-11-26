@@ -705,6 +705,9 @@ public static class AuditActions
     public const string SpacesGuestInvited = "spaces.guest_invited";
     public const string SpacesGuestExpired = "spaces.guest_expired";
     public const string SpacesGuestRemoved = "spaces.guest_removed";
+    public const string SpacesStatusSummarized = "spaces.status_summarized";
+    public const string SpacesSyncLinked = "spaces.sync_linked";
+    public const string SpacesSyncUnlinked = "spaces.sync_unlinked";
 
     // 031
     public const string BookingResourceCreated = "booking.resource_created";
@@ -800,7 +803,7 @@ public static class AuditActions
         EngagementRoomCreated, EngagementRoomArchived, EngagementMirrorSet, EngagementMirrorRemoved, EngagementAiSettingChanged,
         LearningCoursePublished, LearningCourseRetired, LearningPathPublished, LearningAttemptsGranted, LearningAssignmentCreated, LearningAssignmentWithdrawn, LearningEvidenceExported, LearningQuizDrafted, LearningSessionChanged, LearningAttendanceRecorded,
         SpacesCreated, SpacesChanged, SpacesArchived, SpacesRestored, SpacesMemberAdded, SpacesMemberRemoved, SpacesOwnerReassigned, SpacesSettingsChanged,
-        SpacesTemplateChanged, SpacesEventChanged, SpacesGuestInvited, SpacesGuestExpired,
+        SpacesTemplateChanged, SpacesEventChanged, SpacesGuestInvited, SpacesGuestExpired, SpacesStatusSummarized, SpacesSyncLinked, SpacesSyncUnlinked,
         BookingResourceCreated, BookingResourceRemoved, BookingRulesChanged, BookingCancelledByAdmin, BookingSettingsChanged, BookingSiteChanged,
         BookingSiteClosed, BookingSiteReopened,
     ];

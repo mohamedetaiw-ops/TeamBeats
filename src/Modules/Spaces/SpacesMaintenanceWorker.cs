@@ -11,7 +11,7 @@ namespace TeamBeats.Modules.Spaces;
 
 /// <summary>
 /// Every minute, for every active tenant with spaces, in its own scope and transaction: sends the day-before due
-/// reminders of space tasks (spec 029 US2), and ends, announces and re-sends guest access and invitations (US4). Runs
+/// reminders of space tasks (spec 029 US2), runs the tracker syncs that are due (R3 US10), and ends, announces and re-sends guest access and invitations (US4). Runs
 /// as the system actor. Hosted by the worker, and by the development host when <c>Spaces:Maintenance:InProcess</c> is true.
 /// </summary>
 public sealed class SpacesMaintenanceWorker(IServiceScopeFactory scopes, IClock clock, ILogger<SpacesMaintenanceWorker> logger) : BackgroundService
@@ -26,6 +26,28 @@ public sealed class SpacesMaintenanceWorker(IServiceScopeFactory scopes, IClock 
         {
             await RunOnceAsync(stoppingToken);
             await Task.Delay(Tick, stoppingToken);
+        }
+    }
+
+    // Tracker sync (spec 029 R3 US10) in its own scope and transaction, so a slow or failing tracker never holds back reminders.
+    private async Task SyncAsync(Guid tenantId, DateTimeOffset now, CancellationToken ct)
+    {
+        try
+        {
+            await using var scope = scopes.CreateAsyncScope();
+            var context = scope.ServiceProvider.GetRequiredService<TenantContextAccessor>();
+            context.SetTenant(tenantId);
+            context.SetActor(ActorType.System, null);
+            if (!await scope.ServiceProvider.GetRequiredService<IEntitlementService>().IsEnabledAsync(Capabilities.SpacesProjects, ct))
+            {
+                return;
+            }
+            await scope.ServiceProvider.GetRequiredService<SpaceSync>().SyncDueAsync(now, ct);
+            await scope.ServiceProvider.GetRequiredService<IDbSession>().CommitAsync(ct);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogError(ex, "Spaces task sync failed for tenant {TenantId}", tenantId);
         }
     }
 
@@ -67,6 +89,7 @@ public sealed class SpacesMaintenanceWorker(IServiceScopeFactory scopes, IClock 
             {
                 logger.LogError(ex, "Spaces maintenance failed for tenant {TenantId}", tenant.Id);
             }
+            await SyncAsync(tenant.Id, now, ct);
         }
     }
 }
