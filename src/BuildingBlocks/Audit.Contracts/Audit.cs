@@ -687,6 +687,9 @@ public static class AuditActions
     public const string LearningAssignmentCreated = "learning.assignment_created";
     public const string LearningAssignmentWithdrawn = "learning.assignment_withdrawn";
     public const string LearningEvidenceExported = "learning.evidence_exported";
+    public const string LearningQuizDrafted = "learning.quiz_drafted";
+    public const string LearningSessionChanged = "learning.session_changed";
+    public const string LearningAttendanceRecorded = "learning.attendance_recorded";
 
     // 029
     public const string SpacesCreated = "spaces.created";
@@ -795,7 +798,7 @@ public static class AuditActions
         EngagementSurveyPublished, EngagementSurveyClosed, EngagementSurveyThresholdChanged, EngagementPointsConfigChanged, EngagementRecognitionCatalogueChanged,
         EngagementAwardOpened, EngagementAwardDecided, EngagementCelebrationSettingsChanged,
         EngagementRoomCreated, EngagementRoomArchived, EngagementMirrorSet, EngagementMirrorRemoved, EngagementAiSettingChanged,
-        LearningCoursePublished, LearningCourseRetired, LearningPathPublished, LearningAttemptsGranted, LearningAssignmentCreated, LearningAssignmentWithdrawn, LearningEvidenceExported,
+        LearningCoursePublished, LearningCourseRetired, LearningPathPublished, LearningAttemptsGranted, LearningAssignmentCreated, LearningAssignmentWithdrawn, LearningEvidenceExported, LearningQuizDrafted, LearningSessionChanged, LearningAttendanceRecorded,
         SpacesCreated, SpacesChanged, SpacesArchived, SpacesRestored, SpacesMemberAdded, SpacesMemberRemoved, SpacesOwnerReassigned, SpacesSettingsChanged,
         SpacesTemplateChanged, SpacesEventChanged, SpacesGuestInvited, SpacesGuestExpired,
         BookingResourceCreated, BookingResourceRemoved, BookingRulesChanged, BookingCancelledByAdmin, BookingSettingsChanged, BookingSiteChanged,

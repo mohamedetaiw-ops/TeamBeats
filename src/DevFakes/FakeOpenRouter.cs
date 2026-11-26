@@ -193,7 +193,9 @@ public sealed partial class FakeOpenRouter(string apiKey, string basePath, IRead
             // Sentiment (spec 021 US8) labels each numbered text: [fake:positive] and [fake:negative] mark it, anything else is neutral.
             // A dashboard summary (spec 021 US8) states the first figure it was given and names it.
             // A policy change summary (spec 025 section 11) names how many clauses change and lists each one.
-            reply = properties?["points"] is not null ? ChangeSummary(last) : properties?["sentiments"] is not null ? Sentiments(last) : properties?["figures"] is not null ? Summary(last)
+            // A quiz draft (spec 028 US8) writes the number of questions asked for, in every language asked for, cycling through
+            // the three kinds; a lesson text with [fake:badquestion] puts first one single choice question with two correct options.
+            reply = properties?["questions"] is not null ? QuizDraft(last) : properties?["points"] is not null ? ChangeSummary(last) : properties?["sentiments"] is not null ? Sentiments(last) : properties?["figures"] is not null ? Summary(last)
                 : properties?["texts"] is not null ? Translation(last) : properties?["safe"] is not null ? JsonSerializer.Serialize(new { safe = !Attached(messages).Any(t => t.Contains("[fake:unsafe]", StringComparison.Ordinal)) })
                 : properties?["merchant"] is not null ? Receipt(messages) : judging
                 ? JsonSerializer.Serialize(last.Contains("[fake:judge:fail]", StringComparison.Ordinal)
@@ -270,6 +272,34 @@ public sealed partial class FakeOpenRouter(string apiKey, string basePath, IRead
         var arabic = node?["targetLanguage"]?.GetValue<string>() == "Arabic";
         var texts = (node?["texts"] as JsonArray ?? []).Select(t => (arabic ? "مترجم: " : "Translated: ") + t?.GetValue<string>()).ToList();
         return JsonSerializer.Serialize(new { texts });
+    }
+
+    private static string QuizDraft(string request)
+    {
+        var node = JsonNode.Parse(request);
+        var locales = (node?["locales"] as JsonArray ?? []).Select(l => l!.GetValue<string>()).ToList();
+        var count = node?["count"]?.GetValue<int>() ?? 1;
+        Dictionary<string, string> Text(string en, string ar) => locales.ToDictionary(l => l, l => l == "ar" ? ar : en);
+        object Option(string n, bool correct) => new { labels = Text($"Fictional option {n}", $"خيار تجريبي {n}"), correct };
+        var kinds = new[] { "single", "multiple", "true_false" };
+        var questions = new List<object>();
+        for (var i = 1; i <= count; i++)
+        {
+            var kind = kinds[(i - 1) % 3];
+            questions.Add(new
+            {
+                kind,
+                prompts = Text($"Fictional question {i}", $"سؤال تجريبي {i}"),
+                options = kind == "true_false" ? new[] { Option("true", true), Option("false", false) }
+                    : kind == "multiple" ? new[] { Option("a", true), Option("b", true), Option("c", false) }
+                    : new[] { Option("a", true), Option("b", false), Option("c", false) },
+            });
+        }
+        if (request.Contains("[fake:badquestion]", StringComparison.Ordinal))
+        {
+            questions.Insert(0, new { kind = "single", prompts = Text("Fictional broken question", "سؤال معطوب"), options = new[] { Option("a", true), Option("b", true) } });
+        }
+        return JsonSerializer.Serialize(new { questions });
     }
 
     /// <summary>A stable, recognisable answer: tests can assert on it and testers can see it is not a real model.</summary>

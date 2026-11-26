@@ -1025,7 +1025,8 @@
         "notifications_sms_monthly_messages": "SMS messages a month",
         "notifications_signage": "Signage screens for locations",
         "ai_assistant_teams": "Assistant in Microsoft Teams",
-        "people_skills": "Skills and Find an expert"
+        "people_skills": "Skills and Find an expert",
+        "learning_classroom": "Classroom sessions with attendance"
       },
       "searchLabel": "Search capabilities",
       "searchPlaceholder": "Search by name",
@@ -15063,13 +15064,15 @@
         "document": "Document",
         "video": "Video",
         "quiz": "Quiz",
-        "package": "Interactive package"
+        "package": "Interactive package",
+        "classroom": "Classroom session"
       },
       "open": {
         "page": "Read the page, then come back and mark the lesson done.",
         "document": "Read the document, then come back and mark the lesson done.",
         "video": "Watch the video, then come back and mark the lesson done.",
-        "package": "This lesson plays inside the page. It records your progress and score itself."
+        "package": "This lesson plays inside the page. It records your progress and score itself.",
+        "classroom": "Book a seat in one session. The lesson is done once the facilitator records that you attended."
       },
       "openSource": "Open in a new tab",
       "markDone": "Mark lesson done",
@@ -15223,7 +15226,8 @@
         "document": "Document",
         "video": "Video",
         "quiz": "Quiz",
-        "package": "SCORM or xAPI package"
+        "package": "SCORM or xAPI package",
+        "classroom": "Classroom session"
       },
       "addLesson": "Add lesson",
       "lessonNumber": "Lesson {number}: {kind}",
@@ -15289,7 +15293,29 @@
       "packageIn": "Package in {language}",
       "packageHint": "A SCORM 1.2 or xAPI zip, up to 500 MB. It is scanned before it is imported.",
       "packageFailed": "The package was not imported.",
-      "packageChosen": "A package is chosen for this language. Upload another to replace it."
+      "packageChosen": "A package is chosen for this language. Upload another to replace it.",
+      "quizDraft": {
+        "title": "Draft questions with AI",
+        "hint": "The AI writes questions from the text of this course's page lessons, in each of its languages. Check every question: the course publishes only after you keep, edit or remove each one.",
+        "target": "Add them to",
+        "newLesson": "A new quiz lesson",
+        "quizNumber": "Quiz {number}",
+        "count": "Number of questions",
+        "ask": "Draft questions",
+        "working": "Drafting questions",
+        "added": "{count, plural, one {# question was added} other {# questions were added}} as AI drafts. Check each one before publishing.",
+        "none": "No questions were added",
+        "blocked": "This course's content cannot be sent to the AI under your organization's rules.",
+        "unavailable": "The AI could not draft questions just now. Try again later.",
+        "mark": "AI draft",
+        "markHint": "Check the question and its answers.",
+        "keep": "Keep"
+      },
+      "skills": {
+        "title": "Skills",
+        "hint": "People who declared these skills below expert see the course among their recommendations. Up to 10."
+      },
+      "classroomSaveFirst": "Save the course first, then add sessions to this lesson."
     },
     "pathBuilder": {
       "eyebrow": "Path builder",
@@ -15456,6 +15482,66 @@
       "never": "never",
       "syncNow": "Sync now",
       "failed": "The sync did not run."
+    },
+    "recommended": {
+      "title": "Recommended for your skills",
+      "hint": "Open courses for skills you added to your profile.",
+      "dismiss": "Not for me",
+      "dismissCourse": "Not for me: {title}",
+      "failed": "That did not work. Try again."
+    },
+    "sessions": {
+      "title": "Sessions",
+      "none": "No sessions yet. Add the first one below.",
+      "seats": "{booked} of {capacity} seats taken",
+      "waitingCount": "{count} waiting",
+      "cancelled": "Cancelled",
+      "roster": "Roster",
+      "cancel": "Cancel session",
+      "cancelQuestion": "Cancel this session? Everyone booked or waiting is told and can book another one.",
+      "cancelConfirm": "Cancel session",
+      "keep": "Keep it",
+      "starts": "Starts",
+      "ends": "Ends",
+      "seatsLabel": "Seats",
+      "placeLabel": "Place",
+      "linkLabel": "Meeting link",
+      "facilitator": "Facilitator",
+      "add": "Add session",
+      "failed": "That did not work. Try again.",
+      "place": "Where: {place}",
+      "link": "Join online",
+      "when": "{start} to {end}",
+      "hint": "Book a seat in one session. The lesson is done once the facilitator records that you attended.",
+      "doneHint": "You attended. This lesson is done.",
+      "noneTitle": "No sessions to book",
+      "noneLearner": "There are no sessions coming up for this lesson. Check again later.",
+      "with": "With {name}",
+      "full": "Full",
+      "free": "{count, plural, one {# seat left} other {# seats left}}",
+      "waitingAt": "Waiting list, number {position}",
+      "seat": {
+        "booked": "Your seat",
+        "waiting": "Waiting",
+        "attended": "Attended",
+        "absent": "Absent"
+      },
+      "wait": "Join the waiting list",
+      "book": "Book a seat",
+      "giveBack": "Give it back",
+      "facilitatingTitle": "Sessions I facilitate",
+      "facilitatingIntro": "Classroom sessions you lead. Open one to see who is coming and record who attended.",
+      "facilitatingEmptyTitle": "No sessions",
+      "facilitatingEmpty": "You are not facilitating any sessions.",
+      "details": "Session",
+      "attendance": "Attendance",
+      "attendanceHint": "Tick everyone who attended, then save. You can correct this for 14 days after the session.",
+      "attendanceLater": "Attendance can be recorded once the session starts.",
+      "saved": "Attendance saved",
+      "noSeats": "Nobody has a seat yet.",
+      "saveAttendance": "Save attendance",
+      "waitingList": "Waiting list",
+      "eyebrow": "Classroom session"
     }
   },
   "spaces": {

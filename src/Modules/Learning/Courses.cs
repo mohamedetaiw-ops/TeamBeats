@@ -27,7 +27,8 @@ public sealed record CourseRequest(
     string? Category,
     ContentAudience? Audience,
     bool OpenEnrolment,
-    CourseDefinitionInput? Definition);
+    CourseDefinitionInput? Definition,
+    IReadOnlyList<Guid>? Skills = null);
 
 public sealed record PublishRequest(int? Revision, bool RequiresRetraining);
 
@@ -50,7 +51,8 @@ public sealed record CourseDetail(
     IReadOnlyList<ChangedSource> ChangedSources,
     DateTimeOffset UpdatedAt,
     string? ExternalId = null,
-    string? LaunchUrl = null);
+    string? LaunchUrl = null,
+    IReadOnlyList<Guid>? Skills = null);
 
 public sealed record CourseSummary(
     Guid Id,
@@ -89,8 +91,10 @@ public sealed class Courses(
     INotificationSender notifications,
     IAuditWriter audit,
     IClock clock,
-    People.Contracts.IReportingLine reportingLine)
+    People.Contracts.IReportingLine reportingLine,
+    People.Contracts.IPersonSkills personSkills)
 {
+    public const int MaxSkills = 10;
     public const int MaxCategory = 60;
     public const string WithdrawnTemplate = "learning.course.withdrawn";
     public const string MyLearningPath = "/learning";
@@ -98,7 +102,8 @@ public sealed class Courses(
     public static string CoursePath(Guid id) => $"/learning/courses/{id}";
 
     internal sealed record CourseRow(Guid Id, Guid? OrgUnitId, string? Category, string Status, string Draft, int DraftRevision, int? PublishedRevision,
-        int? PublishedVersion, int? RetrainingVersion, string Audience, bool OpenEnrolment, DateTimeOffset UpdatedAt, string? ExternalId = null, string? LaunchUrl = null)
+        int? PublishedVersion, int? RetrainingVersion, string Audience, bool OpenEnrolment, DateTimeOffset UpdatedAt, string? ExternalId = null, string? LaunchUrl = null,
+        Guid[]? Skills = null)
     {
         public CourseDefinition DraftDefinition => LearningJson.Read<CourseDefinition>(Draft);
 
@@ -109,11 +114,11 @@ public sealed class Courses(
         public AuthzTarget Scope => OrgUnitId is { } u ? AuthzTarget.OrgUnit(u) : AuthzTarget.Tenant;
     }
 
-    internal const string Columns = "id, org_unit_id, category, status, draft::text, draft_revision, published_revision, published_version, retraining_version, audience::text, open_enrolment, updated_at, external_id, launch_url";
+    internal const string Columns = "id, org_unit_id, category, status, draft::text, draft_revision, published_revision, published_version, retraining_version, audience::text, open_enrolment, updated_at, external_id, launch_url, skills";
 
     internal static CourseRow Read(Npgsql.NpgsqlDataReader r) => new(r.GetGuid(0), r.Get<Guid?>("org_unit_id"), r.Get<string>("category"), r.GetString(3), r.GetString(4),
         r.GetInt32(5), r.Get<int?>("published_revision"), r.Get<int?>("published_version"), r.Get<int?>("retraining_version"), r.GetString(9), r.GetBoolean(10),
-        r.GetFieldValue<DateTimeOffset>(11), r.Get<string>("external_id"), r.Get<string>("launch_url"));
+        r.GetFieldValue<DateTimeOffset>(11), r.Get<string>("external_id"), r.Get<string>("launch_url"), r.GetFieldValue<Guid[]>(14));
 
     internal Task<CourseRow?> RowAsync(Guid id, bool forUpdate, CancellationToken ct) =>
         session.QuerySingleOrDefaultAsync($"select {Columns} from learning.course where id = @id{(forUpdate ? " for update" : "")}", new { id }, Read, ct);
@@ -184,7 +189,7 @@ public sealed class Courses(
     {
         var names = row.OrgUnitId is { } unit ? (await hierarchy.GetNamesAsync([unit], ct)).GetValueOrDefault(unit) : null;
         return new CourseDetail(row.Id, row.OrgUnitId, names, row.Category, row.Status, row.AudienceValue, row.OpenEnrolment, row.DraftDefinition, row.DraftRevision,
-            row.DraftChanged, row.PublishedVersion, await ChangedSourcesAsync(row, ct), row.UpdatedAt, row.ExternalId, row.LaunchUrl);
+            row.DraftChanged, row.PublishedVersion, await ChangedSourcesAsync(row, ct), row.UpdatedAt, row.ExternalId, row.LaunchUrl, row.Skills ?? []);
     }
 
     /// <summary>Lessons of the published version whose page or file has a newer version than the one published (US1 scenario 1).</summary>
@@ -253,6 +258,25 @@ public sealed class Courses(
         return (definition, audience, string.IsNullOrEmpty(category) ? null : category);
     }
 
+    /// <summary>
+    /// The skill tags to keep (FR-024): skills on the tenant's list, at most <see cref="MaxSkills"/>. Without a list in the
+    /// request, or while skills are off, the stored tags stay as they are.
+    /// </summary>
+    private async Task<Guid[]> SkillsAsync(IReadOnlyList<Guid>? given, Guid[]? current, ValidationErrors errors, CancellationToken ct)
+    {
+        if (given is null || await personSkills.ListedAsync(ct) is not { } listed)
+        {
+            return current ?? [];
+        }
+        var known = listed.Select(s => s.Id).ToHashSet();
+        var kept = given.Where(known.Contains).Distinct().ToArray();
+        if (kept.Length > MaxSkills)
+        {
+            errors.Add("skills", "validation.learning.skill_count");
+        }
+        return kept;
+    }
+
     /// <summary>The course title in the tenant's default language, or the first language the course has.</summary>
     internal async Task<string> TitleAsync(CourseDefinition definition, CancellationToken ct)
     {
@@ -273,18 +297,19 @@ public sealed class Courses(
         await RequireBuilderAsync(ct);
         var errors = new ValidationErrors();
         var (definition, audience, category) = await CleanAsync(request, errors, ct);
+        var skills = await SkillsAsync(request.Skills, null, errors, ct);
         errors.ThrowIfAny();
         await DemandScopeAsync(request.OrgUnitId, ct);
         var id = Ids.New();
         var now = clock.UtcNow;
         await session.ExecAsync(
             """
-            insert into learning.course (tenant_id, id, org_unit_id, category, draft, audience, open_enrolment, created_by, created_at, updated_at)
-            values (@tenant, @id, @unit, @category, @draft, @audience, @open, @user, @now, @now)
+            insert into learning.course (tenant_id, id, org_unit_id, category, draft, audience, open_enrolment, skills, created_by, created_at, updated_at)
+            values (@tenant, @id, @unit, @category, @draft, @audience, @open, @skills, @user, @now, @now)
             """, new
             {
                 tenant = context.RequireTenant(), id, unit = request.OrgUnitId, category, draft = LearningJson.Jsonb(definition), audience = LearningJson.Jsonb(audience),
-                open = request.OpenEnrolment, user = context.RequireUser(), now,
+                open = request.OpenEnrolment, skills, user = context.RequireUser(), now,
             }, ct);
         return await DetailAsync((await RowAsync(id, false, ct))!, ct);
     }
@@ -306,6 +331,7 @@ public sealed class Courses(
         var current = row.DraftDefinition;
         var (definition, audience, category) = await CleanAsync(
             external ? request with { Definition = new CourseDefinitionInput(current.Titles, current.Summaries, current.Minutes, []) } : request, errors, ct);
+        var skills = await SkillsAsync(request.Skills, row.Skills, errors, ct);
         errors.ThrowIfAny();
         if (external)
         {
@@ -318,13 +344,13 @@ public sealed class Courses(
         await session.ExecAsync(
             """
             update learning.course set org_unit_id = @unit, category = @category, draft = @draft, draft_revision = draft_revision + 1, audience = @audience,
-              open_enrolment = @open, updated_at = @now,
+              open_enrolment = @open, skills = @skills, updated_at = @now,
               published_revision = case when external_id is not null then draft_revision + 1 else published_revision end
             where id = @id
             """, new
             {
                 id, unit = request.OrgUnitId, category, draft = LearningJson.Jsonb(definition), audience = LearningJson.Jsonb(audience), open = request.OpenEnrolment,
-                now = clock.UtcNow,
+                skills, now = clock.UtcNow,
             }, ct);
         if (row.Status == CourseStatuses.Published)
         {
@@ -354,6 +380,10 @@ public sealed class Courses(
         if (definition.Lessons.Any(l => l.Kind == LessonKinds.Package))
         {
             await entitlements.DemandAsync(Capabilities.LearningScorm, ct);
+        }
+        if (definition.Lessons.Any(l => l.Kind == LessonKinds.Classroom))
+        {
+            await entitlements.DemandAsync(Capabilities.LearningClassroom, ct);
         }
         var errors = new ValidationErrors();
         CourseModel.CheckPublishable(definition, errors);

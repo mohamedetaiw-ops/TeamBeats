@@ -5,7 +5,7 @@ export const learningApi = "/api/v1/learning";
 
 export type Texts = Record<string, string>;
 
-export type LessonKind = "page" | "document" | "video" | "quiz" | "package";
+export type LessonKind = "page" | "document" | "video" | "quiz" | "package" | "classroom";
 export type QuestionKind = "single" | "multiple" | "true_false";
 export type LearnerStateKind = "none" | "open" | "completed" | "retraining";
 export type AssignmentSource = "self" | "rule" | "manager" | "onboarding" | "policy";
@@ -116,7 +116,9 @@ export type CertificateView = {
 export type Audience = { anyOf?: { orgUnits?: { id: string; subtree?: boolean }[] }[] | null };
 
 export type QuizOption = { key: string; labels: Texts; correct: boolean };
-export type QuizQuestion = { key: string; kind: QuestionKind; prompts: Texts; options: QuizOption[] };
+export type QuizQuestion = { key: string; kind: QuestionKind; prompts: Texts; options: QuizOption[]; aiDraft?: boolean };
+/** The answer to a quiz draft request (spec 028 US8): how many questions joined the draft, or why none did. */
+export type QuizDraftView = { outcome: "drafted" | "policy_blocked" | "unavailable"; added: number; denial: string | null; course: CourseDetail };
 export type QuizDefinition = { passMark: number; attempts: number; questions: QuizQuestion[] };
 export type LessonDefinition = { key: string; kind: LessonKind; titles: Texts; sources?: Record<string, string> | null; quiz?: QuizDefinition | null; minutes?: number | null };
 export type CourseDefinition = { titles: Texts; summaries: Texts; minutes?: number | null; lessons: LessonDefinition[] };
@@ -137,7 +139,13 @@ export type CourseDetail = {
   updatedAt: string;
   externalId?: string | null;
   launchUrl?: string | null;
+  /** Skills from the spec 010 list the course is tagged with (spec 028 R3 US9). */
+  skills?: string[] | null;
 };
+
+/** A course recommended for skills the learner declared below expert (spec 028 R3 US9). */
+export type RecommendedCourse = { id: string; titles: Texts; summaries: Texts; category: string | null; minutes: number | null; skills: { id: string; names: Texts }[] };
+export type RecommendationsView = { available: boolean; items: RecommendedCourse[] };
 
 export type CourseSummary = {
   id: string;
@@ -255,3 +263,30 @@ export async function call<T>(request: () => Promise<Response>, failed: string):
     return { ok: false, messages: [failed] };
   }
 }
+
+/** A classroom session (spec 028 R3 US10). The viewer's seat, and what they may do, come from the API. */
+export type SessionView = {
+  id: string;
+  courseId: string;
+  lessonKey: string;
+  startsAt: string;
+  endsAt: string;
+  place: string | null;
+  link: string | null;
+  capacity: number;
+  facilitator: { id: string; name: string };
+  status: "scheduled" | "cancelled";
+  booked: number;
+  waiting: number;
+  mySeat: "booked" | "waiting" | "attended" | "absent" | null;
+  myPosition: number | null;
+  canManage: boolean;
+  canTakeAttendance: boolean;
+  courseTitles?: Texts | null;
+};
+
+export type RosterView = { session: SessionView; seats: { learnerId: string; name: string; status: "booked" | "waiting" | "attended" | "absent" }[] };
+
+export const sessionsHref = "/learning/sessions";
+export const sessionHref = (id: string) => `/learning/sessions/${encodeURIComponent(id)}`;
+

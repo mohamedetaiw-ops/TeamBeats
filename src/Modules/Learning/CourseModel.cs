@@ -14,7 +14,10 @@ public static class LessonKinds
     /// <summary>An imported SCORM 1.2 or xAPI package (FR-016), played in a sandboxed frame.</summary>
     public const string Package = "package";
 
-    public static readonly IReadOnlyList<string> All = [Page, Document, Video, Quiz, Package];
+    /// <summary>A classroom lesson (R3 FR-026): done when the facilitator records the learner attended a session.</summary>
+    public const string Classroom = "classroom";
+
+    public static readonly IReadOnlyList<string> All = [Page, Document, Video, Quiz, Package, Classroom];
 
     /// <summary>Kinds that point at a page, a file or a package in each language of the course.</summary>
     public static bool HasSources(string kind) => kind is Page or Document or Video or Package;
@@ -31,7 +34,8 @@ public static class QuestionKinds
 
 public sealed record QuizOption(string Key, IReadOnlyDictionary<string, string> Labels, bool Correct);
 
-public sealed record QuizQuestion(string Key, string Kind, IReadOnlyDictionary<string, string> Prompts, IReadOnlyList<QuizOption> Options);
+/// <summary>A quiz question. <see cref="AiDraft"/>: written by the AI Gateway and not yet kept by a person (spec 028 FR-022).</summary>
+public sealed record QuizQuestion(string Key, string Kind, IReadOnlyDictionary<string, string> Prompts, IReadOnlyList<QuizOption> Options, bool AiDraft = false);
 
 public sealed record QuizDefinition(int PassMark, int Attempts, IReadOnlyList<QuizQuestion> Questions);
 
@@ -52,7 +56,7 @@ public sealed record CourseDefinition(IReadOnlyDictionary<string, string> Titles
 
 public sealed record QuizOptionInput(string? Key, IReadOnlyDictionary<string, string>? Labels, bool Correct);
 
-public sealed record QuizQuestionInput(string? Key, string? Kind, IReadOnlyDictionary<string, string>? Prompts, IReadOnlyList<QuizOptionInput>? Options);
+public sealed record QuizQuestionInput(string? Key, string? Kind, IReadOnlyDictionary<string, string>? Prompts, IReadOnlyList<QuizOptionInput>? Options, bool? AiDraft = null);
 
 public sealed record QuizInput(int? PassMark, int? Attempts, IReadOnlyList<QuizQuestionInput>? Questions);
 
@@ -163,7 +167,7 @@ public static partial class CourseModel
                 }
                 sources = map;
             }
-            else
+            else if (kind == LessonKinds.Quiz)
             {
                 quiz = Quiz(lesson.Quiz, locales, $"{field}.quiz", errors);
             }
@@ -172,13 +176,28 @@ public static partial class CourseModel
         return new CourseDefinition(titles, summaries, input?.Minutes, lessons);
     }
 
-    /// <summary>What publishing needs beyond a clean draft: at least one lesson.</summary>
+    /// <summary>What publishing needs beyond a clean draft: at least one lesson, and no AI drafted question a person has not kept (FR-022).</summary>
     public static void CheckPublishable(CourseDefinition definition, ValidationErrors errors)
     {
         if (definition.Lessons.Count == 0)
         {
             errors.Add("lessons", "validation.learning.lesson_count");
         }
+        for (var i = 0; i < definition.Lessons.Count; i++)
+        {
+            if (definition.Lessons[i].Quiz?.Questions.Any(q => q.AiDraft) == true)
+            {
+                errors.Add($"lessons[{i}].quiz.questions", "validation.learning.quiz_unreviewed");
+            }
+        }
+    }
+
+    /// <summary>One question checked by the builder's rules for <paramref name="locales"/>, or null when it breaks any of them.</summary>
+    public static QuizQuestion? CleanQuestion(QuizQuestionInput input, IReadOnlyList<string> locales)
+    {
+        var errors = new ValidationErrors();
+        var quiz = Quiz(new QuizInput(null, null, [input]), locales, "quiz", errors);
+        return errors.Any || quiz.Questions.Count != 1 ? null : quiz.Questions[0];
     }
 
     private static QuizDefinition Quiz(QuizInput? input, IReadOnlyList<string> locales, string field, ValidationErrors errors)
@@ -233,7 +252,7 @@ public static partial class CourseModel
             {
                 errors.Add($"{qField}.options", "validation.learning.option_correct");
             }
-            questions.Add(new QuizQuestion(key, kind, prompts, options));
+            questions.Add(new QuizQuestion(key, kind, prompts, options, question.AiDraft == true));
         }
         return new QuizDefinition(passMark, attempts, questions);
     }

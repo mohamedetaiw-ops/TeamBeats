@@ -243,6 +243,19 @@ async function seedExtras(api: APIRequestContext, found: Found): Promise<void> {
   await ok(await api.post(`/api/v1/learning/manage/paths/${path.id as string}:publish`));
   found.set("/learning/manage/paths/[id]", `/learning/manage/paths/${path.id as string}`);
   found.set("/learning/paths/[id]", `/learning/paths/${path.id as string}`);
+  // A classroom course with a session the administrator facilitates (spec 028 R3 US10).
+  const classroom = await ok(await api.post("/api/v1/learning/manage/courses", {
+    data: {
+      orgUnitId: unitId, openEnrolment: true,
+      definition: { titles: both("Fire warden practical", "التدريب العملي لمسؤول الحريق"), lessons: [{ key: "practical", kind: "classroom", titles: both("Practical", "عملي") }] },
+    },
+  }));
+  await ok(await api.post(`/api/v1/learning/manage/courses/${classroom.id as string}:publish`, { data: { revision: classroom.revision, requiresRetraining: false } }));
+  const starts = Date.now() + 2 * 86_400_000;
+  const session = await ok(await api.post(`/api/v1/learning/manage/courses/${classroom.id as string}/sessions`, {
+    data: { lessonKey: "practical", startsAt: new Date(starts).toISOString(), endsAt: new Date(starts + 7_200_000).toISOString(), place: "Training room 2", capacity: 12, facilitatorId: me.id },
+  }));
+  found.set("/learning/sessions/[id]", `/learning/sessions/${session.id as string}`);
   // The administrator takes the course and passes, for a certificate.
   await ok(await api.post(`/api/v1/learning/courses/${course.id as string}:enrol`));
   await ok(await api.post(`/api/v1/learning/courses/${course.id as string}/lessons/check/attempts`, { data: { answers: { q1: ["b"] } } }));

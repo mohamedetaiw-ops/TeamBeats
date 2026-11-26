@@ -128,7 +128,7 @@ public sealed class Player(
         r.Get<DateOnly?>("due_on"), r.GetInt32(6), r.Get<string>("last_lesson_key"), r.Get<DateTimeOffset?>("started_at"), r.Get<DateTimeOffset?>("completed_at"),
         r.Get<int?>("completed_version"), r.GetFieldValue<DateTimeOffset>(11));
 
-    private async Task<Guid> RequireLearnerAsync(CancellationToken ct)
+    internal async Task<Guid> RequireLearnerAsync(CancellationToken ct)
     {
         await entitlements.DemandAsync(Capabilities.LearningCourses, ct);
         var user = context.RequireUser();
@@ -343,6 +343,11 @@ public sealed class Player(
             // A package reports its own completion through its launch; the learner cannot mark it done.
             throw AppException.Conflict("conflict.learning.package_needs_launch");
         }
+        if (lesson.Kind == LessonKinds.Classroom)
+        {
+            // Only the facilitator or a learning administrator records attendance (R3 FR-029).
+            throw AppException.Conflict("conflict.learning.classroom_needs_attendance");
+        }
         var readable = false;
         foreach (var source in lesson.Sources!.Values.Distinct())
         {
@@ -483,6 +488,10 @@ public sealed class Player(
             new { tenant = context.RequireTenant(), assignmentId, lessonKey, now = clock.UtcNow }, ct);
         await CompleteIfDoneAsync(row, definition, assignment, ct);
     }
+
+    /// <summary>A classroom lesson attended (R3 FR-029): done like any lesson, and the course completes when it was the last.</summary>
+    internal Task RecordAttendedAsync(Guid assignmentId, string lessonKey, CancellationToken ct) =>
+        RecordPackageAsync(assignmentId, lessonKey, 0, true, null, false, ct);
 
     /// <summary>Completes the assignment and issues the certificate once every lesson of the current version is done.</summary>
     private async Task<AssignmentRow> CompleteIfDoneAsync(Courses.CourseRow row, CourseDefinition definition, AssignmentRow assignment, CancellationToken ct)
