@@ -8104,6 +8104,7 @@
         "intro": "AI apps such as desktop assistants reach TeamBeats through its MCP server, acting for an employee with that employee's rights. Only the clients listed here can sign in, and nothing above a client's classification limit is sent to it.",
         "enabled": "Allow external AI clients",
         "writeTools": "Allow actions that employees confirm in TeamBeats (submit requests, draft news)",
+        "confirmInClient": "Let verified AI clients ask the employee to confirm inside the client (the action still waits in TeamBeats when they cannot)",
         "clients": "Allowed clients",
         "clientId": "Client ID",
         "cap": "Highest classification sent",

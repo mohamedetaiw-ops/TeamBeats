@@ -280,6 +280,15 @@ export function AgentPolicyEditor({
           <input type="checkbox" checked={external.writeTools} onChange={(e) => setExternal({ writeTools: e.target.checked })} />
           {t("external.writeTools")}
         </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={external.confirmInClient ?? false}
+            disabled={!external.writeTools}
+            onChange={(e) => setExternal({ confirmInClient: e.target.checked })}
+          />
+          {t("external.confirmInClient")}
+        </label>
       </fieldset>
       <div className="agents-table">
         <table data-testid="external-ai-clients">

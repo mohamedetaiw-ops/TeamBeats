@@ -64,3 +64,6 @@ The spec stays Approved, not Implemented. Everything in its R2 scope is built: t
 | Public app gallery: platform-published apps added with admin consent, withdrawn everywhere at once | Met | `PublicAppGalleryTests.An_administrator_adds_a_published_app_and_employees_connect_it_without_asking_again` |
 | Gallery publishing by platform operators only, scopes within the package | Met | `PublicAppGalleryTests.Only_platform_operators_publish_and_an_app_needs_scopes_the_package_covers` |
 | Publisher self-service and a platform gallery screen | Gap | Platform API only in R3 |
+| Confirmation inside verified AI clients (MCP elicitation), opt-in per tenant | Met | `PublicMcpElicitationTests.A_verified_client_asks_the_employee_and_their_answer_counts_as_on_the_card` |
+| No in-client question with the setting off, for clients that cannot ask or tenant-registered clients | Met | `PublicMcpElicitationTests.Without_the_setting_a_verified_client_or_a_client_that_can_ask_the_action_waits_in_TeamBeats` |
+| An in-client answer decides only its own pending action | Met | `PublicMcpElicitationTests.An_answer_covers_only_the_pending_action_it_was_asked_for` |

@@ -193,6 +193,8 @@ export type ExternalAiPolicy = {
   clients: { clientId: string; maxClassification: string }[] | null;
   allowedTools: string[] | null;
   writeTools: boolean;
+  /** Verified AI clients that can ask the employee may confirm write actions inside the client (spec 035 R3). Off by default. */
+  confirmInClient?: boolean;
 };
 
 /** The classifications an external AI client may be capped at; Restricted never leaves TeamBeats. */

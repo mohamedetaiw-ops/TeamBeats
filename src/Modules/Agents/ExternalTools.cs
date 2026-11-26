@@ -232,7 +232,7 @@ public sealed class ExternalToolGateway(IDbSession session, ITenantContext conte
         {
             status = "pending_confirmation", actionId = id, expiresAt, link = ExternalActions.Link(id),
             message = "Nothing has been done yet. The employee must confirm this action in TeamBeats within 15 minutes. Call the tool again with the same arguments to get the result.",
-        }), "internal", []);
+        }), "internal", [], PendingActionId: id);
 
     /// <summary>
     /// Runs a pending action the employee confirmed (spec 035 FR-022): the gateway checks run again as at the call, with

@@ -38925,6 +38925,10 @@
           "writeTools": {
             "type": "boolean",
             "default": false
+          },
+          "confirmInClient": {
+            "type": "boolean",
+            "default": false
           }
         }
       },
