@@ -47,10 +47,11 @@ public static class ChannelKinds
 
 /// <summary>
 /// What the viewer may do in a community; worked out on the server so the page only shows it. CanAddSpeakUp and
-/// CanAllowAnonymous say whether the channel form may offer a Speak Up channel and anonymous posting in it.
+/// CanAllowAnonymous say whether the channel form may offer a Speak Up channel and anonymous posting in it. Rooms says whether
+/// the tenant's package has discussion rooms (R3).
 /// </summary>
 public sealed record CommunityRights(bool Member, bool Pending, bool CanJoin, bool CanLeave, bool CanPost, bool CanModerate, bool CanManage, DateTimeOffset? MutedUntil,
-    bool CanAddSpeakUp = false, bool CanAllowAnonymous = false);
+    bool CanAddSpeakUp = false, bool CanAllowAnonymous = false, bool Rooms = false);
 
 public sealed record CommunityView(
     Guid Id,
@@ -270,7 +271,8 @@ public sealed class Communities(
         var rights = new CommunityRights(s.Member, s.Pending,
             CanJoin: c.Status == "active" && s.Participates && !s.Member && !s.Pending && c.OrgUnitId is null && c.Kind != CommunityKinds.Closed,
             CanLeave: s.Stored,
-            CanPost: s.Posts, CanModerate: s.Moderates, CanManage: s.Manages, MutedUntil: s.MutedUntil);
+            CanPost: s.Posts, CanModerate: s.Moderates, CanManage: s.Manages, MutedUntil: s.MutedUntil,
+            Rooms: (s.Reads || s.Manages) && await entitlements.IsEnabledAsync(Capabilities.EngagementRooms, ct));
         if (s.Manages && await entitlements.IsEnabledAsync(Capabilities.EngagementSpeakUp, ct))
         {
             rights = rights with { CanAddSpeakUp = true, CanAllowAnonymous = await AllowsAnonymousAsync(ct) };

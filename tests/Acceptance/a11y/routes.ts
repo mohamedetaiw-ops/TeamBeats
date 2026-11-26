@@ -169,6 +169,8 @@ export const routes: readonly Route[] = [
   { path: "/communities/[id]/members", tier: "detail" },
   { path: "/communities/[id]/polls", tier: "detail" },
   { path: "/communities/[id]/posts/[postId]", tier: "detail" },
+  { path: "/communities/[id]/rooms", tier: "detail" },
+  { path: "/communities/[id]/rooms/[roomId]", tier: "detail" },
   { path: "/communities/awards", tier: "other" },
   { path: "/communities/celebrations", tier: "other" },
   { path: "/communities/hashtags/[tag]", tier: "detail" },

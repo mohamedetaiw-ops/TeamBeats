@@ -17,6 +17,7 @@ import {
   communityHref,
   engagementApi,
   localName,
+  roomsHref,
   send,
   speakUpReplyPath,
   type AnonymousReceipt,
@@ -112,6 +113,11 @@ export function CommunityFeed({ initial, feed, locales }: { initial: CommunityVi
         {readable ? (
           <ButtonLink size="sm" variant="quiet" icon="trend-up" href={`${communityHref(community.id)}/polls`}>
             {t("polls.link")}
+          </ButtonLink>
+        ) : null}
+        {readable && r.rooms ? (
+          <ButtonLink size="sm" variant="quiet" icon="chat" href={roomsHref(community.id)}>
+            {t("rooms.link")}
           </ButtonLink>
         ) : null}
         {readable ? (

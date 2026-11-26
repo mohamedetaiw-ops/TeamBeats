@@ -13,7 +13,7 @@ import { BlockEditor } from "@/features/content/editor/BlockEditor";
 import type { BodyDocument } from "@/lib/content/types";
 import { PersonPicker } from "@/features/services/PersonPicker";
 import { problemMessages } from "@/lib/notifications/types";
-import { engagementApi, localName, postHref, send, type KeywordFilterView, type ModerationItem, type MuteView } from "@/lib/engagement";
+import { engagementApi, localName, postHref, roomHref, send, type KeywordFilterView, type ModerationItem, type MuteView } from "@/lib/engagement";
 import "./engagement.css";
 
 /**
@@ -95,14 +95,14 @@ function QueueEntry({ item, onDone }: { item: ModerationItem; onDone: (message: 
         <h2 id={headingId} className="engagement-post-author">
           <bdi>{item.author?.displayName ?? t("anonymous")}</bdi>
         </h2>
-        <Badge tone="neutral">{item.type === "post" ? t("types.post") : t("types.comment")}</Badge>
+        <Badge tone="neutral">{item.type === "post" ? t("types.post") : item.type === "message" ? t("types.message") : t("types.comment")}</Badge>
         <Badge tone={item.status === "published" || item.status === "visible" ? "info" : "warning"}>{state}</Badge>
         <p className="engagement-meta">
           <bdi>{localName(item.communityNames, locale)}</bdi>
           {" · "}
           <time dateTime={item.createdAt}>{format.dateTime(new Date(item.createdAt), { dateStyle: "medium", timeStyle: "short" })}</time>
           {" · "}
-          <Link href={postHref(item.communityId, item.postId)}>{t("open")}</Link>
+          <Link href={item.type === "message" ? roomHref(item.communityId, item.postId) : postHref(item.communityId, item.postId)}>{t("open")}</Link>
         </p>
       </div>
       {item.body ? (

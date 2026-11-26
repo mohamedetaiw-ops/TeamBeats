@@ -54,14 +54,14 @@ export function StatusNote({
 }
 
 /**
- * Reporting a post or comment (FR-018). The answer is the same however many people reported it, so the page only
+ * Reporting a post, comment or room message (FR-018, FR-029). The answer is the same however many people reported it, so the page only
  * thanks the reporter; moderators see the report in their queue.
  */
 export function ReportControl({
   type,
   id,
 }: {
-  type: "post" | "comment";
+  type: "post" | "comment" | "room-message";
   id: string;
 }) {
   const t = useTranslations("engagement.moderation");
@@ -117,7 +117,7 @@ export function ReportControl({
     <form
       className="engagement-section"
       onSubmit={(e) => void submit(e)}
-      aria-label={type === "post" ? t("reportPost") : t("reportComment")}
+      aria-label={type === "post" ? t("reportPost") : type === "comment" ? t("reportComment") : t("reportMessage")}
     >
       <SelectField
         label={t("reason")}

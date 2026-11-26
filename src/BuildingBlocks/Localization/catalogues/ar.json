@@ -3138,5 +3138,9 @@
   "ai.provider_key.checks.no_adapter": "لا يوجد محوّل يستطيع اختبار هذا المزوّد.",
   "ai.provider_key.checks.rejected": "رفض OpenRouter المفتاح.",
   "ai.provider_key.checks.unreachable": "لم يستجب OpenRouter.",
-  "ai.provider_key.checks.egress_blocked": "لا يستطيع هذا التثبيت الوصول إلى OpenRouter بحكم تصميمه."
+  "ai.provider_key.checks.egress_blocked": "لا يستطيع هذا التثبيت الوصول إلى OpenRouter بحكم تصميمه.",
+  "notifications.template.engagement.room.mention.title": "تمت الإشارة إليك في غرفة نقاش",
+  "notifications.template.engagement.room.mention.body": "أشار إليك أحد الزملاء في غرفة نقاش في مجتمع. افتحها لقراءة الرسالة.",
+  "conflict.engagement.room_limit": "يضم هذا المجتمع 20 غرفة مفتوحة بالفعل. أرشف إحداها أولًا.",
+  "conflict.engagement.room_archived": "هذه الغرفة مؤرشفة، لذلك لا تقبل رسائل جديدة."
 }

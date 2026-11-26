@@ -974,6 +974,8 @@
         "engagement_recognition": "Recognition",
         "engagement_points": "Points and leaderboards",
         "engagement_galleries": "Galleries",
+        "engagement_mirroring": "Teams and Slack mirroring",
+        "engagement_rooms": "Discussion rooms",
         "learning_courses": "Courses and learning paths",
         "learning_mandatory": "Mandatory training",
         "learning_scorm": "SCORM and xAPI import",
@@ -14307,7 +14309,8 @@
       "types": {
         "post": "Post",
         "comment": "Comment",
-        "anonymous": "Anonymous Speak Up"
+        "anonymous": "Anonymous Speak Up",
+        "message": "Room message"
       },
       "open": "Open",
       "embed": "Embedded content",
@@ -14353,7 +14356,8 @@
       "answerAction": "Answer privately",
       "decline": "Decline",
       "sendAnswer": "Send answer",
-      "confirmDecline": "Decline"
+      "confirmDecline": "Decline",
+      "reportMessage": "Report this message"
     },
     "speakUp": {
       "anonymous": "Anonymous",
@@ -14778,6 +14782,39 @@
       "imageAlt": "Image {name}",
       "size": "{size} KB",
       "failed": "That did not work. Try again."
+    },
+    "rooms": {
+      "link": "Rooms",
+      "pageTitle": "Discussion rooms",
+      "listLabel": "Rooms",
+      "emptyTitle": "No rooms yet",
+      "empty": "Nobody has opened a room in this community yet.",
+      "emptyManager": "Open a room for live conversation in this community.",
+      "unavailableTitle": "Rooms are not available",
+      "unavailable": "Discussion rooms are not part of your organization's plan.",
+      "createTitle": "Open a room",
+      "name": "Room name ({language})",
+      "create": "Open room",
+      "created": "The room is open.",
+      "failed": "That did not work",
+      "working": "Working…",
+      "archived": "Archived",
+      "archive": "Archive room",
+      "lastMessage": "Last message {when}",
+      "noMessages": "No messages yet",
+      "live": "Live",
+      "connecting": "Connecting…",
+      "goneTitle": "You can no longer read this room",
+      "gone": "You lost access to this community, so new messages are not shown.",
+      "quietTitle": "No messages yet",
+      "quiet": "Nobody has written here yet.",
+      "quietWriter": "Start the conversation.",
+      "messagesLabel": "Messages",
+      "composerLabel": "Write a message",
+      "message": "Message",
+      "send": "Send",
+      "readOnly": "You can read this room. Join the community to write.",
+      "delete": "Delete"
     }
   },
   "learning": {

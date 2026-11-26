@@ -26,3 +26,21 @@ Depends on 002, 004, 009, 010, 011, 012, 015, 026. R2.
 
 ## Final phase
 - [x] T015 Home widgets for 008; performance tests; OpenAPI; R2 implementation notes; spec evidence
+
+## R3
+
+Depends on 015 (Teams bot), 017 (Slack), 013 (AI Gateway), 021 (sentiment). R3 covers User Stories 9 to 11 and FR-027 to FR-033.
+
+### Phase 5: User Story 9, discussion rooms (P2)
+- [ ] T016 [US9] Rooms and messages: migration, capability `engagement.rooms`, audit actions, API, live stream, mentions, keyword hold, reports and removal in the moderator queue; integration tests
+- [ ] T017 [US9] Rooms on the community page and the room page with live updates; e2e
+
+### Phase 6: User Story 10, mirroring (P3)
+- [ ] T018 [US10] Mirrors to Slack and Teams channels: migration, capability `engagement.mirroring`, Teams channel post through the bot, `PostPublished` handler, section on the community settings; tests
+
+### Phase 7: User Story 11, AI summaries and sentiment trends (P3)
+- [ ] T019 [US11] Thread and room summaries through the AI Gateway, tenant setting for anonymous content; tests
+- [ ] T020 [US11] Sentiment topic key and trends contract in 021, room and Speak Up sources, trend on the community page; tests
+
+### Final phase (R3)
+- [ ] T021 OpenAPI; R3 implementation notes; spec evidence

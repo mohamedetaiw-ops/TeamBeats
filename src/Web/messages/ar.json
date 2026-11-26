@@ -974,6 +974,8 @@
         "engagement_recognition": "التقدير",
         "engagement_points": "النقاط ولوحات الصدارة",
         "engagement_galleries": "معارض الصور",
+        "engagement_mirroring": "النسخ إلى Teams وSlack",
+        "engagement_rooms": "غرف النقاش",
         "learning_courses": "الدورات ومسارات التعلم",
         "learning_mandatory": "التدريب الإلزامي",
         "learning_scorm": "استيراد SCORM وxAPI",
@@ -14307,7 +14309,8 @@
       "types": {
         "post": "منشور",
         "comment": "تعليق",
-        "anonymous": "تحدث بصراحة دون اسم"
+        "anonymous": "تحدث بصراحة دون اسم",
+        "message": "رسالة غرفة"
       },
       "open": "فتح",
       "embed": "محتوى مضمن",
@@ -14353,7 +14356,8 @@
       "answerAction": "الرد بشكل خاص",
       "decline": "رفض",
       "sendAnswer": "إرسال الرد",
-      "confirmDecline": "رفض"
+      "confirmDecline": "رفض",
+      "reportMessage": "أبلغ عن هذه الرسالة"
     },
     "speakUp": {
       "anonymous": "مجهول",
@@ -14778,6 +14782,39 @@
       "imageAlt": "صورة {name}",
       "size": "{size} كيلوبايت",
       "failed": "لم ينجح ذلك. حاول مرة أخرى."
+    },
+    "rooms": {
+      "link": "الغرف",
+      "pageTitle": "غرف النقاش",
+      "listLabel": "الغرف",
+      "emptyTitle": "لا توجد غرف بعد",
+      "empty": "لم يفتح أحد غرفة في هذا المجتمع بعد.",
+      "emptyManager": "افتح غرفة للمحادثة المباشرة في هذا المجتمع.",
+      "unavailableTitle": "الغرف غير متاحة",
+      "unavailable": "غرف النقاش ليست ضمن خطة مؤسستك.",
+      "createTitle": "افتح غرفة",
+      "name": "اسم الغرفة ({language})",
+      "create": "افتح الغرفة",
+      "created": "تم فتح الغرفة.",
+      "failed": "لم ينجح ذلك",
+      "working": "جارٍ العمل…",
+      "archived": "مؤرشفة",
+      "archive": "أرشف الغرفة",
+      "lastMessage": "آخر رسالة {when}",
+      "noMessages": "لا توجد رسائل بعد",
+      "live": "مباشر",
+      "connecting": "جارٍ الاتصال…",
+      "goneTitle": "لم يعد بإمكانك قراءة هذه الغرفة",
+      "gone": "فقدت صلاحية الوصول إلى هذا المجتمع، لذلك لن تظهر الرسائل الجديدة.",
+      "quietTitle": "لا توجد رسائل بعد",
+      "quiet": "لم يكتب أحد هنا بعد.",
+      "quietWriter": "ابدأ المحادثة.",
+      "messagesLabel": "الرسائل",
+      "composerLabel": "اكتب رسالة",
+      "message": "الرسالة",
+      "send": "إرسال",
+      "readOnly": "يمكنك قراءة هذه الغرفة. انضم إلى المجتمع لتكتب.",
+      "delete": "حذف"
     }
   },
   "learning": {

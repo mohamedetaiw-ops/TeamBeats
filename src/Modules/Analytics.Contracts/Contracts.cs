@@ -66,7 +66,7 @@ public static class AnalyticsEvents
     /// <summary>What a person did in communities and engagement (spec 023 FR-024, SC-001).</summary>
     public static readonly IReadOnlySet<string> EngagementActions = new HashSet<string>(StringComparer.Ordinal)
     {
-        "post", "comment", "react", "vote", "recognize", "respond", "join",
+        "post", "comment", "react", "vote", "recognize", "respond", "join", "room_message",
     };
 
     /// <summary>Anonymous actions, counted with no identity at all (spec 023 FR-005, FR-024).</summary>

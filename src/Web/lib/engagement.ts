@@ -17,6 +17,8 @@ export type CommunityRights = {
   mutedUntil: string | null;
   canAddSpeakUp: boolean;
   canAllowAnonymous: boolean;
+  /** Whether the tenant's package has discussion rooms (spec 023 R3). */
+  rooms: boolean;
 };
 
 export type CommunityView = {
@@ -48,8 +50,9 @@ export const reportReasons = ["spam", "harassment", "inappropriate", "misinforma
 export type ReportReason = (typeof reportReasons)[number];
 
 export type ModerationItem = {
-  type: "post" | "comment" | "anonymous";
+  type: "post" | "comment" | "anonymous" | "message";
   id: string;
+  /** The post, or for a room message the room. */
   postId: string;
   communityId: string;
   communityNames: Record<string, string>;
@@ -145,6 +148,8 @@ export function localName(names: Record<string, string> | undefined, locale: str
 
 export const communityHref = (id: string) => `/communities/${encodeURIComponent(id)}`;
 export const postHref = (communityId: string, postId: string) => `/communities/${encodeURIComponent(communityId)}/posts/${encodeURIComponent(postId)}`;
+export const roomsHref = (communityId: string) => `/communities/${encodeURIComponent(communityId)}/rooms`;
+export const roomHref = (communityId: string, roomId: string) => `/communities/${encodeURIComponent(communityId)}/rooms/${encodeURIComponent(roomId)}`;
 export const hashtagHref = (tag: string) => `/communities/hashtags/${encodeURIComponent(tag)}`;
 
 /** A guid as the API writes it; pages refuse anything else before calling the API. */
@@ -345,3 +350,32 @@ export type AlbumPage = { album: AlbumView; canUpload: boolean; canModerate: boo
 export const albumsHref = (communityId: string) => `${communityHref(communityId)}/albums`;
 export const albumHref = (communityId: string, albumId: string) => `${albumsHref(communityId)}/${encodeURIComponent(albumId)}`;
 export const photoFile = (photoId: string) => `${engagementApi}/photos/${encodeURIComponent(photoId)}/file`;
+
+/** Discussion rooms with live chat (spec 023 R3 US9). The API decides who reads, writes, archives and moderates. */
+export type RoomView = {
+  id: string;
+  communityId: string;
+  names: Record<string, string>;
+  communityNames: Record<string, string>;
+  status: "active" | "archived";
+  createdAt: string;
+  lastMessageAt: string | null;
+  rights: { canWrite: boolean; canArchive: boolean; canModerate: boolean };
+};
+
+export type RoomMessageView = {
+  id: string;
+  roomId: string;
+  author: EngagementPerson;
+  body: string;
+  createdAt: string;
+  status: ContentStatus | "deleted";
+  heldReason: HeldReason | null;
+  removedReason: string | null;
+  mine: boolean;
+  canRemove: boolean;
+  canReport: boolean;
+};
+
+export type RoomMessagePage = { items: RoomMessageView[]; cursor: string | null };
+export type RoomMessageSaved = { message: RoomMessageView; notReachable: EngagementPerson[] };

@@ -3138,5 +3138,9 @@
   "ai.provider_key.checks.no_adapter": "No adapter can test this provider.",
   "ai.provider_key.checks.rejected": "OpenRouter refused the key.",
   "ai.provider_key.checks.unreachable": "OpenRouter did not answer.",
-  "ai.provider_key.checks.egress_blocked": "This installation cannot reach OpenRouter by design."
+  "ai.provider_key.checks.egress_blocked": "This installation cannot reach OpenRouter by design.",
+  "notifications.template.engagement.room.mention.title": "You were mentioned in a room",
+  "notifications.template.engagement.room.mention.body": "Someone mentioned you in a community discussion room. Open it to read the message.",
+  "conflict.engagement.room_limit": "This community already has 20 open rooms. Archive one first.",
+  "conflict.engagement.room_archived": "This room is archived, so it takes no new messages."
 }
