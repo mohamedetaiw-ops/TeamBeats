@@ -68,3 +68,19 @@ Depends on 003 (groups, `UserDeprovisioned`), 004, 005, 006, 007, 008 (shell slo
 
 ### R2 final phase
 - [x] T037 OpenAPI; R2 implementation notes; spec evidence for R2
+
+## R3
+
+### Phase 13: User Story 10, guest sites (P3)
+- [ ] T038 [P] [US10] Tests: share needs site.manage and space ownership, days 1 to 365, archived site refused; guests read only published Public and Internal items of a live share; revoked or expired share and leaving the space end it; members and other spaces get nothing; entitlement off and other tenant
+- [ ] T039 [US10] Site guest shares, guest reading endpoints, audit; site Guests section and Shared sites on the space page, English and Arabic, e2e with axe
+
+### Phase 14: User Story 11, campaign automation (P3)
+- [ ] T040 [P] [US11] Tests: follow-up step due after the delay goes only to recipients of the earlier step who have not acted; skipped when the earlier step is skipped; goal reached skips pending steps, completes and notifies; follows and goal refused without the capability
+- [ ] T041 [US11] Step follows and delay, campaign goal, scheduler, editor and dashboard, English and Arabic, e2e with axe
+
+### Phase 15: event items (FR-018 R3)
+- [ ] T042 Event content type linked to a Calendar event through a Calendar contract, reading view with the event card; tests and e2e
+
+### R3 final phase
+- [ ] T043 OpenAPI; R3 implementation notes; spec evidence for R3

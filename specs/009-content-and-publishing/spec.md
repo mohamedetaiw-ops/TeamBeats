@@ -169,6 +169,25 @@ HR runs a four-week benefits enrolment campaign: an article, two announcements, 
 3. **Given** a #hashtag, **Then** it links to a topic page listing permitted items with that tag.
 4. **Given** moderation is on for the site, **Then** comments from users without `content.edit` are held until a moderator approves them; reported comments are hidden after the configured number of reports pending review.
 
+### User Story 10: A site for guests (Priority: P3, R3)
+
+Acme runs a partner programme. Its communications team keeps a "Partner news" site and shares it with the "Distributors" guest space (spec 026, spec 029), so the distributors read the news and guides there without seeing anything else of the intranet.
+
+**Acceptance scenarios:**
+1. **Given** a site and a guest space the site owner owns, **When** they share the site with the space for a number of days (1 to 365, 30 by default), **Then** the space's guests see the site under the space and read its published items while the share lasts.
+2. **Given** a guest of a shared space, **Then** they read only published Public and Internal items of that site, never Confidential or Restricted ones, never comments, reactions or other sites, and cannot comment or react. Every other content API refuses them as before.
+3. **Given** the share is revoked or expires, or the guest leaves the space, **Then** the guest reads nothing of the site from then on.
+4. **Given** a site share, **Then** sharing and revoking are audited, and the site owner sees the live and past shares of the site.
+
+### User Story 11: Campaigns that follow up on their own (Priority: P3, R3)
+
+HR's benefits campaign should remind people only when they have not acted, a set time after they got the previous message, and stop once enough people have enrolled.
+
+**Acceptance scenarios:**
+1. **Given** a campaign step set to follow an earlier step after a number of days, **When** that time has passed since the earlier step was sent, **Then** it is sent only to the people who got the earlier step and have not acted on its item.
+2. **Given** a campaign goal (an item of the campaign and a share of the audience that acted on it), **When** the share is reached, **Then** the steps still pending are skipped, the campaign is completed and the people who manage it are told.
+3. **Given** a campaign without the advanced automation feature, **Then** steps run on fixed times only and a goal cannot be set.
+
 ### Edge cases and exception flows
 - The targeted audience resolves to zero people: publishing warns and asks for confirmation.
 - The audience changes after publishing (people join or leave a unit): feeds and acknowledgement lists follow the current membership; confirmations already given are kept.
@@ -179,6 +198,8 @@ HR runs a four-week benefits enrolment campaign: an article, two announcements, 
 - AI drafting is unavailable: authoring works as normal and the AI actions show a degraded state (constitution XII).
 - Uploaded or pasted HTML: sanitized, scripts removed, only allowlisted embeds kept.
 - A site owner leaves: the site is flagged ownerless in the content health dashboard and the communications admin is notified.
+- A site shared with guests is archived: guests stop reading it at once, and the share stays on record.
+- A followed step whose earlier step was skipped or cancelled: it is skipped too.
 
 ## 5. Functional requirements
 
@@ -202,6 +223,9 @@ HR runs a four-week benefits enrolment campaign: an article, two announcements, 
 - **FR-018 / PUB-018**: Event items MUST support date and time with time zone, location or online link, capacity, registration, waitlist and calendar file download. Company and department events, important dates and RSVP are owned by the `Calendar` module (spec 037 FR-017 to FR-020, R2); event items of sites (R3) publish into the same calendar events so an event exists once.
 - **FR-019 / PUB-019**: All published items MUST be indexed for search (spec 012) with their audience, permissions, locale, version and classification, and removed from the index within the KNO-006 objective (5 minutes by default, owned by spec 012) when unpublished or restricted.
 - **FR-020 / PUB-020**: Retention MUST be configurable per content type: keep versions for a period, then delete old versions or the whole item, with legal hold (spec 011) taking precedence. *(ADM-003)*
+- **FR-025 / PUB-025**: *(R3)* A site owner MUST be able to share a site read-only with a guest space they own, for a set number of days, and revoke it. Guests of the space MUST read only the site's published Public and Internal items while the share lasts; shares MUST be audited.
+- **FR-026 / PUB-026**: *(R3)* A campaign step MUST be able to follow an earlier step after a number of days, going only to the people who got that step and have not acted on its item.
+- **FR-027 / PUB-027**: *(R3)* A campaign MUST be able to have a goal: an item and the share of the audience that acted on it, which completes the campaign and skips its pending steps when reached.
 - **FR-021**: Each feed item MUST carry its reading time (body words at 200 a minute, at least one minute) and its reaction count, computed by the content module with one query per page of results. The news feed component MUST offer a list layout and a featured layout (lead story large, the rest as rows).
 - **FR-022**: News that refers to a time (an event starting soon, a live session) MUST say it from the event's own start time, rendered against the viewer's clock, never as fixed text in a title; a title is a headline that stays true after the event. Seeded and demo news follow the same rule. Acceptance: no news title on staging contains a relative time such as "in 12 minutes".
 - **FR-023**: A story page MUST follow the editorial rules of spec 036 DLS-112: kind label, title, byline with author, date and reading time, an optional 16:9 hero picture with alternative text and no placeholder when there is none, and the text in the reading column. Feed and home cards for a story with no picture use the typographic card.
@@ -232,6 +256,7 @@ HR runs a four-week benefits enrolment campaign: an article, two announcements, 
 | Comment, reaction | Product | Internal | Site setting, default life of item | Yes |
 | Site, theme, template | Product | Internal | Life of tenant | No |
 | Campaign and send log | Product | Internal | 2 years default | Yes (recipients) |
+| Site share with a guest space | Product | Internal | Life of the site | No (space and sharer IDs) |
 
 ## 9. Package entitlements
 
@@ -243,6 +268,8 @@ HR runs a four-week benefits enrolment campaign: an article, two announcements, 
 | `content.max_sites` (limit) | 3 | 25 | unlimited |
 | `content.campaigns` | off | on | on |
 | `content.ai_translation` | off | on | on |
+| `content.guest_sites` (sites shared with guest spaces, R3) | off | off | on |
+| `content.campaign_automation` (follow-up steps and goals, R3) | off | off | on |
 | `ai.authoring` (AI drafting and rewrite, counts against AI quota) | on | on | on |
 
 ## 10. UX, localization and accessibility
@@ -274,6 +301,8 @@ HR runs a four-week benefits enrolment campaign: an article, two announcements, 
 | content.version_restored | audit | item, from version, actor |
 | content.owner_reassigned | audit | item, from, to, reason |
 | site.created / editors_changed | audit | site, actor (theme and page changes are audited by specs 033 and 032) |
+| site.shared_with_guests / guest_share_revoked | audit | site, space, expiry, actor |
+| campaign.goal_reached | audit | campaign, goal item, share reached |
 | content.viewed, content.reacted, content.commented | analytics | item, user (pseudonymous in analytics), channel, dwell bucket |
 | campaign.step_delivered / opened / clicked | analytics | campaign, step, channel |
 
@@ -283,6 +312,7 @@ HR runs a four-week benefits enrolment campaign: an article, two announcements, 
 - Using @mentions to find out who exists in a restricted unit: mention suggestions only list people the author can see in the directory (spec 010).
 - Inferring restricted content through feed counts or hashtags: counts only include permitted items.
 - Acknowledgement report export is a personal data export: needs `content.publish_critical` or `content.admin` and is audited.
+- Sharing a site with guests to reach outsiders with internal news: only a site owner who also owns the space can share, Confidential and Restricted items never reach guests, and every share is audited with its expiry.
 
 ## 15. Non-functional requirements
 - Feed and page render p95 under 800 ms server-side for a user with 50 audience memberships and 10,000 published items in the tenant.
@@ -312,6 +342,8 @@ HR runs a four-week benefits enrolment campaign: an article, two announcements, 
 | ADM-001 (branding) | FR-014, US6 |
 | ADM-003 | FR-020 |
 | UC-04 | US1, US2 |
+| R3 guest sites | FR-025, US10 |
+| R3 campaign automation | FR-026, FR-027, US11 |
 
 ## Review checklist
 - [x] No implementation details
