@@ -3083,5 +3083,6 @@
   "integrations.permission.calendars_read_write": "Answer meeting invitations on the employee's behalf, only when they choose to",
   "validation.calendar.event_id": "The calendar event was not recognised.",
   "validation.calendar.response": "Choose Accept, Tentative or Decline.",
-  "validation.calendar.response_comment": "Keep the note to the organizer under 500 characters."
+  "validation.calendar.response_comment": "Keep the note to the organizer under 500 characters.",
+  "integrations.permission.presence_read_all": "Read colleagues' Teams presence, such as available or in a call, as the employee"
 }

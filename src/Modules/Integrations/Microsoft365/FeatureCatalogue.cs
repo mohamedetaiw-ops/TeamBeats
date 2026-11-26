@@ -51,6 +51,11 @@ public static class FeatureCatalogue
         [
             new("Calendars.ReadBasic", PermissionType.Delegated, "integrations.permission.calendars_read_basic"),
         ]),
+        // Teams presence (spec 018 R3): read as the viewer, so Teams' own privacy decides what shows; opt-in by tenant.
+        new(Microsoft365Features.Presence, Capabilities.IntegrationMicrosoft365,
+        [
+            new("Presence.Read.All", PermissionType.Delegated, "integrations.permission.presence_read_all"),
+        ]),
         // Office editing (spec 011 FR-010): the employee's own OneDrive holds the copy while they edit, so only
         // Files.ReadWrite on their own files; never Files.ReadWrite.All or Sites.
         new(Microsoft365Features.OfficeEditing, Capabilities.IntegrationMicrosoft365,

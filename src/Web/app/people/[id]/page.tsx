@@ -12,6 +12,7 @@ import { PersonItem } from "@/features/people/PersonItem";
 import "@/features/people/people.css";
 import { Widget } from "@/components/ui/Widget";
 import { PersonAvatar } from "@/components/ui/Person";
+import { PresenceStatus } from "@/features/people/PresenceStatus";
 
 /**
  * A person's profile (spec 010 US1 and US3): the fields the viewer may see, contact actions built only from those
@@ -49,6 +50,7 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
     apiGet<OrgChart>(`/api/v1/people/${encodeURIComponent(id)}/org-chart`),
     apiGet<RecognitionView[]>(`/api/v1/engagement/people/${encodeURIComponent(id)}/recognitions`),
   ]);
+
   const name = personName(p, locale);
   const email = p.fields.find((f) => f.key === "email")?.value;
   const phones = p.fields.filter((f) => isPhoneField(f.key));
@@ -76,6 +78,7 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
               {p.unit ? <bdi>{localName(p.unit.names, locale)}</bdi> : null}
               {p.location ? <bdi>{locationName(p.location, locale)}</bdi> : null}
             </span>
+            {p.isSelf ? null : <PresenceStatus personId={p.id} />}
             {p.away ? (
               <span className="people-away">
                 {t("profile.away", { date: format.dateTime(new Date(`${p.away.to}T00:00:00Z`), { dateStyle: "medium", timeZone: "UTC" }) })}

@@ -3829,6 +3829,18 @@
     "quick": {
       "email": "مراسلة {name} بالبريد",
       "call": "الاتصال بـ {name}"
+    },
+    "presence": {
+      "label": "الحالة في Teams",
+      "available": "متاح",
+      "away": "بعيد",
+      "busy": "مشغول",
+      "do_not_disturb": "عدم الإزعاج",
+      "offline": "غير متصل",
+      "in_a_call": "في مكالمة",
+      "in_a_meeting": "في اجتماع",
+      "presenting": "يقدّم عرضاً",
+      "out_of_office": "خارج المكتب"
     }
   },
   "security": {
@@ -10877,7 +10889,8 @@
         "sharepoint_documents": "مستندات SharePoint",
         "sharepoint_upload": "الرفع إلى SharePoint",
         "teams": "إشعارات Teams",
-        "calendar_responses": "الرد على دعوات الاجتماعات"
+        "calendar_responses": "الرد على دعوات الاجتماعات",
+        "presence": "الحالة في Teams على الملفات الشخصية"
       },
       "featureOn": "مفعلة",
       "featureOff": "متوقفة",
@@ -10899,7 +10912,8 @@
         "files_read_all": "السماح لكل موظف بتصفح ملفات SharePoint ومعاينتها وتنزيلها إذا كان يستطيع فتحها في SharePoint",
         "files_read_write_all": "السماح لكل موظف برفع الملفات وإعادة تسمية العناصر في مكتبات SharePoint المتصلة حيث يسمح له SharePoint بذلك",
         "teams_activity_send": "إرسال الإشعارات إلى موجز النشاط في Teams لكل شخص، دون قراءة المحادثات أو القنوات",
-        "calendars_read_write": "الرد على دعوات الاجتماعات نيابة عن الموظف، فقط عندما يختار ذلك"
+        "calendars_read_write": "الرد على دعوات الاجتماعات نيابة عن الموظف، فقط عندما يختار ذلك",
+        "presence_read_all": "قراءة حالة الزملاء في Teams، مثل متاح أو في مكالمة، باسم الموظف"
       },
       "application": "تطبيق",
       "delegated": "نيابة عن الموظف",

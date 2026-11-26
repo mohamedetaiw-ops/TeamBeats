@@ -3829,6 +3829,18 @@
     "quick": {
       "email": "Email {name}",
       "call": "Call {name}"
+    },
+    "presence": {
+      "label": "Teams status",
+      "available": "Available",
+      "away": "Away",
+      "busy": "Busy",
+      "do_not_disturb": "Do not disturb",
+      "offline": "Offline",
+      "in_a_call": "In a call",
+      "in_a_meeting": "In a meeting",
+      "presenting": "Presenting",
+      "out_of_office": "Out of office"
     }
   },
   "security": {
@@ -10877,7 +10889,8 @@
         "sharepoint_documents": "SharePoint documents",
         "sharepoint_upload": "SharePoint uploads",
         "teams": "Teams notifications",
-        "calendar_responses": "Answering meeting invitations"
+        "calendar_responses": "Answering meeting invitations",
+        "presence": "Teams presence on profiles"
       },
       "featureOn": "On",
       "featureOff": "Off",
@@ -10899,7 +10912,8 @@
         "files_read_all": "Let each employee browse, preview and download SharePoint files they can already open in SharePoint",
         "files_read_write_all": "Let each employee upload files and rename items in connected SharePoint libraries where SharePoint lets them",
         "teams_activity_send": "Send notifications to each person's Teams activity feed, without reading chats or channels",
-        "calendars_read_write": "Answer meeting invitations on the employee's behalf, only when they choose to"
+        "calendars_read_write": "Answer meeting invitations on the employee's behalf, only when they choose to",
+        "presence_read_all": "Read colleagues' Teams presence, such as available or in a call, as the employee"
       },
       "application": "application",
       "delegated": "on behalf of the employee",

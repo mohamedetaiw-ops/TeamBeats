@@ -584,6 +584,18 @@ public sealed partial class FakeMicrosoftGraph : HttpMessageHandler
         }
         var userId = parts[1];
         var scopes = parts[2].Split(',', StringSplitOptions.RemoveEmptyEntries).ToHashSet(StringComparer.Ordinal);
+        if (path.StartsWith("/v1.0/users/", StringComparison.Ordinal) && path.EndsWith("/presence", StringComparison.Ordinal) && request.Method == HttpMethod.Get)
+        {
+            // Teams presence of anyone in the directory (spec 018 R3); a person without a Teams presence reads as unknown.
+            if (!scopes.Contains("Presence.Read.All"))
+            {
+                return new HttpResponseMessage(HttpStatusCode.Forbidden) { Content = new StringContent("{\"error\":{\"code\":\"Forbidden\"}}") };
+            }
+            var who = Uri.UnescapeDataString(path["/v1.0/users/".Length..^"/presence".Length]);
+            PresenceReads.Enqueue(who);
+            var (availability, activity) = _presence.TryGetValue(who, out var p) ? p : ("PresenceUnknown", "PresenceUnknown");
+            return Json(new { id = Guid.NewGuid().ToString(), availability, activity, statusMessage = new { message = new { content = "Fictional status text" } } });
+        }
         var data = Data(directoryId);
         if (path.StartsWith("/v1.0/me/drive/", StringComparison.Ordinal))
         {
@@ -1329,6 +1341,14 @@ public sealed partial class FakeMicrosoftGraph : HttpMessageHandler
     public sealed record InvitationAnswer(string Upn, string EventId, string Action, string Comment, bool SendResponse);
 
     public ConcurrentQueue<InvitationAnswer> InvitationAnswers { get; } = new();
+
+    private readonly ConcurrentDictionary<string, (string Availability, string Activity)> _presence = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Sets a person's Teams presence by address, with Graph's own values such as Busy and InACall.</summary>
+    public void SetPresence(string upn, string availability, string activity) => _presence[upn] = (availability, activity);
+
+    /// <summary>Addresses whose presence was read.</summary>
+    public ConcurrentQueue<string> PresenceReads { get; } = new();
 
     /// <summary>Every calendar event of a directory's mailboxes, once each.</summary>
     public IReadOnlyList<Event> DirectoryEvents(Guid directoryId) => AllEvents(directoryId);

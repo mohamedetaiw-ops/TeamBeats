@@ -287,7 +287,7 @@ No new capability or permission key. Admin work uses `integration.manage`. The a
 ## 17. Open questions
 - Decided 2026-11-05 (Mohamed): mail and calendar ship in R1, using the R1 Microsoft 365 connection of spec 006 and Entra ID sign-in of spec 003; they do not wait for the connector framework (spec 017). Rooms stay in R2 with workplace booking (spec 031).
 - Decided 2026-11-05 (Mohamed): Workplace gets mail and calendar through the `integration.microsoft365` add-on.
-- [NEEDS CLARIFICATION: should Teams presence (available, in a call) be shown on profile cards?] Default: R3, needs `Presence.Read.All`, opt-in by tenant.
+- Teams presence on profile cards (resolved with the default): R3, a connection feature off by default that needs delegated `Presence.Read.All`, read as the viewer for a colleague whose free and busy the viewer may see, kept for a minute, and shown as the availability and activity in words only, never the status message.
 - [NEEDS CLARIFICATION: is on-premises Exchange Server needed for any target customer?] Default: not planned; hybrid through Graph only.
 - [NEEDS CLARIFICATION: should employees see their OneDrive recent files on the home page?] Default: R3, as a further feature of the same connection.
 

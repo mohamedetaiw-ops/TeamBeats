@@ -18,6 +18,7 @@ public sealed class GraphReadCache(IMemoryCache cache, TenantContextAccessor con
     public static readonly TimeSpan MailFreshness = TimeSpan.FromMinutes(2);
     public static readonly TimeSpan CalendarFreshness = TimeSpan.FromMinutes(5);
     public static readonly TimeSpan LastKnown = TimeSpan.FromHours(1);
+    public static readonly TimeSpan PresenceFreshness = TimeSpan.FromMinutes(1);
 
     /// <summary>Graph refreshes an employee may force per minute; beyond it a refresh answers from the cache.</summary>
     public const int RefreshesPerMinute = 6;
@@ -273,6 +274,50 @@ public sealed class GraphCalendarResponses(DelegatedAccessService access, IMicro
         cache.Forget(Microsoft365Features.Calendar);
         return M365States.Ok;
     }
+}
+
+/// <summary>
+/// Microsoft 365 adapter for <see cref="IPresence"/> (spec 018 R3): <c>GET users/{address}/presence</c> as the viewer
+/// with <c>Presence.Read.All</c>, kept for a minute per viewer. Only the availability and a few activities leave it.
+/// </summary>
+public sealed class GraphPresence(DelegatedAccessService access, IMicrosoftGraph graph, GraphReadCache cache) : IPresence
+{
+    private sealed record Reading(string Availability, string? Activity);
+
+    public async Task<PresenceResult> GetAsync(string colleagueAddress, CancellationToken ct = default)
+    {
+        var grant = await access.AcquireAsync(Microsoft365Features.Presence, ct);
+        if (grant.State != M365States.Ok)
+        {
+            return new PresenceResult(grant.State, null, null);
+        }
+        var (value, _, state) = await cache.ReadAsync(Microsoft365Features.Presence, colleagueAddress.ToLowerInvariant(), GraphReadCache.PresenceFreshness, false,
+            async () =>
+            {
+                var result = await graph.DelegatedSendAsync(grant.AccessToken!, HttpMethod.Get, $"users/{Uri.EscapeDataString(colleagueAddress)}/presence", null, ct);
+                return new Reading(Availability(GraphMailbox.Text(result, "availability")), Activity(GraphMailbox.Text(result, "activity")));
+            });
+        return value is null ? new PresenceResult(state, null, null) : new PresenceResult(state, value.Availability, value.Activity);
+    }
+
+    public static string Availability(string? graph) => graph switch
+    {
+        "Available" or "AvailableIdle" => "available",
+        "Away" or "BeRightBack" => "away",
+        "Busy" or "BusyIdle" => "busy",
+        "DoNotDisturb" => "do_not_disturb",
+        "Offline" => "offline",
+        _ => "unknown",
+    };
+
+    public static string? Activity(string? graph) => graph switch
+    {
+        "InACall" or "InAConferenceCall" => "in_a_call",
+        "InAMeeting" => "in_a_meeting",
+        "Presenting" => "presenting",
+        "OutOfOffice" => "out_of_office",
+        _ => null,
+    };
 }
 
 /// <summary>Microsoft 365 adapter for <see cref="IAvailability"/> (spec 018 US4): <c>getSchedule</c> as the viewer, status only.</summary>

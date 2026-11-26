@@ -124,24 +124,42 @@ public static class WorkspaceEndpoints
             IProfiles profiles, ITenantContext context, CancellationToken ct) =>
         {
             await entitlements.DemandAsync(Capabilities.IntegrationMicrosoft365, ct);
-            // Who may see a colleague's free and busy is the profile visibility rule (spec 010 FR-014): the viewer needs
-            // `people.view` and the colleague an active profile the viewer may open. Users of another tenant are not found.
-            if (!await authz.HoldsAnywhereAsync(Permissions.PeopleView, ct))
-            {
-                throw AppException.NotFound();
-            }
-            var visible = await profiles.ViewAsync(context.RequireUser(), [userId], ct);
-            var colleague = visible is [{ Active: true }] ? await users.GetAsync(userId, ct) : null;
-            var membership = colleague is null ? null : await memberships.GetAsync(userId, ct);
-            if (colleague is null || membership is not { Status: MembershipStatus.Active } || string.IsNullOrEmpty(colleague.Email))
-            {
-                throw AppException.NotFound();
-            }
+            var email = await ColleagueAddressAsync(userId, users, memberships, authz, profiles, context, ct);
             var zone = await ZoneAsync(settings, ct);
             var now = clock.UtcNow;
-            var result = await availability.GetAsync(colleague.Email, now, StartOfDay(now, zone).AddDays(1), ct);
+            var result = await availability.GetAsync(email, now, StartOfDay(now, zone).AddDays(1), ct);
             return Results.Ok(new AvailabilityResponse(result.State, result.Shared, result.Blocks));
         }).RequireTenantUser().WithTags("Integrations: mail and calendar");
+
+        // Teams presence on the profile (spec 018 R3): the same visibility as free and busy, read as the viewer.
+        app.MapGet("/api/v1/people/{userId:guid}/presence", async (Guid userId, IEntitlementService entitlements, IUserDirectory users,
+            ITenantMemberships memberships, IPresence presence, IAuthorizationService authz, IProfiles profiles, ITenantContext context, CancellationToken ct) =>
+        {
+            await entitlements.DemandAsync(Capabilities.IntegrationMicrosoft365, ct);
+            var email = await ColleagueAddressAsync(userId, users, memberships, authz, profiles, context, ct);
+            return Results.Ok(await presence.GetAsync(email, ct));
+        }).RequireTenantUser().WithTags("Integrations: mail and calendar");
+    }
+
+    /// <summary>
+    /// Who may see a colleague's free and busy or presence is the profile visibility rule (spec 010 FR-014): the viewer
+    /// needs <c>people.view</c> and the colleague an active profile the viewer may open. Users of another tenant are not found.
+    /// </summary>
+    private static async Task<string> ColleagueAddressAsync(Guid userId, IUserDirectory users, ITenantMemberships memberships, IAuthorizationService authz,
+        IProfiles profiles, ITenantContext context, CancellationToken ct)
+    {
+        if (!await authz.HoldsAnywhereAsync(Permissions.PeopleView, ct))
+        {
+            throw AppException.NotFound();
+        }
+        var visible = await profiles.ViewAsync(context.RequireUser(), [userId], ct);
+        var colleague = visible is [{ Active: true }] ? await users.GetAsync(userId, ct) : null;
+        var membership = colleague is null ? null : await memberships.GetAsync(userId, ct);
+        if (colleague is null || membership is not { Status: MembershipStatus.Active } || string.IsNullOrEmpty(colleague.Email))
+        {
+            throw AppException.NotFound();
+        }
+        return colleague.Email;
     }
 
     /// <summary>

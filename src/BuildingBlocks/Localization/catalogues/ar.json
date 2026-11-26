@@ -3083,5 +3083,6 @@
   "integrations.permission.calendars_read_write": "الرد على دعوات الاجتماعات نيابة عن الموظف، فقط عندما يختار ذلك",
   "validation.calendar.event_id": "لم يتم التعرف على حدث التقويم.",
   "validation.calendar.response": "اختر قبول أو مبدئي أو رفض.",
-  "validation.calendar.response_comment": "اجعل الملاحظة للمنظم أقل من 500 حرف."
+  "validation.calendar.response_comment": "اجعل الملاحظة للمنظم أقل من 500 حرف.",
+  "integrations.permission.presence_read_all": "قراءة حالة الزملاء في Teams، مثل متاح أو في مكالمة، باسم الموظف"
 }

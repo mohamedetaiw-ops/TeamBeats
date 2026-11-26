@@ -583,7 +583,7 @@ public sealed partial class MailCalendarTests(TenantWorld world)
     {
         var s = await SetupAsync([], package: "workplace");
         var client = s.Tenant["employee"].Client;
-        foreach (var url in new[] { "/api/v1/me/mail", "/api/v1/me/calendar", $"/api/v1/people/{s.Tenant["admin"].Id}/availability" })
+        foreach (var url in new[] { "/api/v1/me/mail", "/api/v1/me/calendar", $"/api/v1/people/{s.Tenant["admin"].Id}/availability", $"/api/v1/people/{s.Tenant["admin"].Id}/presence" })
         {
             var response = await client.GetAsync(url);
             Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);

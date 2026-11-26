@@ -29,6 +29,9 @@ public static class Microsoft365Features
 
     /// <summary>Accept, tentatively accept or decline invitations from My calendar (spec 018 R3, FR-015), as the employee.</summary>
     public const string CalendarResponses = "calendar_responses";
+
+    /// <summary>Teams presence of a colleague on their profile (spec 018 R3), read as the viewer.</summary>
+    public const string Presence = "presence";
 }
 
 /// <summary>Connection status (spec 006 FR-014).</summary>
@@ -537,6 +540,19 @@ public interface ICalendarResponses
 
     /// <summary>Returns an M365States value: ok, or why the answer could not be sent.</summary>
     Task<string> RespondAsync(string eventId, string response, string? comment, bool notifyOrganizer, CancellationToken ct = default);
+}
+
+/// <summary>
+/// A colleague's Teams presence (spec 018 R3): <see cref="Availability"/> is available, away, busy, do_not_disturb,
+/// offline or unknown; <see cref="Activity"/> is in_a_call, in_a_meeting, presenting or out_of_office, or null. Never
+/// a status message, a calendar item or a device.
+/// </summary>
+public sealed record PresenceResult(string State, string? Availability, string? Activity);
+
+public interface IPresence
+{
+    /// <summary>Teams presence of one colleague, read as the signed-in employee, so never more than Teams shows them.</summary>
+    Task<PresenceResult> GetAsync(string colleagueAddress, CancellationToken ct = default);
 }
 
 /// <summary>A status block only: free, busy, tentative, oof or working_elsewhere. Never a subject, location or attendee.</summary>

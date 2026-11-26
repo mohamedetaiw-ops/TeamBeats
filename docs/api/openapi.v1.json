@@ -146,6 +146,29 @@
         }
       }
     },
+    "/api/v1/people/{userId}/presence": {
+      "get": {
+        "tags": [
+          "Integrations: mail and calendar"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/integrations/pack-connections/{id}/finance-handoffs": {
       "get": {
         "tags": [

@@ -49,6 +49,7 @@ public static class IntegrationsModule
         services.AddScoped<IMailbox, GraphMailbox>();
         services.AddScoped<ICalendar, GraphCalendar>();
         services.AddScoped<ICalendarResponses, GraphCalendarResponses>();
+        services.AddScoped<IPresence, GraphPresence>();
         services.AddScoped<Agents.Contracts.IAgentTool, CalendarEventsTool>();
         services.AddScoped<IAvailability, GraphAvailability>();
         services.AddScoped<IOfficeEditor, GraphOfficeEditor>();

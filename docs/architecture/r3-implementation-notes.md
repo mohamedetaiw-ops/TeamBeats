@@ -180,3 +180,7 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - Answers are their own connection feature (`calendar_responses`, delegated `Calendars.ReadWrite`), so a tenant that only reads its calendars never grants write access. Recorded defaults: a note of up to 500 characters, the organizer told unless the employee unticks it, and only invitations (not responded, tentative or accepted) answerable; the employee's own meetings are not.
 - Graph answers `202 Accepted` with no body; the delegated gateway now treats it like `204`. A `400 ErrorInvalidRequest` (answering a meeting one organized) maps to `rejected`, shown as `refused`.
 - The read cache moves the employee's calendar to a new generation after an answer instead of removing keys, so My calendar and the unified calendar read fresh at once without a refresh limit.
+
+## Spec 018 R3 slice 2: Teams presence on profiles (T020)
+- Presence is its own connection feature (`presence`, delegated `Presence.Read.All`) and is read as the viewer, so Teams' own privacy decides; the visibility check is the free and busy one, now shared by both endpoints. Graph values are folded into six availabilities and four activities; the status message never leaves the adapter.
+- Recorded defaults: kept a minute per viewer; the profile reads it in the browser so a slow Teams answer never holds the page; unknown availability and every non-ok state show nothing; one's own profile does not ask.
