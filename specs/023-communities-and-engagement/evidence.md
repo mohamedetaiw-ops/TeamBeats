@@ -35,3 +35,16 @@ The spec stays Approved, not Implemented. Every part of the spec is built: commu
 | SC-001 40% monthly participation in pilot tenants | Not proven | Needs a pilot tenant; the FR-024 counts measure it |
 | SC-002 no anonymous item can be linked to its author in a security review | Partly met | The FR-005 and FR-024 tests check the database, audit, outbox and analytics; the security review itself is still to be held |
 | Cross-tenant, org boundary and package denial | Met | Every class above has a case for another tenant, and the closed community, unit scope and Workplace package cases (`SpeakUpTests.Only_engagement_administrators_allow_anonymity_and_Workplace_has_no_Speak_Up`, `SurveyTests.Surveys_stay_in_their_tenant_and_out_of_workplace`, `RecognitionTests.Recognition_stays_in_its_tenant_and_points_need_the_package`) |
+
+## R3
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| US9 / FR-027 rooms inside a community, read and written like its posts | Met | `RoomTests.Owners_open_rooms_members_write_and_readers_read`, `RoomTests.Closed_community_rooms_are_invisible_and_rooms_need_the_capability`, `rooms.spec.ts` |
+| FR-028 live updates without reloading, ending when access is lost | Met | `RoomTests.The_stream_delivers_new_messages_and_stops_when_access_is_lost`, `rooms.spec.ts` (a second browser sees messages arrive) |
+| FR-029 room messages follow mentions, keyword holds, reports and removal | Met | `RoomTests.Mentions_keyword_holds_reports_and_removal_follow_the_comment_rules` |
+| US10 / FR-030 one way mirroring to Slack and Teams, open internal communities only, excerpt only when allowed, through adapters | Met | `MirrorTests` (3 tests), `mirrors.spec.ts` |
+| US11 / FR-031 summaries through the gateway with the community's classification, only readable content, never stored | Met | `ThreadSummaryTests.Readers_summarize_long_threads_with_only_what_they_can_read`, `ThreadSummaryTests.Busy_rooms_are_summarized_from_their_visible_messages`, `rooms.spec.ts` (a member summarizes a busy room) |
+| FR-032 AI on anonymous content off until an engagement administrator turns it on; authors never sent | Met | `ThreadSummaryTests.Anonymous_posts_reach_AI_only_after_the_tenant_allows_it_and_never_with_their_author`, `CommunitySentimentTests.Moderators_see_their_community_sentiment_by_week_above_the_group_size` (Speak Up counts only after the setting, with no contributor, unit or location) |
+| FR-033 community sentiment from spec 021, moderators and owners only, weeks below the group size hidden | Met | `CommunitySentimentTests.Moderators_see_their_community_sentiment_by_week_above_the_group_size`, `community-sentiment.spec.ts` |
+| Cross-tenant and package denial | Met | Each R3 class has another tenant case; Workplace has no rooms or mirroring (`RoomTests.Closed_community_rooms_...`, `MirrorTests.Only_open_internal_communities_...`). `ai.assistant` is in every package, so the summary capability check cannot be turned off in a test |
