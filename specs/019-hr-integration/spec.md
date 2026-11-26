@@ -25,7 +25,7 @@
 ## 2. Scope
 
 **In scope:**
-- Canonical HR contract: employee (employee number, legal name in ar and en, work email, employment status, hire date, termination date, job title, grade, employment type, cost centre, location, org unit code, manager employee number, personal email), position, org unit code mapping, payslip summary and document. The personal email is optional and used only to send pre-boarding to a joiner who has no account yet (spec 022 FR-016); no other module sees it with a person's record.
+- Canonical HR contract: employee (employee number, legal name in ar and en, work email, employment status, hire date, termination date, job title, grade, employment type, cost centre, location, org unit code, manager employee number, personal email, and the probation and contract end dates that spec 022 milestones read), position, org unit code mapping, payslip summary and document. The personal email is optional and used only to send pre-boarding to a joiner who has no account yet (spec 022 FR-016); no other module sees it with a person's record.
 - Matching HR employees to TeamBeats users by work email or employee number, with an unmatched list.
 - Scheduled sync and inbound change events (webhook through spec 017), with field ownership: HR owns the fields it maps, they are read-only in TeamBeats.
 - Lifecycle events: `EmployeeHired`, `EmployeeTransferred`, `EmployeeManagerChanged`, `EmployeeTerminated`, `EmployeeRehired`, with effective dates and future-dated changes held until effective.

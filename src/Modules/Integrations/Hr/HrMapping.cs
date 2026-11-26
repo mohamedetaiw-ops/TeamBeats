@@ -114,9 +114,11 @@ public static class HrMapping
             return (null, new HrProblem(id, HrProblemReasons.BadEmail));
         }
         DateOnly? hire = null, end = null;
-        DateOnly? assigned = null;
+        DateOnly? assigned = null, probation = null, contract = null;
         if (V(HrFields.HireDate) is { } h && (hire = Date(h, dateFormat)) is null || V(HrFields.TerminationDate) is { } t && (end = Date(t, dateFormat)) is null
-            || V(HrFields.AssignmentDate) is { } a && (assigned = Date(a, dateFormat)) is null)
+            || V(HrFields.AssignmentDate) is { } a && (assigned = Date(a, dateFormat)) is null
+            || V(HrFields.ProbationEndDate) is { } p && (probation = Date(p, dateFormat)) is null
+            || V(HrFields.ContractEndDate) is { } c && (contract = Date(c, dateFormat)) is null)
         {
             return (null, new HrProblem(id, HrProblemReasons.BadDate));
         }
@@ -127,7 +129,7 @@ public static class HrMapping
             return (null, new HrProblem(id, HrProblemReasons.SelfManager));
         }
         return (new HrEmployee(id, number, email, V(HrFields.NameEn), V(HrFields.NameAr), status, hire, end, V(HrFields.JobTitle), V(HrFields.Grade),
-            V(HrFields.EmploymentType), V(HrFields.CostCentre), V(HrFields.Location), V(HrFields.OrgUnitCode), manager, assigned, personal), null);
+            V(HrFields.EmploymentType), V(HrFields.CostCentre), V(HrFields.Location), V(HrFields.OrgUnitCode), manager, assigned, personal, probation, contract), null);
     }
 
     private static bool EmailLike(string? email) =>

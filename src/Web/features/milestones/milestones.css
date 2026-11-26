@@ -1,0 +1,13 @@
+/* Spec 022 R3 milestone pages. Spacing comes from tokens; surfaces come from the form panel and the data table. */
+.milestones {
+  display: grid;
+  gap: var(--tb-space-lg);
+  min-inline-size: 0;
+}
+
+.milestones-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--tb-space-sm);
+}

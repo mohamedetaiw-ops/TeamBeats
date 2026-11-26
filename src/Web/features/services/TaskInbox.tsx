@@ -31,6 +31,7 @@ const sourceIcons: Record<string, IconName> = {
   leave: "leave",
   leave_change: "leave",
   leave_replacement: "leave",
+  probation_review: "calendar",
   journey: "user",
   attendance: "clock",
   letter: "files",
@@ -131,6 +132,8 @@ export function TaskInbox({ items, meId, units }: { items: InboxItem[]; meId: st
         return t("leaveChange");
       case "leave_replacement":
         return t("leaveReplacement");
+      case "probation_review":
+        return t("probationReview");
       case "journey":
         return t("journeyStep");
       case "attendance":

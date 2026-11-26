@@ -966,6 +966,8 @@
         "hr_data_change": "Personal data change requests",
         "hr_expenses": "Expense claims",
         "ai_receipt_reading": "Receipt reading with AI",
+        "hr_milestones": "Probation and contract milestones",
+        "hr_rosters": "Shift rosters",
         "engagement_communities": "Communities",
         "engagement_speak_up": "Speak Up",
         "engagement_surveys": "Surveys",
@@ -4655,6 +4657,7 @@
       "leaveApproval": "Leave approval",
       "leaveChange": "Leave change",
       "leaveReplacement": "Cover for a colleague",
+      "probationReview": "Probation review",
       "journeyStep": "Journey step",
       "attendanceRequest": "Attendance request",
       "letterRequest": "Letter request",
@@ -11428,6 +11431,8 @@
         "org_unit_code": "Organization unit code",
         "manager_employee_number": "Manager's employee number",
         "assignment_date": "Assignment effective date",
+        "probation_end_date": "Probation end date",
+        "contract_end_date": "Contract end date",
         "personal_email": "Personal email (pre-boarding only)"
       },
       "statusesTitle": "Status and schedule",
@@ -17607,6 +17612,81 @@
     "empty": {
       "title": "No pay components",
       "message": "HR has no current pay components for you."
+    }
+  },
+  "milestones": {
+    "title": "Probation and contracts",
+    "intro": "Probation and contract end dates of the people you cover, nearest first. Dates come from HR where it holds them.",
+    "denied": "Only HR officers see this page.",
+    "failed": "That did not work. Try again.",
+    "saving": "Saving",
+    "person": "Person",
+    "kind": "Milestone",
+    "dueDate": "End date",
+    "daysLeft": "Days left",
+    "source": "Source",
+    "status": "Status",
+    "hireDate": "Start date",
+    "jobTitle": "Role",
+    "kinds": {
+      "probation": "Probation",
+      "contract": "Contract"
+    },
+    "sources": {
+      "hr": "HR system",
+      "manual": "Set by HR"
+    },
+    "statuses": {
+      "open": "Open",
+      "reviewed": "Waiting for HR",
+      "closed": "Closed"
+    },
+    "outcomes": {
+      "confirm": "Confirm",
+      "extend": "Extend",
+      "end": "End employment"
+    },
+    "writeBack": {
+      "hr": "Sent to HR",
+      "recorded": "Recorded in HR",
+      "failed": "HR refused it",
+      "none": "Not sent"
+    },
+    "detailTitle": {
+      "probation": "Probation of {name}",
+      "contract": "Contract of {name}"
+    },
+    "list": {
+      "caption": "Milestones",
+      "empty": "No probation or contract end dates yet."
+    },
+    "set": {
+      "title": "Set a date by hand",
+      "hint": "For people the HR system has no date for. Leave the date empty to remove one you set.",
+      "dateHint": "From today on.",
+      "save": "Save date",
+      "saved": "The date is saved.",
+      "cleared": "The date is removed.",
+      "personRequired": "Choose a person."
+    },
+    "review": {
+      "title": "Probation review",
+      "hint": "Your comment stays in TeamBeats. Only the outcome and a new end date go to the HR system.",
+      "outcome": "Outcome",
+      "newDate": "New end date",
+      "comment": "Comment",
+      "commentHint": "What went well and what needs work.",
+      "counter": "{count} of {max} characters",
+      "submit": "Submit review",
+      "saved": "The review is saved and HR is told."
+    },
+    "reviews": {
+      "caption": "Reviews",
+      "empty": "No reviews yet.",
+      "noDate": "None",
+      "by": "Reviewed by",
+      "at": "Reviewed on",
+      "writeBack": "HR system"
     }
   }
 }

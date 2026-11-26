@@ -210,3 +210,14 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - The gateway treats `local` like a private endpoint for Restricted content and the sovereign rule (`ModelCatalogue.InOwnNetwork`). Hosted models are metered like any model, with `key_owner = platform`.
 - The policy view carries `airGapped`, shown as a note on the Model policy page, and a customer-hosted install that is air-gapped shows `install_ai_air_gapped` as a passed posture check.
 - Recorded defaults: one hosted server per install; hosted models are shared by every tenant of the install, each choosing them through its own policy.
+
+## Spec 022 R3 slice 7: receipt reading in every package (T025)
+- Entitlements migration 0050 turns `ai.receipt_reading` on for Workplace. Receipts still need `hr.expenses`, so a Workplace tenant reads receipts once it has expenses through an add-on or an override. Each read goes through the AI Gateway and counts against the AI quota as before.
+
+## Spec 022 R3 slice 8: probation and contract milestones (T026, T027)
+- Spec 019 gains the canonical HR fields `probation_end_date` and `contract_end_date` (mapping, `HrEmployee`, stored record). Capabilities `hr.milestones` and `hr.rosters` are added in Entitlements migration 0051 (off for Workplace, on for Workplace Plus and above).
+- Hr migration 0014 adds `hr.milestone` (one row per person and kind, source `hr` or `manual`, status `open`, `reviewed` or `closed`, and once-per-date markers for the alert, the review and the reminder) and `hr.milestone_review` (outcome, new date, comment, write-back state).
+- The hourly HR job and every `HrSyncCompleted` refresh dates from HR and send what is due. A moved date reopens the milestone and clears the markers, so everything is sent again for the new date. A date HR holds cannot be set by hand (`conflict.hr.milestone_from_hr`).
+- Reviewer: the line manager. When the person has none, the HR officers covering them review (smallest safe default, the spec names only the manager). The review is a personal task `probation_review` in the inbox. A review opened inside the last seven days sends no separate reminder.
+- Outcomes: confirm and end close the milestone. Extend moves a manual date at once; for a date from HR the milestone waits as `reviewed` until HR brings the new date. The outcome and new date go to HR as a spec 019 data change of group `probation`; the comment stays in TeamBeats and is never audited. Without a connection that takes changes the review records `none`.
+- Endpoints under `/api/v1/hr/milestones`; pages `/hr/milestones` and `/hr/milestones/{id}`.

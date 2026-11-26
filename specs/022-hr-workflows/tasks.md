@@ -56,8 +56,8 @@ Depends on 019 (HR fields and data change write-back), 016 (task inbox), 015 (no
 - [x] T025 `ai.receipt_reading` on for Workplace; test
 
 ### Slice 8: Probation and contract milestones (US9, FR-027, FR-028)
-- [ ] T026 [P] Tests: HR and manual dates, review task timing and reminder, outcomes and write-back without the comment, no connection, moved dates, contract alert once, sibling unit refused, entitlement, cross-tenant
-- [ ] T027 HR fields, `hr.milestone`, daily job, review task and endpoints, write-back, milestones page and review page in English and Arabic, RTL; e2e with axe
+- [x] T026 [P] Tests: HR and manual dates, review task timing and reminder, outcomes and write-back without the comment, no connection, moved dates, contract alert once, sibling unit refused, entitlement, cross-tenant
+- [x] T027 HR fields, `hr.milestone`, daily job, review task and endpoints, write-back, milestones page and review page in English and Arabic, RTL; e2e with axe
 
 ### Slice 9: Shift rosters (US10, FR-029)
 - [ ] T028 [P] Tests: patterns, planning scope, conflicts, publish and change notices, attendance against the shift, another team refused, HR officer view, entitlement, cross-tenant
