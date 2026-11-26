@@ -20,13 +20,14 @@ type Message = {
   preview: string | null;
   webLink: string;
 };
-type Summary = { state: OutlookState; asOf: string | null; unreadCount: number | null; messages: Message[]; composeLink: string | null };
+type Summary = { state: OutlookState; asOf: string | null; unreadCount: number | null; messages: Message[]; composeLink: string | null; source?: "outlook" | "google" };
 
 /**
  * My mail (spec 018 US2): the Inbox unread count and the latest messages with text markers, each opening in Outlook on
  * the web. TeamBeats never renders a message body; the preview is plain text when the admin turned it on (FR-008).
  * Built on the shared widget frame (spec 036 DLS-089); senders and subjects in either language start at the row's start
- * edge (DLS-091).
+ * edge (DLS-091). The same placement shows Gmail (spec 018 R3, FR-024): the answer names its source, and links say they
+ * open Gmail.
  */
 export default function MyMail({ props }: PlacementProps) {
   const t = useTranslations("outlook.mail");
@@ -50,6 +51,7 @@ export default function MyMail({ props }: PlacementProps) {
   const other = <OutlookStateView state={state} returnTo={returnTo} retry={retry} noun="mail" />;
   if (answer === "failed" || answer === "denied" || (state !== "ok" && state !== "degraded")) return shell(other);
 
+  const opens = answer.source === "google" ? t("opensGmail") : t("opensOutlook");
   const time = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" });
   const switcher = (
     <SegmentedControl
@@ -63,7 +65,7 @@ export default function MyMail({ props }: PlacementProps) {
   const compose = answer.composeLink ? (
     <a className="button button-secondary" href={answer.composeLink} target="_blank" rel="noopener noreferrer">
       {t("compose")}
-      <span className="visually-hidden"> {t("opensOutlook")}</span>
+      <span className="visually-hidden"> {opens}</span>
     </a>
   ) : null;
 
@@ -104,7 +106,7 @@ export default function MyMail({ props }: PlacementProps) {
                     </span>
                   ) : null}
                   {m.preview ? <span className="outlook-preview">{m.preview}</span> : null}
-                  <span className="visually-hidden">{t("opensOutlook")}</span>
+                  <span className="visually-hidden">{opens}</span>
                 </a>
               </li>
             );

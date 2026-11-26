@@ -22,7 +22,10 @@ public static class GoogleFeatures
     /// <summary>Each employee's own Google Calendar meetings for the unified calendar (spec 037 FR-012), read as that employee.</summary>
     public const string Calendar = "calendar";
 
-    public static readonly string[] All = [Directory, Drive, Calendar];
+    /// <summary>Each employee's own Gmail Inbox for My mail (spec 018 R3, FR-024): headers and labels only, read as that employee.</summary>
+    public const string Mail = "mail";
+
+    public static readonly string[] All = [Directory, Drive, Calendar, Mail];
 }
 
 /// <summary>
@@ -190,6 +193,15 @@ public sealed partial class GooglePack(ITenantContext context, GoogleSignIn sign
             checks.Add(token.Ok
                 ? new PackCheck("calendar", true, "integrations.test.token_ok")
                 : new PackCheck("calendar", false, token.ErrorClass == ConnectorErrorClasses.NotResponding ? "integrations.test.not_responding" : "integrations.test.google_delegation_refused",
+                    token.ErrorClass));
+        }
+        if (s.Has(GoogleFeatures.Mail))
+        {
+            // As for the calendar, the administrator stands in for every employee.
+            var token = await signIn.TokenAsync(connection, s, s.AdminEmail!, GoogleHosts.GmailScope, ct, fresh: true);
+            checks.Add(token.Ok
+                ? new PackCheck("mail", true, "integrations.test.token_ok")
+                : new PackCheck("mail", false, token.ErrorClass == ConnectorErrorClasses.NotResponding ? "integrations.test.not_responding" : "integrations.test.google_delegation_refused",
                     token.ErrorClass));
         }
         if (s.Has(GoogleFeatures.Drive))

@@ -46,7 +46,9 @@ public static class IntegrationsModule
         services.AddScoped<DelegatedAccessService>();
         services.AddMemoryCache();
         services.AddScoped<GraphReadCache>();
-        services.AddScoped<IMailbox, GraphMailbox>();
+        services.AddScoped<GraphMailbox>();
+        services.AddScoped<Google.GoogleMail>();
+        services.AddScoped<IMailbox, Google.Mailboxes>();
         services.AddScoped<ICalendar, GraphCalendar>();
         services.AddScoped<ICalendarResponses, GraphCalendarResponses>();
         services.AddScoped<IPresence, GraphPresence>();
@@ -57,6 +59,7 @@ public static class IntegrationsModule
         services.AddScoped<IOfficeEditor, GraphOfficeEditor>();
         services.AddScoped<IRoomMailboxes, RoomMailboxes>();
         services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IComponentRegistration, OutlookComponents>();
+        services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IComponentRegistration, Google.GoogleComponents>();
         services.AddHttpClient(OpenMeteoWeather.ClientName, c => c.Timeout = TimeSpan.FromSeconds(10));
         services.AddScoped<IWeather, OpenMeteoWeather>();
         // Web Push (spec 030 US2): one key pair per installation, so the client is a singleton.

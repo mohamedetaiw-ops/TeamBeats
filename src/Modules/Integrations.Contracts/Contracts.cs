@@ -462,7 +462,8 @@ public sealed record MailMessage(
     string WebLink);
 
 /// <summary>The Inbox summary. <see cref="AsOf"/> is when the data was read from the provider (older when degraded).</summary>
-public sealed record MailSummary(string State, DateTimeOffset? AsOf, int? UnreadCount, IReadOnlyList<MailMessage> Messages, string? ComposeLink);
+public sealed record MailSummary(string State, DateTimeOffset? AsOf, int? UnreadCount, IReadOnlyList<MailMessage> Messages, string? ComposeLink,
+    string Source = CalendarSources.Outlook);
 
 public interface IMailbox
 {

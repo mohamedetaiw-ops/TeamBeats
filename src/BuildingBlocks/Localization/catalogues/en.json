@@ -3091,5 +3091,11 @@
   "tool.mail_summaries_not_opted_in": "The employee has not agreed to mail summaries. They can turn them on in Outlook settings.",
   "tool.mail_reconnect": "The employee needs to connect Outlook again before the assistant can read their Inbox.",
   "tool.mail_no_mailbox": "The employee has no Outlook mailbox.",
-  "tool.mail_unavailable": "The Inbox could not be read right now."
+  "tool.mail_unavailable": "The Inbox could not be read right now.",
+  "experience.component.google_my_mail.description": "Your unread count and latest Gmail messages",
+  "experience.component.google_my_mail.name": "My mail",
+  "experience.component.google_my_mail.props.top": "Messages to show",
+  "experience.component.google_my_mail.props.view": "Starting view",
+  "experience.component.google_my_mail.props.view.all": "All mail",
+  "experience.component.google_my_mail.props.view.focused": "Primary"
 }

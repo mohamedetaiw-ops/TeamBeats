@@ -180,6 +180,6 @@ public sealed partial class ComponentRegistry
     private static partial Regex EventName();
 
     /// <summary>A connection feature as <c>kind:feature</c>, for example <c>microsoft365:mail</c>.</summary>
-    [GeneratedRegex("^[a-z][a-z0-9]*:[a-z][a-z0-9_]*$")]
+    [GeneratedRegex("^[a-z][a-z0-9_]*:[a-z][a-z0-9_]*$")]
     private static partial Regex ConnectionFeature();
 }

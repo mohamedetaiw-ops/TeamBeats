@@ -2796,6 +2796,7 @@
       },
       "compose": "New message",
       "opensOutlook": "(opens Outlook in a new tab)",
+      "opensGmail": "(opens Gmail in a new tab)",
       "empty": "No new mail",
       "noSubject": "(no subject)",
       "markers": {

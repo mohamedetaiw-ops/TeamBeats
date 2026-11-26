@@ -2796,6 +2796,7 @@
       },
       "compose": "رسالة جديدة",
       "opensOutlook": "(يفتح Outlook في علامة تبويب جديدة)",
+      "opensGmail": "(يفتح Gmail في علامة تبويب جديدة)",
       "empty": "لا يوجد بريد جديد",
       "noSubject": "(بلا موضوع)",
       "markers": {

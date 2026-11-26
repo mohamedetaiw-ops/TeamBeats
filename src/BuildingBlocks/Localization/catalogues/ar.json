@@ -3091,5 +3091,11 @@
   "tool.mail_summaries_not_opted_in": "لم يوافق الموظف على تلخيص البريد. يمكنه تفعيله في إعدادات Outlook.",
   "tool.mail_reconnect": "يحتاج الموظف إلى ربط Outlook مرة أخرى قبل أن يتمكن المساعد من قراءة بريده الوارد.",
   "tool.mail_no_mailbox": "ليس لدى الموظف صندوق بريد Outlook.",
-  "tool.mail_unavailable": "تعذرت قراءة البريد الوارد الآن."
+  "tool.mail_unavailable": "تعذرت قراءة البريد الوارد الآن.",
+  "experience.component.google_my_mail.description": "عدد الرسائل غير المقروءة وأحدث رسائل Gmail",
+  "experience.component.google_my_mail.name": "بريدي",
+  "experience.component.google_my_mail.props.top": "عدد الرسائل المعروضة",
+  "experience.component.google_my_mail.props.view": "العرض الافتراضي",
+  "experience.component.google_my_mail.props.view.all": "كل البريد",
+  "experience.component.google_my_mail.props.view.focused": "الرئيسي"
 }

@@ -52,7 +52,11 @@ public static class WorkspaceEndpoints
 
         me.MapGet("/mail", async (string? view, int? top, bool? refresh, IEntitlementService entitlements, IMailbox mailbox, CancellationToken ct) =>
         {
-            await entitlements.DemandAsync(Capabilities.IntegrationMicrosoft365, ct);
+            // Outlook needs integration.microsoft365; Gmail (R3, FR-024) comes with the connector packs.
+            if (!await entitlements.IsEnabledAsync(Capabilities.IntegrationConnectors, ct))
+            {
+                await entitlements.DemandAsync(Capabilities.IntegrationMicrosoft365, ct);
+            }
             var errors = new ValidationErrors();
             if (view is not (null or "focused" or "all"))
             {
