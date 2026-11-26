@@ -50,6 +50,7 @@ public sealed class LearningMaintenanceWorker(IServiceScopeFactory scopes, ICloc
                 context.SetActor(ActorType.System, null);
                 await scope.ServiceProvider.GetRequiredService<AssignmentRules>().RunDueAsync(now, 1000, ct);
                 await scope.ServiceProvider.GetRequiredService<LmsSync>().RunDueAsync(now, ct);
+                await scope.ServiceProvider.GetRequiredService<Sessions>().RemindDueAsync(now, ct);
                 await scope.ServiceProvider.GetRequiredService<IDbSession>().CommitAsync(ct);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)

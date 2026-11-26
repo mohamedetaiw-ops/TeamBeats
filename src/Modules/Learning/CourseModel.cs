@@ -14,7 +14,10 @@ public static class LessonKinds
     /// <summary>An imported SCORM 1.2 or xAPI package (FR-016), played in a sandboxed frame.</summary>
     public const string Package = "package";
 
-    public static readonly IReadOnlyList<string> All = [Page, Document, Video, Quiz, Package];
+    /// <summary>A classroom lesson (R3 FR-026): done when the facilitator records the learner attended a session.</summary>
+    public const string Classroom = "classroom";
+
+    public static readonly IReadOnlyList<string> All = [Page, Document, Video, Quiz, Package, Classroom];
 
     /// <summary>Kinds that point at a page, a file or a package in each language of the course.</summary>
     public static bool HasSources(string kind) => kind is Page or Document or Video or Package;
@@ -164,7 +167,7 @@ public static partial class CourseModel
                 }
                 sources = map;
             }
-            else
+            else if (kind == LessonKinds.Quiz)
             {
                 quiz = Quiz(lesson.Quiz, locales, $"{field}.quiz", errors);
             }

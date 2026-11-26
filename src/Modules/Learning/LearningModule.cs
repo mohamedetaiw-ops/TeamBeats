@@ -31,6 +31,7 @@ public static class LearningModule
         services.AddScoped<PackageRuntime>();
         services.AddScoped<QuizDrafts>();
         services.AddScoped<Recommendations>();
+        services.AddScoped<Sessions>();
         services.AddScoped<Contracts.ILearningObligations>(sp => sp.GetRequiredService<LearningObligations>());
         services.AddMessageHandler<Tenancy.Contracts.OrganizationMembershipChanged, AssignmentRules>("learning.rule_membership");
         services.AddMessageHandler<Tenancy.Contracts.TenantMembershipDisabled, AssignmentRules>("learning.rule_disabled");
@@ -198,6 +199,59 @@ public static class LearningModule
         // ---- Learning ----
 
         root.MapGet("/me", async (Player player, CancellationToken ct) => Results.Ok(await player.MineAsync(ct)));
+
+        // ---- Classroom sessions (R3) ----
+
+        root.MapGet("/manage/courses/{id:guid}/sessions", async (Guid id, Sessions sessions, CancellationToken ct) => Results.Ok(await sessions.ListAsync(id, ct)));
+
+        root.MapPost("/manage/courses/{id:guid}/sessions", async (Guid id, SessionRequest request, Sessions sessions, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await sessions.CreateAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/learning/sessions/{view.Id}", view);
+        });
+
+        root.MapPut("/manage/sessions/{id:guid}", async (Guid id, SessionRequest request, Sessions sessions, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await sessions.UpdateAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapPost("/manage/sessions/{id:guid}:cancel", async (Guid id, Sessions sessions, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await sessions.CancelAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapGet("/courses/{id:guid}/lessons/{key}/sessions", async (Guid id, string key, Sessions sessions, CancellationToken ct) =>
+            Results.Ok(await sessions.LessonAsync(id, key, ct)));
+
+        root.MapPost("/sessions/{id:guid}/seat", async (Guid id, Sessions sessions, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await sessions.BookAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapDelete("/sessions/{id:guid}/seat", async (Guid id, Sessions sessions, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await sessions.CancelSeatAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapGet("/sessions/facilitating", async (Sessions sessions, CancellationToken ct) => Results.Ok(await sessions.FacilitatingAsync(ct)));
+
+        root.MapGet("/sessions/{id:guid}/roster", async (Guid id, Sessions sessions, CancellationToken ct) => Results.Ok(await sessions.RosterAsync(id, ct)));
+
+        root.MapPut("/sessions/{id:guid}/attendance", async (Guid id, AttendanceRequest request, Sessions sessions, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await sessions.AttendanceAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
 
         root.MapGet("/recommendations", async (Recommendations recommendations, CancellationToken ct) => Results.Ok(await recommendations.ListAsync(ct)));
 

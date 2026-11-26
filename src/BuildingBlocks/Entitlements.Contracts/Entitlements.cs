@@ -114,6 +114,9 @@ public static class Capabilities
     public const string LearningScorm = "learning.scorm";
     public const string LearningLmsConnector = "learning.lms_connector";
 
+    // Spec 028 R3 section 9: classroom sessions with seats and attendance, Workplace Plus and above.
+    public const string LearningClassroom = "learning.classroom";
+
     // Spec 029 section 9: project and team spaces and guests Workplace Plus and above, with a limit on spaces.
     public const string SpacesProjects = "spaces.projects";
     public const string SpacesGuests = "spaces.guests";

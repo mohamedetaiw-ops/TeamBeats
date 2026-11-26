@@ -381,6 +381,10 @@ public sealed class Courses(
         {
             await entitlements.DemandAsync(Capabilities.LearningScorm, ct);
         }
+        if (definition.Lessons.Any(l => l.Kind == LessonKinds.Classroom))
+        {
+            await entitlements.DemandAsync(Capabilities.LearningClassroom, ct);
+        }
         var errors = new ValidationErrors();
         CourseModel.CheckPublishable(definition, errors);
         var sources = new Dictionary<string, string>(StringComparer.Ordinal);
