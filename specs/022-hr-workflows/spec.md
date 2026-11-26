@@ -137,6 +137,22 @@ Omar's start date is entered in HR. Ten days before, the journey starts: IT gets
 5. **Given** routes by amount (for example manager up to 5,000, plus department head above), **Then** the route runs on spec 024.
 6. **Given** finance approval, **Then** the claim is handed to the ERP or finance system through spec 017, and the external reference and payment status are shown.
 
+### User Story 9: Probation and contract milestones (Priority: P2, R3)
+
+**Acceptance scenarios:**
+1. **Given** HR records a probation end date for a new joiner, **When** the date is 30 days away, **Then** the line manager gets a probation review task with the person's start date, role and end date, and a reminder 7 days before if it is still open.
+2. **Given** the manager confirms, extends (with a new end date) or ends the employment at probation, **When** they submit the review with a comment, **Then** the outcome is recorded, HR officers of the person's unit are told, and the outcome is written back to HR through spec 019. The comment stays in TeamBeats.
+3. **Given** a fixed-term contract end date from HR, **When** it is 60 days away, **Then** HR officers of the person's unit get an alert, once, and again if HR moves the date.
+4. **Given** a tenant without an HR connection, **When** an HR officer sets a probation or contract end date by hand, **Then** the same reminders and reviews follow, and nothing is written back.
+
+### User Story 10: Shift rosters (Priority: P2, R3)
+
+**Acceptance scenarios:**
+1. **Given** shift patterns defined by HR (name, start, end, break, colour), **When** a manager plans their team's week, **Then** they assign one shift or a day off per person and day, and approved leave and holidays on the person's calendar are shown and flagged as conflicts.
+2. **Given** a planned week, **When** the manager publishes it, **Then** each person with a shift is told, sees their shifts under My shifts, and later changes notify only the people affected.
+3. **Given** a published shift, **When** attendance checks the day, **Then** lateness, early leaving and missing sign in are judged against the shift's times instead of the working week (spec 022 FR-010).
+4. **Given** an employee who is not the manager, **When** they open another team's roster, **Then** it is refused; HR officers see the rosters of their units.
+
 ### Edge cases and exception flows
 - Leave across a year end with carry-over limits: days are counted against the right year's balance.
 - Leave request overlapping an existing approved leave: refused.
@@ -175,6 +191,10 @@ Omar's start date is entered in HR. Ten days before, the journey starts: IT gets
 - **FR-024 / HRW-012**: AI receipt reading MUST only suggest values for the employee to confirm, and MUST follow the tenant AI policy for the receipt's classification.
 - **FR-025 / HRW-013**: Approved claims MUST hand off to finance or ERP through spec 017 with external reference and payment status shown.
 - **FR-026 / HRW-014**: Every HR module service MUST register in the catalogue through the module contract of spec 016 (FR-010), and every human step MUST be a task in the task inbox. *(UC-08)*
+- **FR-027 / HRW-015**: Probation and contract end dates MUST come from HR through spec 019 where mapped, or be set by an HR officer; probation reviews MUST be tasks of the line manager 30 days before the end, with a reminder 7 days before; outcomes (confirm, extend with a new date, end) MUST be written back to HR through spec 019 when a connection takes them. *(R3)*
+- **FR-028 / HRW-016**: Contract end alerts MUST reach the HR officers of the person's unit 60 days before the end, once per date. *(R3)*
+- **FR-029 / HRW-017**: Managers MUST be able to plan and publish weekly shift rosters for their direct reports from tenant shift patterns, with leave and holiday conflicts flagged; published shifts MUST replace the working week for that person and day in attendance checks, and changes MUST notify the people affected. *(R3)*
+- **FR-030 / HRW-018**: AI receipt reading MUST be available to every package, counting against the AI quota, under the same rules as FR-024. *(R3)*
 
 ## 6. Business and validation rules
 - Default rounding: leave in half days unless the type allows hours.
@@ -214,7 +234,9 @@ Location data from sign in is collected only if the tenant enables it, shown to 
 | `hr.letters` | on | on | on |
 | `hr.data_change` | off | on | on |
 | `hr.expenses` | off | on | on |
-| `ai.receipt_reading` (counts against AI quota) | off | on | on |
+| `ai.receipt_reading` (counts against AI quota) | on (R3) | on | on |
+| `hr.milestones` (probation and contract milestones, R3) | off | on | on |
+| `hr.rosters` (shift rosters, R3) | off | on | on |
 
 ## 10. UX, localization and accessibility
 - Leave and attendance calendars support Gregorian with optional Hijri display (spec 007), and week start per location.
@@ -246,6 +268,8 @@ Location data from sign in is collected only if the tenant enables it, shown to 
 | hr.data_change_approved / written_back | audit | person, field names (no values), actor |
 | hr.letter_issued / verified | audit | letter type, reference, actor |
 | hr.expense_submitted / approved / handed_off | audit | claim, total, currency, actor |
+| hr.milestone_set / reviewed / written_back | audit | person, kind, due date, outcome (no comment), actor |
+| hr.roster_published / changed | audit | team manager, week, people count, actor |
 | hr.request_cycle_time | analytics | service, unit, duration |
 
 ## 14. Security and abuse cases

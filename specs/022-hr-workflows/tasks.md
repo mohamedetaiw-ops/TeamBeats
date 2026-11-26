@@ -47,3 +47,21 @@ Depends on 002 (hierarchy), 004 (authorization), 006 (audit and admin shell), 00
 
 ## Final phase (R2)
 - [x] T024 Performance checks of section 15; OpenAPI; R2 implementation notes; spec evidence
+
+## R3
+
+Depends on 019 (HR fields and data change write-back), 016 (task inbox), 015 (notifications). R3 covers User Stories 9 and 10 and FR-027 to FR-030.
+
+### Slice 7: Receipt reading for every package (FR-030)
+- [ ] T025 `ai.receipt_reading` on for Workplace; test
+
+### Slice 8: Probation and contract milestones (US9, FR-027, FR-028)
+- [ ] T026 [P] Tests: HR and manual dates, review task timing and reminder, outcomes and write-back without the comment, no connection, moved dates, contract alert once, sibling unit refused, entitlement, cross-tenant
+- [ ] T027 HR fields, `hr.milestone`, daily job, review task and endpoints, write-back, milestones page and review page in English and Arabic, RTL; e2e with axe
+
+### Slice 9: Shift rosters (US10, FR-029)
+- [ ] T028 [P] Tests: patterns, planning scope, conflicts, publish and change notices, attendance against the shift, another team refused, HR officer view, entitlement, cross-tenant
+- [ ] T029 `hr.shift_pattern`, `hr.roster_week`, `hr.roster_entry`, `IShiftRoster` in attendance, planner and My shifts in English and Arabic, RTL; e2e with axe
+
+### Final phase (R3)
+- [ ] T030 OpenAPI; R3 implementation notes; spec evidence
