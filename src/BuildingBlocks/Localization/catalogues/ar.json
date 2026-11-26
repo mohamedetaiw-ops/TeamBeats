@@ -3194,5 +3194,15 @@
   "notifications.template.learning.session.seat.title": "لديك مقعد في {course}",
   "notifications.template.learning.session.seat.body": "تحرر مقعد وأصبح لك. تبدأ الجلسة في {start}. المكان: {place}.",
   "notifications.template.learning.session.cancelled.title": "أُلغيت جلسة من {course}",
-  "notifications.template.learning.session.cancelled.body": "لن تُعقد الجلسة المقررة في {start}. افتح الدورة لحجز جلسة أخرى."
+  "notifications.template.learning.session.cancelled.body": "لن تُعقد الجلسة المقررة في {start}. افتح الدورة لحجز جلسة أخرى.",
+  "validation.spaces.task_dates": "يجب أن يكون تاريخ البدء في تاريخ الاستحقاق أو قبله.",
+  "validation.spaces.task_estimate": "أدخل تقديرًا بين دقيقة واحدة و10,000 ساعة.",
+  "validation.spaces.task_blocker": "اختر مهمة أخرى من هذه المساحة.",
+  "validation.spaces.task_blocker_count": "يمكن أن تنتظر المهمة 20 مهمة أخرى على الأكثر.",
+  "conflict.spaces.task_loop": "هذا الربط سيجعل هذه المهام تنتظر بعضها في حلقة.",
+  "validation.spaces.time_day": "اختر يومًا من العام الماضي، لا يتجاوز اليوم.",
+  "validation.spaces.time_minutes": "أدخل الوقت المستغرق، من دقيقة واحدة إلى 24 ساعة.",
+  "validation.spaces.time_note": "اجعل الملاحظة في حدود 500 حرف.",
+  "validation.spaces.time_range": "اختر مدة لا تزيد على عام، يكون بدايتها قبل نهايتها.",
+  "authz.denied.spaces_time_entry": "لا يغيّر هذا الوقت إلا من سجّله. ويمكن لمالكي المساحة حذفه."
 }

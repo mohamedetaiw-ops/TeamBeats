@@ -428,6 +428,12 @@ public sealed class SpaceTasks(
         }
         var errors = new ValidationErrors();
         var fields = await ValidateAsync(spaceId, request, errors, ct);
+        // A due date never falls before the task's start (spec 029 R3 section 6); the timeline sets both together.
+        if (fields.DueOn is { } dueOn && await session.ScalarAsync<DateOnly?>("select start_on from spaces.task where id = @taskId", new { taskId }, ct) is { } startOn
+            && dueOn < startOn)
+        {
+            errors.Add("dueOn", "validation.spaces.task_dates");
+        }
         errors.ThrowIfAny();
         await session.ExecAsync(
             """
@@ -499,7 +505,12 @@ public sealed class SpaceTasks(
         var user = context.RequireUser();
         var now = clock.UtcNow;
         await session.ExecAsync(
-            "update spaces.task set status = @status, completed_by = @by, completed_at = @at, updated_at = @now, row_version = row_version + 1 where id = @id",
+            """
+            update spaces.task set status = @status, completed_by = @by, completed_at = @at, updated_at = @now, row_version = row_version + 1,
+              finished_before_blocker = @status = 'done' and exists(select 1 from spaces.task_link l join spaces.task b on b.id = l.blocker_id
+                where l.task_id = spaces.task.id and b.status = 'open')
+            where id = @id
+            """,
             new { id = row.Id, status = done ? "done" : "open", by = done ? user : (Guid?)null, at = done ? now : (DateTimeOffset?)null, now }, ct);
         if (done)
         {

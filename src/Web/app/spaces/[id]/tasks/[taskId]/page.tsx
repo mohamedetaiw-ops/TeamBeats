@@ -2,9 +2,10 @@ import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
 import type { ItemPage } from "@/lib/documents/types";
-import { isGuid, spaceHref, spaceTasksHref, spacesApi, spacesHref, taskHref, type MilestoneView, type SpaceMember, type SpaceView, type TaskDetail } from "@/lib/spaces";
+import { isGuid, spaceHref, spaceTasksHref, spacesApi, spacesHref, taskHref, type MilestoneView, type SpaceMember, type SpaceView, type TaskBoard, type TaskDetail, type TaskSchedule, type TaskTime } from "@/lib/spaces";
 import { Header } from "@/components/shell/Header";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { TaskPlan } from "@/features/spaces/TaskPlan";
 import { TaskView } from "@/features/spaces/TaskView";
 
 /** One task of a space (spec 029 US2). */
@@ -17,11 +18,14 @@ export default async function TaskPage({ params }: { params: Promise<{ id: strin
   if (!isGuid(id) || !isGuid(taskId)) {
     notFound();
   }
-  const [space, task, members, milestones] = await Promise.all([
+  const [space, task, members, milestones, schedule, time, board] = await Promise.all([
     apiGet<SpaceView>(`${spacesApi}/${id}`),
     apiGet<TaskDetail>(`${spacesApi}/${id}/tasks/${taskId}`),
     apiGet<SpaceMember[]>(`${spacesApi}/${id}/members`),
     apiGet<MilestoneView[]>(`${spacesApi}/${id}/milestones`),
+    apiGet<TaskSchedule>(`${spacesApi}/${id}/tasks/${taskId}/schedule`),
+    apiGet<TaskTime>(`${spacesApi}/${id}/tasks/${taskId}/time`),
+    apiGet<TaskBoard>(`${spacesApi}/${id}/tasks`),
   ]);
   if (!space.ok || !task.ok) {
     notFound();
@@ -46,6 +50,10 @@ export default async function TaskPage({ params }: { params: Promise<{ id: strin
       <main id="main" className="page">
         <PageHeader title={task.data.task.title} eyebrow={space.data.name} icon="tasks" />
         <TaskView spaceId={id} initial={task.data} members={members.ok ? members.data : []} milestones={milestones.ok ? milestones.data : []} libraryFiles={files} />
+        {schedule.ok && time.ok ? (
+          <TaskPlan spaceId={id} initialSchedule={schedule.data} initialTime={time.data} today={new Date().toISOString().slice(0, 10)}
+            tasks={board.ok ? board.data.tasks.map((x) => ({ id: x.id, title: x.title })) : []} />
+        ) : null}
       </main>
     </>
   );

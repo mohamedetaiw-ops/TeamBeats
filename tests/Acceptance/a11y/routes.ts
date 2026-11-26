@@ -301,6 +301,8 @@ export const routes: readonly Route[] = [
   { path: "/spaces/[id]/settings", tier: "detail" },
   { path: "/spaces/[id]/tasks", tier: "detail" },
   { path: "/spaces/[id]/tasks/[taskId]", tier: "detail" },
+  { path: "/spaces/[id]/time", tier: "detail" },
+  { path: "/spaces/[id]/timeline", tier: "detail" },
   { path: "/spaces/manage", tier: "other" },
   { path: "/spaces/new", tier: "other" },
   { path: "/tasks", tier: "primary" },

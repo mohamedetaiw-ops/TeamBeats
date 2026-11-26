@@ -14,6 +14,7 @@ import {
   RadialChart,
   Rings,
   ScatterChart,
+  ScheduleChart,
   StageBars,
   seriesTable,
   type Series,
@@ -34,6 +35,12 @@ export function ChartsGallery() {
   const categories = months.map((m) => monthName.format(Date.parse(m)));
   const n = (v: number) => number.format(v);
   const c = (v: number) => compact.format(v);
+
+  const plan = [
+    { key: "design", label: t("scheduleDesign"), start: "2026-09-01", end: "2026-09-12", state: "done" as const, detail: t("scheduleDesignDates") },
+    { key: "migrate", label: t("scheduleMigrate"), start: "2026-09-10", end: "2026-10-02", state: "conflict" as const, detail: t("scheduleMigrateDates") },
+    { key: "train", label: t("scheduleTrain"), start: "2026-10-03", end: "2026-10-10", detail: t("scheduleTrainDates") },
+  ];
 
   const visits: Series[] = [
     { key: "web", label: t("web"), values: [4200, 4800, 4500, 5600, 6100, 6900] },
@@ -169,6 +176,14 @@ export function ChartsGallery() {
             <StageBars label={t("pipelineSummary")} stages={stages} format={n} />
           </ChartCard>
         </div>
+      </section>
+
+      <section aria-labelledby="cg-charts-schedule">
+        <h2 id="cg-charts-schedule">{t("scheduleTitle")}</h2>
+        <p className="notice">{t("scheduleIntro")}</p>
+        <ChartCard title={t("schedule")} table={{ head: [t("scheduleTask"), t("scheduleDates")], rows: plan.map((p) => [p.label, p.detail]) }}>
+          <ScheduleChart label={t("scheduleSummary")} from="2026-09-01" to="2026-10-15" rows={plan} markers={[{ key: "golive", label: t("scheduleGoLive"), date: "2026-10-12" }]} />
+        </ChartCard>
       </section>
     </>
   );

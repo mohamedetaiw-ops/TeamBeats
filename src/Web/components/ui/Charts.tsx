@@ -807,3 +807,67 @@ export function StageBars({ label, stages, format }: { label: string; stages: re
     </div>
   );
 }
+
+export type ScheduleRow = {
+  key: string;
+  label: string;
+  href?: string;
+  /** First and last day of the bar, ISO dates; a row with one day shows a one-day bar. */
+  start: string;
+  end: string;
+  /** How the bar is drawn: open, done, late or in conflict. Conflict also gets a pattern, so color is not the only cue. */
+  state?: "open" | "done" | "late" | "conflict";
+  /** The dates and any state as text, read with the row and shown under the label. */
+  detail: string;
+};
+
+export type ScheduleMarker = { key: string; label: string; date: string };
+
+/**
+ * Schedule (spec 036 DLS-040): one bar per row from its first to its last day on a shared day axis, with markers such
+ * as milestones on the axis. Bars sit by logical inline position, so the axis runs right to left in RTL. Plain HTML: each
+ * row reads as its label and its detail text, and the chart card holds the same data as a table.
+ */
+export function ScheduleChart({ label, from, to, rows, markers = [], today }: { label: string; from: string; to: string; rows: readonly ScheduleRow[]; markers?: readonly ScheduleMarker[]; today?: string }) {
+  const days = Math.max(1, Math.round((fromIso(to) - fromIso(from)) / 86_400_000) + 1);
+  const at = (iso: string) => Math.min(100, Math.max(0, (Math.round((fromIso(iso) - fromIso(from)) / 86_400_000) * 100) / days));
+  const span = (start: string, end: string) => Math.max(100 / days, at(addDays(end, 1)) - at(start));
+  const showToday = today && today >= from && today <= to;
+  return (
+    <div className="ui-schedule" role="group" aria-label={label}>
+      {markers.length > 0 ? (
+        <ul className="ui-schedule-markers">
+          {markers.map((m) => (
+            <li key={m.key} style={{ "--xp-at": `${at(m.date) + 50 / days}%` } as CSSProperties}>
+              <span className="ui-schedule-marker" aria-hidden="true" />
+              <span className="ui-schedule-marker-label">
+                <bdi>{m.label}</bdi>
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      <ol className="ui-schedule-rows">
+        {rows.map((row) => (
+          <li key={row.key} className="ui-schedule-row">
+            <span className="ui-schedule-label">
+              {row.href ? (
+                <a href={row.href}>
+                  <bdi>{row.label}</bdi>
+                </a>
+              ) : (
+                <bdi>{row.label}</bdi>
+              )}
+              <span className="ui-schedule-detail">{row.detail}</span>
+            </span>
+            <span className="ui-schedule-track" aria-hidden="true">
+              {showToday ? <span className="ui-schedule-today" style={{ "--xp-at": `${at(today!) + 50 / days}%` } as CSSProperties} /> : null}
+              <span className="ui-schedule-bar" data-state={row.state ?? "open"}
+                style={{ "--xp-at": `${at(row.start)}%`, "--xp-span": `${span(row.start, row.end)}%` } as CSSProperties} />
+            </span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}

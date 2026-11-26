@@ -39,7 +39,7 @@ export default async function SpaceMembersPage({ params }: { params: Promise<{ i
       />
       <main id="main" className="page">
         <PageHeader title={t("membersTitle")} eyebrow={space.data.name} icon="people"
-          nav={<SpaceNav id={id} current="members" settings={space.data.rights.owns || space.data.rights.manages} files={!!space.data.libraryId} discussion={!!space.data.communityId} />} />
+          nav={<SpaceNav id={id} current="members" settings={space.data.rights.owns || space.data.rights.manages} time={space.data.rights.owns} files={!!space.data.libraryId} discussion={!!space.data.communityId} />} />
         {members.ok ? <Members space={space.data} initial={members.data} /> : <StateView kind="denied" title={t("privateTitle")} message={t("private")} />}
         {guests.ok ? <Guests spaceId={id} initial={guests.data} /> : null}
       </main>
