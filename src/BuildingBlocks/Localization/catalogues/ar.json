@@ -3353,5 +3353,6 @@
   "authz.denied.design_own_proposal": "يجب أن يراجع هذا التصميم شخص غير الذي أرسله للمراجعة",
   "conflict.push.native_unavailable": "الإشعارات لتطبيق TeamBeats غير مهيأة لمساحة العمل هذه.",
   "validation.push.native_token": "لم يقدم الجهاز تسجيلًا صالحًا للإشعارات.",
-  "validation.push.native_platform": "اختر Android أو iOS."
+  "validation.push.native_platform": "اختر Android أو iOS.",
+  "validation.security.app_lock": "اختر إيقاف أو اختياري أو إلزامي لقفل التطبيق."
 }

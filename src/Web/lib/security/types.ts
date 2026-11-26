@@ -19,6 +19,10 @@ export type SecurityPolicy = {
   offlineDays: number;
   guestAllowDomains: string[];
   guestBlockDomains: string[];
+  /** The store apps' lock (spec 030 MOB-023): off, optional or required, after this many minutes in the background. */
+  appLock: "off" | "optional" | "required";
+  appLockMinutes: number;
+  appLockAvailable: boolean;
   scopedRulesAvailable: boolean;
   yourAddress: string | null;
   version: number;

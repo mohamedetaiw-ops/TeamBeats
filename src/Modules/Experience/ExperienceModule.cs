@@ -71,6 +71,7 @@ public static class ExperienceModule
         services.AddScoped<Commands>();
         services.AddScoped<PreferenceExport>();
         services.AddScoped<Help>();
+        services.AddScoped<MobileShell>();
         services.AddScoped<Personalization.Suggestions>();
         return services;
     }
@@ -851,6 +852,19 @@ public static class ExperienceModule
             response.Headers.CacheControl = "no-store";
             return Results.Ok(bundle);
         }).RequireTenantUser().WithTags("Experience: offline");
+
+        // The store app (spec 030 R3 MOB-021): read on the tenant host before sign-in, so it needs no session.
+        app.MapGet("/api/v1/mobile/shell", async (ITenantContext context, TenantContextAccessor accessor, MobileShell shell, HttpResponse response,
+            CancellationToken ct) =>
+        {
+            if (context.Host.Kind != HostScopeKind.Tenant || context.Host.Tenant is not { } tenant)
+            {
+                throw AppException.NotFound();
+            }
+            accessor.SetTenant(tenant.Id);
+            response.Headers.CacheControl = "no-store";
+            return Results.Ok(await shell.ConfigAsync(tenant, ct));
+        }).WithTags("Experience: mobile shell");
 
         x.MapGet("/app-icon.svg", async (bool? maskable, AppManifest manifests, HttpResponse response, IDbSession session, CancellationToken ct) =>
         {

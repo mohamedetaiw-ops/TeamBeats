@@ -4221,7 +4221,16 @@
         "max": "Most sessions per person",
         "maxHint": "Leave empty for no limit. The oldest session ends when a new one goes over the limit.",
         "remember": "Remember a device for, in days",
-        "rememberHint": "0 means never. Longer periods ask for the second factor less often."
+        "rememberHint": "0 means never. Longer periods ask for the second factor less often.",
+        "appLock": "Lock the TeamBeats app",
+        "appLockHint": "On phones with the store app, unlocking uses the face, fingerprint or passcode of the device. It never signs anyone in.",
+        "appLocks": {
+          "off": "Off",
+          "optional": "Each person chooses",
+          "required": "Required"
+        },
+        "appLockMinutes": "Lock after, in minutes in the background",
+        "appLockMinutesHint": "0 locks as soon as the app leaves the screen. Device management can make this shorter, never longer."
       },
       "offline": {
         "title": "Offline reading on devices",

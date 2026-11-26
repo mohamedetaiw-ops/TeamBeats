@@ -58,7 +58,12 @@ public sealed record SignInAddress(Guid UserId, string Address);
 /// people are members and never guests (spec 026 edge case). ProviderKind is the enabled provider's kind (such as
 /// <c>entra</c>, <c>google</c>, <c>adfs</c>, <c>generic</c>), the key of its MFA claim mapping (spec 026 FR-004).
 /// </summary>
-public sealed record SignInMethods(bool SsoEnabled, bool DevSignInEnabled, IReadOnlyList<string>? MemberDomains = null, string? ProviderKind = null);
+/// <summary>
+/// The tenant's sign-in methods. <see cref="SignInHosts"/> are the https hosts the enabled provider signs people in on
+/// (its issuer and, for SAML, its sign-in address), which the store apps may open in place (spec 030 MOB-021).
+/// </summary>
+public sealed record SignInMethods(bool SsoEnabled, bool DevSignInEnabled, IReadOnlyList<string>? MemberDomains = null, string? ProviderKind = null,
+    IReadOnlyList<string>? SignInHosts = null);
 
 public interface ISignInMethods
 {

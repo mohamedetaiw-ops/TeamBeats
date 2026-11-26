@@ -23,7 +23,9 @@ public sealed record SecurityPolicySnapshot(
     int OfflineMaxMb = SecurityPolicySnapshot.DefaultOfflineMb,
     int OfflineDays = SecurityPolicySnapshot.DefaultOfflineDays,
     IReadOnlyList<string>? GuestAllowDomains = null,
-    IReadOnlyList<string>? GuestBlockDomains = null)
+    IReadOnlyList<string>? GuestBlockDomains = null,
+    string AppLock = SecurityPolicySnapshot.DefaultAppLock,
+    int AppLockMinutes = SecurityPolicySnapshot.DefaultAppLockMinutes)
 {
     /// <summary>
     /// Spec 026 US3 and section 14: whether the tenant's guest domain rules refuse an email domain. An entry covers the
@@ -47,6 +49,11 @@ public sealed record SecurityPolicySnapshot(
     public const int DefaultOfflineItems = 50;
     public const int DefaultOfflineMb = 50;
     public const int DefaultOfflineDays = 7;
+
+    /// <summary>Spec 030 MOB-023: the app lock of the store apps is optional, after 5 minutes in the background, unless the tenant says otherwise.</summary>
+    public const string DefaultAppLock = "optional";
+    public const int DefaultAppLockMinutes = 5;
+    public static readonly IReadOnlyList<string> AppLocks = ["off", "optional", "required"];
 
     /// <summary>Section 6 defaults: no network rules, step-up after 10 minutes, idle 30 minutes, absolute 12 hours.</summary>
     public static readonly SecurityPolicySnapshot Default = new([], [], [], new Dictionary<string, IReadOnlyList<string>>(), false, 10, 30, 12, null, 0, 0);

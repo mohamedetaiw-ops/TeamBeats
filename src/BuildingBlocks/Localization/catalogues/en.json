@@ -3353,5 +3353,6 @@
   "authz.denied.design_own_proposal": "Someone other than the person who sent it for review must review this design",
   "conflict.push.native_unavailable": "Push for the TeamBeats app is not set up for this workspace.",
   "validation.push.native_token": "The device did not give a valid push registration.",
-  "validation.push.native_platform": "Choose Android or iOS."
+  "validation.push.native_platform": "Choose Android or iOS.",
+  "validation.security.app_lock": "Choose off, optional or required for the app lock."
 }
