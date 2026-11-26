@@ -6,6 +6,7 @@ import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { Alert } from "@/components/ui/Alert";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { Checkbox } from "@/components/ui/Checkbox";
 import { SelectField, TextAreaField } from "@/components/ui/FormField";
 import { StateView } from "@/components/ui/StateView";
 import { BodyView } from "@/features/content/BodyView";
@@ -13,7 +14,7 @@ import { BlockEditor } from "@/features/content/editor/BlockEditor";
 import type { BodyDocument } from "@/lib/content/types";
 import { PersonPicker } from "@/features/services/PersonPicker";
 import { problemMessages } from "@/lib/notifications/types";
-import { engagementApi, localName, postHref, send, type KeywordFilterView, type ModerationItem, type MuteView } from "@/lib/engagement";
+import { engagementApi, localName, postHref, roomHref, send, type EngagementAiSettingView, type KeywordFilterView, type ModerationItem, type MuteView } from "@/lib/engagement";
 import "./engagement.css";
 
 /**
@@ -95,14 +96,14 @@ function QueueEntry({ item, onDone }: { item: ModerationItem; onDone: (message: 
         <h2 id={headingId} className="engagement-post-author">
           <bdi>{item.author?.displayName ?? t("anonymous")}</bdi>
         </h2>
-        <Badge tone="neutral">{item.type === "post" ? t("types.post") : t("types.comment")}</Badge>
+        <Badge tone="neutral">{item.type === "post" ? t("types.post") : item.type === "message" ? t("types.message") : t("types.comment")}</Badge>
         <Badge tone={item.status === "published" || item.status === "visible" ? "info" : "warning"}>{state}</Badge>
         <p className="engagement-meta">
           <bdi>{localName(item.communityNames, locale)}</bdi>
           {" · "}
           <time dateTime={item.createdAt}>{format.dateTime(new Date(item.createdAt), { dateStyle: "medium", timeStyle: "short" })}</time>
           {" · "}
-          <Link href={postHref(item.communityId, item.postId)}>{t("open")}</Link>
+          <Link href={item.type === "message" ? roomHref(item.communityId, item.postId) : postHref(item.communityId, item.postId)}>{t("open")}</Link>
         </p>
       </div>
       {item.body ? (
@@ -329,6 +330,65 @@ export function KeywordFilterEditor({ initial, eTag }: { initial: KeywordFilterV
         <div className="engagement-row">
           <Button type="submit" variant="primary" busy={busy} busyLabel={t("working")}>
             {t("saveKeywords")}
+          </Button>
+        </div>
+      </form>
+    </section>
+  );
+}
+
+/**
+ * Whether AI may read anonymous Speak Up posts for summaries and sentiment (spec 023 R3 FR-032). Off until an engagement
+ * administrator turns it on; saved with If-Match and audited by the API.
+ */
+export function AiSettingEditor({ initial, eTag }: { initial: EngagementAiSettingView; eTag: string }) {
+  const t = useTranslations("engagement.moderation");
+  const [on, setOn] = useState(initial.anonymousContent);
+  const [tag, setTag] = useState(eTag);
+  const [busy, setBusy] = useState(false);
+  const [messages, setMessages] = useState<string[]>([]);
+  const [saved, setSaved] = useState(false);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setMessages([]);
+    setSaved(false);
+    try {
+      const response = await fetch(`${engagementApi}/settings/ai`, {
+        method: "PUT",
+        headers: { "content-type": "application/json", "if-match": tag },
+        body: JSON.stringify({ anonymousContent: on }),
+      });
+      if (response.ok) {
+        const view = (await response.json()) as EngagementAiSettingView;
+        setTag(response.headers.get("etag") ?? tag);
+        setOn(view.anonymousContent);
+        setSaved(true);
+      } else {
+        setMessages(await problemMessages(response));
+      }
+    } catch {
+      setMessages([t("failed")]);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="engagement-section" aria-labelledby="engagement-ai">
+      <h2 id="engagement-ai">{t("aiTitle")}</h2>
+      <form className="engagement" onSubmit={(e) => void save(e)}>
+        <Checkbox label={t("aiAnonymous")} hint={t("aiAnonymousHint")} name="anonymousContent" checked={on} onChange={(e) => setOn(e.target.checked)} />
+        {messages.length > 0 ? (
+          <Alert tone="danger" title={t("failed")} live>
+            {messages.join(" ")}
+          </Alert>
+        ) : null}
+        {saved ? <Alert tone="success" title={t("aiSaved")} live /> : null}
+        <div className="engagement-row">
+          <Button type="submit" variant="primary" busy={busy} busyLabel={t("working")}>
+            {t("saveAi")}
           </Button>
         </div>
       </form>

@@ -17,6 +17,10 @@ export type CommunityRights = {
   mutedUntil: string | null;
   canAddSpeakUp: boolean;
   canAllowAnonymous: boolean;
+  /** Whether the tenant's package has discussion rooms (spec 023 R3). */
+  rooms: boolean;
+  /** Whether the viewer may link the community to Slack or Teams channels (spec 023 R3 US10). */
+  canMirror: boolean;
 };
 
 export type CommunityView = {
@@ -48,8 +52,9 @@ export const reportReasons = ["spam", "harassment", "inappropriate", "misinforma
 export type ReportReason = (typeof reportReasons)[number];
 
 export type ModerationItem = {
-  type: "post" | "comment" | "anonymous";
+  type: "post" | "comment" | "anonymous" | "message";
   id: string;
+  /** The post, or for a room message the room. */
   postId: string;
   communityId: string;
   communityNames: Record<string, string>;
@@ -99,6 +104,7 @@ export type PostView = {
   anonymous: boolean;
   editedByModerator: boolean;
   attachments?: AttachmentView[];
+  canSummarize?: boolean;
 };
 
 export type AttachmentView = { id: string; kind: "image" | "file"; name: string; contentType: string; bytes: number; width: number | null; height: number | null };
@@ -145,6 +151,10 @@ export function localName(names: Record<string, string> | undefined, locale: str
 
 export const communityHref = (id: string) => `/communities/${encodeURIComponent(id)}`;
 export const postHref = (communityId: string, postId: string) => `/communities/${encodeURIComponent(communityId)}/posts/${encodeURIComponent(postId)}`;
+export const roomsHref = (communityId: string) => `/communities/${encodeURIComponent(communityId)}/rooms`;
+export const roomHref = (communityId: string, roomId: string) => `/communities/${encodeURIComponent(communityId)}/rooms/${encodeURIComponent(roomId)}`;
+export const sentimentHref = (communityId: string) => `/communities/${encodeURIComponent(communityId)}/sentiment`;
+export const mirrorsHref = (communityId: string) => `/communities/${encodeURIComponent(communityId)}/mirrors`;
 export const hashtagHref = (tag: string) => `/communities/hashtags/${encodeURIComponent(tag)}`;
 
 /** A guid as the API writes it; pages refuse anything else before calling the API. */
@@ -345,3 +355,61 @@ export type AlbumPage = { album: AlbumView; canUpload: boolean; canModerate: boo
 export const albumsHref = (communityId: string) => `${communityHref(communityId)}/albums`;
 export const albumHref = (communityId: string, albumId: string) => `${albumsHref(communityId)}/${encodeURIComponent(albumId)}`;
 export const photoFile = (photoId: string) => `${engagementApi}/photos/${encodeURIComponent(photoId)}/file`;
+
+/** Discussion rooms with live chat (spec 023 R3 US9). The API decides who reads, writes, archives and moderates. */
+export type RoomView = {
+  id: string;
+  communityId: string;
+  names: Record<string, string>;
+  communityNames: Record<string, string>;
+  status: "active" | "archived";
+  createdAt: string;
+  lastMessageAt: string | null;
+  rights: { canWrite: boolean; canArchive: boolean; canModerate: boolean; canSummarize?: boolean };
+};
+
+export type RoomMessageView = {
+  id: string;
+  roomId: string;
+  author: EngagementPerson;
+  body: string;
+  createdAt: string;
+  status: ContentStatus | "deleted";
+  heldReason: HeldReason | null;
+  removedReason: string | null;
+  mine: boolean;
+  canRemove: boolean;
+  canReport: boolean;
+};
+
+export type RoomMessagePage = { items: RoomMessageView[]; cursor: string | null };
+export type RoomMessageSaved = { message: RoomMessageView; notReachable: EngagementPerson[] };
+
+/** Mirroring a community's new posts to Slack or Teams channels (spec 023 R3 US10). */
+export type MirrorTarget = "slack" | "teams";
+export type MirrorView = {
+  target: MirrorTarget;
+  channelId: string;
+  excerpt: boolean;
+  createdAt: string;
+  lastSentAt: string | null;
+  lastFailure: "unavailable" | "channel_unavailable" | "unreachable" | null;
+  lastFailureAt: string | null;
+};
+export type MirrorsView = {
+  eligible: boolean;
+  mirrors: MirrorView[];
+  slackAvailable: boolean;
+  slackChannels: { id: string; name: string; member: boolean }[];
+  teamsAvailable: boolean;
+};
+
+/** An AI summary of a thread or room, or why there is none (spec 023 R3 FR-031). */
+export type ThreadSummaryView = { outcome: "summarized" | "policy_blocked" | "unavailable"; summary: string | null; denial: string | null };
+
+/** Whether AI may read anonymous content, a versioned tenant setting (spec 023 R3 FR-032). */
+export type EngagementAiSettingView = { anonymousContent: boolean; version: number };
+
+/** One week of a community's sentiment; counts are null below the tenant's minimum group size (spec 023 R3 FR-033). */
+export type CommunitySentimentWeek = { week: string; texts: number | null; positive: number | null; neutral: number | null; negative: number | null; score: number | null };
+export type CommunitySentimentView = { enabled: boolean; minGroupSize: number; from: string; to: string; weeks: CommunitySentimentWeek[] };

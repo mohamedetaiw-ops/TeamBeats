@@ -17,6 +17,9 @@ import {
   communityHref,
   engagementApi,
   localName,
+  mirrorsHref,
+  sentimentHref,
+  roomsHref,
   send,
   speakUpReplyPath,
   type AnonymousReceipt,
@@ -114,6 +117,11 @@ export function CommunityFeed({ initial, feed, locales }: { initial: CommunityVi
             {t("polls.link")}
           </ButtonLink>
         ) : null}
+        {readable && r.rooms ? (
+          <ButtonLink size="sm" variant="quiet" icon="chat" href={roomsHref(community.id)}>
+            {t("rooms.link")}
+          </ButtonLink>
+        ) : null}
         {readable ? (
           <ButtonLink size="sm" variant="quiet" icon="image" href={albumsHref(community.id)}>
             {t("gallery.link")}
@@ -123,6 +131,16 @@ export function CommunityFeed({ initial, feed, locales }: { initial: CommunityVi
           <Button size="sm" variant="primary" busy={busy === ":join"} busyLabel={t("working")} onClick={() => void membership(":join")}>
             {community.kind === "approval" ? t("community.askToJoin") : t("community.join")}
           </Button>
+        ) : null}
+        {r.canMirror ? (
+          <ButtonLink size="sm" variant="quiet" icon="link" href={mirrorsHref(community.id)}>
+            {t("mirrors.link")}
+          </ButtonLink>
+        ) : null}
+        {r.canModerate ? (
+          <ButtonLink size="sm" variant="quiet" icon="trend-up" href={sentimentHref(community.id)}>
+            {t("sentiment.link")}
+          </ButtonLink>
         ) : null}
         {r.canModerate ? (
           <ButtonLink size="sm" variant="quiet" icon="alert" href={`/communities/moderation?communityId=${encodeURIComponent(community.id)}`}>

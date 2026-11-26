@@ -48,7 +48,8 @@ public sealed record PostView(
     bool CanReport,
     bool Anonymous = false,
     bool EditedByModerator = false,
-    IReadOnlyList<AttachmentView>? Attachments = null);
+    IReadOnlyList<AttachmentView>? Attachments = null,
+    bool CanSummarize = false);
 
 public sealed record FeedPage(IReadOnlyList<PostView> Items, string? NextCursor);
 
@@ -199,6 +200,11 @@ public sealed partial class Posts(
         var people = await PeopleAsync(rows.Select(r => r.AuthorId).Concat(mentions.SelectMany(m => m)), ct);
         var reactions = await ReactionsAsync("post", ids, ct);
         var files = await attachments.ForPostsAsync(ids, ct);
+        // A summary is offered on a long published thread to a reader with the AI assistant; an anonymous post only while
+        // the tenant lets AI read anonymous content (FR-031, FR-032). The service checks all of it again.
+        var ai = rows.Any(r => r.CommentCount >= ThreadSummaries.MinComments) && await entitlements.IsEnabledAsync(Capabilities.AiAssistant, ct);
+        var anonymousAi = ai && rows.Any(r => r.Anonymous) &&
+            (await session.QuerySingleOrDefaultAsync("select anonymous_content from engagement.ai_setting", null, r => (bool?)r.GetBoolean(0), ct) ?? false);
         return rows.Select(r =>
         {
             var s = standing(r.CommunityId);
@@ -208,7 +214,7 @@ public sealed partial class Posts(
                 r.Pinned, r.PublishedAt, r.EditedAt, r.CommentCount, reactions[r.Id], following.Contains(r.Id), mine,
                 CanEdit: mine && s.Posts && live, CanPin: live && s.Moderates && s.Community.Status == "active", CanComment: live && s.Posts,
                 r.Status, r.HeldReason, mine ? r.RemovedReason : null, CanReport: live && !mine && s.Participates, r.Anonymous, r.EditedByModerator,
-                files[r.Id].ToList());
+                files[r.Id].ToList(), CanSummarize: live && ai && r.CommentCount >= ThreadSummaries.MinComments && (!r.Anonymous || anonymousAi));
         }).ToList();
     }
 

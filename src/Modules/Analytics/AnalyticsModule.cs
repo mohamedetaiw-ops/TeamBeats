@@ -43,6 +43,7 @@ public static class AnalyticsModule
         services.AddScoped<ReportRunner>();
         services.AddScoped<SentimentClassifier>();
         services.AddScoped<SentimentAnalytics>();
+        services.AddScoped<IAnalyticsSentimentTrends, SentimentTrends>();
         services.AddScoped<AiUsageAnalytics>();
         services.AddScoped<DashboardSummaries>();
         services.AddScoped<SearchGaps>();

@@ -9,9 +9,9 @@
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R2 (communities and discussion channels, posts with comments, reactions, mentions and hashtags, Speak Up with anonymous option, polls, anonymous surveys with results thresholds, recognition and thank-you shout-outs, custom badges, points and leaderboard, team and star of the period, celebrations for birthdays and work anniversaries, photo galleries, moderation), R3 (discussion rooms with live chat, Teams and Slack channel mirroring, AI summaries of long threads, sentiment trends) |
-| Last updated | 2026-11-07 |
+| Last updated | 2026-11-26 |
 | Approved | 2026-11-07 by Mohamed (standing approval to proceed) |
-| Requirement IDs | EXP-007, ENG-001 to ENG-026 (new) |
+| Requirement IDs | EXP-007, ENG-001 to ENG-033 (new) |
 | Use cases | UC-03 |
 | Depends on | 002 (org units for department channels), 004 (authorization), 005 (entitlements), 009 (comments, reactions and moderation patterns, publishing), 010 (people, birthdays, work anniversaries), 011 (images and files), 012 (search), 015 (notifications), 021 (analytics), 026 (content safety, anonymity controls) |
 | Used by | 008 (home widgets: discussions, celebrations, recognition, polls), 029 (project space discussions), 021 (engagement analytics) |
@@ -36,10 +36,11 @@
 - Celebrations: birthdays (opt-in, day and month only), work anniversaries, new joiners; a celebrations widget and greetings.
 - Galleries: albums of images and videos from 011 storage, with moderation.
 - Moderation: report a post or comment, moderator queue, hide, remove with reason, mute a member for a time, keyword filter, content safety scan through 026 for images.
+- R3: discussion rooms with live chat inside a community; mirroring new posts of a community to a Slack or Teams channel; AI summaries of long threads and busy rooms; sentiment trends for a community.
 
 **Out of scope:**
-- Real-time chat and discussion rooms (R3), video calls.
-- Mirroring to Teams or Slack channels (R3).
+- Video calls, voice rooms and screen sharing.
+- Bringing messages from Teams or Slack back into TeamBeats (mirroring is one way).
 - Rewards redemption or any monetary value for points.
 - External communities with customers.
 
@@ -129,6 +130,30 @@ Sara thanks Ahmed for help with month-end closing, linked to the value "Teamwork
 3. **Given** a removed post, **Then** the author sees the reason, the action is audited, and the post is removed from search within 1 minute.
 4. **Given** a muted member, **Then** they can read but not post or comment in that community until the mute ends.
 
+### User Story 9: Talk live in a discussion room (Priority: P2, R3)
+
+**Acceptance scenarios:**
+1. **Given** a community owner, **When** they open a room in the community, **Then** everyone who reads the community can read the room and its members can write in it.
+2. **Given** two members in the same room, **When** one sends a message, **Then** the other sees it within 3 seconds without reloading the page.
+3. **Given** a message with a mention of someone who reads the community, **Then** that person is told once; someone who cannot read it is not told and the writer is warned.
+4. **Given** a keyword on the tenant's filter, **Then** the message is held for a moderator and only the writer sees it; a reported message follows the same rules as a comment, and 3 reports hide it.
+5. **Given** a member who leaves a closed community or is muted, **Then** the live view stops showing new messages to them, or they can no longer write, at once.
+
+### User Story 10: Mirror a community to Teams or Slack (Priority: P3, R3)
+
+**Acceptance scenarios:**
+1. **Given** an open community whose content every employee may read, **When** an engagement administrator links it to a Slack channel or a Teams channel, **Then** each new published post appears there as a short notice with the author, the community and a link that needs sign in.
+2. **Given** the mirror allows an excerpt, **Then** the notice carries the first 200 characters of the post; otherwise no post text leaves TeamBeats.
+3. **Given** a closed, approval, department or space community, or a confidential one, **Then** it cannot be mirrored.
+4. **Given** Slack or Teams refuses the message, **Then** the mirror shows the last failure and later posts are still tried.
+
+### User Story 11: Catch up with AI summaries and sentiment trends (Priority: P3, R3)
+
+**Acceptance scenarios:**
+1. **Given** a post with at least 10 visible comments, or a room with at least 20 messages, **When** a reader asks for a summary, **Then** they get a short summary in their language of only what they can read, through the AI Gateway, and nothing is stored.
+2. **Given** an anonymous Speak Up post, **Then** it is summarized and counted in sentiment only when the tenant turned on AI for anonymous content, and the summary never names or guesses its author.
+3. **Given** a community moderator or owner, **When** sentiment is on for the tenant (spec 021), **Then** they see the share of positive, neutral and negative comments and room messages of their community by week, only for weeks with at least the tenant's minimum group size of people.
+
 ### Edge cases and exception flows
 - Author leaves the company: posts stay with the name shown as a former employee; anonymous posts are unaffected.
 - Department community whose unit is deleted: the community is archived, readable by former members.
@@ -164,6 +189,13 @@ Sara thanks Ahmed for help with month-end closing, linked to the value "Teamwork
 - **ENG-024 / FR-024**: Engagement events MUST feed 021 as counts without identities for anonymous items.
 - **ENG-025 / FR-025**: Community owners MUST NOT see anonymous identities; there is no override role.
 - **ENG-026 / FR-026**: All user-facing text MUST use resource keys and work in RTL.
+- **ENG-027 / FR-027**: A community MAY hold discussion rooms; a room MUST follow the community's read, write, mute and moderation rules, and its messages MUST be up to 2,000 characters.
+- **ENG-028 / FR-028**: Room messages MUST reach open readers within 3 seconds, and every delivery MUST check the reader's access again so lost access stops delivery at once.
+- **ENG-029 / FR-029**: Room messages MUST use the same mentions, keyword filter, report and removal rules as comments.
+- **ENG-030 / FR-030**: Mirroring MUST be one way, MUST be set by an engagement administrator, MUST only apply to open communities of public or internal classification without a unit or space, and MUST send post text only when the mirror allows an excerpt (at most 200 characters). It MUST go through connector adapters (spec 017).
+- **ENG-031 / FR-031**: Thread and room summaries MUST go through the AI Gateway with the community's classification, include only what the reader can read, never be stored, and never identify anonymous authors.
+- **ENG-032 / FR-032**: AI on anonymous content (summaries and sentiment) MUST be off until an engagement administrator turns it on for the tenant.
+- **ENG-033 / FR-033**: Community sentiment trends MUST come from spec 021 sentiment, MUST be shown only to the community's moderators and owners, and MUST hide weeks below the minimum group size.
 
 ## 6. Business and validation rules
 - Post length up to 10,000 characters; up to 10 images per post; comment length up to 2,000.
@@ -197,6 +229,10 @@ Sara thanks Ahmed for help with month-end closing, linked to the value "Teamwork
 | `engagement.recognition` | on | on | on |
 | `engagement.points` | off | on | on |
 | `engagement.galleries` | on | on | on |
+| `engagement.rooms` (R3) | off | on | on |
+| `engagement.mirroring` (R3) | off | on | on |
+
+Thread summaries also need `ai.assistant`; community sentiment trends also need `analytics.sentiment`.
 
 ## 10. UX, localization and accessibility
 - Communities directory, community page with channels, post composer shared with 009, recognition wall, survey builder with preview, moderator queue.
@@ -204,10 +240,11 @@ Sara thanks Ahmed for help with month-end closing, linked to the value "Teamwork
 - Arabic and English, RTL, keyboard operable; reactions have text labels for screen readers.
 
 ## 11. AI behavior
-R2: none. R3: thread summaries and sentiment trends through 013 and 014, never on anonymous content without the tenant's explicit setting, never identifying anonymous authors.
+R2: none. R3: thread summaries and sentiment trends through 013 and 014, never on anonymous content without the tenant's explicit setting, never identifying anonymous authors. Summaries use the `summarize` use case with the community's classification and pass the thread as untrusted data. Sentiment reuses the spec 021 classifier: community comments, room messages and, with the setting, anonymous Speak Up posts are its sources.
 
 ## 12. Integrations and events
 - Publishes `PostPublished`, `PostRemoved`, `CommentAdded`, `RecognitionGiven`, `SurveyClosed`, `PollClosed`.
+- R3: mirrors posts through the spec 017 Slack adapter and the Teams bot (spec 015) into a channel where the bot is installed.
 - Consumes `OrgUnitMembershipChanged` (002), `EmployeeHired` (019), profile changes (010).
 
 ## 13. Audit, telemetry and analytics
@@ -219,6 +256,9 @@ R2: none. R3: thread summaries and sentiment trends through 013 and 014, never o
 | engagement.member_muted | audit | community, member, until, actor |
 | engagement.survey_published / closed | audit | survey, audience, actor |
 | engagement.points_config_changed | audit | config version, actor |
+| engagement.room_created / archived | audit | community, room, actor |
+| engagement.mirror_set / removed | audit | community, target, excerpt, actor |
+| engagement.ai_setting_changed | audit | anonymous content on or off, actor |
 | engagement.activity | telemetry | type, community (no content, no identity for anonymous) |
 
 ## 14. Security and abuse cases
@@ -243,5 +283,5 @@ R2: none. R3: thread summaries and sentiment trends through 013 and 014, never o
 
 | Requirement ID | Covered by |
 |---|---|
-| EXP-007 | ENG-001 to ENG-026, US1 to US8 |
+| EXP-007 | ENG-001 to ENG-033, US1 to US11 |
 | UC-03 | US1, US4 |

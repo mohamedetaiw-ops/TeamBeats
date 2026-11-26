@@ -195,6 +195,46 @@ public sealed class BotFramework
         }
     }
 
+    /// <summary>
+    /// Starts a thread in a team channel with the card (Bot Framework creates the conversation with its first activity).
+    /// Teams answers 403 or 404 when the bot is not in the channel's team.
+    /// </summary>
+    public async Task<TeamsSendOutcome> PostToChannelAsync(string entraTenantId, string channelId, object card, string summary, CancellationToken ct)
+    {
+        if (!Enabled)
+        {
+            return TeamsSendOutcome.Unavailable;
+        }
+        try
+        {
+            var bearer = await TokenAsync(ct);
+            using var client = httpClients.CreateClient(ClientName);
+            using var create = new HttpRequestMessage(HttpMethod.Post, ServiceUrl + "v3/conversations")
+            {
+                Content = JsonContent.Create(new
+                {
+                    isGroup = true,
+                    bot = new { id = "28:" + AppId },
+                    tenantId = entraTenantId,
+                    channelData = new { channel = new { id = channelId }, tenant = new { id = entraTenantId } },
+                    activity = new { type = "message", summary, attachments = new[] { new { contentType = CardType, content = card } } },
+                }),
+            };
+            create.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bearer);
+            using var created = await client.SendAsync(create, ct);
+            return Outcome(created.StatusCode) ?? TeamsSendOutcome.Sent;
+        }
+        catch (BotCredentialsRefusedException)
+        {
+            return TeamsSendOutcome.Unavailable;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or JsonException or InvalidOperationException
+            || (ex is TaskCanceledException && !ct.IsCancellationRequested))
+        {
+            return TeamsSendOutcome.Transient;
+        }
+    }
+
     private static async Task<TeamsSendOutcome> PostAsync(HttpClient client, string bearer, string serviceUrl, string conversation, object card, string summary, CancellationToken ct)
     {
         var baseUrl = serviceUrl.EndsWith('/') ? serviceUrl : serviceUrl + "/";

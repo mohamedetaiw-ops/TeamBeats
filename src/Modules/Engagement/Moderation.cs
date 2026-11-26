@@ -23,7 +23,7 @@ public sealed record ReportCount(string Reason, int Count);
 /// <summary>
 /// One item in a moderator's queue: a post or comment held by the keyword filter or Speak Up review, hidden after
 /// reports, or still published with open reports; or an anonymous Speak Up post (type "anonymous", no author, only the
-/// day it came in). PostId and CommunityId point to where the item lives; for an anonymous post PostId is empty. Report notes are shown; reporters are not, so the queue cannot be used to pressure them.
+/// day it came in); or a room message (type "message", whose PostId is the room). PostId and CommunityId point to where the item lives; for an anonymous post PostId is empty. Report notes are shown; reporters are not, so the queue cannot be used to pressure them.
 /// </summary>
 public sealed record ModerationItem(
     string Type,
@@ -57,6 +57,7 @@ public sealed class Moderation(
     IAuditWriter audit,
     IOutbox outbox,
     SpeakUp speakUp,
+    Rooms rooms,
     IClock clock)
 {
     public const int HideThreshold = 3;
@@ -213,10 +214,10 @@ public sealed class Moderation(
             standings[id] = c is null ? null : await communities.StandingAsync(c, ct);
         }
         var mine = rows.Where(r => standings[r.Community] is { Moderates: true }).ToList();
-        var anonymous = await speakUp.QueueAsync(communityId, ct);
+        var anonymous = (await speakUp.QueueAsync(communityId, ct)).Concat(await rooms.QueueAsync(communityId, ct)).ToList();
         if (mine.Count == 0)
         {
-            return anonymous;
+            return anonymous.OrderBy(i => i.CreatedAt).ThenBy(i => i.Id).ToList();
         }
         var ids = mine.Select(r => r.Id).ToArray();
         var reports = await session.QueryAsync(
@@ -258,6 +259,11 @@ public sealed class Moderation(
     /// </summary>
     public async Task ApproveAsync(string type, Guid id, CancellationToken ct)
     {
+        if (type == "message")
+        {
+            await rooms.ApproveAsync(id, ct);
+            return;
+        }
         var (t, s) = await ModeratedAsync(type, id, ct);
         var was = t.Status;
         if (!Live(t))
@@ -296,6 +302,11 @@ public sealed class Moderation(
     /// </summary>
     public async Task RemoveAsync(string type, Guid id, RemoveRequest request, CancellationToken ct)
     {
+        if (type == "message")
+        {
+            await rooms.RemoveAsync(id, request, ct);
+            return;
+        }
         var (t, _) = await ModeratedAsync(type, id, ct);
         var reason = request.Reason?.Trim();
         if (string.IsNullOrEmpty(reason) || reason.Length > MaxNote || reason.Any(c => char.IsControl(c) && c is not '\n' and not '\r'))

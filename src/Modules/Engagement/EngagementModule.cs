@@ -23,6 +23,8 @@ public static class EngagementModule
         services.AddScoped<Communities>();
         services.AddScoped<TeamBeats.Modules.Analytics.Contracts.IAnalyticsTextSource, CommunityTextSource>();
         services.AddScoped<TeamBeats.Modules.Analytics.Contracts.IAnalyticsTextSource, SurveyTextSource>();
+        services.AddScoped<TeamBeats.Modules.Analytics.Contracts.IAnalyticsTextSource, RoomTextSource>();
+        services.AddScoped<TeamBeats.Modules.Analytics.Contracts.IAnalyticsTextSource, SpeakUpTextSource>();
         services.AddScoped<Contracts.ISpaceChannels, SpaceChannels>();
         services.AddScoped<Posts>();
         services.AddScoped<KeywordFilters>();
@@ -34,7 +36,14 @@ public static class EngagementModule
         services.AddScoped<Awards>();
         services.AddScoped<Celebrations>();
         services.AddScoped<Galleries>();
+        services.AddSingleton<RoomSignals>();
+        services.AddScoped<Rooms>();
+        services.AddSingleton<RoomStream>();
+        services.AddScoped<EngagementAiSettings>();
+        services.AddScoped<ThreadSummaries>();
+        services.AddScoped<CommunitySentiment>();
         services.AddMessageHandler<Contracts.PostPublished, Points>("engagement.points_post");
+        services.AddMessageHandler<Contracts.PostPublished, Mirrors>("engagement.mirror_post");
         services.AddScoped<Search.Contracts.ISearchSource, EngagementSearchSource>();
         return services;
     }
@@ -263,6 +272,120 @@ public static class EngagementModule
             await moderation.RemoveAsync(type, id, request, ct);
             await session.CommitAsync(ct);
             return Results.NoContent();
+        });
+
+        // ---- Discussion rooms (R3 US9) ----
+
+        root.MapGet("/communities/{id:guid}/rooms", async (Guid id, Rooms rooms, CancellationToken ct) => Results.Ok(await rooms.ListAsync(id, ct)));
+
+        root.MapPost("/communities/{id:guid}/rooms", async (Guid id, RoomRequest request, Rooms rooms, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await rooms.CreateAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/engagement/rooms/{view.Id}", view);
+        });
+
+        root.MapGet("/rooms/{id:guid}", async (Guid id, Rooms rooms, CancellationToken ct) => Results.Ok(await rooms.GetAsync(id, ct)));
+
+        root.MapPost("/rooms/{id:guid}:archive", async (Guid id, Rooms rooms, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await rooms.ArchiveAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapGet("/rooms/{id:guid}/messages", async (Guid id, string? after, Rooms rooms, CancellationToken ct) => Results.Ok(await rooms.MessagesAsync(id, after, ct)));
+
+        root.MapPost("/rooms/{id:guid}/messages", async (Guid id, RoomMessageRequest request, Rooms rooms, IDbSession session, CancellationToken ct) =>
+        {
+            var saved = await rooms.SendAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/engagement/rooms/{id}/messages", saved);
+        });
+
+        root.MapDelete("/room-messages/{id:guid}", async (Guid id, Rooms rooms, IDbSession session, CancellationToken ct) =>
+        {
+            await rooms.DeleteAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        root.MapPost("/room-messages/{id:guid}:report", async (Guid id, ReportRequest request, Rooms rooms, IDbSession session, CancellationToken ct) =>
+        {
+            await rooms.ReportAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        // Live messages as server-sent events (FR-028): "messages" events with new messages and the next cursor,
+        // "gone" when the person may no longer read the room, and "end" when the stream's time is up; the browser
+        // then connects again from its last cursor. Access is checked on every read, each in its own short transaction.
+        root.MapGet("/rooms/{id:guid}/stream", async (Guid id, string? after, HttpContext http, Rooms rooms, RoomStream stream, ITenantContext context, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var first = await rooms.MessagesAsync(id, after, ct);
+            var who = RoomStream.Of(context);
+            await session.CommitAsync(ct);
+            var response = http.Response;
+            response.ContentType = "text/event-stream";
+            response.Headers.CacheControl = "no-cache, no-transform";
+            response.Headers["X-Accel-Buffering"] = "no";
+            http.Features.Get<Microsoft.AspNetCore.Http.Features.IHttpResponseBodyFeature>()?.DisableBuffering();
+            var cursor = first.Cursor;
+            async Task WriteAsync(string name, object data)
+            {
+                await response.WriteAsync($"event: {name}\ndata: {System.Text.Json.JsonSerializer.Serialize(data, System.Text.Json.JsonSerializerOptions.Web)}\n\n", ct);
+                await response.Body.FlushAsync(ct);
+            }
+            try
+            {
+                if (after is not null && first.Items.Count > 0)
+                {
+                    await WriteAsync("messages", first);
+                }
+                else
+                {
+                    await WriteAsync("ready", new { cursor });
+                }
+                var until = DateTimeOffset.UtcNow + RoomStream.Lifetime;
+                while (DateTimeOffset.UtcNow < until && !ct.IsCancellationRequested)
+                {
+                    var page = await stream.NextAsync(who, id, cursor, ct);
+                    if (page is null)
+                    {
+                        await WriteAsync("gone", new { });
+                        return Results.Empty;
+                    }
+                    if (page.Items.Count > 0)
+                    {
+                        cursor = page.Cursor;
+                        await WriteAsync("messages", page);
+                    }
+                }
+                await WriteAsync("end", new { cursor });
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+            }
+            return Results.Empty;
+        });
+
+        // ---- Mirroring to Slack and Teams (R3 US10) ----
+
+        root.MapGet("/communities/{id:guid}/mirrors", async (Guid id, Mirrors mirrors, CancellationToken ct) => Results.Ok(await mirrors.GetAsync(id, ct)));
+
+        root.MapPut("/communities/{id:guid}/mirrors/{target}", async (Guid id, string target, MirrorRequest request, Mirrors mirrors, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await mirrors.SetAsync(id, target, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapDelete("/communities/{id:guid}/mirrors/{target}", async (Guid id, string target, Mirrors mirrors, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await mirrors.RemoveAsync(id, target, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
         });
 
         // ---- Polls (US3) ----
@@ -645,6 +768,29 @@ public static class EngagementModule
         {
             var view = await filters.GetAsync(ct);
             response.Headers.ETag = KeywordFilters.ETag(view.Version);
+            return Results.Ok(view);
+        });
+
+        // ---- AI summaries and the anonymous content setting (R3 US11) ----
+
+        root.MapPost("/posts/{id:guid}:summarize", async (Guid id, ThreadSummaries summaries, CancellationToken ct) => Results.Ok(await summaries.PostAsync(id, ct)));
+
+        root.MapPost("/rooms/{id:guid}:summarize", async (Guid id, ThreadSummaries summaries, CancellationToken ct) => Results.Ok(await summaries.RoomAsync(id, ct)));
+
+        root.MapGet("/communities/{id:guid}/sentiment", async (Guid id, CommunitySentiment sentiment, CancellationToken ct) => Results.Ok(await sentiment.GetAsync(id, ct)));
+
+        root.MapGet("/settings/ai", async (EngagementAiSettings settings, HttpResponse response, CancellationToken ct) =>
+        {
+            var view = await settings.GetAsync(ct);
+            response.Headers.ETag = EngagementAiSettings.ETag(view.Version);
+            return Results.Ok(view);
+        });
+
+        root.MapPut("/settings/ai", async (EngagementAiSettingRequest request, HttpRequest http, EngagementAiSettings settings, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await settings.SetAsync(request, IfMatch(http), ct);
+            await session.CommitAsync(ct);
+            http.HttpContext.Response.Headers.ETag = EngagementAiSettings.ETag(view.Version);
             return Results.Ok(view);
         });
 

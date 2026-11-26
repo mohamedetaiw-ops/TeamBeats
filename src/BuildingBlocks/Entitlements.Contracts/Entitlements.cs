@@ -103,6 +103,10 @@ public static class Capabilities
     public const string EngagementPoints = "engagement.points";
     public const string EngagementGalleries = "engagement.galleries";
 
+    // Spec 023 R3 section 9: discussion rooms and channel mirroring Workplace Plus and above.
+    public const string EngagementRooms = "engagement.rooms";
+    public const string EngagementMirroring = "engagement.mirroring";
+
     // Spec 028 section 9: courses, mandatory training and the LMS connector Workplace Plus and above; SCORM and xAPI
     // import Enterprise and Government only.
     public const string LearningCourses = "learning.courses";

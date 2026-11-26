@@ -54,6 +54,7 @@ const finders: Finder[] = [
   { route: "/communities/[id]/posts/[postId]", list: "/communities/[id]" },
   { route: "/communities/hashtags/[tag]", list: "/communities/[id]" },
   { route: "/communities/[id]/albums/[albumId]", list: "/communities/[id]/albums" },
+  { route: "/communities/[id]/rooms/[roomId]", list: "/communities/[id]/rooms" },
   { route: "/communities/surveys/[id]", list: "/communities/surveys" },
   { route: "/learning/courses/[id]", list: "/learning/catalogue" },
   { route: "/learning/manage/courses/[id]", list: "/learning/manage" },
@@ -193,6 +194,9 @@ async function seedExtras(api: APIRequestContext, found: Found): Promise<void> {
   }));
   await ok(await api.post(`/api/v1/engagement/communities/${communityId}/albums`, {
     data: { title: "Harbour walk", description: "Our first walk of the season.", requiresApproval: false },
+  }));
+  await ok(await api.post(`/api/v1/engagement/communities/${communityId}/rooms`, {
+    data: { names: both("Walk planning", "تخطيط الجولات") },
   }));
   await ok(await api.post(`/api/v1/engagement/communities/${communityId}/polls`, {
     data: { question: "Where should we walk next?", options: ["The old town", "The corniche"], multiple: false, anonymous: false, allowChange: true, results: "after_vote", closesAt: new Date(Date.now() + 7 * 86_400_000).toISOString() },

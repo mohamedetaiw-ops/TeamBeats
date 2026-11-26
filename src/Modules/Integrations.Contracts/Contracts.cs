@@ -906,6 +906,13 @@ public interface ITeamsMessaging
     /// still reach the person in Teams.
     /// </summary>
     Task<TeamsSendOutcome> ReplyAsync(Guid userId, TeamsConversation conversation, TeamsCard card, CancellationToken ct = default);
+
+    /// <summary>
+    /// A card as a new thread in a Teams channel (spec 023 R3 US10), posted by the TeamBeats bot, which must be installed
+    /// in the channel's team: <see cref="TeamsSendOutcome.NotInstalled"/> when it is not or the channel is unknown, and
+    /// <see cref="TeamsSendOutcome.Unavailable"/> without the bot or the tenant's Teams connection.
+    /// </summary>
+    Task<TeamsSendOutcome> PostToChannelAsync(string channelId, TeamsCard card, CancellationToken ct = default);
 }
 
 /// <summary>A button of a Teams card: its verb, its label in the person's language and the opaque token it sends back.</summary>
