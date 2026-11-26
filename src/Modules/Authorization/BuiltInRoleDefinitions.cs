@@ -51,7 +51,7 @@ public static class BuiltInRoleDefinitions
         // Spec 011 R2: retention labels, disposition and legal holds across every library of the tenant.
         new(BuiltInRoles.RecordsManager, Delegable: false, DelegatedAdmin: false, [P.OrgUnitView, P.PeopleView, P.RecordsManage]),
         new(BuiltInRoles.SpacesAdministrator, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PeopleView, P.SpacesCreate, P.SpacesManage]),
-        new(BuiltInRoles.FacilitiesAdministrator, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PeopleView, P.BookingBook, P.BookingManage, P.BookingReport]),
+        new(BuiltInRoles.FacilitiesAdministrator, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PeopleView, P.BookingBook, P.BookingManage, P.BookingReport, P.BookingReception]),
         new(BuiltInRoles.FacilitiesAnalyst, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.BookingReport]),
         // Spec 021 R2 US6: location and unit heads read the analytics workspace for the units they are given.
         new(BuiltInRoles.AnalyticsViewer, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.AnalyticsView]),

@@ -1669,7 +1669,8 @@
       "booking": {
         "book": "Book desks and rooms",
         "manage": "Manage booking",
-        "report": "Booking reports"
+        "report": "Booking reports",
+        "reception": "Work reception"
       },
       "kiosk": {
         "signin": "Sign in at kiosks"

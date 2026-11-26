@@ -31,6 +31,7 @@ public static class BookingModule
         services.AddScoped<BookingClosures>();
         services.AddScoped<BookingActivity>();
         services.AddScoped<FloorPlans>();
+        services.AddScoped<Visits>();
         services.AddMessageHandler<TenantMembershipDisabled, BookingLeavers>("booking.leaver");
         services.AddScoped<BookingHolidayHandler>();
         services.AddMessageHandler<Hr.Contracts.WorkingCalendarChanged, BookingHolidayHandler>("booking.holiday");
@@ -110,6 +111,36 @@ public static class BookingModule
 
         root.MapGet("/reports/utilization", async (Guid site, DateOnly? from, DateOnly? to, string? groupBy, BookingReports reports, CancellationToken ct) =>
             Results.Ok(await reports.UtilizationAsync(site, from, to, groupBy, ct)));
+
+        root.MapGet("/visits/mine", async (Visits visits, CancellationToken ct) => Results.Ok(await visits.MineAsync(ct)));
+
+        root.MapGet("/visits/{id:guid}", async (Guid id, Visits visits, CancellationToken ct) => Results.Ok(await visits.GetAsync(id, ct)));
+
+        root.MapPost("/visits", async (VisitRequest request, Visits visits, IDbSession session, CancellationToken ct) =>
+        {
+            var visit = await visits.RegisterAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/booking/visits/{visit.Id}", visit);
+        });
+
+        root.MapPut("/visits/{id:guid}", async (Guid id, VisitRequest request, Visits visits, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await visits.ChangeAsync(id, request, ct), ct));
+
+        root.MapPost("/visits/{id:guid}:cancel", async (Guid id, Visits visits, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await visits.CancelAsync(id, ct), ct));
+
+        root.MapGet("/reception/sites", async (Visits visits, CancellationToken ct) => Results.Ok(await visits.ReceptionSitesAsync(ct)));
+
+        root.MapGet("/reception/sites/{id:guid}/visits", async (Guid id, DateOnly? date, Visits visits, CancellationToken ct) => Results.Ok(await visits.DayAsync(id, date, ct)));
+
+        root.MapPost("/reception/sites/{id:guid}/visits:check-in", async (Guid id, CheckInCodeRequest request, Visits visits, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await visits.CheckInByCodeAsync(id, request, ct), ct));
+
+        root.MapPost("/reception/visits/{id:guid}:check-in", async (Guid id, Visits visits, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await visits.CheckInAsync(id, ct), ct));
+
+        root.MapPost("/reception/visits/{id:guid}:check-out", async (Guid id, Visits visits, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await visits.CheckOutAsync(id, ct), ct));
 
         var manage = root.MapGroup("/manage");
 
@@ -230,8 +261,15 @@ public static class BookingModule
     }
 }
 
-/// <summary>Cancels the future bookings of a person whose membership ended (spec 031 FR-016).</summary>
-public sealed class BookingLeavers(Bookings bookings) : IMessageHandler<TenantMembershipDisabled>
+/// <summary>
+/// Cancels the future bookings of a person whose membership ended (spec 031 FR-016), and their future visits, telling
+/// the visitors (spec 031 R3 section 4).
+/// </summary>
+public sealed class BookingLeavers(Bookings bookings, Visits visits) : IMessageHandler<TenantMembershipDisabled>
 {
-    public Task HandleAsync(TenantMembershipDisabled message, CancellationToken ct) => bookings.CancelForLeaverAsync(message.UserId, ct);
+    public async Task HandleAsync(TenantMembershipDisabled message, CancellationToken ct)
+    {
+        await bookings.CancelForLeaverAsync(message.UserId, ct);
+        await visits.CancelForLeaverAsync(message.UserId, ct);
+    }
 }

@@ -79,8 +79,9 @@ public sealed partial class Facilities(
         var book = (await authz.CheckAsync(Permissions.BookingBook, AuthzTarget.Tenant, ct)).Allowed;
         var manage = await authz.HoldsAnywhereAsync(Permissions.BookingManage, ct);
         var report = await entitlements.IsEnabledAsync(Capabilities.BookingReports, ct) && await authz.HoldsAnywhereAsync(Permissions.BookingReport, ct);
-        return new BookingRights(book, manage, report, kinds, await entitlements.IsEnabledAsync(Capabilities.BookingFloorPlans, ct),
-            await entitlements.IsEnabledAsync(Capabilities.BookingVisitors, ct));
+        var visitors = await entitlements.IsEnabledAsync(Capabilities.BookingVisitors, ct);
+        return new BookingRights(book, manage, report, kinds, await entitlements.IsEnabledAsync(Capabilities.BookingFloorPlans, ct), visitors,
+            visitors && await authz.HoldsAnywhereAsync(Permissions.BookingReception, ct));
     }
 
     // ---- Sites ----

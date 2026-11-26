@@ -102,8 +102,8 @@ public static class CheckInMethods
 
 // ---- Views ----
 
-/// <summary>What the viewer may do in booking. FloorPlans and Visitors say whether those R3 parts are in the plan.</summary>
-public sealed record BookingRights(bool Book, bool Manage, bool Report, IReadOnlyList<string> Kinds, bool FloorPlans = false, bool Visitors = false);
+/// <summary>What the viewer may do in booking. FloorPlans and Visitors say whether those R3 parts are in the plan; Reception that the viewer works reception somewhere.</summary>
+public sealed record BookingRights(bool Book, bool Manage, bool Report, IReadOnlyList<string> Kinds, bool FloorPlans = false, bool Visitors = false, bool Reception = false);
 
 public sealed record SiteView(Guid Id, IReadOnlyDictionary<string, string> Names, string? LocationKey, Guid? OrgUnitId, string TimeZone, TimeOnly OpensAt, TimeOnly ClosesAt,
     string Status, bool Manages, int Version);
