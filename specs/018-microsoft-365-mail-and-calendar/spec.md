@@ -192,7 +192,7 @@ Mona asks the assistant "When is my next meeting and what's free this afternoon?
 - **FR-021 / M365-021**: Booking MUST create an event in the employee's own calendar with the room as a resource attendee; the room mailbox's own rules decide acceptance, and the result MUST be visible in My calendar.
 
 ### Assistant and agents
-- **FR-022 / M365-022**: The assistant and agents MAY read calendar data (R1) and mail summaries (R3) only through read tools registered under spec 027, only as the employee, only when the tenant allows the tool and, for mail, the employee has opted in. Mail and event text MUST be treated as untrusted content.
+- **FR-022 / M365-022**: The assistant and agents MAY read calendar data (R1) and mail summaries (R3) only through read tools registered under spec 027, only as the employee, only when the tenant allows the tool and, for mail, the employee has opted in. Mail and event text MUST be treated as untrusted content. In R3 the tenant switch is a Mail feature option (Assistant summaries, off by default, which needs `Mail.Read`); the employee opts in, and out at any time, in their Outlook settings, and a disabled membership loses the opt-in. The mail tool reads at most 25 of the latest Inbox messages (sender, subject, time received, read, importance, attachments and the plain-text preview, never the full body) and its answer is Confidential, so only agents allowed Confidential data can use it.
 - **FR-023 / M365-023**: Access while the employee is signed out (for example a scheduled briefing) MUST require a separate, revocable employee opt-in. Without it, TeamBeats MUST NOT hold mail or calendar access beyond the employee's session.
 
 ### Ports

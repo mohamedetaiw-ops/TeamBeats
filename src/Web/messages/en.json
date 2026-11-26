@@ -2815,7 +2815,10 @@
       "reconnectAction": "Reconnect Outlook",
       "adminSetup": "Your administrator needs to finish setting up Outlook.",
       "conditionalAccess": "Your organization requires a managed device for Outlook.",
-      "unavailable": "Outlook settings are not available right now."
+      "unavailable": "Outlook settings are not available right now.",
+      "mailSummaries": "Let the assistant summarise my Inbox",
+      "mailSummariesHint": "The assistant reads the latest messages in your Outlook Inbox only when you ask it to. You can turn this off at any time.",
+      "mailSummariesFailed": "Your choice was not saved. Try again."
     }
   },
   "builder": {
@@ -10965,7 +10968,8 @@
           "confidential": "Confidential",
           "restricted": "Restricted"
         }
-      }
+      },
+      "assistantSummaries": "Let employees ask the assistant to summarise their Inbox (each employee also has to agree)"
     },
     "webhooks": {
       "formLabel": "Webhook settings",

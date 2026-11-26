@@ -3145,6 +3145,38 @@
         }
       }
     },
+    "/api/v1/me/outlook/mail-summaries": {
+      "get": {
+        "tags": [
+          "Integrations: Outlook"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Integrations: Outlook"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MailSummaryChoice"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/me/mail": {
       "get": {
         "tags": [
@@ -39693,6 +39725,12 @@
               "string"
             ],
             "format": "int32"
+          },
+          "assistantSummaries": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },
@@ -42685,6 +42723,20 @@
             "items": {
               "type": "string"
             }
+          }
+        }
+      },
+      "MailSummaryChoice": {
+        "required": [
+          "optedIn"
+        ],
+        "type": "object",
+        "properties": {
+          "optedIn": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },

@@ -35,8 +35,8 @@ public sealed record ConnectionView(
     DateTimeOffset? LastSuccessAt,
     IReadOnlyList<FeatureView> Features);
 
-/// <summary>Admin options of a feature (spec 018): Mail <c>previewLine</c>, <c>maxMessages</c>; Calendar <c>maxDays</c>.</summary>
-public sealed record FeatureOptionsRequest(bool? PreviewLine, int? MaxMessages, int? MaxDays);
+/// <summary>Admin options of a feature (spec 018): Mail <c>previewLine</c>, <c>maxMessages</c>, <c>assistantSummaries</c>; Calendar <c>maxDays</c>.</summary>
+public sealed record FeatureOptionsRequest(bool? PreviewLine, int? MaxMessages, int? MaxDays, bool? AssistantSummaries = null);
 
 public sealed record CreateConnectionRequest(string? Kind, string? ExternalTenantId, string? DisplayName, IReadOnlyList<string>? Features);
 
@@ -217,7 +217,7 @@ public sealed class ConnectionService(
         var errors = new ValidationErrors();
         var isMail = feature == Microsoft365Features.Mail;
         var isCalendar = feature == Microsoft365Features.Calendar;
-        if ((!isMail && (request.PreviewLine is not null || request.MaxMessages is not null)) || (!isCalendar && request.MaxDays is not null))
+        if ((!isMail && (request.PreviewLine is not null || request.MaxMessages is not null || request.AssistantSummaries is not null)) || (!isCalendar && request.MaxDays is not null))
         {
             errors.Add("options", "validation.integrations.option_not_for_feature");
         }
@@ -231,7 +231,8 @@ public sealed class ConnectionService(
         }
         errors.ThrowIfAny();
 
-        var after = new FeatureOptions(request.PreviewLine ?? before.PreviewLine, request.MaxMessages ?? before.MaxMessages, request.MaxDays ?? before.MaxDays);
+        var after = new FeatureOptions(request.PreviewLine ?? before.PreviewLine, request.MaxMessages ?? before.MaxMessages, request.MaxDays ?? before.MaxDays,
+            request.AssistantSummaries ?? before.AssistantSummaries);
         if (after == before)
         {
             return connection;

@@ -3084,5 +3084,12 @@
   "validation.calendar.event_id": "The calendar event was not recognised.",
   "validation.calendar.response": "Choose Accept, Tentative or Decline.",
   "validation.calendar.response_comment": "Keep the note to the organizer under 500 characters.",
-  "integrations.permission.presence_read_all": "Read colleagues' Teams presence, such as available or in a call, as the employee"
+  "integrations.permission.presence_read_all": "Read colleagues' Teams presence, such as available or in a call, as the employee",
+  "validation.integrations.mail_summaries_choice": "Choose whether the assistant may summarise your Inbox.",
+  "conflict.integrations.mail_summaries_not_offered": "Your organization does not offer mail summaries by the assistant.",
+  "tool.mail_summaries_off": "Mail summaries by the assistant are turned off for this organization.",
+  "tool.mail_summaries_not_opted_in": "The employee has not agreed to mail summaries. They can turn them on in Outlook settings.",
+  "tool.mail_reconnect": "The employee needs to connect Outlook again before the assistant can read their Inbox.",
+  "tool.mail_no_mailbox": "The employee has no Outlook mailbox.",
+  "tool.mail_unavailable": "The Inbox could not be read right now."
 }

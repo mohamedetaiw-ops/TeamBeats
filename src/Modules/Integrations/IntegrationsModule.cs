@@ -51,6 +51,8 @@ public static class IntegrationsModule
         services.AddScoped<ICalendarResponses, GraphCalendarResponses>();
         services.AddScoped<IPresence, GraphPresence>();
         services.AddScoped<Agents.Contracts.IAgentTool, CalendarEventsTool>();
+        services.AddScoped<MailSummaryConsent>();
+        services.AddScoped<Agents.Contracts.IAgentTool, MailInboxTool>();
         services.AddScoped<IAvailability, GraphAvailability>();
         services.AddScoped<IOfficeEditor, GraphOfficeEditor>();
         services.AddScoped<IRoomMailboxes, RoomMailboxes>();
@@ -172,6 +174,7 @@ public static class IntegrationsModule
         services.AddMessageHandler<ConnectorActionCompleted, Hr.HrDataChangeSubmitFinished>("integrations.hr_data_change_submit_finished");
         services.AddMessageHandler<SessionRevoked, DropTokensOnSessionRevoked>("integrations.tokens_session_revoked");
         services.AddMessageHandler<UserDeprovisioned, DropTokensOnUserDeprovisioned>("integrations.tokens_user_deprovisioned");
+        services.AddMessageHandler<UserDeprovisioned, DropMailSummaryOptInOnUserDeprovisioned>("integrations.mail_summaries_user_deprovisioned");
         return services;
     }
 
@@ -368,6 +371,15 @@ public static class IntegrationsModule
                 HttpOnly = true, Secure = true, SameSite = SameSiteMode.Lax, Path = OutlookCookiePath, MaxAge = DelegatedAccessService.ConnectLifetime,
             });
             return Results.Redirect(start.Url);
+        });
+
+        // Mail summaries by the assistant (spec 018 R3, FR-022): whether the tenant offers them and the employee's own choice.
+        me.MapGet("/mail-summaries", async (MailSummaryConsent consent, CancellationToken ct) => Results.Ok(await consent.StatusAsync(ct)));
+        me.MapPut("/mail-summaries", async (MailSummaryChoice choice, MailSummaryConsent consent, IDbSession session, CancellationToken ct) =>
+        {
+            var status = await consent.SetAsync(choice, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(status);
         });
 
         me.MapDelete("", async (DelegatedAccessService outlook, IDbSession session, CancellationToken ct) =>

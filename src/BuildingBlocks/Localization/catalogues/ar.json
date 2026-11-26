@@ -3084,5 +3084,12 @@
   "validation.calendar.event_id": "لم يتم التعرف على حدث التقويم.",
   "validation.calendar.response": "اختر قبول أو مبدئي أو رفض.",
   "validation.calendar.response_comment": "اجعل الملاحظة للمنظم أقل من 500 حرف.",
-  "integrations.permission.presence_read_all": "قراءة حالة الزملاء في Teams، مثل متاح أو في مكالمة، باسم الموظف"
+  "integrations.permission.presence_read_all": "قراءة حالة الزملاء في Teams، مثل متاح أو في مكالمة، باسم الموظف",
+  "validation.integrations.mail_summaries_choice": "اختر ما إذا كان بإمكان المساعد تلخيص بريدك الوارد.",
+  "conflict.integrations.mail_summaries_not_offered": "لا تتيح مؤسستك تلخيص البريد بواسطة المساعد.",
+  "tool.mail_summaries_off": "تلخيص البريد بواسطة المساعد متوقف في هذه المؤسسة.",
+  "tool.mail_summaries_not_opted_in": "لم يوافق الموظف على تلخيص البريد. يمكنه تفعيله في إعدادات Outlook.",
+  "tool.mail_reconnect": "يحتاج الموظف إلى ربط Outlook مرة أخرى قبل أن يتمكن المساعد من قراءة بريده الوارد.",
+  "tool.mail_no_mailbox": "ليس لدى الموظف صندوق بريد Outlook.",
+  "tool.mail_unavailable": "تعذرت قراءة البريد الوارد الآن."
 }

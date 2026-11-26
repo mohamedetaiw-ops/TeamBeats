@@ -41,7 +41,7 @@ Depends on 003 (Entra ID sign-in), 006 (Microsoft 365 connection), 005 (entitlem
 ## R3
 - [x] T019 [US3] Invitation answers (FR-015): `calendar_responses` feature with `Calendars.ReadWrite`, `ICalendarResponses` Graph adapter, answer endpoint with audit, `canRespond` on My calendar, `answer` action in the unified calendar and its Accept, Tentative and Decline control; tests for the answer and its note, organizer told or not, own meeting refused, unknown event, feature off, cache refreshed, another person's event and the entitlement
 - [x] T020 Teams presence on profile cards: `presence` feature with `Presence.Read.All`, `IPresence` Graph adapter kept a minute per viewer, `GET /api/v1/people/{userId}/presence` with the free and busy visibility rule, status line on the profile; tests for the values, no status message, cache, feature off, another tenant, no `people.view` and the entitlement
-- [ ] T021 [US6] Assistant mail summaries: tenant switch, employee opt-in, Inbox only, untrusted content (FR-022)
+- [x] T021 [US6] Assistant mail summaries: `assistantSummaries` Mail option (needs `Mail.Read`), employee opt-in in Outlook settings with audit and removal on deprovisioning, `mail.inbox` tool (Inbox only, at most 25, Confidential, untrusted); tests for the switch, the opt-in and opt-out, a refused yes, the colleague's mail, the injection, the classification cap and the entitlement
 - [ ] T022 Google Workspace mail through `IMailbox` and calendar through the same ports (FR-024)
 - [ ] T023 R3 implementation notes, OpenAPI and spec evidence
 

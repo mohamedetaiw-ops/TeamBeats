@@ -268,6 +268,8 @@ public static class AuditActions
     public const string HrCompensationViewed = "hr.compensation_viewed";
     public const string HrCompensationReadForLetter = "hr.compensation_read_for_letter";
     public const string CalendarInvitationAnswered = "integration.calendar_invitation_answered";
+    public const string MailSummariesOptedIn = "integration.mail_summaries_opted_in";
+    public const string MailSummariesOptedOut = "integration.mail_summaries_opted_out";
     public const string HrOrgCodeMapped = "hr.org_code_mapped";
 
     // 010
@@ -729,7 +731,7 @@ public static class AuditActions
         ThemePublished, ThemeDrafted, ThemeSubmitted, ThemeApproved, ThemeReturned, ThemeScheduled, ThemeRolledBack, ThemeTokensImported, ThemeExtensionProposed, ThemeExtensionApproved, ThemeExtensionRejected, ThemeExtensionRemoved, BrandAssigned, BrandUnassigned, ExperienceLockChanged,
         NotificationSettingsChanged, NotificationRelayTested, NotificationTemplateOverridden, NotificationSignageScreenRegistered, NotificationSignageScreenRotated, NotificationSignageScreenRevoked, NotificationQuickActionUsed,
         HrCalendarChanged, HrSettingsChanged, HrMatchLinked, HrMatchUnlinked, HrSyncHeld, HrSyncConfirmed, HrChangeApplied, HrOrgCodeMapped, DisabledByHr, ReenabledByHr,
-        HrPayslipViewed, HrPayslipDownloaded, HrCompensationViewed, HrCompensationReadForLetter, CalendarInvitationAnswered,
+        HrPayslipViewed, HrPayslipDownloaded, HrCompensationViewed, HrCompensationReadForLetter, CalendarInvitationAnswered, MailSummariesOptedIn, MailSummariesOptedOut,
         HrLeaveSubmitted, HrLeaveApproved, HrLeaveRejected, HrLeaveCancelled, HrLeaveShortened, HrLeaveOnBehalf, HrBalanceAdjusted, HrLeaveTypeChanged, HrLeavePolicyChanged,
         HrLeaveRecounted, HrLeaveSourceChanged, HrLeaveHandOffRetried,
         HrJourneyTemplateChanged, HrJourneyStarted, HrJourneyRescheduled, HrJourneyStepCompleted, HrJourneyCancelled, HrAccessRemovalConfirmed, HrAccessRemovalEscalated, HrExitInterviewRecorded, HrJourneySettingsChanged, HrPreboardingSent, HrAttendanceSettingsChanged, HrWorkRuleChanged, HrAttendanceExported, HrAttendanceRequested, HrAttendanceCorrected, HrCompensationCredited, HrAttendanceRequestRejected, HrLetterTypeChanged, HrLetterSettingsChanged, HrLetterRequested, HrLetterIssued, HrLetterRejected, HrLetterVerified, HrDataChangeSettingsChanged, HrDataChangeRequested, HrDataChangeApproved, HrDataChangeRejected, HrDataChangeWrittenBack, HrDataChangeWriteFailed, HrExpensePolicyChanged, HrExpenseRatesChanged, HrExpenseSubmitted, HrExpenseApproved, HrExpenseRejected, HrExpenseHandedOff,

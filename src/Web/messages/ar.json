@@ -2815,7 +2815,10 @@
       "reconnectAction": "إعادة ربط Outlook",
       "adminSetup": "يحتاج المسؤول إلى إكمال إعداد Outlook.",
       "conditionalAccess": "تطلب مؤسستك جهازا مُدارا لاستخدام Outlook.",
-      "unavailable": "إعدادات Outlook غير متاحة الآن."
+      "unavailable": "إعدادات Outlook غير متاحة الآن.",
+      "mailSummaries": "السماح للمساعد بتلخيص بريدي الوارد",
+      "mailSummariesHint": "يقرأ المساعد أحدث الرسائل في بريدك الوارد في Outlook فقط عندما تطلب منه ذلك. يمكنك إيقاف ذلك في أي وقت.",
+      "mailSummariesFailed": "لم يتم حفظ اختيارك. حاول مرة أخرى."
     }
   },
   "builder": {
@@ -10965,7 +10968,8 @@
           "confidential": "سري",
           "restricted": "مقيد"
         }
-      }
+      },
+      "assistantSummaries": "السماح للموظفين بأن يطلبوا من المساعد تلخيص بريدهم الوارد (ويجب أن يوافق كل موظف أيضاً)"
     },
     "webhooks": {
       "formLabel": "إعدادات خطاف الويب",

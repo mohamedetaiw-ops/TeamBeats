@@ -123,7 +123,7 @@ public sealed class GraphMailbox(DelegatedAccessService access, IMicrosoftGraph 
             : new MailSummary(state, asOf, value.Unread, value.Messages, ComposeLink);
     }
 
-    private static MailMessage Map(JsonElement m, bool preview)
+    internal static MailMessage Map(JsonElement m, bool preview)
     {
         var from = m.TryGetProperty("from", out var f) && f.ValueKind == JsonValueKind.Object && f.TryGetProperty("emailAddress", out var e) ? e : default;
         return new MailMessage(

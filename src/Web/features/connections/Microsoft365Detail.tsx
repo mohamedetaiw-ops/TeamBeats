@@ -26,6 +26,7 @@ function FeatureOptions({ feature, busy, onSave }: { feature: FeatureView; busy:
   const t = useTranslations("connections");
   const o = feature.options ?? {};
   const [previewLine, setPreviewLine] = useState(o.previewLine ?? false);
+  const [assistantSummaries, setAssistantSummaries] = useState(o.assistantSummaries ?? false);
   const [maxMessages, setMaxMessages] = useState(String(o.maxMessages ?? 10));
   const [maxDays, setMaxDays] = useState(String(o.maxDays ?? 14));
   if (feature.key !== "mail" && feature.key !== "calendar") return null;
@@ -35,7 +36,7 @@ function FeatureOptions({ feature, busy, onSave }: { feature: FeatureView; busy:
       aria-label={t("m365.optionsFor", { feature: t(`m365.feature.${feature.key === "mail" ? "mail" : "calendar"}`) })}
       onSubmit={(e) => {
         e.preventDefault();
-        onSave(feature.key === "mail" ? { previewLine, maxMessages: Number(maxMessages) } : { maxDays: Number(maxDays) });
+        onSave(feature.key === "mail" ? { previewLine, maxMessages: Number(maxMessages), assistantSummaries } : { maxDays: Number(maxDays) });
       }}
     >
       {feature.key === "mail" ? (
@@ -43,6 +44,10 @@ function FeatureOptions({ feature, busy, onSave }: { feature: FeatureView; busy:
           <label className="connections-check">
             <input type="checkbox" checked={previewLine} onChange={(e) => setPreviewLine(e.target.checked)} />
             {t("m365.previewLine")}
+          </label>
+          <label className="connections-check">
+            <input type="checkbox" checked={assistantSummaries} onChange={(e) => setAssistantSummaries(e.target.checked)} />
+            {t("m365.assistantSummaries")}
           </label>
           <FormField label={t("m365.maxMessages")} hint={t("m365.maxMessagesHint")} name="maxMessages" type="number" min={1} max={10} value={maxMessages} onChange={(e) => setMaxMessages(e.target.value)} />
         </>

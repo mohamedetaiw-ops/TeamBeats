@@ -184,3 +184,8 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 ## Spec 018 R3 slice 2: Teams presence on profiles (T020)
 - Presence is its own connection feature (`presence`, delegated `Presence.Read.All`) and is read as the viewer, so Teams' own privacy decides; the visibility check is the free and busy one, now shared by both endpoints. Graph values are folded into six availabilities and four activities; the status message never leaves the adapter.
 - Recorded defaults: kept a minute per viewer; the profile reads it in the browser so a slow Teams answer never holds the page; unknown availability and every non-ok state show nothing; one's own profile does not ask.
+
+## Spec 018 R3 slice 3: mail summaries by the assistant (T021)
+- The tenant switch is a Mail feature option, `assistantSummaries`, so turning it on asks for `Mail.Read` through the usual consent and drops older tokens. The employee's opt-in is one row in `integrations.mail_summary_optin` (no mail is ever stored), audited both ways, refused while the tenant does not offer it, and deleted on `UserDeprovisioned`.
+- `mail.inbox` reads as the employee through the same delegated token, Inbox only, newest first, at most 25 messages, with the preview as plain text and never the full body. Its result is Confidential, so the runtime's classification cap (spec 027 FR-017) and the gateway's Confidential routing (spec 013) apply; message text reaches the model in the untrusted envelope like any tool output.
+- Recorded defaults: 10 messages unless the agent asks for up to 25; an optional unread-only filter; the opt-in shows in Outlook settings only while the tenant offers it or the employee is still opted in, so they can always take it back.

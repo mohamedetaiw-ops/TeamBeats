@@ -448,7 +448,7 @@ export type FeatureView = {
   permissions: GraphPermissionView[];
   grantedPermissions: string[];
   lastTest: unknown;
-  options?: { previewLine?: boolean; maxMessages?: number; maxDays?: number } | null;
+  options?: { previewLine?: boolean; maxMessages?: number; maxDays?: number; assistantSummaries?: boolean } | null;
 };
 
 export type Microsoft365Connection = {
