@@ -39,6 +39,26 @@ R2 slices, in order:
 - Briefings: not offered when policy forbids; runs as the user with current permissions; stops on opt-out, suspension or a disabled user.
 - e2e: Studio, marketplace and My agents in English and Arabic with axe.
 
+## R3 plan
+**Date:** 2026-11-25. R3 adds handoffs between agents (US10, FR-016) and the advanced templates 13 to 15. Extensibility in the R3 release line is met by spec 027 R3 (MCP servers as tool sources) and the connector tools of spec 017; it needs no further work here.
+
+R3 slices, in order:
+1. **Handoffs (US10, FR-016, `ai.agents.orchestration`):** a definition declares up to 5 handoffs, each a target and a topic per language. In a platform template the target is a template ID, resolved to the tenant's published agent installed from it; a customer agent may also name an agent ID. The runtime offers the built-in tool `agent.handoff` (read side effect, parameters `to` from the declared targets and `request`), checked by the gateway like any tool. A handoff ends the current agent's turn and starts a run of the target agent as the same person, with the target's own definition, tools, policy and limits; the person sees which agent took over. Runs keep `parent_run_id` and `depth`; the first agent is depth 1, and at depth 3 the tool is refused (`tool.handoff_depth`) and the answer offers the agent's human contact. An undeclared target, a target the person may not use, or a target that is not published is refused (`tool.handoff_not_declared`, `tool.handoff_unavailable`). Every handoff is audited (`agent.handoff`).
+2. **Advanced templates (13 to 15, `ai.agents.advanced`):** Legal and Compliance (L0: policies, documents and compliance evidence search), Executive Intelligence (L0: knowledge and the analytics tools that exist), Process Automation (L4, only as agent tasks of approved processes; "not ready" without `ai.agents.autonomous`), with Arabic and English instructions and platform suites.
+3. **Pages:** handoffs in the agent editor (targets and topics) and the "handed over to" notice in the conversation; OpenAPI, R3 notes and evidence.
+
+Defaults (spec silent):
+- Package scope: `ai.agents.orchestration` (Workplace Plus and Enterprise and Government) allows handoffs declared by a platform template; `ai.agents.orchestration_custom` (Enterprise and Government) also allows handoffs a tenant adds or that name an agent ID. Two flags keep the entitlement check a plain capability check.
+- A handoff is one step of the current run and counts as one tool call. The target's answer is its own run; the first run ends with outcome `handed_off`.
+- The target run gets the request the first agent wrote, not the conversation, so nothing the person did not say to it moves between agents beyond that request.
+
+### R3 data model (schema `agents`, forced RLS)
+- `run`: `parent_run_id`, `depth` (1 to 3).
+
+### R3 tests
+- A declared handoff runs the target as the person with its own tools; an undeclared one is refused; depth 3 refuses and offers the human contact; permissions never add up across the two agents; the package scope and cross-tenant hold.
+- The advanced templates validate under the default policy in Arabic and English; Process Automation is not ready without `ai.agents.autonomous`.
+
 ## Constitution check
 | Principle | Pass | Evidence |
 |---|---|---|

@@ -383,4 +383,41 @@ public sealed class AgentRegistryTests(TenantWorld world)
             Assert.Equal("[]", own.Content);
         }
     }
+
+    [Fact]
+    public async Task Advanced_templates_need_the_advanced_package_and_process_automation_needs_autonomy()
+    {
+        // Spec 020 R3 T025, section 12: templates 13 to 15 are in Enterprise and Government only.
+        string[] advanced = ["executive_intelligence", "legal_compliance", "process_automation"];
+        var plus = await FreshAsync();
+        var plusIds = (await OkAsync(plus["sara"].Client.GetAsync($"{Agents}/templates"))).GetProperty("templates").EnumerateArray().Select(x => x.GetProperty("id").GetString()).ToList();
+        Assert.All(advanced, id => Assert.DoesNotContain(id, plusIds));
+        Assert.Equal("validation.agent.template",
+            await ProblemAsync(plus["sara"].Client.PostAsJsonAsync(Agents, new { templateId = "legal_compliance", orgUnitId = plus.Unit("Hr") }), HttpStatusCode.BadRequest));
+
+        var t = await FreshAsync("enterprise_gov");
+        JsonElement Find(JsonElement library, string id) => library.GetProperty("templates").EnumerateArray().Single(x => x.GetProperty("id").GetString() == id);
+        var library = await OkAsync(t["sara"].Client.GetAsync($"{Agents}/templates"));
+        Assert.True(Find(library, "legal_compliance").GetProperty("ready").GetBoolean());
+        Assert.True(Find(library, "executive_intelligence").GetProperty("ready").GetBoolean());
+        // Process Automation is L4: above the default policy until the tenant allows L4.
+        Assert.True(Find(library, "process_automation").GetProperty("autonomyAbovePolicy").GetBoolean());
+        var legal = await OkAsync(t["sara"].Client.PostAsJsonAsync(Agents, new { templateId = "legal_compliance", orgUnitId = t.Unit("Hr") }), HttpStatusCode.Created);
+        Assert.Equal("legal_compliance", legal.GetProperty("agent").GetProperty("templateId").GetString());
+
+        var policy = await OkAsync(t["aip"].Client.GetAsync($"{Agents}/policy"));
+        await OkAsync(t["aip"].Client.PutAsJsonAsync($"{Agents}/policy",
+            new { version = policy.GetProperty("version").GetInt32(), policy = AgentPolicy.Default with { MaxAutonomy = "L4" } }));
+        var automation = Find(await OkAsync(t["sara"].Client.GetAsync($"{Agents}/templates")), "process_automation");
+        Assert.True(automation.GetProperty("ready").GetBoolean());
+        Assert.False(automation.GetProperty("needsAutonomy").GetBoolean());
+
+        // Without ai.agents.autonomous it is not ready, whatever the policy says, and cannot be installed.
+        await world.SetCapabilityAsync(t, Capabilities.AiAgentsAutonomous, new { enabled = false });
+        automation = Find(await OkAsync(t["sara"].Client.GetAsync($"{Agents}/templates")), "process_automation");
+        Assert.False(automation.GetProperty("ready").GetBoolean());
+        Assert.True(automation.GetProperty("needsAutonomy").GetBoolean());
+        Assert.Equal("validation.agent.template_not_ready",
+            await ProblemAsync(t["sara"].Client.PostAsJsonAsync(Agents, new { templateId = "process_automation", orgUnitId = t.Unit("Hr") }), HttpStatusCode.BadRequest));
+    }
 }

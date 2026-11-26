@@ -70,7 +70,7 @@ export function TemplateLibrary({ templates, units }: { templates: TemplateView[
                 <span className="agents-badge">{t("autonomy", { level: template.autonomy ?? "" })}</span>{" "}
                 {template.ready ? null : <span className="agents-badge">{t("notReady")}</span>}
               </p>
-              {template.ready ? null : <p>{t(template.autonomyAbovePolicy ? "notReadyPolicy" : "notReadyTools")}</p>}
+              {template.ready ? null : <p>{t(template.needsAutonomy ? "notReadyAutonomy" : template.autonomyAbovePolicy ? "notReadyPolicy" : "notReadyTools")}</p>}
               <div className="agents-row">
                 <Button
                   variant="primary"

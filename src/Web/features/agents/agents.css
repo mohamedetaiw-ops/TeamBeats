@@ -197,3 +197,19 @@
   padding-block: var(--tb-space-xs);
   border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
 }
+
+/* Declared handoffs in the editor (spec 020 US10): one block per target, separated like the other editor rows. */
+.agents-handoffs {
+  display: grid;
+  gap: var(--tb-space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.agents-handoffs > li {
+  display: grid;
+  gap: var(--tb-space-sm);
+  padding-block-end: var(--tb-space-md);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}

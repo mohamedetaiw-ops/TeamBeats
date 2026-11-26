@@ -38,3 +38,8 @@ Depends on 004, 005, 006, 013, 016, 027 (same module), 034; 012 (search source),
 - [x] T021 Runtime: streamed agent answers and resumption after restart (closes T004, T005)
 - [x] T022 Detailed agent analytics through spec 021 under `analytics.advanced`
 - [x] T023 OpenAPI; R2 implementation notes; spec evidence
+
+## R3
+- [x] T024 [US10] Handoffs: declared targets in the definition, `agent.handoff` in the gateway, child runs with depth up to 3, human contact at the limit, `ai.agents.orchestration` and `ai.agents.orchestration_custom`; tests including cross-tenant and permission separation
+- [x] T025 Advanced templates 13 to 15 behind `ai.agents.advanced` with suites; Process Automation not ready without `ai.agents.autonomous`
+- [x] T026 Pages (handoffs in the editor, handed over notice in the conversation), OpenAPI, R3 implementation notes, spec evidence

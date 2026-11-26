@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useId, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { problemMessages } from "@/lib/notifications/types";
-import { readRunStream, type ConfirmationCard, type RunView } from "@/lib/agents/types";
+import { pickText, readRunStream, type ConfirmationCard, type RunView } from "@/lib/agents/types";
 
 /** A turn: the finished run, or only its ID when the connection dropped while the run went on (spec 020 T021). */
 type Turn = { key: string; message: string; run: RunView | null; runId: string | null };
@@ -75,6 +75,7 @@ function Card({ card, busy, onDecide, onCheck }: { card: ConfirmationCard; busy:
  */
 export function AgentConversation({ agentId, item }: { agentId: string; item: { source: string; id: string } | null }) {
   const ts = useTranslations("agents");
+  const locale = useLocale();
   const ids = useId();
   const [message, setMessage] = useState("");
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -200,6 +201,15 @@ export function AgentConversation({ agentId, item }: { agentId: string; item: { 
               <p>
                 <strong>{ts("use.you")}</strong> <bdi>{turn.message}</bdi>
               </p>
+              {turn.run.handedOffFrom ? (
+                <p className="notice" data-testid="agent-handed-over">
+                  {ts.rich("use.handedOver", {
+                    from: pickText(turn.run.handedOffFrom.agentNames, locale),
+                    to: pickText(turn.run.handedOffFrom.toNames, locale),
+                    name: (chunks) => <bdi>{chunks}</bdi>,
+                  })}
+                </p>
+              ) : null}
               {turn.run.answer ? (
                 <div>
                   <p className="agents-answer" data-testid="agent-answer">

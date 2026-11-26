@@ -1002,6 +1002,8 @@
         "workflow_bpmn_advanced": "Process compensation, instance migration and BPMN import",
         "ai_agents_mcp": "Agent tools from external MCP servers",
         "ai_agents_autonomous": "Agents running on their own inside approved processes (L4)",
+        "ai_agents_orchestration": "Handoffs between agents declared by templates",
+        "ai_agents_orchestration_custom": "Handoffs between agents you build",
         "workflow_max_active_instances": "Active process instances",
         "workflow_connector_fulfilment": "Connector and webhook steps in services",
         "ai_budgets": "AI budget",
@@ -7859,6 +7861,7 @@
       "unit": "Org unit that owns the agent",
       "autonomy": "Autonomy {level}",
       "notReady": "Not ready",
+      "notReadyAutonomy": "It runs only as a step of approved processes, which your package does not include.",
       "notReadyPolicy": "Its autonomy is above what your agent policy allows.",
       "notReadyTools": "A tool it needs is missing or not allowed by your agent policy.",
       "install": "Use template",
@@ -8001,6 +8004,17 @@
         "intro": "Offer people a briefing they can subscribe to. It runs as each person with their permissions, reads only, and arrives as a notification. Your organization's agent policy must allow scheduled agents.",
         "enabled": "Offer a daily briefing",
         "prompt": "What the briefing asks"
+      },
+      "handoffs": {
+        "title": "Handoffs",
+        "intro": "Name the agents that may take over part of a conversation, and what each one handles. The other agent answers as the same person, with its own tools.",
+        "none": "This agent does not hand work to other agents.",
+        "target": "Agent:",
+        "topic": "What it handles",
+        "remove": "Remove handoff to {name}",
+        "choose": "Add a handoff to",
+        "pick": "Choose an agent",
+        "add": "Add handoff"
       }
     },
     "review": {
@@ -8233,7 +8247,8 @@
       "stillWorking": "The agent is still working on this. Check again in a moment.",
       "stillWaiting": "The approver has not decided yet.",
       "degradedTitle": "This agent works with fewer tools for now",
-      "degraded": "A connection it uses is turned off, so some of its actions are not available. It still answers what it can."
+      "degraded": "A connection it uses is turned off, so some of its actions are not available. It still answers what it can.",
+      "handedOver": "<name>{from}</name> handed your request to <name>{to}</name>, who answers below."
     },
     "card": {
       "title": "Confirm this action",
@@ -8311,7 +8326,10 @@
         "rule_changed": "The approval rule changed",
         "connector_disabled": "The connection is turned off",
         "mcp_not_approved": "Tool not approved",
-        "not_in_process": "Not a step of the process"
+        "not_in_process": "Not a step of the process",
+        "handoff_not_declared": "Not a declared handoff",
+        "handoff_depth": "Too many handoffs in a row",
+        "handoff_unavailable": "The other agent is not available"
       }
     },
     "studio": {

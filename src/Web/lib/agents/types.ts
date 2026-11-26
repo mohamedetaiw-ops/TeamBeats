@@ -23,7 +23,14 @@ export type AgentDefinition = {
   purpose?: Localized | null;
   memory?: { mode: string | null; retentionDays?: number | null } | null;
   briefing?: { enabled: boolean; prompt: Localized | null } | null;
+  /** Declared handoffs (spec 020 US10): a platform template target or an agent ID, and the topic per language. */
+  handoffs?: AgentHandoff[] | null;
 };
+
+export type AgentHandoff = { template?: string | null; agent?: string | null; topic: Localized | null };
+
+/** The most handoffs one agent declares (spec 020 FR-016). */
+export const MAX_HANDOFFS = 5;
 
 /** A daily briefing offer and the person's subscription (spec 020 US8). Days are ISO weekdays, 1 for Monday. */
 export type BriefingView = {
@@ -118,6 +125,8 @@ export type TemplateView = {
   missingTools: string[];
   blockedTools: string[];
   autonomyAbovePolicy: boolean;
+  /** An L4 template whose package does not include bounded autonomy (spec 020 section 12). */
+  needsAutonomy?: boolean;
 };
 
 /** A tenant tool (a connector action, spec 017) carries the title its administrator entered per language. */
@@ -235,6 +244,8 @@ export type RunView = {
   generated: boolean;
   /** The answer names web addresses; they are shown as text only (spec 027 US5 scenario 3). */
   linksAsText: boolean;
+  /** Another agent took over through a declared handoff (spec 020 US10): the agent asked and the agent that answered. */
+  handedOffFrom?: { agentId: string; runId: string; agentNames: Localized | null; toNames: Localized | null } | null;
 };
 
 /** What a streamed run sends (spec 020 T021): its ID, each tool step, answer text as it arrives, then the checked answer. */

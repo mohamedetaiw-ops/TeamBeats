@@ -19,6 +19,12 @@ public static class Capabilities
     public const string AiAgentsMarketplace = "ai.agents.marketplace";
     public const string AiAgentsAdvanced = "ai.agents.advanced";
 
+    /// <summary>Handoffs between agents that a platform template declares (spec 020 US10, FR-016).</summary>
+    public const string AiAgentsOrchestration = "ai.agents.orchestration";
+
+    /// <summary>Also handoffs a tenant adds to its own agents or that name an agent (spec 020 section 9, Enterprise and Government).</summary>
+    public const string AiAgentsOrchestrationCustom = "ai.agents.orchestration_custom";
+
     /// <summary>Spec 027 R3: TeamBeats agents use tools of external MCP servers the integration administrator approved (FR-006).</summary>
     public const string AiAgentsMcp = "ai.agents.mcp";
 

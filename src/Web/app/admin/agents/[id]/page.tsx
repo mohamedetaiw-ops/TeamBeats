@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { apiGet } from "@/lib/api";
 import { listUnits } from "@/lib/experience/client";
-import { pickText, type AccessRequestView, type AgentAnalyticsView, type AgentDetail, type StudioOffer, type ToolView } from "@/lib/agents/types";
+import { pickText, type AccessRequestView, type AgentAnalyticsView, type AgentDetail, type AgentSummary, type StudioOffer, type ToolView } from "@/lib/agents/types";
 import { Alert } from "@/components/ui/Alert";
 import { AgentTabs } from "@/features/agents/AgentTabs";
 import { AgentEditor } from "@/features/agents/AgentEditor";
@@ -15,7 +15,7 @@ import "@/features/agents/agents.css";
 export default async function AgentPage({ params }: { params: Promise<{ id: string }> }) {
   await agentsSection();
   const { id } = await params;
-  const [detail, tools, units, analytics, studio, access] = await Promise.all([
+  const [detail, tools, units, analytics, studio, access, agents] = await Promise.all([
     apiGet<AgentDetail>(`/api/v1/agents/${encodeURIComponent(id)}`),
     apiGet<{ tools: ToolView[] }>("/api/v1/agents/tools"),
     listUnits(),
@@ -23,6 +23,8 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
     apiGet<StudioOffer>("/api/v1/agents/studio"),
     // Listed only to the agent's owners; anyone else gets not found and sees no section.
     apiGet<{ requests: AccessRequestView[] }>(`/api/v1/agents/${encodeURIComponent(id)}/access-requests`),
+    // Handoff targets (spec 020 US10): the agents this person can see; the API checks each handoff when the agent runs.
+    apiGet<{ agents: AgentSummary[] }>("/api/v1/agents"),
   ]);
   if (!detail.ok) notFound();
   const t = await getTranslations("agents");
@@ -38,7 +40,9 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
           {t("degraded.body", { tools: detail.data.unavailableTools.map((name) => (t.has(`toolNames.${name}`) ? t(`toolNames.${name}`) : name)).join(", ") })}
         </Alert>
       ) : null}
-      <AgentEditor initial={detail.data} tools={tools.ok ? tools.data.tools : []} units={units.ok ? units.data : []} studio={studio.ok ? studio.data : null} />
+      <AgentEditor initial={detail.data} tools={tools.ok ? tools.data.tools : []} units={units.ok ? units.data : []} studio={studio.ok ? studio.data : null}
+        agents={agents.ok ? agents.data.agents : []}
+      />
       {access.ok ? <AccessRequests requests={access.data.requests} /> : null}
       {analytics.ok ? <AgentAnalytics view={analytics.data} /> : null}
     </>

@@ -41,7 +41,22 @@ public sealed record AgentDefinition(
     int? MaxToolCalls,
     Dictionary<string, string>? Purpose = null,
     AgentMemorySettings? Memory = null,
-    AgentBriefingSettings? Briefing = null);
+    AgentBriefingSettings? Briefing = null,
+    List<AgentHandoff>? Handoffs = null);
+
+/// <summary>
+/// A declared handoff (spec 020 US10, FR-016): the part of the work, per language, that another agent takes over. A
+/// platform template names its target by template ID, resolved to the tenant's published agent installed from it; a
+/// customer agent may name an agent ID. Exactly one of the two is set.
+/// </summary>
+public sealed record AgentHandoff(string? Template, Guid? Agent, Dictionary<string, string>? Topic)
+{
+    public const int Max = 5;
+    public const int MaxTopicLength = 200;
+
+    /// <summary>What the model names in <c>agent.handoff</c>: the template ID or the agent ID.</summary>
+    public string Key => Template ?? Agent?.ToString() ?? string.Empty;
+}
 
 /// <summary>
 /// Whether the agent offers its users a daily briefing (spec 020 US8 scenarios 2 to 4, FR-014), and what it is asked each
@@ -248,6 +263,26 @@ public static class AgentDefinitions
         if (d.MaxToolCalls is not { } calls || calls < 1 || calls > policy.MaxToolCalls)
         {
             errors.Add("maxToolCalls", "validation.agent.max_tool_calls");
+        }
+        if (d.Handoffs is { } handoffs)
+        {
+            // Declared handoffs (spec 020 FR-016): a few, each with one target and a topic in every language of the agent.
+            if (handoffs.Count > AgentHandoff.Max || handoffs.Select(h => h.Key).Distinct().Count() != handoffs.Count)
+            {
+                errors.Add("handoffs", "validation.agent.handoffs");
+            }
+            for (var i = 0; i < handoffs.Count; i++)
+            {
+                var h = handoffs[i];
+                if ((h.Template is null) == (h.Agent is null) || (h.Template is { } t && AgentTemplates.Find(t) is null) || h.Agent == Guid.Empty)
+                {
+                    errors.Add($"handoffs.{i}", "validation.agent.handoff_target");
+                }
+                if (languages.Any(l => h.Topic?.GetValueOrDefault(l) is not { } topic || topic.Trim().Length is 0 or > AgentHandoff.MaxTopicLength))
+                {
+                    errors.Add($"handoffs.{i}.topic", "validation.agent.handoff_topic");
+                }
+            }
         }
         errors.ThrowIfAny();
     }
