@@ -1707,3 +1707,35 @@ public interface IOccupancyReadings
 
     Task<OccupancyRead> ReadAsync(Guid connectionId, CancellationToken ct = default);
 }
+
+/// <summary>The regulator change feed packs (spec 025 R3 US10, through spec 017).</summary>
+public static class RegulatorFeedKinds
+{
+    /// <summary>An https address answering a JSON Feed or a plain JSON list of items.</summary>
+    public const string Rest = "regulator_feed";
+
+    public static readonly IReadOnlyList<string> All = [Rest];
+}
+
+/// <summary>An enabled regulator feed connection.</summary>
+public sealed record RegulatorFeedConnection(Guid Id, string Name);
+
+/// <summary>
+/// One item a regulator published, as the pack keeps it (FR-024): its id in the feed, the title, an https link or none,
+/// the date and a plain text summary of at most 2,000 characters. Nothing else crosses this contract.
+/// </summary>
+public sealed record RegulatorItem(string Id, string Title, string? Link, DateTimeOffset? Published, string? Summary);
+
+/// <summary>A read's result (one of <see cref="TrackerResults"/>) and the items, up to 200.</summary>
+public sealed record RegulatorFeedRead(string Result, IReadOnlyList<RegulatorItem> Items);
+
+/// <summary>
+/// Regulator change feeds through spec 017 (spec 025 FR-024). Every read goes through the connector runtime and is kept
+/// in the connection's run history. Tenant comes from context.
+/// </summary>
+public interface IRegulatorFeeds
+{
+    Task<IReadOnlyList<RegulatorFeedConnection>> ConnectionsAsync(CancellationToken ct = default);
+
+    Task<RegulatorFeedRead> ReadAsync(Guid connectionId, CancellationToken ct = default);
+}

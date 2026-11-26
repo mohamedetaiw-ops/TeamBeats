@@ -3276,5 +3276,12 @@
   "validation.calendar.holiday_observed": "يجب أن تحدد العطلة المنقولة تاريخاً آخر لا يبعد أكثر من 7 أيام.",
   "validation.people.suggestions_on": "حدد ما إذا كانت اقتراحات المهارات مفعلة أم لا.",
   "conflict.people.suggestions_off": "فعّل اقتراحات المهارات أولا.",
-  "conflict.people.suggestion_limit": "طلبت الاقتراحات ثلاث مرات اليوم. حاول مرة أخرى غدا."
+  "conflict.people.suggestion_limit": "طلبت الاقتراحات ثلاث مرات اليوم. حاول مرة أخرى غدا.",
+  "capability.policy.regulator_feeds": "متابعة تحديثات الجهات التنظيمية",
+  "notifications.template.policies.regulator_changes_new.title": "تحديثات تنظيمية جديدة للاطلاع عليها",
+  "notifications.template.policies.regulator_changes_new.body": "نشرت جهة تنظيمية عناصر جديدة. افتح التحديثات التنظيمية لتحديد غير المهم منها أو ربطها بالسياسات.",
+  "validation.policies.regulator_status": "اختر جديد أو مستبعد أو تم التعامل معه.",
+  "validation.policies.regulator_policies": "اختر من سياسة واحدة إلى 20 سياسة تديرها.",
+  "validation.policies.regulator_note": "يمكن أن تصل الملاحظة إلى 2,000 حرف.",
+  "conflict.policies.regulator_decided": "اتخذ شخص آخر قرارًا بشأن هذا التحديث التنظيمي."
 }

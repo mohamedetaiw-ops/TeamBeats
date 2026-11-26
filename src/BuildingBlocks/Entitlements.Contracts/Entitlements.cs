@@ -236,6 +236,7 @@ public static class Capabilities
     public const string PolicyComprehension = "policy.comprehension";
     public const string PolicyExemptions = "policy.exemptions";
     public const string PolicyEvidence = "policy.evidence";
+    public const string PolicyRegulatorFeeds = "policy.regulator_feeds";
     public const string AiPolicyQa = "ai.policy_qa";
     public const string SearchCore = "search.core";
     public const string SearchSemantic = "search.semantic";

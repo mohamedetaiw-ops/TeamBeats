@@ -3276,5 +3276,12 @@
   "validation.calendar.holiday_observed": "An observed holiday must name another date, at most 7 days away.",
   "validation.people.suggestions_on": "Say whether skill suggestions are on or off.",
   "conflict.people.suggestions_off": "Turn on skill suggestions first.",
-  "conflict.people.suggestion_limit": "You have asked for suggestions three times today. Try again tomorrow."
+  "conflict.people.suggestion_limit": "You have asked for suggestions three times today. Try again tomorrow.",
+  "capability.policy.regulator_feeds": "Regulator change feeds",
+  "notifications.template.policies.regulator_changes_new.title": "New regulator changes to look at",
+  "notifications.template.policies.regulator_changes_new.body": "A regulator feed published new items. Open Regulator changes to mark them as not relevant or link them to policies.",
+  "validation.policies.regulator_status": "Choose new, dismissed or actioned.",
+  "validation.policies.regulator_policies": "Choose 1 to 20 policies that you manage.",
+  "validation.policies.regulator_note": "The note can be up to 2,000 characters.",
+  "conflict.policies.regulator_decided": "Someone already decided on this regulator change."
 }
