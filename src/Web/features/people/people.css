@@ -318,6 +318,13 @@ ol.people-chart {
   list-style: none;
 }
 
+/* Each missing item link is a touch target of at least 24px (WCAG 2.5.8). */
+.people-completeness-list a {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 1.5rem;
+}
+
 .people-relations-head {
   margin-block: var(--tb-space-sm) var(--tb-space-xs);
   font-size: var(--tb-font-size-sm);
