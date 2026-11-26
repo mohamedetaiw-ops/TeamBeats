@@ -143,7 +143,7 @@ public sealed class Certificates(
         var rtl = Locales.IsRightToLeft(language);
         var date = view.IssuedAt.ToString("d MMMM yyyy", CultureInfo.GetCultureInfo(language == "ar" ? "ar-AE" : "en-GB"));
         var html = new StringBuilder();
-        html.Append(CultureInfo.InvariantCulture, $"<!doctype html><html lang=\"{language}\" dir=\"{(rtl ? "rtl" : "ltr")}\"><head><meta charset=\"utf-8\">");
+        html.Append(TeamBeats.Persistence.PdfPage.Head(language, rtl, $"{localizer.Get("learning.certificate.pdf.title", language)}, {view.Learner.DisplayName}"));
         html.Append("<style>body{font-family:'Noto Naskh Arabic','Noto Sans','DejaVu Sans',sans-serif;color:#111;margin:0;text-align:center}")
             .Append("main{border:3px double #444;padding:48pt 36pt;margin:24pt}h1{font-size:26pt;margin:0 0 24pt}.company{font-size:14pt;margin-bottom:36pt}")
             .Append(".name{font-size:22pt;font-weight:700;margin:12pt 0}.course{font-size:16pt;margin:12pt 0 36pt}footer{font-size:10pt;color:#333}")

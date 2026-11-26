@@ -213,7 +213,7 @@ public sealed class DispositionCertificates(
         var culture = CultureInfo.GetCultureInfo(language == "ar" ? "ar-AE" : "en-GB");
         string Day(DateTimeOffset d) => E(d.ToUniversalTime().ToString("d MMMM yyyy", culture));
         var html = new StringBuilder();
-        html.Append(CultureInfo.InvariantCulture, $"<!doctype html><html lang=\"{language}\" dir=\"{(rtl ? "rtl" : "ltr")}\"><head><meta charset=\"utf-8\">");
+        html.Append(PdfPage.Head(language, rtl, $"{localizer.Get("records.certificate.pdf.title", language)} {code}"));
         html.Append("<style>body{font-family:'Noto Naskh Arabic','Noto Sans','DejaVu Sans',sans-serif;color:#111;margin:24pt;font-size:10pt}")
             .Append("h1{font-size:20pt;margin:0 0 12pt}.company{font-size:12pt;margin-bottom:18pt}dl{display:grid;grid-template-columns:max-content 1fr;gap:4pt 12pt;margin:0 0 18pt}")
             .Append("dt{font-weight:700}dd{margin:0}table{width:100%;border-collapse:collapse}th,td{border:1px solid #888;padding:4pt 6pt;text-align:start;vertical-align:top}")

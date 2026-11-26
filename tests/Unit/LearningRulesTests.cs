@@ -105,6 +105,9 @@ public sealed class LearningRulesTests
         Assert.Contains("Acme &amp; Co", en, StringComparison.Ordinal);
         Assert.DoesNotContain("<script>", en, StringComparison.Ordinal);
         Assert.DoesNotContain("http", en, StringComparison.Ordinal);
+        // Spec 038 T019: the tagged PDF keeps the language and a title naming the certificate and the learner.
+        Assert.Contains("<html lang=\"en\" dir=\"ltr\">", en, StringComparison.Ordinal);
+        Assert.Contains("<title>Certificate of completion, Laila &lt;script&gt;</title>", en, StringComparison.Ordinal);
         var ar = Certificates.Html("ar", "Acme", view, localizer);
         Assert.Contains("dir=\"rtl\"", ar, StringComparison.Ordinal);
         Assert.Contains("شهادة إتمام", ar, StringComparison.Ordinal);

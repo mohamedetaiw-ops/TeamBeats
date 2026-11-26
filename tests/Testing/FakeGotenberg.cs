@@ -50,8 +50,13 @@ public sealed class FakeGotenberg : HttpMessageHandler
         switch (request.RequestUri?.AbsolutePath)
         {
             case "/forms/chromium/convert/html":
-                // The printed page is the HTML itself after a PDF header, so tests can read what a letter says.
-                return HtmlDown || name != "index.html" ? new HttpResponseMessage(HttpStatusCode.ServiceUnavailable) : Pdf($"%PDF-1.7 html\n{body}");
+                {
+                    // The printed page is the HTML itself after a PDF header, so tests can read what a letter says; the
+                    // header says "tagged" when the page was asked for as a tagged PDF with an outline (spec 038 T019).
+                    bool On(string field) => form.FirstOrDefault(p => p.Headers.ContentDisposition?.Name?.Trim('"') == field)?.ReadAsStringAsync(cancellationToken).Result == "true";
+                    var tagged = On("generateTaggedPdf") && On("generateDocumentOutline") ? " tagged" : "";
+                    return HtmlDown || name != "index.html" ? new HttpResponseMessage(HttpStatusCode.ServiceUnavailable) : Pdf($"%PDF-1.7 html{tagged}\n{body}");
+                }
             case "/forms/libreoffice/convert":
                 return Pdf($"%PDF-1.7 converted {name}");
             case "/forms/chromium/screenshot/html":

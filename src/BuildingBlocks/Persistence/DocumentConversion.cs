@@ -18,8 +18,9 @@ public interface IDocumentConverter
     Task<Stream?> StampFooterAsync(Stream pdf, string text, CancellationToken ct = default);
 
     /// <summary>
-    /// A PDF printed from a self-contained HTML page (spec 022 FR-021 letters), or null when it could not be printed.
-    /// The page must load nothing from outside: the converter is given the HTML alone.
+    /// A tagged PDF printed from a self-contained HTML page (spec 022 FR-021 letters, spec 038 T019), or null when it could
+    /// not be printed. The page must load nothing from outside: the converter is given the HTML alone. Start the page with
+    /// <see cref="PdfPage.Head"/> so the PDF carries its language, direction and title.
     /// </summary>
     Task<Stream?> HtmlToPdfAsync(string html, CancellationToken ct = default);
 
@@ -28,6 +29,17 @@ public interface IDocumentConverter
     /// renditions), or null when it could not be made. The page must load nothing from outside.
     /// </summary>
     Task<Stream?> HtmlToPngAsync(string html, int width, int height, CancellationToken ct = default);
+}
+
+/// <summary>
+/// The start of every page printed to PDF (spec 038 T019): the document language and direction, which the tagged PDF
+/// keeps for screen readers, and the title, which becomes the PDF title shown instead of the file name.
+/// </summary>
+public static class PdfPage
+{
+    public static string Head(string language, bool rightToLeft, string title) =>
+        $"<!doctype html><html lang=\"{System.Net.WebUtility.HtmlEncode(language)}\" dir=\"{(rightToLeft ? "rtl" : "ltr")}\"><head><meta charset=\"utf-8\">"
+        + $"<title>{System.Net.WebUtility.HtmlEncode(title)}</title>";
 }
 
 /// <summary>
@@ -85,6 +97,10 @@ public sealed class GotenbergConverter(IHttpClientFactory clients, Uri baseUrl) 
             form.Add(new StringContent("0.79"), side);
         }
         form.Add(new StringContent("true"), "printBackground");
+        // Spec 038 T019: a tagged PDF, so headings, paragraphs, lists, tables and the reading order reach assistive
+        // technology, with the outline built from the headings (Gotenberg 8 field names).
+        form.Add(new StringContent("true"), "generateTaggedPdf");
+        form.Add(new StringContent("true"), "generateDocumentOutline");
         return PostAsync("forms/chromium/convert/html", form, ct);
     }
 

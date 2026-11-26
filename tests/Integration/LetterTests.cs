@@ -164,6 +164,10 @@ public sealed partial class LetterTests(TenantWorld world)
 
         var pdf = await PdfTextAsync(mona, id);
         Assert.StartsWith("%PDF", pdf, StringComparison.Ordinal);
+        // Spec 038 T019: printed as a tagged PDF that carries its language and a title naming the letter.
+        Assert.StartsWith("%PDF-1.7 html tagged", pdf, StringComparison.Ordinal);
+        Assert.Contains("<html lang=\"en\" dir=\"ltr\">", pdf, StringComparison.Ordinal);
+        Assert.Matches("<title>[^<]+, LT-000001</title>", pdf);
         Assert.Contains("Mona Hassan, employee 100", pdf, StringComparison.Ordinal);
         Assert.Contains("14 March 2021", pdf, StringComparison.Ordinal);
         Assert.Contains("Emirates Bank", pdf, StringComparison.Ordinal);

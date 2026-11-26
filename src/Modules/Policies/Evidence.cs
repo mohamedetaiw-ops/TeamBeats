@@ -464,7 +464,7 @@ public sealed class PolicyEvidence(
         static string E(string s) => WebUtility.HtmlEncode(s);
         var l = pack.Locale;
         var sb = new StringBuilder();
-        sb.Append(CultureInfo.InvariantCulture, $"<!doctype html><html lang=\"{l}\" dir=\"{(Locales.IsRightToLeft(l) ? "rtl" : "ltr")}\"><head><meta charset=\"utf-8\">");
+        sb.Append(TeamBeats.Persistence.PdfPage.Head(l, Locales.IsRightToLeft(l), L("title", l)));
         sb.Append("<style>body{font-family:'Noto Naskh Arabic','Noto Sans','DejaVu Sans',sans-serif;color:#111;font-size:10pt}h1{font-size:18pt}h2{font-size:14pt;margin-top:18pt;")
             .Append("break-before:page}h3{font-size:11pt;margin:12pt 0 4pt}table{border-collapse:collapse;width:100%}th,td{border:1px solid #999;padding:3pt 5pt;text-align:start;")
             .Append("vertical-align:top}bdi{unicode-bidi:isolate}.meta{color:#333}</style></head><body>");

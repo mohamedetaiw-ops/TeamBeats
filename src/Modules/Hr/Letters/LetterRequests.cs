@@ -442,7 +442,8 @@ public sealed class LetterRequests(
             var origin = await TenantOriginAsync(ct);
             footer.Add((localizer.Get("hr.letters.pdf.verify", row.Language), origin + VerifyPath));
         }
-        var html = LetterRender.Html(row.Language, company, body, footer);
+        var html = LetterRender.Html(row.Language, company, body, footer,
+            type.Names.TryGetValue(row.Language, out var letterName) ? $"{letterName}, {row.Reference}" : row.Reference);
         await using var pdf = await converter.HtmlToPdfAsync(html, ct);
         if (pdf is null)
         {

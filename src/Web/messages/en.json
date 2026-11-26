@@ -18756,7 +18756,7 @@
     "limitations": {
       "title": "Known limitations",
       "captions": "Videos that people upload have no captions unless the uploader adds them.",
-      "pdf": "Letters and reports downloaded as PDF are not yet tagged for screen readers.",
+      "pdf": "Letters, certificates and reports download as tagged PDFs. The PDF copy of a brand image is the picture alone; its description is kept with the image.",
       "audit": "No independent assistive technology audit has been completed yet.",
       "timeout": "An idle session ends without a warning first. Your work in progress in forms is kept where the page allows.",
       "content": "Your organization writes its own news, pages and documents. TeamBeats checks images for alternative text and pages for accessibility problems before they are published, but the content itself is your organization's responsibility."

@@ -21,6 +21,9 @@ public sealed class FakeOfficeConverter : HttpMessageHandler
     /// <summary>The last HTML page printed, so tests can check what a letter says.</summary>
     public string? LastHtml { get; private set; }
 
+    /// <summary>Whether the last HTML page was asked for as a tagged PDF with an outline (spec 038 T019).</summary>
+    public bool LastTagged { get; private set; }
+
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         Interlocked.Increment(ref Requests);
@@ -51,6 +54,9 @@ public sealed class FakeOfficeConverter : HttpMessageHandler
             // the verification code is printed so a test can check the letter on the public page.
             var html = await file.ReadAsStringAsync(cancellationToken);
             LastHtml = html;
+            async Task<bool> On(string field) => form.FirstOrDefault(p => p.Headers.ContentDisposition?.Name?.Trim('"') == field) is { } part
+                && await part.ReadAsStringAsync(cancellationToken) == "true";
+            LastTagged = await On("generateTaggedPdf") && await On("generateDocumentOutline");
             var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(html)))[..16];
             var code = System.Text.RegularExpressions.Regex.Match(html, "[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}").Value;
             return Pdf(OnePage(["TeamBeats test environment", "Fictional letter printed by the fake converter", $"Page {hash}", $"Code {code}"]));

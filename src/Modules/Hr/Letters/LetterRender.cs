@@ -76,12 +76,12 @@ public static partial class LetterRender
     /// The page the converter prints: the company, the letter text in paragraphs, and the reference, verification code
     /// and verification address at the foot. Arabic pages run right to left. Nothing is loaded from outside.
     /// </summary>
-    public static string Html(string language, string company, string body, IReadOnlyList<(string Label, string Value)> footer)
+    public static string Html(string language, string company, string body, IReadOnlyList<(string Label, string Value)> footer, string? title = null)
     {
         static string E(string s) => WebUtility.HtmlEncode(s);
         var rtl = language == "ar";
         var html = new StringBuilder();
-        html.Append(CultureInfo.InvariantCulture, $"<!doctype html><html lang=\"{language}\" dir=\"{(rtl ? "rtl" : "ltr")}\"><head><meta charset=\"utf-8\">");
+        html.Append(TeamBeats.Persistence.PdfPage.Head(language, rtl, title ?? company));
         html.Append("<style>body{font-family:'Noto Naskh Arabic','Noto Sans','DejaVu Sans',sans-serif;font-size:12pt;line-height:1.6;color:#111;margin:0}")
             .Append("header{font-size:16pt;font-weight:700;margin-bottom:24pt}p{margin:0 0 10pt}")
             .Append("footer{margin-top:36pt;padding-top:8pt;border-top:1px solid #999;font-size:9pt;color:#333}footer span{display:block}")
