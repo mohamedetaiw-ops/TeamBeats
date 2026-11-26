@@ -9,11 +9,11 @@
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R2 (course catalogue, courses built from pages, videos, documents and quizzes, learning paths, mandatory training assignments with due dates and reminders, completion tracking and certificates, assignments from onboarding (022) and policies (025), manager and compliance reports, external LMS connector as an alternative, SCORM 1.2 and xAPI import), R3 (AI generated quiz drafts, skill based recommendations from 010 skills, classroom sessions with attendance) |
-| Last updated | 2026-11-07 |
+| Last updated | 2026-11-26 |
 | Approved | 2026-11-07 by Mohamed (standing approval to proceed) |
-| Requirement IDs | LRN-001 to LRN-020 (new) |
+| Requirement IDs | LRN-001 to LRN-020 (R2), LRN-021 to LRN-030 (R3) |
 | Use cases | UC-09 |
-| Depends on | 002 (audiences), 004 (authorization), 005 (entitlements), 009 (content blocks, targeting), 010 (people, skills in R3), 011 (files and video storage), 015 (reminders), 017 (LMS connector), 021 (reports), 022 (onboarding tasks), 025 (policy linked training) |
+| Depends on | 002 (audiences), 004 (authorization), 005 (entitlements), 009 (content blocks, targeting), 010 (people, skills in R3), 011 (files and video storage), 013 (AI Gateway, R3), 015 (reminders), 017 (LMS connector), 021 (reports), 022 (onboarding tasks), 025 (policy linked training) |
 | Used by | 022 (onboarding journeys), 025 (policy acknowledgement with training), 008 (My learning widget), 021 (compliance dashboards) |
 
 ## 1. Problem and outcome
@@ -34,9 +34,10 @@
 - Completion tracking: progress per lesson, quiz scores, completion date, certificate (PDF with tenant brand) and expiry for recurring training.
 - Reports: my team (managers), unit completion and overdue (compliance officers), export to CSV, evidence pack per course.
 - External LMS connector through 017: import catalogue items as links, push assignments, pull completions.
+- R3: quiz drafts written by the AI Gateway (013) from a course's own lessons and reviewed by a person before publishing; courses tagged with 010 skills and recommended to people who declared those skills; classroom sessions as a lesson kind, with seats, a waiting list, reminders and attendance taken by a facilitator.
 
 **Out of scope:**
-- Authoring video, live classes and virtual classrooms (R3 for attendance only).
+- Authoring video, live classes and virtual classrooms. R3 adds in-person and online classroom sessions with seats and attendance only; the meeting itself happens elsewhere.
 - Paid course marketplaces; Udemy and similar stay linked apps (016).
 - Grading free-text answers.
 
@@ -49,6 +50,7 @@
 | Line manager | See direct reports' assignments and progress, assign catalogue courses to them | `learning.team_view` relation `manager_of` |
 | Compliance officer | See completion and overdue reports for scope, export evidence | `learning.report` in org scope |
 | Policy owner | Link a training course to a policy version (025) | `policy.manage` plus `learning.assign_linked` |
+| Facilitator (R3) | See the roster of a classroom session they are named on and take attendance | Named on the session; learning administrators of the course may do the same |
 
 ## 4. User scenarios
 
@@ -111,12 +113,50 @@ Khaled, compliance officer, prepares for an audit.
 1. **Given** a SCORM 1.2 zip, **When** Mona imports it, **Then** it is scanned (026), unpacked to tenant storage and played in a sandboxed frame with no access to the TeamBeats session.
 2. **Given** the package reports completion and score, **Then** they are recorded like native completions.
 
+### User Story 8: Draft a quiz from the course (Priority: P2, R3)
+
+Mona has three lessons on information security and wants a first set of questions to edit instead of writing them from nothing.
+
+**Why this priority:** writing questions is the slowest part of building a course.
+
+**Independent test:** ask for a quiz draft on a course with a page lesson; the questions arrive marked as AI drafts in every language of the course; publishing is refused until each is reviewed; a gateway refusal changes nothing.
+
+**Acceptance scenarios:**
+1. **Given** a course draft with page lessons, **When** Mona asks for a quiz draft of up to 10 questions, **Then** the AI Gateway writes single choice, multiple choice and true or false questions from the text of those lessons only, in every language of the course, and they are added to a quiz lesson of the draft marked "AI draft".
+2. **Given** questions marked "AI draft", **When** Mona tries to publish, **Then** publishing is refused until she has kept, edited or removed each one; keeping a question removes its mark.
+3. **Given** the gateway refuses (budget, classification, provider down), **Then** the draft is unchanged and Mona sees why in words.
+4. **Given** lessons Mona cannot read or lessons above the classification the gateway accepts, **Then** their text is not sent.
+
+### User Story 9: Courses for the skills I have (Priority: P3, R3)
+
+Laila declared "Data analysis" at a basic level on her profile.
+
+**Acceptance scenarios:**
+1. **Given** courses tagged with skills, **When** Laila opens My learning, **Then** she sees up to six recommended courses that are targeted to her, open for enrolment and tagged with a skill she declared below expert, leaving out courses she has open or completed.
+2. **Given** a recommendation she does not want, **When** she dismisses it, **Then** it is not recommended to her again.
+3. **Given** the tenant has skills off or the package has no `people.skills`, **Then** no recommendations show and course skill tags are not offered in the builder.
+
+### User Story 10: Run a classroom session (Priority: P2, R3)
+
+Mona adds a classroom lesson "Fire warden practical" with two sessions of 12 seats; Omar facilitates.
+
+**Acceptance scenarios:**
+1. **Given** a classroom lesson with sessions, **When** a learner with the course open books a seat, **Then** they get one seat across the lesson's sessions; when a session is full they join its waiting list.
+2. **Given** a booked learner cancels before the start, **Then** the first person on the waiting list gets the seat and is told.
+3. **Given** a session tomorrow, **Then** each booked learner gets a reminder the day before.
+4. **Given** the session has started, **When** Omar records who attended, **Then** the lesson is complete for those who attended and the course completes when it was the last lesson; those absent keep the lesson open and may book again.
+5. **Given** a session is cancelled, **Then** everyone booked or waiting is told and may book another session.
+6. **Given** a package without `learning.classroom`, **Then** a course with a classroom lesson cannot be published and sessions cannot be added.
+
 ### Edge cases and exception flows
 - Due date on a weekend or holiday: moved to the next working day by the learner's calendar (022).
 - Learner on long leave: assignments pause when the tenant enables pause for leave.
 - Course retired with open assignments: assignments are withdrawn with a notice, completions stay.
 - Quiz question changed after attempts: old attempts keep their score.
 - Duplicate assignment from two audiences: one assignment with the earliest due date.
+- R3: a quiz draft on a course whose lessons have no readable text is refused with a reason, without calling the model.
+- R3: attendance before the session starts is refused; attendance can be corrected for 14 days after it ends.
+- R3: a seat cannot be booked on a session that started, was cancelled, or for a lesson already complete.
 
 ## 5. Functional requirements
 
@@ -140,12 +180,25 @@ Khaled, compliance officer, prepares for an audit.
 - **LRN-018 / FR-018**: The catalogue MUST show only courses targeted to the viewer and MUST be searchable through 012.
 - **LRN-019 / FR-019**: Learning administrators MUST be able to grant extra attempts, with audit.
 - **LRN-020 / FR-020**: Due dates MUST respect the learner's working calendar (022).
+- **LRN-021 / FR-021**: *(R3)* Learning administrators MUST be able to ask for quiz questions drafted from the readable text of a course's own lessons through 013, in every language of the course.
+- **LRN-022 / FR-022**: *(R3)* AI drafted questions MUST stay marked until a person keeps, edits or removes them, and a course with marked questions MUST NOT be published.
+- **LRN-023 / FR-023**: *(R3)* A refused or failed draft MUST leave the course unchanged and say why; each draft MUST be audited.
+- **LRN-024 / FR-024**: *(R3)* Learning administrators MUST be able to tag courses with skills from the 010 skill list while skills are available and on.
+- **LRN-025 / FR-025**: *(R3)* My learning MUST recommend at most six open, targeted courses tagged with skills the learner declared below expert, leaving out open and completed ones, and the learner MUST be able to dismiss each.
+- **LRN-026 / FR-026**: *(R3)* A classroom lesson MUST hold sessions with a start, end, place or link, capacity and facilitator, managed by the course's learning administrators.
+- **LRN-027 / FR-027**: *(R3)* A learner with the course open MUST be able to hold one seat per classroom lesson, join a waiting list when full, and cancel before the start, giving the seat to the first waiting person.
+- **LRN-028 / FR-028**: *(R3)* Booked learners MUST get a reminder the day before through 015, and everyone booked or waiting MUST be told when a session is cancelled.
+- **LRN-029 / FR-029**: *(R3)* The facilitator or a learning administrator MUST record attendance after the start; attendance MUST complete the lesson and MUST be audited.
+- **LRN-030 / FR-030**: *(R3)* Classroom sessions MUST need `learning.classroom`.
 
 ## 6. Business and validation rules
 - Reminders at 7 days and 1 day before due; overdue weekly; manager copied from overdue.
 - Default grace period 0 days; range 0 to 30.
 - Quiz attempts default 3; pass mark default 70%.
 - SCORM package size up to 500 MB.
+- R3 quiz drafts: 1 to 20 questions per request, default 10; at most 60,000 characters of lesson text are sent; the model call uses the draft use case and the course's classification (Internal).
+- R3 recommendations: at most six; a dismissal lasts for good; skills at expert level are not used.
+- R3 sessions: capacity 1 to 500; a session lasts at most 12 hours; attendance can be corrected for 14 days after the end; reminder one day before the start.
 
 ## 7. Tenant and organization scope
 - Tenant-owned data: courses, versions, quizzes, paths, assignments, progress, attempts, certificates, packages.
@@ -161,6 +214,9 @@ Khaled, compliance officer, prepares for an audit.
 | Assignments, progress, attempts | Product (or LMS) | Confidential | 7 years for mandatory training, 2 years otherwise | Yes |
 | Certificates | Product | Internal | Same as completion | Yes |
 | SCORM packages | Product storage | Internal | Life of course | No |
+| Course skill tags (R3) | Product | Internal | Life of course | No |
+| Recommendation dismissals (R3) | Product | Internal | Until the learner leaves | Yes |
+| Classroom sessions, seats and attendance (R3) | Product | Confidential | Same as assignments | Yes |
 
 ## 9. Package entitlements
 
@@ -170,6 +226,9 @@ Khaled, compliance officer, prepares for an audit.
 | `learning.mandatory` | off | on | on |
 | `learning.scorm` | off | off | on |
 | `learning.lms_connector` | off | on | on |
+| `learning.classroom` (R3) | off | on | on |
+
+Quiz drafts need `learning.courses` and the AI Gateway; recommendations need `learning.courses` and `people.skills` (010).
 
 ## 10. UX, localization and accessibility
 - My learning page and widget; course player with lesson list, progress and next; course builder; assignment wizard; reports.
@@ -177,7 +236,7 @@ Khaled, compliance officer, prepares for an audit.
 - Arabic and English, RTL.
 
 ## 11. AI behavior
-R2: none. R3: quiz drafts from course content through 013, always reviewed by a person before publishing.
+R2: none. R3: quiz drafts from course content through 013, always reviewed by a person before publishing. Only the text of the course's own lessons that the administrator may read is sent; the answer must match the quiz shape, and anything that does not is dropped. Recommendations use no model: they match declared skills to course tags.
 
 ## 12. Integrations and events
 - Publishes `CourseAssigned`, `CourseCompleted`, `CourseOverdue`, `CertificateIssued`.
@@ -192,11 +251,16 @@ R2: none. R3: quiz drafts from course content through 013, always reviewed by a 
 | learning.attempts_granted | audit | learner, course, actor |
 | learning.evidence_exported | audit | course, scope, actor |
 | learning.progress | telemetry | course, lesson, status |
+| learning.quiz_drafted (R3) | audit | course, questions, actor |
+| learning.session_changed (R3) | audit | course, session, change (added, changed, cancelled), actor |
+| learning.attendance_recorded (R3) | audit | session, attended and absent counts, actor |
 
 ## 14. Security and abuse cases
 - Malicious SCORM content: sandboxed frame on a separate origin, scanned on import.
 - Faked completions: completions accepted only from the player session or the LMS connector, never from a client parameter.
 - Overexposure of results: managers see direct reports only.
+- R3: prompt injection in lesson text: the lesson text is sent as quoted data, the answer is parsed against the quiz shape, and every question waits for a person.
+- R3: attendance only from the facilitator or a learning administrator, never by the learner.
 
 ## 15. Non-functional requirements
 - Assignment of a course to 20,000 people within 5 minutes.
@@ -218,3 +282,6 @@ R2: none. R3: quiz drafts from course content through 013, always reviewed by a 
 | LRN-005 to LRN-012 | US2, US4 |
 | LRN-013, LRN-014 | US5 |
 | LRN-015, LRN-016 | US6, US7 |
+| LRN-021 to LRN-023 | US8 |
+| LRN-024, LRN-025 | US9 |
+| LRN-026 to LRN-030 | US10 |
