@@ -11,7 +11,7 @@
 | Target release | R1 (design guidelines and technical guidelines, four selectable designs Beats, Atlas, Pulse and Studio, design picker in the brand manager, component and template library with the living gallery, design consistency gate, design test suite with accessibility, responsive, target size and visual regression checks, enforcement in the constitution and specs, the extended component catalogue of DLS-030 to DLS-041 with its data, assistant and chart parts, the experience rules of DLS-100 to DLS-119: page hierarchy, content budgets, one instance per data source, complete states, type roles, the page frame, the filter toolbar, pattern choice, work rows, design descriptors and the gates on real pages), R2 (design review workflow in the theme lifecycle of spec 033, cross-browser automation, quarterly design audit report), R3 (tenant design extensions through reviewed token extensions) |
 | Last updated | 2026-11-14 |
 | Approved | 2026-11-09 by Mohamed (standing approval to proceed) |
-| Requirement IDs | DLS-001 to DLS-119 (new); CX-BRD-003, CX-BRD-006, CX-BRD-009 (with spec 033); CX-ACC-001 to CX-ACC-005 (with spec 007) |
+| Requirement IDs | DLS-001 to DLS-122 (new); CX-BRD-003, CX-BRD-006, CX-BRD-009 (with spec 033); CX-ACC-001 to CX-ACC-005 (with spec 007) |
 | Use cases | UC-01 (tenant setup, design choice), every employee and admin journey (look and feel) |
 | Depends on | 007 (localization and accessibility), 008 (shell), 032 (templates and components), 033 (tokens, brands, resolver, brand manager), ADR-0014, ADR-0019, ADR-0021 |
 | Used by | Every spec with a user interface: its UX section references this system instead of describing visuals from scratch |
@@ -210,22 +210,27 @@ A developer builds a new page from a template and the shared components; the bui
 - **DLS-118**: Gates on real pages. The design gate (`npm run check:design`) MUST also fail on: a page under `app/` that renders no shared page header; a feature style sheet that declares its own card surface, tab strip, tag or filter bar instead of the shared part; a literal font size or a size outside the type roles. The design suite MUST run axe, the reflow check, the target size check, the text size floor and the font family check on the main pages (Home, Tasks, Services, Requests, Calendar, Assistant, People, Policies, Documents, Knowledge, Notifications, Preferences, and the Administration overview, Users and Plan pages) in each design, in Arabic and English, at comfortable and compact density, at 390, 768 and 1440 px, with visual baselines for the first viewport of each page in the default design. A high-volume scenario (30 tasks, 20 meetings, 40 notifications) checks the budgets of DLS-101.
 - **DLS-119**: Calendar views. Beyond DLS-069 to DLS-074: an item that spans several days appears once in the agenda under its first shown day with its date range, not once per day; recurring identical items within the shown period collapse to one row with their count where the view is a summary; overlapping items in the week view sit side by side at equal widths with at least the title readable, and beyond three share a "+N" block that opens the day panel; a month cell shows at most three items and then "+N more". A calendar page shows one agenda for the selected range, never a second list under the grid. A title in another script starts at the same edge as the other titles (DLS-029). The home shows the summary variant only: today and the next item, at most five rows.
 
+- **DLS-120** (R3): Tenant designs. A theme editor MAY derive a named design from one of the four: the base design, values for design tokens on top of it (any token of the schema except `design.preset`), a name in English and Arabic and a short description. Values are typed and checked like brand tokens, the text floor of DLS-104 holds, and free CSS is never accepted. A tenant keeps at most 10 designs. A design starts as a draft only its editors see.
+- **DLS-121** (R3): Review of a tenant design. Proposing a design runs the contrast checks of spec 033 in light, dark and high contrast on the base design with its values; a blocking finding refuses the proposal. Someone who may publish themes for the tenant, and who did not propose it, approves or rejects it with an optional note. Changing an approved or rejected design returns it to draft; brands that applied it keep their values. Every step is audited.
+- **DLS-122** (R3): Applying a tenant design. An approved design is listed beside the four designs. Applying it to a brand writes the base design and its values into the brand's draft, which goes live through the theme lifecycle of spec 033 (draft, approval where required, publish or schedule), so the change is previewed, reviewed and can be rolled back like any brand change. Pages keep the base design's attribute, so its descriptors, variants and gates still apply. Retiring a design stops new applications only.
+
 ## 6. Business and validation rules
 - `design.preset` takes `beats`, `atlas`, `pulse` or `studio`; `layout.navigation` takes `rail`, `top` or `sidebar`. Other values are refused with `validation.theme.choice_invalid`.
 - The descriptor tokens of DLS-110 take only the listed values and are refused otherwise with the same code. `font.size.xs` under 12 px or `font.size.md` under 14 px in any density is refused with `validation.theme.text_too_small`.
 - Content budgets are platform limits: a manifest or a placement can lower them, never raise them.
 - A new tenant, and any brand that sets no design, uses Beats.
 - Choosing a design in the editor replaces the brand's token values; brand name, assets and contrast policy stay.
+- A tenant design key takes 2 to 24 lower case letters, digits and underscores and starts with a letter; a design that sets `design.preset` is refused with `validation.theme.design_token`; an eleventh design with `validation.theme.design_limit`; a proposal with a blocking contrast finding with `validation.theme.design_contrast`; reviewing one's own proposal with `authz.denied.design_own_proposal`.
 
 ## 7. Tenant and organization scope
 - The design is a token of the tenant brand profile and of organization overrides; it follows spec 033 section 7 for isolation, locks and inheritance.
 - Cross-tenant denial: the same cases as spec 033 (theme CSS and assets of another tenant are not found).
 
 ## 8. Data, ownership and classification
-No new data. The design is stored as a token in the brand version (spec 033 section 8).
+The design is stored as a token in the brand version (spec 033 section 8). Tenant designs (R3) are a tenant table under row level security with the base design, the values, the names, the state and who proposed and reviewed them; they are configuration, not personal data, and go with the tenant.
 
 ## 9. Package entitlements
-All four designs are in every package (smallest safe default: the design is part of tenant branding, which spec 033 puts in every package). Organization-level design choice needs `experience.org_branding`.
+All four designs are in every package (smallest safe default: the design is part of tenant branding, which spec 033 puts in every package). Organization-level design choice needs `experience.org_branding`. Tenant designs (R3) need `experience.token_extensions`, the capability of spec 033's reviewed token extensions; without it the list stays readable and nothing can be proposed or applied.
 
 ## 10. UX, localization and accessibility
 - The guidelines in `docs/design-system` are the UX rules for every screen.
@@ -260,7 +265,7 @@ Design changes publish through `ThemePublished` like any brand change.
 
 ## 17. Open questions
 - Should Firefox and WebKit join the design suite in R1 or R2? Default: R2 with the browser matrix decision.
-- Should tenants be able to submit their own design? Default: no; they adjust one of the four through tokens; revisit with R3 token extensions.
+- Should tenants be able to submit their own design? Decided for R3: a tenant derives reviewed designs from one of the four (DLS-120 to DLS-122); a design built from nothing, with its own layout rules, stays out.
 - Is Studio the final name of the fourth design? Default: Studio, so no other company's brand name appears in the product.
 
 ## 18. Traceability
@@ -280,6 +285,7 @@ Design changes publish through `ThemePublished` like any brand change.
 | DLS-104, DLS-105, DLS-116, DLS-118 | `src/Web/scripts/check-design.mjs`, `tests/Unit/DesignPresetTests.cs` (size floor), `tests/Acceptance/specs/design-system.spec.ts` (main pages matrix: text floor, font families, footer, header) |
 | DLS-106 to DLS-109, DLS-113, DLS-115 | `tests/Acceptance/specs/details.spec.ts` (toolbar, row actions, review panel, delegation dialog), `tests/Acceptance/specs/components.spec.ts` |
 | DLS-110 | `tests/Unit/DesignPresetTests.cs` (descriptor values), `tests/Acceptance/specs/design-system.spec.ts` (home variants in four designs) |
+| DLS-120 to DLS-122 | `tests/Integration/TenantDesignTests.cs`, `tests/Acceptance/specs/tenant-designs.spec.ts` |
 | DLS-111, DLS-112, DLS-114, DLS-117, DLS-119 | Gallery sections in `tests/Acceptance/specs/design-system.spec.ts`; `tests/Acceptance/specs/assistant.spec.ts`, `content.spec.ts`, `calendar.spec.ts` |
 | DLS-031 to DLS-041 | `tests/Acceptance/specs/design-system.spec.ts`, `tests/Acceptance/specs/components.spec.ts` (keyboard behavior per component), `npm run verify` |
 

@@ -615,6 +615,63 @@ public static class ExperienceModule
             return Results.NoContent();
         });
 
+        // Tenant designs (spec 036 R3, DLS-120 to DLS-122): derived from one of the four, reviewed, applied into a brand draft.
+        x.MapGet("/designs", async (ThemeService themes, IDbSession session, CancellationToken ct) =>
+        {
+            var list = await themes.ListDesignsAsync(ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(list);
+        });
+
+        x.MapGet("/designs/{id:guid}", async (Guid id, ThemeService themes, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await themes.GetDesignAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        x.MapPost("/designs", async (TenantDesignRequest request, ThemeService themes, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await themes.CreateDesignAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/experience/designs/{view.Id}", view);
+        });
+
+        x.MapPut("/designs/{id:guid}", async (Guid id, TenantDesignRequest request, ThemeService themes, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await themes.UpdateDesignAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        x.MapPost("/designs/{id:guid}/propose", async (Guid id, ThemeService themes, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await themes.ProposeDesignAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        x.MapPost("/designs/{id:guid}/review", async (Guid id, TenantDesignReview review, ThemeService themes, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await themes.ReviewDesignAsync(id, review, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        x.MapPost("/designs/{id:guid}/retire", async (Guid id, ThemeService themes, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await themes.RetireDesignAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        x.MapPost("/designs/{id:guid}/apply", async (Guid id, TenantDesignApply request, ThemeService themes, IDbSession session, CancellationToken ct) =>
+        {
+            var draft = await themes.ApplyDesignAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(draft);
+        });
+
         // Portable tokens (spec 033 R2 T022, FR-014): the brand's tokens as a DTCG 2025.10 token file, and back into the draft.
         x.MapGet("/brands/{id:guid}/tokens", async (Guid id, ThemeService themes, HttpContext http, CancellationToken ct) =>
         {

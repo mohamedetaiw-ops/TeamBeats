@@ -85,3 +85,8 @@ A review of the 35 admin pages on staging found 23 issues: no current item in th
 - [x] T053 Admin tables: dash for empty cells, no-wrap dates and statuses, quiet row actions with confirmation on Roles, long values on Sign-in, Model policy columns, Audit filters (DLS-095 to DLS-097)
 - [x] T054 Count chart ticks and single point stat (DLS-098); Plan page sentence and layout; Connections demo label and row actions
 - [x] T055 `admin-layout.spec.ts` page check across every admin section, English and Arabic, desktop and phone
+
+## R3: tenant designs (DLS-120 to DLS-122)
+- [x] T056 Tenant designs: table, save and validation, proposal with the contrast gate, four eyes review, retire, apply into the brand draft, audit, API (DLS-120 to DLS-122)
+- [x] T057 Designs page in the Brand section with the editor, review and apply; messages in English and Arabic; accessibility route
+- [x] T058 Integration tests (entitlement, cross-tenant, own proposal, contrast refusal, apply), e2e in both languages, OpenAPI, implementation notes and evidence

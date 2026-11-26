@@ -3336,5 +3336,19 @@
   "validation.page.sandbox_unavailable": "This component is not available. Choose one that is approved and turned on.",
   "conflict.experience.sandbox_reviewed": "This version was already reviewed.",
   "capability.experience.custom_components": "Your own components",
-  "experience.component.sandbox_tenant_component.props.component": "Component key"
+  "experience.component.sandbox_tenant_component.props.component": "Component key",
+  "validation.theme.design_key": "Use 2 to 24 lowercase letters, digits or underscores, starting with a letter",
+  "validation.theme.design_base": "Choose Beats, Atlas, Pulse or Studio as the starting design",
+  "validation.theme.design_name": "Give the design a name in English and in Arabic, up to 60 characters each",
+  "validation.theme.design_description": "Keep the description to 200 characters or fewer",
+  "validation.theme.design_token": "A design starts from its base design and cannot choose another one",
+  "validation.theme.design_limit": "This workspace already has 10 designs. Retire one first.",
+  "validation.theme.design_contrast": "Some text in this design is too hard to read. Fix the contrast findings before sending it for review.",
+  "validation.theme.design_brand": "Choose the brand to apply the design to",
+  "conflict.theme.design_exists": "A design with this key already exists",
+  "conflict.theme.design_retired": "A retired design cannot be changed",
+  "conflict.theme.design_not_draft": "Only a draft or a design that was sent back can be sent for review",
+  "conflict.theme.design_not_proposed": "This design is not waiting for review",
+  "conflict.theme.design_not_approved": "Only an approved design can be applied to a brand",
+  "authz.denied.design_own_proposal": "Someone other than the person who sent it for review must review this design"
 }

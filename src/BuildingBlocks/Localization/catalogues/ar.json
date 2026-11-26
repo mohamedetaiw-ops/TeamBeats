@@ -3336,5 +3336,19 @@
   "validation.page.sandbox_unavailable": "هذا المكون غير متاح. اختر مكونا معتمدا ومفعلا.",
   "conflict.experience.sandbox_reviewed": "تمت مراجعة هذه النسخة من قبل.",
   "capability.experience.custom_components": "مكوناتك الخاصة",
-  "experience.component.sandbox_tenant_component.props.component": "مفتاح المكون"
+  "experience.component.sandbox_tenant_component.props.component": "مفتاح المكون",
+  "validation.theme.design_key": "استخدم من 2 إلى 24 حرفا لاتينيا صغيرا أو رقما أو شرطة سفلية، تبدأ بحرف",
+  "validation.theme.design_base": "اختر Beats أو Atlas أو Pulse أو Studio تصميما للبداية",
+  "validation.theme.design_name": "سمِّ التصميم بالإنجليزية والعربية، بحد أقصى 60 حرفا لكل اسم",
+  "validation.theme.design_description": "اجعل الوصف في حدود 200 حرف أو أقل",
+  "validation.theme.design_token": "يبدأ التصميم من تصميمه الأساسي ولا يمكنه اختيار تصميم آخر",
+  "validation.theme.design_limit": "لدى مساحة العمل 10 تصاميم بالفعل. أوقف أحدها أولا.",
+  "validation.theme.design_contrast": "بعض النصوص في هذا التصميم صعبة القراءة. عالج ملاحظات التباين قبل إرساله للمراجعة.",
+  "validation.theme.design_brand": "اختر العلامة التي يُطبق عليها التصميم",
+  "conflict.theme.design_exists": "يوجد تصميم بهذا المفتاح بالفعل",
+  "conflict.theme.design_retired": "لا يمكن تغيير تصميم متوقف",
+  "conflict.theme.design_not_draft": "لا يُرسل للمراجعة إلا مسودة أو تصميم أُعيد للتعديل",
+  "conflict.theme.design_not_proposed": "هذا التصميم ليس بانتظار المراجعة",
+  "conflict.theme.design_not_approved": "لا يُطبق على العلامة إلا تصميم معتمد",
+  "authz.denied.design_own_proposal": "يجب أن يراجع هذا التصميم شخص غير الذي أرسله للمراجعة"
 }
