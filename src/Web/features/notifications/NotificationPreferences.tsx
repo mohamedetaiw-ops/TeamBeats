@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/components/ui/FormField";
 import { problemMessages, type Preferences } from "@/lib/notifications/types";
-import { deviceSubscription, pushSupported, turnOffPush, turnOnPush } from "@/lib/push";
+import { devicePushState, pushOffered, turnOffPush, turnOnPush } from "@/lib/push";
 import "./notifications.css";
 
 /**
@@ -27,38 +27,38 @@ export function NotificationPreferences({ initial }: { initial: Preferences }) {
   const [linking, setLinking] = useState(false);
   const slack = prefs.slack.available;
   const teams = prefs.teamsAvailable;
-  const push = prefs.push.available && prefs.push.publicKey !== null;
+  const [push, setPush] = useState(prefs.push.available && prefs.push.publicKey !== null);
   // What this browser allows is only known after hydration: "unknown" renders nothing until then.
   const [device, setDevice] = useState<"unknown" | "unsupported" | "blocked" | "off" | "on">("unknown");
   const [switching, setSwitching] = useState(false);
 
   useEffect(() => {
-    if (!push) return;
     let live = true;
-    const look = async (): Promise<typeof device> => {
-      if (!pushSupported()) return "unsupported";
-      if (Notification.permission === "denied") return "blocked";
-      const subscription = await deviceSubscription().catch(() => null);
-      return subscription && Notification.permission === "granted" ? "on" : "off";
-    };
-    void look().then((state) => live && setDevice(state));
+    void (async () => {
+      // In the store app native push decides, which is only known in the browser (spec 030 R3).
+      const offered = pushOffered(prefs.push);
+      if (live) setPush(offered);
+      if (!offered) return;
+      const state = await devicePushState();
+      if (live) setDevice(state);
+    })();
     return () => {
       live = false;
     };
-  }, [push]);
+  }, [prefs.push]);
 
   async function switchDevice(on: boolean) {
     setSwitching(true);
     setResult(null);
     try {
       if (on) {
-        const outcome = await turnOnPush(prefs.push.publicKey!);
+        const outcome = await turnOnPush(prefs.push.publicKey);
         if (outcome === "on") {
           setDevice("on");
           setPrefs((p) => ({ ...p, push: { ...p.push, devices: p.push.devices + 1 } }));
           setResult({ ok: true, messages: [t("pushTurnedOn")] });
         } else if (outcome === "denied") {
-          setDevice(Notification.permission === "denied" ? "blocked" : "off");
+          setDevice(await devicePushState().then((s) => (s === "blocked" ? "blocked" : "off")));
           setResult({ ok: false, messages: [t("pushDenied")] });
         } else if (outcome === "unsupported") {
           setDevice("unsupported");

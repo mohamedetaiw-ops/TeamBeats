@@ -22,3 +22,14 @@ Depends on 003, 008, 015, 026, 033. R2.
 
 ## Final phase
 - [x] T011 Lighthouse checks in CI; OpenAPI; R2 implementation notes; spec evidence
+
+## R3: native shells and the rest (MOB-020 to MOB-025)
+- [x] T012 [US6] Tests: native token registration, limit shared with web push, removal on sign-out and unregistered, no Confidential words, entitlement and cross-tenant
+- [x] T013 [US6] Native push devices, FCM adapter and delivery to native devices
+- [x] T014 [US6] Tests: app lock policy range and audit, shell configuration by capability
+- [x] T015 [US6] App lock in the security policy and the shell configuration endpoint, Sessions settings
+- [x] T016 [US6] ADR-0023 and the Capacitor shell: workspace entry, managed configuration, host allow list, app lock, push hand-off
+- [x] T017 [US6] Web bridge: the PWA uses the native push token and lock when it runs in the shell
+- [x] T018 [US6] Offline leave request draft with send on confirmation
+- [x] T019 OpenAPI, R3 implementation notes and evidence
+

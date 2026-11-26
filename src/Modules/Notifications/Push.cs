@@ -21,26 +21,40 @@ public sealed record PushKeys(string? P256dh, string? Auth);
 
 public sealed record PushUnsubscribeRequest(string? Endpoint);
 
-/// <summary>Push for this person (spec 030 US2): whether it can be used here, the key to subscribe with, and how many devices have it.</summary>
-public sealed record PushStatus(bool Available, string? PublicKey, int Devices);
+/// <summary>What the store app gives after registering with the messaging service (spec 030 R3 MOB-022).</summary>
+public sealed record NativePushRequest(string? Token, string? Platform);
+
+/// <summary>
+/// Push for this person (spec 030 US2, R3 MOB-022): whether Web Push can be used here, the key to subscribe with, how
+/// many devices have push (web and native together), and whether the store app may register for native push.
+/// </summary>
+public sealed record PushStatus(bool Available, string? PublicKey, int Devices, bool NativeAvailable = false);
 
 /// <summary>
 /// Push subscriptions (spec 030 US2, FR-008). A subscription belongs to the person and the session that made it, so
 /// signing out or revoking the session removes it. Only push services on the allow list are accepted, at most
 /// <see cref="MaxPerUser"/> devices per person, the oldest dropped first.
 /// </summary>
-public sealed class PushSubscriptions(IDbSession session, ITenantContext context, IClock clock, IWebPush push, IEntitlementService entitlements,
-    IOutbox outbox, IAnalyticsEvents analytics)
+public sealed class PushSubscriptions(IDbSession session, ITenantContext context, IClock clock, IWebPush push, INativePush native,
+    IEntitlementService entitlements, IOutbox outbox, IAnalyticsEvents analytics)
 {
     public const int MaxPerUser = 10;
 
     public static readonly IReadOnlySet<string> Platforms = new HashSet<string>(StringComparer.Ordinal) { "android", "ios", "windows", "macos", "linux", "other" };
 
+    public static readonly IReadOnlySet<string> NativePlatforms = new HashSet<string>(StringComparer.Ordinal) { "android", "ios" };
+
     public async Task<PushStatus> StatusAsync(Guid userId, CancellationToken ct)
     {
-        var available = push.PublicKey is not null && await entitlements.IsEnabledAsync(Capabilities.MobilePush, ct);
-        var devices = await session.ScalarAsync<long>("select count(*) from notifications.push_subscription where user_id = @userId", new { userId }, ct);
-        return new PushStatus(available, available ? push.PublicKey : null, (int)devices);
+        var entitled = await entitlements.IsEnabledAsync(Capabilities.MobilePush, ct);
+        var available = entitled && push.PublicKey is not null;
+        var nativeAvailable = entitled && native.Available && await entitlements.IsEnabledAsync(Capabilities.MobileNativeShell, ct);
+        var devices = await session.ScalarAsync<long>(
+            """
+            select (select count(*) from notifications.push_subscription where user_id = @userId)
+                 + (select count(*) from notifications.native_push_device where user_id = @userId)
+            """, new { userId }, ct);
+        return new PushStatus(available, available ? push.PublicKey : null, (int)devices, nativeAvailable);
     }
 
     public async Task<PushStatus> SubscribeAsync(Guid userId, PushSubscribeRequest request, CancellationToken ct)
@@ -75,12 +89,7 @@ public sealed class PushSubscriptions(IDbSession session, ITenantContext context
             returning (xmax = 0)
             """,
             new { id = Ids.New(), userId, sessionId = context.SessionId, endpoint, p256dh = request.Keys!.P256dh!.Trim(), auth = request.Keys.Auth!.Trim(), platform, now }, ct);
-        await session.ExecAsync(
-            """
-            delete from notifications.push_subscription
-            where user_id = @userId and id not in (
-              select id from notifications.push_subscription where user_id = @userId order by created_at desc, id limit @max)
-            """, new { userId, max = MaxPerUser }, ct);
+        await KeepNewestAsync(userId, ct);
         if (inserted)
         {
             await outbox.EnqueueAsync(new PushSubscriptionCreated(userId, platform), ct);
@@ -88,6 +97,80 @@ public sealed class PushSubscriptions(IDbSession session, ITenantContext context
         }
         return await StatusAsync(userId, ct);
     }
+
+    /// <summary>
+    /// Registers the store app on this device for native push (spec 030 R3 MOB-022). It needs the native shell feature
+    /// as well as push, and a messaging project configured for the deployment. The same token registering again, for
+    /// this person or after someone else signed out on the device, takes the row over.
+    /// </summary>
+    public async Task<PushStatus> RegisterNativeAsync(Guid userId, NativePushRequest request, CancellationToken ct)
+    {
+        await entitlements.DemandAsync(Capabilities.MobilePush, ct);
+        await entitlements.DemandAsync(Capabilities.MobileNativeShell, ct);
+        if (!native.Available)
+        {
+            throw AppException.Conflict("conflict.push.native_unavailable");
+        }
+        var errors = new ValidationErrors();
+        var token = request.Token?.Trim() ?? "";
+        if (!IsToken(token))
+        {
+            errors.Add("token", "validation.push.native_token");
+        }
+        var platform = request.Platform?.Trim() ?? "";
+        if (!NativePlatforms.Contains(platform))
+        {
+            errors.Add("platform", "validation.push.native_platform");
+        }
+        errors.ThrowIfAny();
+
+        var inserted = await session.ScalarAsync<bool>(
+            """
+            insert into notifications.native_push_device (tenant_id, id, user_id, session_id, platform, token, created_at)
+            values (platform.current_tenant_id(), @id, @userId, @sessionId, @platform, @token, @now)
+            on conflict (tenant_id, token) do update
+              set user_id = excluded.user_id, session_id = excluded.session_id, platform = excluded.platform, created_at = excluded.created_at
+            returning (xmax = 0)
+            """,
+            new { id = Ids.New(), userId, sessionId = context.SessionId, platform, token, now = clock.UtcNow }, ct);
+        await KeepNewestAsync(userId, ct);
+        if (inserted)
+        {
+            await outbox.EnqueueAsync(new PushSubscriptionCreated(userId, platform), ct);
+            await analytics.EmitAsync(AnalyticsEvents.MobilePushOptIn, new Dictionary<string, object?> { ["platform"] = platform }, ct);
+        }
+        return await StatusAsync(userId, ct);
+    }
+
+    /// <summary>Turns native push off for one device of the person. Another person's device is never touched.</summary>
+    public async Task<PushStatus> RemoveNativeAsync(Guid userId, NativePushRequest request, CancellationToken ct)
+    {
+        var removed = await session.ExecAsync(
+            "delete from notifications.native_push_device where user_id = @userId and token = @token",
+            new { userId, token = request.Token?.Trim() ?? "" }, ct);
+        if (removed > 0)
+        {
+            await outbox.EnqueueAsync(new PushSubscriptionRemoved(userId, "turned_off"), ct);
+        }
+        return await StatusAsync(userId, ct);
+    }
+
+    /// <summary>At most <see cref="MaxPerUser"/> devices per person, web and native counted together, the oldest dropped first.</summary>
+    private Task KeepNewestAsync(Guid userId, CancellationToken ct) =>
+        session.ExecAsync(
+            """
+            with devices as (
+              select 'web' as kind, id, created_at from notifications.push_subscription where user_id = @userId
+              union all
+              select 'native', id, created_at from notifications.native_push_device where user_id = @userId),
+            extra as (select kind, id from devices order by created_at desc, id offset @max),
+            web as (delete from notifications.push_subscription where id in (select id from extra where kind = 'web'))
+            delete from notifications.native_push_device where id in (select id from extra where kind = 'native')
+            """, new { userId, max = MaxPerUser }, ct);
+
+    /// <summary>A messaging registration token: letters, digits and the few marks the service uses, of a sane length.</summary>
+    private static bool IsToken(string token) =>
+        token.Length is >= 32 and <= 4096 && token.All(c => char.IsAsciiLetterOrDigit(c) || c is '_' or '-' or ':' or '.');
 
     /// <summary>Turns push off for one device of the person. Another person's device is never touched.</summary>
     public async Task<PushStatus> UnsubscribeAsync(Guid userId, PushUnsubscribeRequest request, CancellationToken ct)
@@ -106,6 +189,8 @@ public sealed class PushSubscriptions(IDbSession session, ITenantContext context
     {
         var removed = await session.ExecAsync(
             "delete from notifications.push_subscription where user_id = @userId and session_id = @sessionId", new { userId, sessionId }, ct);
+        removed += await session.ExecAsync(
+            "delete from notifications.native_push_device where user_id = @userId and session_id = @sessionId", new { userId, sessionId }, ct);
         if (removed > 0)
         {
             await outbox.EnqueueAsync(new PushSubscriptionRemoved(userId, reason), ct);
@@ -115,6 +200,7 @@ public sealed class PushSubscriptions(IDbSession session, ITenantContext context
     public async Task RemoveForUserAsync(Guid userId, string reason, CancellationToken ct)
     {
         var removed = await session.ExecAsync("delete from notifications.push_subscription where user_id = @userId", new { userId }, ct);
+        removed += await session.ExecAsync("delete from notifications.native_push_device where user_id = @userId", new { userId }, ct);
         if (removed > 0)
         {
             await outbox.EnqueueAsync(new PushSubscriptionRemoved(userId, reason), ct);
@@ -150,6 +236,7 @@ public sealed class PushDelivery(
     IDbSession session,
     ITenantContext context,
     IWebPush push,
+    INativePush native,
     IEntitlementService entitlements,
     ITenantMemberships memberships,
     IUserDirectory users,
@@ -167,6 +254,10 @@ public sealed class PushDelivery(
         string Link);
 
     private sealed record Device(Guid Id, string Endpoint, string P256dh, string Auth);
+
+    private sealed record NativeDevice(Guid Id, string Platform, string Token);
+
+    private sealed record Message(string Title, string Body, string Link, string Tag);
 
     public async Task<int> DeliverDueAsync(DateTimeOffset now, int batch, CancellationToken ct)
     {
@@ -188,7 +279,10 @@ public sealed class PushDelivery(
         {
             return 0;
         }
-        if (push.PublicKey is null || !await entitlements.IsEnabledAsync(Capabilities.MobilePush, ct))
+        var entitled = await entitlements.IsEnabledAsync(Capabilities.MobilePush, ct);
+        var web = entitled && push.PublicKey is not null;
+        var nativeOn = entitled && native.Available && await entitlements.IsEnabledAsync(Capabilities.MobileNativeShell, ct);
+        if (!web && !nativeOn)
         {
             foreach (var d in due)
             {
@@ -204,17 +298,25 @@ public sealed class PushDelivery(
                 await FinishAsync(d.Id, "dropped", "member_inactive", now, ct);
                 continue;
             }
-            var devices = await session.QueryAsync(
-                "select id, endpoint, p256dh, auth from notifications.push_subscription where user_id = @userId",
-                new { userId = d.UserId }, r => new Device(r.GetGuid(0), r.GetString(1), r.GetString(2), r.GetString(3)), ct);
-            if (devices.Count == 0)
+            var devices = web
+                ? await session.QueryAsync(
+                    "select id, endpoint, p256dh, auth from notifications.push_subscription where user_id = @userId",
+                    new { userId = d.UserId }, r => new Device(r.GetGuid(0), r.GetString(1), r.GetString(2), r.GetString(3)), ct)
+                : [];
+            var nativeDevices = nativeOn
+                ? await session.QueryAsync(
+                    "select id, platform, token from notifications.native_push_device where user_id = @userId",
+                    new { userId = d.UserId }, r => new NativeDevice(r.GetGuid(0), r.GetString(1), r.GetString(2)), ct)
+                : [];
+            if (devices.Count == 0 && nativeDevices.Count == 0)
             {
                 await FinishAsync(d.Id, "dropped", "no_device", now, ct);
                 continue;
             }
             var user = await users.GetAsync(d.UserId, ct);
             var locale = LocaleResolver.Resolve(user?.PreferredLocale, tenantLocale.EnabledLocales, tenantLocale.DefaultLocale);
-            var payload = Payload(d, locale);
+            var message = Compose(d, locale);
+            var payload = JsonSerializer.Serialize(new { title = message.Title, body = message.Body, link = message.Link, tag = message.Tag }, JsonDefaults.Options);
 
             int sent = 0, transient = 0;
             foreach (var device in devices)
@@ -234,6 +336,27 @@ public sealed class PushDelivery(
                         break;
                     default:
                         logger.LogWarning("Push delivery {DeliveryId} for tenant {TenantId} was refused: {Outcome}", d.Id, context.RequireTenant(), outcome);
+                        break;
+                }
+            }
+            foreach (var device in nativeDevices)
+            {
+                var outcome = await native.SendAsync(
+                    new NativePushMessage(device.Token, device.Platform, message.Title, message.Body, message.Link, message.Tag, TimeToLive, d.Urgent), ct);
+                switch (outcome)
+                {
+                    case NativePushOutcome.Sent:
+                        sent++;
+                        break;
+                    case NativePushOutcome.Unregistered:
+                        await session.ExecAsync("delete from notifications.native_push_device where id = @id", new { id = device.Id }, ct);
+                        await outbox.EnqueueAsync(new PushSubscriptionRemoved(d.UserId, "gone"), ct);
+                        break;
+                    case NativePushOutcome.Transient:
+                        transient++;
+                        break;
+                    default:
+                        logger.LogWarning("Native push delivery {DeliveryId} for tenant {TenantId} was refused: {Outcome}", d.Id, context.RequireTenant(), outcome);
                         break;
                 }
             }
@@ -258,12 +381,12 @@ public sealed class PushDelivery(
     }
 
     /// <summary>The message the device shows: the category and an invitation to open it, never the item's own words.</summary>
-    private string Payload(Due d, string locale)
+    private Message Compose(Due d, string locale)
     {
         var label = d.Mandatory ? $"[{localizer.Get("notifications.email.mandatory", locale)}] " : "";
         var title = Clip(label + localizer.Get($"notifications.push.category.{d.Category}", locale), MaxTitle);
         var body = Clip(localizer.Get("notifications.push.body", locale), MaxBody);
-        return JsonSerializer.Serialize(new { title, body, link = d.Link, tag = d.NotificationId.ToString("N") }, JsonDefaults.Options);
+        return new Message(title, body, d.Link, d.NotificationId.ToString("N"));
     }
 
     private static string Clip(string text, int max) => text.Length <= max ? text : text[..(max - 1)].TrimEnd() + "…";

@@ -47,6 +47,7 @@ export const routes: readonly Route[] = [
   { path: "/admin/branding/preview", tier: "other" },
   { path: "/admin/branding/governance", tier: "other" },
   { path: "/admin/branding/designs", tier: "other" },
+  { path: "/app-start", tier: "other" },
   { path: "/admin/branding/organizations", tier: "other" },
   { path: "/admin/calendars", tier: "other" },
   { path: "/admin/connections", tier: "other" },

@@ -69,6 +69,9 @@ jobs:
       - run: npm ci
       - name: Typecheck, literal-string lint, logical-CSS lint, missing-key gate
         run: npm run verify
+      # The store app's host, managed configuration and lock rules (spec 030 R3, ADR-0023); plain TypeScript, no install.
+      - name: Store app shell rules
+        run: node --test --experimental-strip-types ../../mobile/shell/test/rules.test.ts
       - run: npm run build
       # Exception: @img/sharp-libvips-* (LGPL-3.0-or-later, OSI approved) is the native image library that Next.js
       # installs as an optional dependency of sharp. It is dynamically loaded and unmodified. Recorded in

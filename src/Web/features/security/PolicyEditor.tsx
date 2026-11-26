@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/components/ui/FormField";
+import { RadioGroup } from "@/components/ui/RadioGroup";
 import { problemMessages } from "@/lib/notifications/types";
 import { ranges, stepUpIfAsked, type LockoutPreview, type SecurityPolicy } from "@/lib/security/types";
 
@@ -46,6 +47,8 @@ export function PolicyEditor({ initial, etag }: { initial: SecurityPolicy; etag:
   const [offlineItems, setOfflineItems] = useState(String(initial.offlineMaxItems));
   const [offlineMb, setOfflineMb] = useState(String(initial.offlineMaxMb));
   const [offlineDays, setOfflineDays] = useState(String(initial.offlineDays));
+  const [appLock, setAppLock] = useState<string>(initial.appLock);
+  const [appLockMinutes, setAppLockMinutes] = useState(String(initial.appLockMinutes));
   const [guestAllow, setGuestAllow] = useState(initial.guestAllowDomains.join("\n"));
   const [guestBlock, setGuestBlock] = useState(initial.guestBlockDomains.join("\n"));
   const [preview, setPreview] = useState<LockoutPreview | null>(null);
@@ -89,6 +92,7 @@ export function PolicyEditor({ initial, etag }: { initial: SecurityPolicy; etag:
       offlineDays: Number(offlineDays),
       guestAllowDomains: ranges(guestAllow),
       guestBlockDomains: ranges(guestBlock),
+      ...(policy.appLockAvailable ? { appLock, appLockMinutes: Number(appLockMinutes) } : {}),
       ...(needsConfirmation ? { confirmation } : {}),
     };
     try {
@@ -196,6 +200,14 @@ export function PolicyEditor({ initial, etag }: { initial: SecurityPolicy; etag:
         <FormField label={t("sessions.absolute")} hint={t("sessions.absoluteHint")} name="absoluteHours" type="number" min={1} max={72} value={absolute} onChange={(e) => setAbsolute(e.target.value)} />
         <FormField label={t("sessions.max")} hint={t("sessions.maxHint")} name="maxSessions" type="number" min={1} max={20} value={maxSessions} onChange={(e) => setMaxSessions(e.target.value)} />
         <FormField label={t("sessions.remember")} hint={t("sessions.rememberHint")} name="rememberDeviceDays" type="number" min={0} max={90} value={remember} onChange={(e) => setRemember(e.target.value)} />
+        {policy.appLockAvailable ? (
+          <>
+            <RadioGroup legend={t("sessions.appLock")} hint={t("sessions.appLockHint")} name="appLock" value={appLock} onChange={(e) => setAppLock(e.target.value)}
+              options={(["off", "optional", "required"] as const).map((v) => ({ value: v, label: t(`sessions.appLocks.${v}`) }))} />
+            <FormField label={t("sessions.appLockMinutes")} hint={t("sessions.appLockMinutesHint")} name="appLockMinutes" type="number" min={0} max={60}
+              value={appLockMinutes} onChange={(e) => setAppLockMinutes(e.target.value)} />
+          </>
+        ) : null}
       </section>
 
       <section className="security-section" aria-labelledby="security-offline-title">

@@ -119,3 +119,41 @@
   padding: var(--tb-space-xs) var(--tb-space-xs);
   border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
 }
+
+/* The store app's lock (spec 030 R3 MOB-023) covers the whole page until the phone confirms the person. */
+.app-lock {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--tb-space-md);
+  padding: var(--tb-space-lg);
+  background: var(--tb-color-surface-base);
+  color: var(--tb-color-text-primary);
+  text-align: center;
+}
+
+.app-lock h1 {
+  margin: 0;
+  font-size: var(--tb-font-size-xl);
+}
+
+.app-lock p {
+  max-inline-size: 24rem;
+  margin: 0;
+  color: var(--tb-color-text-secondary);
+}
+
+/* The store app's start page (spec 030 R3): the workspace address and one action. */
+.app-start-form {
+  display: grid;
+  gap: var(--tb-space-md);
+  justify-items: start;
+}
+
+.app-start-form > .field {
+  inline-size: 100%;
+}

@@ -1447,6 +1447,32 @@ public interface IWebPush
     Task<WebPushOutcome> SendAsync(WebPushTarget target, string payload, TimeSpan timeToLive, bool urgent, CancellationToken ct = default);
 }
 
+/// <summary>How a native push ended: sent, a token the device no longer has, a failure worth retrying, or refused.</summary>
+public enum NativePushOutcome
+{
+    Sent,
+    Unregistered,
+    Transient,
+    Rejected,
+    Unavailable,
+}
+
+/// <summary>One native push (spec 030 R3 MOB-022): the words the device shows, the page the tap opens and a tag that replaces an earlier one.</summary>
+public sealed record NativePushMessage(string Token, string Platform, string Title, string Body, string Link, string Tag, TimeSpan TimeToLive, bool Urgent);
+
+/// <summary>
+/// Native push for the store apps (spec 030 R3 MOB-022) through Firebase Cloud Messaging, which reaches Android
+/// directly and iOS through APNs. The service account key stays in the secret manager; the adapter signs its own
+/// OAuth token for the messaging scope only.
+/// </summary>
+public interface INativePush
+{
+    /// <summary>False when no messaging project is configured; native devices then get nothing.</summary>
+    bool Available { get; }
+
+    Task<NativePushOutcome> SendAsync(NativePushMessage message, CancellationToken ct = default);
+}
+
 /// <summary>A signed endpoint another module owns: where to send, and the tenant secret manager reference that signs.</summary>
 public sealed record WebhookEndpointRequest(string Name, string? Url, string? SecretRef);
 

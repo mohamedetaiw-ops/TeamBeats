@@ -24,6 +24,10 @@ public sealed class SignInMethodsReader(Sso.IdentityProviderStore providers, Mic
     {
         var provider = await providers.GetEnabledAsync(ct);
         return new(provider is not null, Microsoft.Extensions.Configuration.ConfigurationBinder.GetValue<bool>(configuration, DevSignInKey),
-            provider is { JitEnabled: true } ? provider.JitDomains : [], provider?.Kind);
+            provider is { JitEnabled: true } ? provider.JitDomains : [], provider?.Kind, provider is null ? [] : Hosts(provider.Issuer, provider.SsoUrl));
     }
+
+    private static List<string> Hosts(params string?[] addresses) =>
+        addresses.Select(a => Uri.TryCreate(a, UriKind.Absolute, out var uri) && uri.Scheme == Uri.UriSchemeHttps && uri.IsDefaultPort ? uri.IdnHost.ToLowerInvariant() : null)
+            .OfType<string>().Distinct(StringComparer.Ordinal).ToList();
 }

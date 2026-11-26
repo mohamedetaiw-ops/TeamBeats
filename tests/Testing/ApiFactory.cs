@@ -74,6 +74,8 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
 
     public FakePushService Push { get; } = new();
 
+    public FakeFcm Fcm { get; } = new();
+
     public FakeDns Dns { get; } = new();
 
     public FakeCertificates Certificates { get; } = new();
@@ -134,6 +136,7 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
             services.AddHttpClient(TeamBeats.Modules.AiGateway.OpenAiCompatible.LocalModelProvider.ClientName).ConfigurePrimaryHttpMessageHandler(() => LocalModels);
             services.AddHttpClient(TeamBeats.Primitives.SafeHttp.ClientName).ConfigurePrimaryHttpMessageHandler(() => Rest);
             services.AddHttpClient(TeamBeats.Modules.Integrations.WebPush.WebPushClient.ClientName).ConfigurePrimaryHttpMessageHandler(() => Push);
+            services.AddHttpClient(TeamBeats.Modules.Integrations.NativePush.FcmPushClient.ClientName).ConfigurePrimaryHttpMessageHandler(() => Fcm);
             services.AddHttpClient(TeamBeats.Modules.Tenancy.Domains.DohTxtLookup.ClientName).ConfigurePrimaryHttpMessageHandler(() => Dns);
             services.AddSingleton<TeamBeats.Modules.Tenancy.Domains.ICertificateProbe>(Certificates);
         });

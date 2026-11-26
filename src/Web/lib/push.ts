@@ -5,8 +5,30 @@
  * (spec 015 push channel); this file only asks the browser for a subscription, hands it to the API and forgets it.
  */
 
-/** Push availability for this person, as GET /api/v1/me/push answers. */
-export type PushStatus = { available: boolean; publicKey: string | null; devices: number };
+import { forgetNativePush, inShell, nativePushAsked, nativePushState, turnOffNativePush, turnOnNativePush } from "@/lib/mobile/shell";
+
+/** Push availability for this person, as GET /api/v1/me/push answers; native push is for the store app (spec 030 R3). */
+export type PushStatus = { available: boolean; publicKey: string | null; devices: number; nativeAvailable?: boolean };
+
+/** Whether this device can be offered push: native push in the store app, Web Push with the tenant's key elsewhere. */
+export function pushOffered(status: PushStatus): boolean {
+  return inShell() ? status.nativeAvailable === true : status.available && status.publicKey !== null;
+}
+
+/** What this device says about push: "unknown" until it answers. */
+export async function devicePushState(): Promise<"unsupported" | "blocked" | "off" | "on"> {
+  if (inShell()) return nativePushState();
+  if (!pushSupported()) return "unsupported";
+  if (Notification.permission === "denied") return "blocked";
+  const subscription = await deviceSubscription().catch(() => null);
+  return subscription && Notification.permission === "granted" ? "on" : "off";
+}
+
+/** True once this device has asked the person, so the push offer never asks twice (FR-006). */
+export async function pushAskedBefore(): Promise<boolean> {
+  if (inShell()) return nativePushAsked();
+  return !pushSupported() || Notification.permission !== "default";
+}
 
 /**
  * The one event modules dispatch after a meaningful action, such as a submitted leave or service request, so the push
@@ -41,6 +63,7 @@ export function rememberDecline(owner: string, now = Date.now()): void {
 
 /** True when this browser can receive Web Push at all. iOS before 16.4, and Safari outside an installed app, cannot. */
 export function pushSupported(): boolean {
+  if (inShell()) return true;
   return typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
 }
 
@@ -72,8 +95,9 @@ export async function deviceSubscription(): Promise<PushSubscription | null> {
 export type TurnOnResult = "on" | "denied" | "unsupported" | "failed";
 
 /** Asks the browser for permission, subscribes with the tenant's VAPID key and registers the device with the API. */
-export async function turnOnPush(publicKey: string): Promise<TurnOnResult> {
-  if (!pushSupported()) return "unsupported";
+export async function turnOnPush(publicKey: string | null): Promise<TurnOnResult> {
+  if (inShell()) return turnOnNativePush();
+  if (!pushSupported() || publicKey === null) return "unsupported";
   try {
     const permission = await Notification.requestPermission();
     if (permission !== "granted") return "denied";
@@ -106,6 +130,7 @@ function sameKey(a: Uint8Array, b: Uint8Array): boolean {
 
 /** Removes this device: from the API first, then from the browser, so no message is sent to a forgotten device. */
 export async function turnOffPush(): Promise<boolean> {
+  if (inShell()) return turnOffNativePush();
   const subscription = await deviceSubscription().catch(() => null);
   if (!subscription) return true;
   try {
@@ -127,6 +152,7 @@ export async function turnOffPush(): Promise<boolean> {
  * person to sign in on this device starts with push off.
  */
 export async function forgetDevicePush(): Promise<void> {
+  if (inShell()) return forgetNativePush();
   try {
     await (await deviceSubscription())?.unsubscribe();
   } catch {

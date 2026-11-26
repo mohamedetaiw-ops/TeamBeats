@@ -3350,5 +3350,9 @@
   "conflict.theme.design_not_draft": "لا يُرسل للمراجعة إلا مسودة أو تصميم أُعيد للتعديل",
   "conflict.theme.design_not_proposed": "هذا التصميم ليس بانتظار المراجعة",
   "conflict.theme.design_not_approved": "لا يُطبق على العلامة إلا تصميم معتمد",
-  "authz.denied.design_own_proposal": "يجب أن يراجع هذا التصميم شخص غير الذي أرسله للمراجعة"
+  "authz.denied.design_own_proposal": "يجب أن يراجع هذا التصميم شخص غير الذي أرسله للمراجعة",
+  "conflict.push.native_unavailable": "الإشعارات لتطبيق TeamBeats غير مهيأة لمساحة العمل هذه.",
+  "validation.push.native_token": "لم يقدم الجهاز تسجيلًا صالحًا للإشعارات.",
+  "validation.push.native_platform": "اختر Android أو iOS.",
+  "validation.security.app_lock": "اختر إيقاف أو اختياري أو إلزامي لقفل التطبيق."
 }

@@ -263,6 +263,18 @@
         }
       }
     },
+    "/api/v1/mobile/shell": {
+      "get": {
+        "tags": [
+          "Experience: mobile shell"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/screens/{token}": {
       "get": {
         "tags": [
@@ -8885,6 +8897,50 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/PushUnsubscribeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/push/native": {
+      "post": {
+        "tags": [
+          "Notifications: my notifications"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NativePushRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/push/native:remove": {
+      "post": {
+        "tags": [
+          "Notifications: my notifications"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NativePushRequest"
               }
             }
           },
@@ -47560,6 +47616,27 @@
           }
         }
       },
+      "NativePushRequest": {
+        "required": [
+          "token",
+          "platform"
+        ],
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "platform": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "NodeRequest": {
         "required": [
           "parentId",
@@ -51682,6 +51759,21 @@
             "items": {
               "type": "string"
             }
+          },
+          "appLock": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "appLockMinutes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -55695,6 +55787,9 @@
     },
     {
       "name": "Experience: offline"
+    },
+    {
+      "name": "Experience: mobile shell"
     },
     {
       "name": "Notifications: signage"

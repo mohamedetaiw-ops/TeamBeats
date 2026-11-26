@@ -21,3 +21,10 @@
 
 ## Tests
 Playwright mobile viewport suite at 360 px in ar and en for every route; push subscription lifecycle with a fake push service; offline cache wipe on sign-out; Confidential never cached; kiosk feature block by URL; cross-tenant badge refusal; lockout.
+
+## R3: native shells, native push, app lock, managed configuration, offline leave draft
+- **Slice 1, native push (T012, T013):** `notifications.native_push_device` (tenant, user, session, platform `android` or `ios`, token, created) under forced RLS; `POST /api/v1/me/push/native` and `POST /api/v1/me/push/native:remove`; `PushDelivery` sends to web and native devices of the person. `INativePush` in Integrations.Contracts with `FcmPushClient` (HTTP v1, OAuth token signed with RS256 from the service account key in `Integrations:Fcm`), a fake in tests. Unregistered tokens are removed at once. Capability: `mobile.push` and `mobile.native_shell`.
+- **Slice 2, shell policy (T014, T015):** `security.policy` gains `app_lock` and `app_lock_minutes`, changed with the rest of the policy (audited, four-eyes when on). `GET /api/v1/mobile/shell` gives the shell what it may do for this workspace: available, app lock and minutes, the sign-in hosts it may open, the push key kind. Settings in Security > Sessions.
+- **Slice 3, the shell (T016, T017):** a Capacitor shell in `mobile/shell` (ADR-0023) with no product pages of its own: workspace entry, MDM keys, host allow list, app lock and the push token hand-off to the PWA through a small bridge the web app feature-detects. Built and tested on device farms; store publishing waits for the store accounts (decision with Mohamed).
+- **Slice 4, offline leave draft (T018):** the leave form keeps a draft in the encrypted offline store while offline and offers to send it when online; nothing is sent without the person.
+

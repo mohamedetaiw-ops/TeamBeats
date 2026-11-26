@@ -34,7 +34,10 @@ public sealed record SecurityPolicyView(
     IReadOnlyList<string> GuestBlockDomains,
     string MfaProvider = PolicyService.DefaultProvider,
     bool MfaClaimsUnavailable = false,
-    PendingChangeView? PendingChange = null)
+    PendingChangeView? PendingChange = null,
+    string AppLock = SecurityPolicySnapshot.DefaultAppLock,
+    int AppLockMinutes = SecurityPolicySnapshot.DefaultAppLockMinutes,
+    bool AppLockAvailable = false)
 {
     public string ETag => PolicyService.ETag(Version);
 }
@@ -56,7 +59,9 @@ public sealed record SecurityPolicyRequest(
     int? OfflineMaxMb = null,
     int? OfflineDays = null,
     IReadOnlyList<string>? GuestAllowDomains = null,
-    IReadOnlyList<string>? GuestBlockDomains = null);
+    IReadOnlyList<string>? GuestBlockDomains = null,
+    string? AppLock = null,
+    int? AppLockMinutes = null);
 
 /// <summary>How many members would be refused by proposed tenant rules, from their sign-ins in the last 30 days (spec 026 section 10).</summary>
 public sealed record LockoutPreview(int PeopleOutside, string? YourAddress, bool YouWouldBeRefused);
@@ -134,7 +139,8 @@ public sealed partial class PolicyService(
         return new(p.IpAllow, p.IpBlock, p.AdminIpAllow, p.NetworkZones, p.RequireMfa, await MfaClaimSeenAsync(ct), p.StepUpMinutes, p.IdleMinutes,
             p.AbsoluteHours, p.MaxSessions, p.RememberDeviceDays, await entitlements.IsEnabledAsync(Capabilities.SecurityIpRulesScoped, ct), Caller(),
             Math.Max(p.Version, 1), p.OfflineMaxItems, p.OfflineMaxMb, p.OfflineDays, p.GuestAllowDomains ?? [], p.GuestBlockDomains ?? [],
-            provider, NoMfaClaimKinds.Contains(provider), await fourEyes.PendingAsync(FourEyesKinds.SecurityPolicy, ct));
+            provider, NoMfaClaimKinds.Contains(provider), await fourEyes.PendingAsync(FourEyesKinds.SecurityPolicy, ct), p.AppLock, p.AppLockMinutes,
+            await entitlements.IsEnabledAsync(Capabilities.MobileNativeShell, ct));
     }
 
     /// <summary>Guest domain rules (section 14): lower case domain names, no duplicates, at most 200.</summary>
@@ -256,6 +262,12 @@ public sealed partial class PolicyService(
         var offlineDays = Number(request.OfflineDays, current.OfflineDays, 1, 30, "offlineDays", errors);
         var guestAllow = Domains(request.GuestAllowDomains, current.GuestAllowDomains, "guestAllowDomains", errors);
         var guestBlock = Domains(request.GuestBlockDomains, current.GuestBlockDomains, "guestBlockDomains", errors);
+        var appLock = request.AppLock?.Trim() ?? current.AppLock;
+        if (!SecurityPolicySnapshot.AppLocks.Contains(appLock))
+        {
+            errors.Add("appLock", "validation.security.app_lock");
+        }
+        var appLockMinutes = Number(request.AppLockMinutes, current.AppLockMinutes, 0, 60, "appLockMinutes", errors);
         errors.ThrowIfAny();
 
         // Admin area and per role network rules are in Workplace Plus and above (section 9).
@@ -263,9 +275,14 @@ public sealed partial class PolicyService(
         {
             await entitlements.DemandAsync(Capabilities.SecurityIpRulesScoped, ct);
         }
+        // The app lock applies to the store apps only, so it is set where the package has them (spec 030 MOB-023).
+        if (appLock != current.AppLock || appLockMinutes != current.AppLockMinutes)
+        {
+            await entitlements.DemandAsync(Capabilities.MobileNativeShell, ct);
+        }
 
         var next = new SecurityPolicySnapshot(allow, block, admin, zones, requireMfa, stepUp, idle, absolute, maxSessions, remember, current.Version + 1,
-            offlineItems, offlineMb, offlineDays, guestAllow, guestBlock);
+            offlineItems, offlineMb, offlineDays, guestAllow, guestBlock, appLock, appLockMinutes);
         var caller = Caller();
         var callerAddress = caller is null ? null : IPAddress.Parse(caller);
         if (NetworkRules.Refusal(next, callerAddress, adminArea: true) is not null && NetworkRules.Refusal(current, callerAddress, adminArea: true) is null
@@ -291,13 +308,14 @@ public sealed partial class PolicyService(
             update security.policy set ip_allow = @allow::cidr[], ip_block = @block::cidr[], admin_ip_allow = @admin::cidr[], network_zones = @zones,
               require_mfa = @mfa, step_up_minutes = @stepUp, idle_minutes = @idle, absolute_hours = @absolute, max_sessions = @maxSessions,
               remember_device_days = @remember, offline_max_items = @offlineItems, offline_max_mb = @offlineMb, offline_days = @offlineDays,
-              guest_allow_domains = @guestAllow, guest_block_domains = @guestBlock, version = @version, updated_at = @now, updated_by = @actor
+              guest_allow_domains = @guestAllow, guest_block_domains = @guestBlock, app_lock = @appLock, app_lock_minutes = @appLockMinutes,
+              version = @version, updated_at = @now, updated_by = @actor
             """,
             new
             {
                 allow = allow.ToArray(), block = block.ToArray(), admin = admin.ToArray(), zones = Jsonb.From(zones), mfa = requireMfa, stepUp, idle, absolute,
                 maxSessions, remember, offlineItems, offlineMb, offlineDays, guestAllow = guestAllow.ToArray(), guestBlock = guestBlock.ToArray(),
-                version = next.Version, now = clock.UtcNow, actor = context.ActorId,
+                appLock, appLockMinutes, version = next.Version, now = clock.UtcNow, actor = context.ActorId,
             }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.SecurityPolicyChanged, "security_policy", null,
             Changes: new { settings = changed, before = Values(current), after = Values(next) }), ct);
@@ -325,7 +343,7 @@ public sealed partial class PolicyService(
         ipAllow = p.IpAllow, ipBlock = p.IpBlock, adminIpAllow = p.AdminIpAllow, networkZones = p.NetworkZones, requireMfa = p.RequireMfa,
         stepUpMinutes = p.StepUpMinutes, idleMinutes = p.IdleMinutes, absoluteHours = p.AbsoluteHours, maxSessions = p.MaxSessions,
         rememberDeviceDays = p.RememberDeviceDays, offlineMaxItems = p.OfflineMaxItems, offlineMaxMb = p.OfflineMaxMb, offlineDays = p.OfflineDays,
-        guestAllowDomains = p.GuestAllowDomains ?? [], guestBlockDomains = p.GuestBlockDomains ?? [],
+        guestAllowDomains = p.GuestAllowDomains ?? [], guestBlockDomains = p.GuestBlockDomains ?? [], appLock = p.AppLock, appLockMinutes = p.AppLockMinutes,
     };
 
     private static List<string> Changed(SecurityPolicySnapshot a, SecurityPolicySnapshot b)
@@ -346,6 +364,8 @@ public sealed partial class PolicyService(
         if (a.OfflineDays != b.OfflineDays) result.Add("offlineDays");
         if (!(a.GuestAllowDomains ?? []).SequenceEqual(b.GuestAllowDomains ?? [])) result.Add("guestAllowDomains");
         if (!(a.GuestBlockDomains ?? []).SequenceEqual(b.GuestBlockDomains ?? [])) result.Add("guestBlockDomains");
+        if (a.AppLock != b.AppLock) result.Add("appLock");
+        if (a.AppLockMinutes != b.AppLockMinutes) result.Add("appLockMinutes");
         return result;
     }
 

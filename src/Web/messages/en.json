@@ -28,6 +28,32 @@
       "message": "We will tell you when something needs you, such as an approval or a reply. You can change this any time in notification preferences.",
       "turnOn": "Turn on",
       "notNow": "Not now"
+    },
+    "lock": {
+      "title": "TeamBeats is locked",
+      "message": "Unlock with your face, fingerprint or phone passcode to carry on.",
+      "failed": "The phone did not confirm it was you. Try again.",
+      "reason": "Unlock TeamBeats",
+      "cancel": "Cancel",
+      "unlock": "Unlock",
+      "settingsTitle": "App lock",
+      "settingsHint": "Ask for your face, fingerprint or phone passcode when the app comes back after {minutes} minutes.",
+      "choice": "Lock the app on this phone",
+      "required": "Your organization requires the app lock on this phone."
+    },
+    "start": {
+      "title": "Open your workspace",
+      "intro": "Type the address your organization gave you for TeamBeats.",
+      "workspace": "Workspace address",
+      "workspaceHint": "For example contoso.teambeats.app",
+      "open": "Open",
+      "invalid": "Type an address like contoso.teambeats.app.",
+      "problems": {
+        "not_available": "This workspace does not offer the TeamBeats app. Ask your administrator, or open it in the browser.",
+        "unreachable": "The workspace did not answer. Check the address and your connection, then try again.",
+        "managed_invalid": "Your phone management set a workspace address that is not valid. Ask your IT team."
+      },
+      "problemTitle": "The app could not open that workspace"
     }
   },
   "home": {
@@ -4221,7 +4247,16 @@
         "max": "Most sessions per person",
         "maxHint": "Leave empty for no limit. The oldest session ends when a new one goes over the limit.",
         "remember": "Remember a device for, in days",
-        "rememberHint": "0 means never. Longer periods ask for the second factor less often."
+        "rememberHint": "0 means never. Longer periods ask for the second factor less often.",
+        "appLock": "Lock the TeamBeats app",
+        "appLockHint": "On phones with the store app, unlocking uses the face, fingerprint or passcode of the device. It never signs anyone in.",
+        "appLocks": {
+          "off": "Off",
+          "optional": "Each person chooses",
+          "required": "Required"
+        },
+        "appLockMinutes": "Lock after, in minutes in the background",
+        "appLockMinutesHint": "0 locks as soon as the app leaves the screen. Device management can make this shorter, never longer."
       },
       "offline": {
         "title": "Offline reading on devices",
@@ -13569,7 +13604,15 @@
         "start": "Choose the first day",
         "end": "Choose the last day",
         "hours": "Enter the hours"
-      }
+      },
+      "offline": "No connection",
+      "offlineHint": "You can still fill in the request. It is kept on this device and sent only when you press submit again with a connection.",
+      "saveDraft": "Keep on this device",
+      "draftSaved": "Kept on this device",
+      "draftSavedHint": "Nothing has been sent yet. When you are back online, check the request and press submit.",
+      "draftFailed": "The request could not be kept on this device. Try again when you are online.",
+      "draftRestored": "Your request from earlier",
+      "draftRestoredHint": "Kept on this device on {at} while you had no connection. Check it and press submit to send it."
     },
     "mine": {
       "title": "My requests",

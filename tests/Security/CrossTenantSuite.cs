@@ -67,6 +67,10 @@ public sealed class CrossTenantSuite(TenantWorld world, ITestOutputHelper output
         // edge asks whether to issue a certificate for a host. Both answer only for verified domains; CustomDomainTests covers them.
         "GET /api/v1/site/presentation",
         "GET /api/v1/domains/tls-allowed",
+        // Spec 030 R3 MOB-021: the store app asks what it may do with a workspace before anyone signs in; it answers only the
+        // lock, the sign-in hosts and whether the app and native push are offered. MobileShellTests covers the package,
+        // another tenant and a host that is not a tenant's.
+        "GET /api/v1/mobile/shell",
     ];
 
     private IReadOnlyList<(string Method, string Pattern)> TenantRoutes() =>
