@@ -35,9 +35,15 @@ public sealed record PerformanceReport(int Samples, IReadOnlyList<VitalsRow> Row
 /// <summary>A task flow on the outcome event contract; the rate is null when fewer people than the minimum started it.</summary>
 public sealed record OutcomeFlow(string Flow, int Started, int Completed, int Abandoned, double? CompletionRate, string? DropOffStep);
 
+/// <summary>
+/// Usefulness of one personalized or recommending surface (spec 021 R3, FR-024): people it was shown to, and of them who
+/// opened or dismissed something; the counts and rate are null when fewer people than the minimum saw it.
+/// </summary>
+public sealed record RecommendationUsefulness(string Surface, int People, int? Opened, int? Dismissed, double? OpenRate);
+
 public sealed record ExperienceAnalyticsView(DateOnly From, DateOnly To, int MinGroupSize, IReadOnlyList<ExperienceTemplateRow> Templates,
     IReadOnlyList<ExperienceCount> Layouts, IReadOnlyList<ExperienceScopeRow> Scopes, PersonalizationReport Personalization, PerformanceReport Performance,
-    IReadOnlyList<OutcomeFlow> Outcomes);
+    IReadOnlyList<OutcomeFlow> Outcomes, IReadOnlyList<RecommendationUsefulness>? Recommendations = null);
 
 /// <summary>
 /// Experience dashboards (spec 021 US9, FR-017 to FR-021, T015): template usage, layout distribution and template version
@@ -96,7 +102,35 @@ public sealed class ExperienceAnalytics(IDbSession session, IEntitlementService 
         personalization = personalization with { Units = personalization.Units.Select(u => u with { Names = Name(u.Group) }).ToList() };
         var performance = await PerformanceAsync(pages, since, until, ct);
         var outcomes = await OutcomesAsync(since, until, min, ct);
-        return new ExperienceAnalyticsView(start, end, min, templateRows, layouts, scopes, personalization, performance, outcomes);
+        var recommendations = await RecommendationsAsync(since, until, min, ct);
+        return new ExperienceAnalyticsView(start, end, min, templateRows, layouts, scopes, personalization, performance, outcomes, recommendations);
+    }
+
+    /// <summary>
+    /// Per surface, the people something was shown to and, of them, who opened or dismissed it. Counted by person, not by
+    /// event, so nobody weighs more for using it often, and never broken down further than the surface.
+    /// </summary>
+    private async Task<IReadOnlyList<RecommendationUsefulness>> RecommendationsAsync(DateTimeOffset from, DateTimeOffset to, int min, CancellationToken ct)
+    {
+        var rows = await session.QueryAsync(
+            """
+            select surface, count(*) filter (where shown), count(*) filter (where shown and opened), count(*) filter (where shown and dismissed)
+            from (
+              select fields->>'surface' as surface, user_key,
+                     bool_or(fields->>'outcome' = 'shown') as shown, bool_or(fields->>'outcome' = 'opened') as opened,
+                     bool_or(fields->>'outcome' = 'dismissed') as dismissed
+              from analytics.event where name = @name and user_key is not null and occurred_at >= @from and occurred_at < @to
+              group by 1, 2) people
+            group by surface
+            """, new { name = AnalyticsEvents.RecommendationOutcome, from, to },
+            r => (Surface: r.GetString(0), Shown: (int)r.GetInt64(1), Opened: (int)r.GetInt64(2), Dismissed: (int)r.GetInt64(3)), ct);
+        return [.. AnalyticsEvents.RecommendationSurfaces.Order(StringComparer.Ordinal).Select(surface =>
+        {
+            var row = rows.FirstOrDefault(r => r.Surface == surface);
+            return row.Shown < min || row.Shown == 0
+                ? new RecommendationUsefulness(surface, row.Shown, null, null, null)
+                : new RecommendationUsefulness(surface, row.Shown, row.Opened, row.Dismissed, Math.Round((double)row.Opened / row.Shown, 3));
+        })];
     }
 
     private sealed record Personal(string Unit, bool Customized, bool Reset);

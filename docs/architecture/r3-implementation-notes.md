@@ -166,6 +166,28 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - The admin page is `/admin/analytics/kpi-tiles`; the permission picker offers the permissions the workspace's roles grant.
 - Gaps: a location dashboard e2e with readings is not possible yet, since locations come only from directory sync; the integration suite covers the tiles on the dashboard. Tiles show the latest value only, without a trend.
 
+
+## Spec 021 R3 slice 2: usefulness of personalization and recommendations (T023)
+
+- Event `recommendation.outcome` (nonessential, user keyed) with `surface` in `search`, `assistant`, `learning` and `outcome` in `shown`, `opened`, `dismissed`. `SearchService` sends `shown` when a page holds a result ranked from use; `AssistantSuggestions` sends `shown` when it offers questions and `dismissed` when the person turns them off; Learning `Recommendations` sends `shown` and `dismissed`. The search results page, the assistant panel and the recommended courses send `opened`. The suggestions and recommendations GET routes now commit so the outbox event goes out.
+- `GET /api/v1/analytics/experience` gains `recommendations`: people shown something per surface and, at or above the minimum group size, how many opened or dismissed and the opened rate. Shown on the experience dashboard as "Personalization and recommendations".
+- Defaults recorded in the plan: judged samples stay the spec 034 search sets (unpersonalized); quick navigation is not a surface; no unit or location breakdown.
+
+## Spec 021 R3 slice 3: governed experience experiments (T024)
+
+- Experience module: `Personalization.Experiments`, tables `experience.experiment` (one open per page, unique partial index) and `experience.experiment_consent`, migration 0023. Routes `GET/POST /api/v1/experience/experiments`, `POST .../{id}/approve`, `POST .../{id}/stop`, `GET/PUT /api/v1/me/experiments`. Capability `analytics.experiments` (Enterprise and Government, already in the catalogue).
+- `PageService.RenderAsync` asks `Experiments.ArmAsync` for the viewer: running experiment, package, consent, unit scope, not a kiosk; the arm is `SHA-256(experiment:person) % 100 < percent`. The variant shows its release; `experiment.exposure` (server only) is sent and the render route now commits so the outbox event goes out.
+- Analytics module: `ExperimentResults` at `GET /api/v1/analytics/experiments/{id}` counts people per arm from exposures and, after first exposure, `task.outcome` complete and `content.viewed`, with the minimum group size. Analytics reads no Experience table.
+- Web: Analytics > Experiments (`/analytics/experiments`) to propose, approve, stop and read results; "Take part in page experiments" on the preferences page. Tests: `ExperimentTests` (2), `experiments.spec.ts` (en and ar, axe).
+## Spec 021 R3 slice 4: analytics API (T025)
+
+- Analytics module: `AnalyticsPublicEndpoints` maps `GET /api/public/v1/analytics/metrics` and `POST /api/public/v1/analytics/query` on the public API group, demanding `analytics.api` and the scope `analytics:read` (PublicApi.Contracts `ScopeCatalogue`, delegated only, admin consent, capabilities `api.public` and `analytics.api`). Both call `Workspace` as the consenting person, so coverage and small group rules are unchanged. Scope label `apiAccess.scope.analytics_read` in English and Arabic. Tests: `PublicAnalyticsApiTests` (2).
+## Spec 021 R3 slice 5: benchmarks across tenants (T026)
+
+- Analytics migration 0008: `analytics.policy.benchmarks` and `benchmarks_week`, the cross tenant table `analytics.benchmark_contribution` (no RLS, no grant to tb_app, listed in `docs/architecture/rls-exceptions.md`) and three security definer functions. Entitlements migration 0060 adds `analytics.benchmarks` for Enterprise and Government.
+- `AnalyticsBenchmarks` (routes `GET/PUT /api/v1/analytics/benchmarks`) and `ContributeAsync` in `AnalyticsMaintenanceWorker`, once per week per tenant. Members are the tenant's active memberships (`ITenantMemberships`); active people are the whole tenant row of `analytics.adoption_weekly`.
+- Web: Analytics > Benchmarks (`/analytics/benchmarks`) with the switch for tenant administrators and the figures table. Tests: `BenchmarkTests` (2), `benchmarks.spec.ts`.
+- Gap: the figures are for the last complete week only; no trend across weeks yet.
 ## Spec 019 R3 slice 1: Oracle HCM and SAP SuccessFactors packs (T015)
 - The named packs are presets, not new adapters: the stored settings are HR REST settings, so every HR path (sync, live read, payslips, leave, data change) keeps one implementation. The preset decides the paths and paging; a tenant may override single fields. Recorded default: the first entry of each Oracle list (names, emails, work relationships, assignments, managers) is used, as Oracle lists the primary first; a suspended assignment counts as active.
 - SuccessFactors returns active users only unless asked, so the preset filters on `status in 't','f','T','F'` to see leavers (FR-020). Its `/Date(ms)/` values are read by `HrMapping` for every HR pack.
@@ -333,3 +355,30 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - Quick navigation orders matches by the person's own use in the last 90 days and marks those moved up as ranked from their use. Contract `IBehaviorSignals` (Experience.Contracts: `ActiveAsync`, `UsageAsync(kind)`) is for specs 012, 014 and 021.
 - Defaults recorded: one signal kind (pages); no model; a policy change applies at once; turning the policy off keeps signals until they age out but nothing reads them.
 - Pages: "Personalization from use" on the shell settings page where the package has the feature; the choice on the preferences page only when the tenant turned it on. Tests: `BehaviorPersonalizationTests` (3), `behavior-personalization.spec.ts` (en and ar, axe).
+
+## Spec 012 R3: personalized ranking (T017, T018)
+
+- `SearchService.SearchAsync` takes `personalize`, set only by the in-app `GET /api/v1/search`. It reads the person's page use from `IBehaviorSignals` (spec 008), which is empty unless personalization applies to them, looks up each candidate's link in `search.unit`, and fuses the candidates they opened, most used first, as a third reciprocal rank list. Best bets go first after that and the permission check runs on the same candidates, so items, totals and facets do not change.
+- Results ranked from use carry `personalized: true` and the results page marks them "Ranked from your use". The public API, agent tools and saved search alerts call without personalization; judged query sets run as the system and never have signals.
+- Defaults recorded: no capability key of its own (follows `experience.behavioral_personalization`); one signal kind (pages opened); every candidate the person opened is marked, not only those that moved. Tests: `SearchPersonalizationTests` (2), `search-personalization.spec.ts` (en and ar, axe).
+
+## Spec 014 R3: proactive suggestions (T018, T019)
+
+- `GET /api/v1/assistant/suggestions?path=` (Agents module, `AssistantSuggestions`) offers up to three questions about the item a page shows. Recognised pages: `/content/read/{id}`, `/documents/{id}`, `/policies/{id}` (policies also need `ai.policy_qa`). The item is checked through `ISearchRetrieval.ItemAsync` as the person, so an unreadable item, one the AI ceiling withholds, or an unknown one gives an empty list. The response holds keys and the item title; the panel words the question and sends it as a first turn with the item's scope, which now accepts `content` and `documents` as well as `policies`.
+- Capability `ai.assistant.suggestions` (Workplace Plus, Enterprise and Government). The tenant switch is `suggestionsEnabled` on the assistant settings (on by default, audited `assistant.suggestions_changed`); the person's switch is `agents.assistant_preference` via `PUT /api/v1/assistant/suggestions/preference`, shown on the preferences page and as "Don't suggest questions" in the panel.
+- Defaults recorded: rules, no model call and nothing stored for a suggestion; only the assistant shows them, never notifications; three item page kinds; two questions per kind. Tests: `AssistantSuggestionTests` (3), `assistant-suggestions.spec.ts` (en and ar, axe); `PolicyQuestionTests` now uses an unsupported source for the bad scope case.
+
+## Spec 032 R3 slice 1: template recommendations (T033, T034)
+
+- Experience module: `Templates/TemplateRecommendations` behind `GET /api/v1/experience/template-recommendations`. Rules only (no AI Gateway call): purpose ranks three platform templates, a phone viewport lifts L01, L06 and L07 templates, density picks the variant and lifts fitting region counts; at most three results; tenant feature controls respected. Validation keys `validation.experience.recommendation_*`.
+- Web: "Help me choose" in `features/builder/TemplateChooser.tsx` (`builder.recommend.*`), marking cards with `data-recommended` and a Recommended badge. Tests: `TemplateRecommendationTests`, `template-recommendations.spec.ts`.
+
+## Spec 032 R3 slice 2: tenant-built components in a sandbox (T035 to T037)
+
+- Experience migration 0024: `experience.tenant_component` and `experience.tenant_component_version` (immutable versions with hosts, context keys, events, height, the document and its SHA-256, review status), both under forced RLS. `Sandbox/TenantComponents` under `experience.custom_components` and `component.enable` for the whole tenant: `GET/POST /api/v1/experience/tenant-components`, `PUT .../{id}/enablement` (needs an approved version), `GET /api/v1/experience/sandbox/{id}` (the live contract for members) and `GET /api/v1/experience/sandbox/{id}/{version}` (the document; the live version for members, any version for managers to try it). Audit `component.submitted`, `component.reviewed`, `component.enabled`, `component.disabled`.
+- Platform review on the platform host: `GET /api/v1/platform/component-reviews` (each tenant read in its own context, component tables only), `GET .../{tenantId}/{id}/{version}/document`, `POST .../{tenantId}/{id}/{version}` approve or reject with a reason; final once reviewed; audited in the tenant and in the platform audit. No platform web console exists yet, so the review is API only like the other platform operations.
+- The document is served with `SandboxPolicy`: CSP `sandbox allow-scripts` (an opaque origin, which is ADR-0012's "separate origin" without another host name, so no DNS or certificate per tenant is needed), `default-src 'none'`, inline script and style only, `connect-src` and `img-src` limited to the declared HTTPS origins, `frame-ancestors 'self'`, `no-store`, no referrer, `nosniff`.
+- On pages the platform component `sandbox.tenant_component@1` (property `component`, capability `experience.custom_components`) frames it: the web placement fetches the live contract, renders `iframe sandbox="allow-scripts"` inside the shared Widget frame, sends `tb.context` with only the declared context keys and a fixed list of theme tokens, and accepts only `tb.height` (80 to 1200) from that frame's window. Page validation (`TenantComponents.FindingsAsync`) blocks a fourth framed component and, at publish, one that is not enabled with an approved version.
+- Web: Pages > Your components (`/admin/pages/components`) to send versions, try a version in its sandbox and turn a component on. Tests: `TenantComponentTests` (2), `tenant-components.spec.ts`.
+- Gaps: events a tenant component declares are checked at submission but not yet carried onto the page event channel; the builder offers the component key as a text field rather than a list of the tenant's components.
+

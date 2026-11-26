@@ -19,10 +19,10 @@ public sealed record ConversationView(Guid Id, string Title, DateTimeOffset Crea
 public sealed record FeedbackRequest(bool? Helpful, string? Reason);
 
 /// <summary>The tenant's assistant settings. <paramref name="GuestsAllowed"/> lets guests use the assistant (AST-022), off by default.</summary>
-public sealed record AssistantSettingsView(int RetentionDays, DateTimeOffset? UpdatedAt, bool GuestsAllowed = false);
+public sealed record AssistantSettingsView(int RetentionDays, DateTimeOffset? UpdatedAt, bool GuestsAllowed = false, bool SuggestionsEnabled = true);
 
 /// <summary>A settings change; a field left out keeps its value.</summary>
-public sealed record AssistantSettingsRequest(int? RetentionDays, bool? GuestsAllowed = null);
+public sealed record AssistantSettingsRequest(int? RetentionDays, bool? GuestsAllowed = null, bool? SuggestionsEnabled = null);
 
 /// <summary>
 /// Conversation history, feedback and retention (spec 014 T006, US4, FR-008, FR-009). A person sees and deletes only
@@ -151,8 +151,8 @@ public sealed class AssistantHistory(IDbSession session, ITenantContext context,
 
     private async Task<AssistantSettingsView> CurrentAsync(CancellationToken ct)
     {
-        var row = await session.QueryAsync("select retention_days, updated_at, guests_allowed from agents.assistant_settings", null,
-            r => new AssistantSettingsView(r.GetInt32(0), r.GetFieldValue<DateTimeOffset>(1), r.GetBoolean(2)), ct);
+        var row = await session.QueryAsync("select retention_days, updated_at, guests_allowed, suggestions_enabled from agents.assistant_settings", null,
+            r => new AssistantSettingsView(r.GetInt32(0), r.GetFieldValue<DateTimeOffset>(1), r.GetBoolean(2), r.GetBoolean(3)), ct);
         return row.Count == 0 ? new AssistantSettingsView(DefaultRetentionDays, null) : row[0];
     }
 
@@ -162,19 +162,20 @@ public sealed class AssistantHistory(IDbSession session, ITenantContext context,
         var by = context.RequireUser();
         var current = await CurrentAsync(ct);
         var days = request.RetentionDays ?? current.RetentionDays;
-        if (request.RetentionDays is null && request.GuestsAllowed is null || days < 1 || days > MaxRetentionDays)
+        if (request.RetentionDays is null && request.GuestsAllowed is null && request.SuggestionsEnabled is null || days < 1 || days > MaxRetentionDays)
         {
             throw AppException.Validation("retentionDays", "validation.assistant.retention");
         }
         var guests = request.GuestsAllowed ?? current.GuestsAllowed;
+        var suggestions = request.SuggestionsEnabled ?? current.SuggestionsEnabled;
         var now = clock.UtcNow;
         await session.ExecAsync(
             """
-            insert into agents.assistant_settings (tenant_id, retention_days, guests_allowed, updated_at, updated_by)
-            values (platform.current_tenant_id(), @days, @guests, @now, @by)
+            insert into agents.assistant_settings (tenant_id, retention_days, guests_allowed, suggestions_enabled, updated_at, updated_by)
+            values (platform.current_tenant_id(), @days, @guests, @suggestions, @now, @by)
             on conflict (tenant_id) do update set retention_days = excluded.retention_days, guests_allowed = excluded.guests_allowed,
-              updated_at = excluded.updated_at, updated_by = excluded.updated_by
-            """, new { days, guests, now, by }, ct);
+              suggestions_enabled = excluded.suggestions_enabled, updated_at = excluded.updated_at, updated_by = excluded.updated_by
+            """, new { days, guests, suggestions, now, by }, ct);
         if (current.RetentionDays != days)
         {
             await audit.WriteAsync(new AuditEntry(AuditActions.AssistantRetentionChanged, "assistant_settings", "retention",
@@ -185,7 +186,12 @@ public sealed class AssistantHistory(IDbSession session, ITenantContext context,
             await audit.WriteAsync(new AuditEntry(AuditActions.AssistantGuestsChanged, "assistant_settings", "guests",
                 Changes: new { old = current.GuestsAllowed, @new = guests }), ct);
         }
-        return new AssistantSettingsView(days, now, guests);
+        if (current.SuggestionsEnabled != suggestions)
+        {
+            await audit.WriteAsync(new AuditEntry(AuditActions.AssistantSuggestionsChanged, "assistant_settings", "suggestions",
+                Changes: new { old = current.SuggestionsEnabled, @new = suggestions }), ct);
+        }
+        return new AssistantSettingsView(days, now, guests, suggestions);
     }
 
     /// <summary>

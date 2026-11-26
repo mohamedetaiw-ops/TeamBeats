@@ -118,6 +118,56 @@ public sealed class ExperienceAnalyticsTests(TenantWorld world)
         Assert.Equal(HttpStatusCode.BadRequest, (await t["admin"].Client.GetAsync($"{Experience}?from=2026-03-01&to=2026-01-01")).StatusCode);
     }
 
+    private static object Recommendation(string surface, string outcome) =>
+        new { name = AnalyticsEvents.RecommendationOutcome, channel = "web", fields = new { surface, outcome } };
+
+    [Fact]
+    public async Task Recommendation_usefulness_counts_people_per_surface_and_hides_small_groups()
+    {
+        // Spec 021 R3 FR-024 (T023): six people were shown personalized search results, three opened one (one of them
+        // twice), one dismissed; only two saw course recommendations; nobody saw assistant suggestions.
+        var (t, _, _, _) = await FreshAsync();
+        for (var i = 1; i <= 6; i++)
+        {
+            var events = new List<object> { Recommendation("search", "shown") };
+            if (i <= 3)
+            {
+                events.Add(Recommendation("search", "opened"));
+            }
+            if (i == 1)
+            {
+                events.Add(Recommendation("search", "opened"));
+            }
+            if (i == 6)
+            {
+                events.Add(Recommendation("search", "dismissed"));
+            }
+            if (i <= 2)
+            {
+                events.Add(Recommendation("learning", "shown"));
+                events.Add(Recommendation("learning", "opened"));
+            }
+            await SendAsync(t, "d" + i, [.. events]);
+        }
+        // An opening without a showing is not counted, and an unknown surface is dropped.
+        await SendAsync(t, "head", Recommendation("search", "opened"), Recommendation("home", "shown"));
+        await DispatchAsync();
+
+        var rows = (await OkAsync(t["admin"].Client.GetAsync(Experience))).GetProperty("recommendations").EnumerateArray()
+            .ToDictionary(r => r.GetProperty("surface").GetString()!);
+        Assert.Equal(["assistant", "learning", "search"], rows.Keys.Order());
+        var search = rows["search"];
+        Assert.Equal(6, search.GetProperty("people").GetInt32());
+        Assert.Equal(3, search.GetProperty("opened").GetInt32());
+        Assert.Equal(1, search.GetProperty("dismissed").GetInt32());
+        Assert.Equal(0.5, search.GetProperty("openRate").GetDouble());
+        // Two people are under the minimum group size: their surface shows how many but nothing about what they did.
+        Assert.Equal(2, rows["learning"].GetProperty("people").GetInt32());
+        Assert.Equal(JsonValueKind.Null, rows["learning"].GetProperty("opened").ValueKind);
+        Assert.Equal(JsonValueKind.Null, rows["learning"].GetProperty("openRate").ValueKind);
+        Assert.Equal(0, rows["assistant"].GetProperty("people").GetInt32());
+    }
+
     [Fact]
     public async Task Only_whole_tenant_viewers_with_the_package_see_it_and_tenants_stay_apart()
     {

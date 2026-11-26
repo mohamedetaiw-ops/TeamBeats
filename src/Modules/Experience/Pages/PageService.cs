@@ -124,7 +124,9 @@ public sealed partial class PageService(
     Fragments fragments,
     Components.FeatureControls controls,
     Components.ComponentDeployments deployments,
-    Sharing.OrgSharing sharing)
+    Sharing.OrgSharing sharing,
+    Personalization.Experiments experiments,
+    Sandbox.TenantComponents tenantComponents)
 {
     private sealed record PageRow(Guid Id, Guid? OrgUnitId, string Slug, string TemplateId, string TemplateVersion, int? CurrentRelease);
 
@@ -669,6 +671,11 @@ public sealed partial class PageService(
         {
             throw AppException.NotFound();
         }
+        // A running experiment (spec 021 R3, FR-022) shows its variant release to the consenting people allocated to it.
+        if (await experiments.ArmAsync(page.Id, (await audiences.ViewerAsync(ct)).Units, ct) is { Variant: true } arm)
+        {
+            current = arm.Release;
+        }
         var snapshot = await ReleaseAsync(page.Id, current, ct);
         // A fragment shows its current version on every page that places it (R2 T027); the release keeps only the reference.
         // A deployed component major (R2 T031) shows on the release through its migration hook, without a republish.
@@ -833,6 +840,7 @@ public sealed partial class PageService(
         var findings = PageValidator.Validate(definition, template, catalogue, registry, availability, mode, rules,
             await entitlements.IsEnabledAsync(Capabilities.ExperienceAudienceVariants, ct));
         findings.AddRange(await TranslationFindingsAsync(definition, ct));
+        findings.AddRange(await tenantComponents.FindingsAsync(definition, mode, ct));
         // A finding inside a fragment is shown on the page's reference to it.
         findings = findings.Select(f => f.Placement is { } id && references.FirstOrDefault(r => id.StartsWith(r, StringComparison.Ordinal)) is { } r
             ? f with { Placement = r[..^1] } : f).ToList();

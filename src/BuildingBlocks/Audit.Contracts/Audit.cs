@@ -142,6 +142,8 @@ public static class AuditActions
     public const string ComponentDisabled = "component.disabled";
     public const string ComponentUpgraded = "component.upgraded";
     public const string ComponentRolledBack = "component.rolled_back";
+    public const string ComponentSubmitted = "component.submitted";
+    public const string ComponentReviewed = "component.reviewed";
     public const string TemplateReleased = "template.released";
     public const string TemplateDistributed = "template.distributed";
     public const string TemplateDeprecated = "template.deprecated";
@@ -172,6 +174,9 @@ public static class AuditActions
     public const string ExperienceStarterCreated = "experience.starter_created";
     public const string ExperienceStarterPublished = "experience.starter_published";
     public const string ExperienceBehavioralPersonalizationChanged = "experience.behavioral_personalization_changed";
+    public const string ExperimentProposed = "experience.experiment_proposed";
+    public const string ExperimentApproved = "experience.experiment_approved";
+    public const string ExperimentStopped = "experience.experiment_stopped";
     public const string TenantDomainAdded = "tenant.domain_added";
     public const string TenantDomainVerified = "tenant.domain_verified";
     public const string TenantDomainChanged = "tenant.domain_changed";
@@ -591,6 +596,7 @@ public static class AuditActions
     public const string AssistantHistoryDeleted = "assistant.history_deleted";
     public const string AssistantRetentionChanged = "assistant.retention_changed";
     public const string AssistantGuestsChanged = "assistant.guests_changed";
+    public const string AssistantSuggestionsChanged = "assistant.suggestions_changed";
     public const string AssistantFileAdded = "assistant.file_added";
     public const string AssistantFileRefused = "assistant.file_refused";
 
@@ -736,6 +742,7 @@ public static class AuditActions
 
     // 021
     public const string AnalyticsPrivacySettingChanged = "analytics.privacy_setting_changed";
+    public const string AnalyticsBenchmarksChanged = "analytics.benchmarks_changed";
     public const string AnalyticsEstimatesChanged = "analytics.estimates_changed";
     public const string AnalyticsKpiTileConfigured = "analytics.kpi_tile_configured";
     public const string AnalyticsExportRequested = "analytics.export_requested";
@@ -763,7 +770,7 @@ public static class AuditActions
         SignInFailed, IdpConfigChanged, DirectoryConnectionChanged, UserSynced, DisabledByDirectory, ReenabledByDirectory,
         ConnectionCreated, ConnectionDeleted, ConnectionFeatureEnabled, ConnectionFeatureDisabled, ConnectionConsentGranted,
         ConnectionConsentRevokedDetected, ConnectionStatusChanged, ConnectionFeatureOptionsChanged, ConnectionSiteAllowed, ConnectionSiteRemoved, OutlookConnected, OutlookDisconnected,
-        PageCreated, PagePublished, PageRolledBack, PageTemplateChanged, PageSubmitted, PageApproved, PageReturned, PageRouteChanged, PageScheduled, PageScheduleCancelled, PageScheduleFailed, PageExpired, FragmentChanged, FragmentArchived, ComponentEnabled, ComponentDisabled, ComponentUpgraded, ComponentRolledBack,
+        PageCreated, PagePublished, PageRolledBack, PageTemplateChanged, PageSubmitted, PageApproved, PageReturned, PageRouteChanged, PageScheduled, PageScheduleCancelled, PageScheduleFailed, PageExpired, FragmentChanged, FragmentArchived, ComponentEnabled, ComponentDisabled, ComponentUpgraded, ComponentRolledBack, ComponentSubmitted, ComponentReviewed,
         TemplateReleased, TemplateDistributed, TemplateDeprecated, TemplateImported, TemplateExported, FeatureControlChanged, RegionLockChanged,
         ThemePublished, ThemeDrafted, ThemeSubmitted, ThemeApproved, ThemeReturned, ThemeScheduled, ThemeRolledBack, ThemeTokensImported, ThemeExtensionProposed, ThemeExtensionApproved, ThemeExtensionRejected, ThemeExtensionRemoved, BrandAssigned, BrandUnassigned, ExperienceLockChanged,
         NotificationSettingsChanged, NotificationRelayTested, NotificationTemplateOverridden, NotificationSignageScreenRegistered, NotificationSignageScreenRotated, NotificationSignageScreenRevoked, NotificationQuickActionUsed,
@@ -805,7 +812,7 @@ public static class AuditActions
         AiPolicyChanged, AiRouteChangeProposed, AiRouteChangeOverridden, AiRouteChangeApplied, AiRouteChangeRejected, AiCatalogueChanged, AiLoggingWindowOpened, AiLoggingWindowClosed,
         SearchBestBetChanged, SearchSynonymsChanged, SearchRetrievalChangeProposed, SearchRetrievalChangeDecided, SearchRetrievalChangeOverridden,
         SearchRetrievalChangeCancelled, SearchFederatedChanged, SearchAiSummaryChanged, SearchQueryTextChanged,
-        AssistantHistoryDeleted, AssistantRetentionChanged, AssistantGuestsChanged, AssistantFileAdded, AssistantFileRefused,
+        AssistantHistoryDeleted, AssistantRetentionChanged, AssistantGuestsChanged, AssistantSuggestionsChanged, AssistantFileAdded, AssistantFileRefused,
         AgentInstalledFromTemplate, AgentCreated, AgentCloned, AgentAccessRequested, AgentAccessGranted, AgentAccessDenied, AgentMemoryAccepted, AgentMemoryDeleted, AgentTemplateUpdateApplied, AgentTemplateSecurityApplied, AgentAudienceChanged, AgentOwnerChanged, AgentPolicyChanged, AgentToolCalled, AgentExternalCallRefused, AgentToolDenied, AgentInjectionDetected, AgentActionConfirmed, AgentActionRejected, AgentActionApproved, AgentActionExpired,
         AgentVersionSubmitted, AgentVersionApproved, AgentVersionRejected, AgentVersionPublished, AgentRolledBack, AgentSuspended, AgentResumed, AgentAlertRaised, AgentAlertDismissed, AgentIncidentOpened, AgentIncidentUpdated, AgentIncidentClosed, AgentEvidenceExported,
         AgentRetired, AgentKillSwitch, AgentTokensRevoked,

@@ -1,14 +1,21 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { CatalogueLayout, CatalogueTemplate } from "@/lib/experience/builder-types";
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { FormField } from "@/components/ui/FormField";
+import { FormField, SelectField } from "@/components/ui/FormField";
 import { LayoutPreview } from "./LayoutPreview";
 
 type Unit = { id: string; name: string; level: number };
+
+type Recommendation = { templateId: string; variant: string; reasons: string[] };
+
+const PURPOSES = ["general", "news", "department", "project", "knowledge", "services", "campaign", "dashboard", "onboarding"] as const;
+const VIEWPORTS = ["desktop", "tablet", "mobile"] as const;
+const DENSITIES = ["light", "medium", "heavy"] as const;
 
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*(\/[a-z0-9]+(-[a-z0-9]+)*)*$/;
 
@@ -37,6 +44,33 @@ export function TemplateChooser({
   const [slugError, setSlugError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  const [facts, setFacts] = useState<{ purpose: string; viewport: string; density: string } | null>(null);
+  const [advice, setAdvice] = useState<{ key: string; items: Recommendation[] } | null>(null);
+  const factsKey = facts ? `${facts.purpose}|${facts.viewport}|${facts.density}` : "";
+  const recommended = advice && advice.key === factsKey ? advice.items : [];
+
+  // Spec 032 FR-023: the server ranks templates from the facts; the advice only marks cards and never chooses for the editor.
+  useEffect(() => {
+    if (!facts) return;
+    const key = `${facts.purpose}|${facts.viewport}|${facts.density}`;
+    const query = new URLSearchParams(facts).toString();
+    let live = true;
+    fetch(`/api/v1/experience/template-recommendations?${query}`)
+      .then((r) => (r.ok ? (r.json() as Promise<{ recommendations: Recommendation[] }>) : { recommendations: [] }))
+      .then((v) => {
+        if (live) setAdvice({ key, items: v.recommendations });
+      })
+      .catch(() => {
+        if (live) setAdvice({ key, items: [] });
+      });
+    return () => {
+      live = false;
+    };
+  }, [facts]);
+
+  const setFact = (name: "purpose" | "viewport" | "density", value: string) =>
+    setFacts((f) => ({ purpose: "general", viewport: "desktop", density: "medium", ...f, [name]: value }));
 
   const byId = new Map(layouts.map((l) => [l.id, l]));
   const chosen = templates.find((x) => x.id === templateId);
@@ -77,19 +111,68 @@ export function TemplateChooser({
 
   return (
     <form className="builder-create" onSubmit={(e) => void submit(e)} noValidate>
+      <fieldset className="builder-recommend" data-testid="template-recommend">
+        <legend>{t("recommend.title")}</legend>
+        <p className="builder-template-description">{t("recommend.intro")}</p>
+        <div className="builder-recommend-facts">
+          <SelectField
+            label={t("recommend.purpose")}
+            name="purpose"
+            value={facts?.purpose ?? ""}
+            onChange={(e) => setFact("purpose", e.target.value)}
+            options={[{ value: "", label: t("recommend.choose") }, ...PURPOSES.map((p) => ({ value: p, label: t(`recommend.purposes.${p}`) }))]}
+          />
+          <SelectField
+            label={t("recommend.viewport")}
+            name="viewport"
+            value={facts?.viewport ?? "desktop"}
+            onChange={(e) => setFact("viewport", e.target.value)}
+            options={VIEWPORTS.map((v) => ({ value: v, label: t(`recommend.viewports.${v}`) }))}
+          />
+          <SelectField
+            label={t("recommend.density")}
+            name="density"
+            value={facts?.density ?? "medium"}
+            onChange={(e) => setFact("density", e.target.value)}
+            options={DENSITIES.map((d) => ({ value: d, label: t(`recommend.densities.${d}`) }))}
+          />
+        </div>
+        <p className="builder-template-description" aria-live="polite">
+          {facts ? (recommended.length > 0 ? t("recommend.found", { count: recommended.length }) : t("recommend.none")) : ""}
+        </p>
+      </fieldset>
+
       <fieldset className="builder-templates">
         <legend>{t("create.template")}</legend>
         <div className="builder-template-grid">
           {templates.map((x) => {
             const layout = byId.get(x.layout);
             const regions = x.regions.map((r) => regionName(r.id)).join(t("create.listSeparator"));
+            const advised = recommended.find((r) => r.templateId === x.id);
             return (
-              <label key={x.id} className="builder-template" data-selected={x.id === templateId || undefined}>
-                <input type="radio" name="template" value={x.id} checked={x.id === templateId} onChange={() => setTemplateId(x.id)} />
+              <label key={x.id} className="builder-template" data-selected={x.id === templateId || undefined} data-recommended={advised ? true : undefined}>
+                <input
+                  type="radio"
+                  name="template"
+                  value={x.id}
+                  checked={x.id === templateId}
+                  onChange={() => {
+                    setTemplateId(x.id);
+                    if (advised) setVariant(advised.variant);
+                  }}
+                />
                 {layout ? <LayoutPreview layout={layout} regionName={regionName} /> : null}
                 <span className="builder-template-name">{x.name}</span>
                 <span className="builder-template-description">{x.description}</span>
                 <span className="builder-template-regions">{t("create.regions", { regions })}</span>
+                {advised ? (
+                  <span className="builder-template-advice">
+                    <Badge tone="info" icon="spark">
+                      {t("recommend.badge")}
+                    </Badge>
+                    <span>{advised.reasons.map((r) => t(`recommend.reasons.${r}`)).join(t("create.listSeparator"))}</span>
+                  </span>
+                ) : null}
               </label>
             );
           })}

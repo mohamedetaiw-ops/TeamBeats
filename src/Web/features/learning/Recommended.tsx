@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { reportOpened } from "@/lib/analytics/recommendations";
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Alert } from "@/components/ui/Alert";
@@ -45,7 +46,7 @@ export function Recommended({ initial }: { initial: RecommendedCourse[] }) {
           return (
             <li key={course.id}>
               <div className="learning-row">
-                <Link href={courseHref(course.id)}>
+                <Link href={courseHref(course.id)} onClick={() => reportOpened("learning")}>
                   <bdi>{title}</bdi>
                 </Link>
                 {course.skills.map((s) => (

@@ -20,7 +20,48 @@ Defaults (spec silent):
 - Tiles are on location dashboards only, since KPI feeds carry a location code and not an organization unit.
 - A tile without a reading says so rather than being left out, so the administrator can see that a feed is not arriving.
 
+R3 slice 2, **personalization and recommendation usefulness (US10 scenario 3, FR-024):**
+- One declared event, `recommendation.outcome` with `surface` (`search` for results ranked from use in 012, `assistant` for suggestions in 014, `learning` for course recommendations in 028) and `outcome` (`shown`, `opened`, `dismissed`). Owners send `shown` and `dismissed` from the server when something was shown or declined; the pages send `opened` when the person opens a ranked or suggested thing.
+- The experience dashboard gains `recommendations`: per surface, the people something was shown to, and of them who opened or dismissed it and the opened rate. Counted by person, not event; an opening by someone who was not shown anything is not counted; under the minimum group size only the number of people shows.
+
+Defaults (spec silent):
+- Judged samples for search stay the judged query sets of spec 034 (R2), which run without personalization, so a ranking change is still judged the same way; personalization itself is judged from outcomes only.
+- Quick navigation (008) is not a surface: it ranks as the person types, so "shown" would count keystrokes.
+- No breakdown by unit or location, so a small group is never singled out within a surface.
+
+R3 slice 3, **governed experience experiments (US9 scenario 8, FR-022):**
+- Experiments live in the Experience module beside the page renderer (`experience.experiment`, `experience.experiment_consent`), under `analytics.experiments`. A page publisher for the page's scope proposes one: a name, an earlier release of the page as the variant, a share of 1 to 50 percent and optionally a unit inside the page's scope. A tenant administrator (`tenant.settings_manage`) other than the proposer approves it, which starts it; a page publisher or a tenant administrator stops it. Proposed, approved and stopped are audited (`experience.experiment_*`). One open experiment per page.
+- People take part only after agreeing on their preferences page (`/api/v1/me/experiments`). For a running experiment, each consenting viewer in scope is in the variant when a SHA-256 of the experiment and person falls below the share, so the arm is stable and nothing about the person is stored. Shared kiosk devices never take part. The renderer sends `experiment.exposure` (experiment and arm, server only) and shows the variant release; stopping shows the current release to everyone at once.
+- Results: `GET /api/v1/analytics/experiments/{id}` for whole tenant analytics viewers: per arm the people who saw it and, of them, who completed a task flow or opened an item afterwards, with the minimum group size. Page: Analytics > Experiments.
+
+Defaults (spec silent):
+- "Never on mandatory or critical content": pages hold no mandatory content of their own (items to acknowledge and policies are specs 009 and 025, critical alerts are in the shell), so an experiment only changes a page's arrangement and can never hide something a person must read.
+- The variant is an earlier immutable release, so an experiment never shows content nobody published.
+- Consent is opt in; the approver must differ from the proposer.
+
+R3 slice 4, **analytics API for customer BI tools (section 12):**
+- Public API routes `GET /api/public/v1/analytics/metrics` (catalogue and minimum group size) and `POST /api/public/v1/analytics/query` (the workspace query), under the delegated scope `analytics:read` and the capability `analytics.api`. The call runs as the person who consented, with their own `analytics.view` coverage, so units, the minimum group size and "other" merging are exactly the workspace's. Only weekly aggregates and breakdowns, never raw events or person keys.
+
+Defaults (spec silent):
+- The scope is delegated only and needs an administrator's consent; an application app cannot hold it, because analytics rights belong to a person's unit coverage.
+- No separate export format: the answer is the workspace JSON, which BI tools read directly; CSV stays the in-app export.
+
+R3 slice 5, **benchmarks across anonymized tenants with consent (section 7, open question default opt in only):**
+- A tenant administrator (`tenant.settings_manage`) opts the tenant in on Analytics > Benchmarks (`GET/PUT /api/v1/analytics/benchmarks`, audited `analytics.benchmarks_changed`), under the new capability `analytics.benchmarks`. While it takes part, the analytics maintenance job gives one figure per metric for the last complete week, aggregated for the whole tenant before it leaves the tenant: the share of active members who were active (`weekly_active_share`). Tenants with fewer members than the minimum group size give nothing.
+- Figures sit in `analytics.benchmark_contribution`, which the application role cannot read. They change only through the security definer functions `analytics.contribute_benchmark` and `analytics.withdraw_benchmarks` under the caller's tenant context, and are read only through `analytics.benchmark_figures`, which answers a tenant that takes part with the number of tenants and, from five tenants, the quartiles rounded to one decimal. No tenant is ever named or listed. Opting out deletes every figure the tenant gave.
+- Viewers: whole tenant `analytics.view` holders and tenant administrators.
+
+Defaults (spec silent):
+- Give to get: only a tenant that takes part sees benchmarks.
+- Five tenants at least before quartiles show, fixed in the database function so no setting lowers it; the count of tenants that take part is shown.
+- One metric first (weekly active share), since it is size neutral and exists in every package; more metrics are added to the same list.
+- Enterprise and Government only, like the other R3 analytics features.
+
 ### R3 tests
+- Slice 5: nothing given or shown before opting in; employees refused; four tenants show the count and own figure without quartiles, five show quartiles; the figures table is unreadable for the application role; opting out removes the tenant's figure; the package decides; the choice is checked; the job gives once a week; the page in English and Arabic with axe.
+- Slice 4: the API answer equals the workspace answer; an unknown metric is refused; a person without analytics rights, a token without the scope, an application app, an employee's own consent, another tenant and a package without the analytics API are all refused.
+- Slice 3: proposal checks and permissions; approval only by another tenant administrator; only consenting people take part, each in the same arm every time; exposure counted once per person; results hide small arms and need analytics.view; stopping returns everyone to the current release; package and tenant boundaries; the page and preference in English and Arabic with axe.
+- Slice 2: people counted once per surface, an opening without a showing ignored, unknown surfaces dropped, small groups hidden; the assistant and learning owners send `shown`; the dashboard section in English and Arabic with axe.
 - The latest reading for the location with source and times; another location's reading never shows; a tile with a permission is left out for a viewer without it; the tile set is checked (metric once, names in both languages, a known permission, at most 12) and versioned; changes are audited; the package decides; another tenant sees nothing.
 
 ## Constitution check

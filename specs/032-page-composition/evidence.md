@@ -1,6 +1,6 @@
 # Spec 032 evidence (R1)
 
-The spec stays Approved, not Implemented. R1 builds the page model, the resolver, the 10 layouts and 12 templates with variants, template preview, locks, distribution and lifecycle, the manifest registry, the builder with keyboard composition, autosave, undo, previews by device and direction, accessibility and translation checks, error isolation, publish and rollback, and the performance and isolation baseline. Still open in R1: persona previews in the builder (FR-041, waiting on spec 008 audiences in the builder), the retired template state with migration guidance (FR-021), page and navigation label translation checks (FR-047), and asset size budgets in CI (FR-060). R2 approval routes for page scopes (FR-051), impact reports (FR-044, FR-054), scheduled releases (FR-053), edit conflicts with merge and kept drafts (FR-042, FR-043), governed fragments (FR-045), template import and export (FR-022), resizable regions (FR-007), feature controls (FR-057) and independent component deployment (FR-033) are built; see the R2 implementation notes. The other R2 and R3 parts are not built yet: sandboxed tenant components (FR-031) and template recommendations (FR-023). The spec 032 sections of `docs/architecture/r1-implementation-notes.md` hold the defaults, deviations and gaps.
+The spec stays Approved, not Implemented. R1 builds the page model, the resolver, the 10 layouts and 12 templates with variants, template preview, locks, distribution and lifecycle, the manifest registry, the builder with keyboard composition, autosave, undo, previews by device and direction, accessibility and translation checks, error isolation, publish and rollback, and the performance and isolation baseline. Still open in R1: persona previews in the builder (FR-041, waiting on spec 008 audiences in the builder), the retired template state with migration guidance (FR-021), page and navigation label translation checks (FR-047), and asset size budgets in CI (FR-060). R2 approval routes for page scopes (FR-051), impact reports (FR-044, FR-054), scheduled releases (FR-053), edit conflicts with merge and kept drafts (FR-042, FR-043), governed fragments (FR-045), template import and export (FR-022), resizable regions (FR-007), feature controls (FR-057) and independent component deployment (FR-033) are built; see the R2 implementation notes. R3 template recommendations (FR-023) and sandboxed tenant components (FR-031) are built; see the R3 implementation notes. The spec 032 sections of `docs/architecture/r1-implementation-notes.md` hold the defaults, deviations and gaps.
 
 | Requirement | Status | Evidence |
 |---|---|---|
@@ -67,3 +67,15 @@ The spec stays Approved, not Implemented. R1 builds the page model, the resolver
 | SC-003 fault injection | Met | As FR-029 |
 | SC-004 keyboard, single pointer and screen reader | Met | `page-builder.spec.ts` |
 | SC-005 performance targets | Met on the default profiles | As FR-058 |
+
+# Spec 032 evidence (R3)
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| FR-023 template recommendations from purpose, viewport and density, ignorable, never publishing or changing permissions | Met | `TemplateRecommendationTests.Recommendations_follow_purpose_viewport_and_density_and_change_nothing`, `template-recommendations.spec.ts` (en, ar, axe) |
+| Section 11 recommendations use page metadata only | Met | Rules in `TemplateRecommendations.Rank` take only the three facts and the template catalogue; no model call |
+| FR-031 tenant-built components in a sandboxed frame: no session, page DOM or other tenants, network only to declared hosts, least privilege | Met | `TenantComponentTests.A_version_is_reviewed_by_the_platform_before_it_can_be_turned_on_and_framed` (policy header: `sandbox allow-scripts`, `default-src 'none'`, declared `connect-src`, no `allow-same-origin`), `tenant-components.spec.ts` (frame gets only declared context, sets its height; en, ar, axe) |
+| Section 7 tenant components need the platform's security review before any tenant can enable them | Met | Same test: enabling before approval is refused, review queue, rejection needs a reason, a review is final, audited in the tenant and on the platform |
+| ADR-0012 sandboxed components limited per page | Met | `TenantComponentTests.A_page_frames_at_most_three_and_only_available_components_publish_and_the_package_decides` |
+| Section 9 `experience.custom_components` Enterprise and Government only | Met | Same test (Workplace Plus refused) |
+

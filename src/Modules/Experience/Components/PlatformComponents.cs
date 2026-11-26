@@ -23,6 +23,17 @@ public sealed class PlatformComponents : IComponentRegistration
 
     public IEnumerable<ComponentManifest> Manifests() =>
     [
+        // A component the tenant built itself (spec 032 R3 FR-031), framed in a sandbox: this platform component holds the frame
+        // and the message contract, and passes on only the context keys the tenant component declares.
+        new(Sandbox.TenantComponents.HostComponent, "1.0.0", "TeamBeats", "^1",
+            new ComponentDisplay("experience.component.sandbox_tenant_component.name", "experience.component.sandbox_tenant_component.description", "utility", "lock"),
+            new Dictionary<string, PropertySchema>
+            {
+                ["component"] = new PropertySchema("string", Required: true, MinLength: 3, MaxLength: 40),
+            },
+            new PlacementRules(MinSpan: 3), [.. ComponentContext.Approved.Order(StringComparer.Ordinal)],
+            new ComponentRequirements([TeamBeats.Entitlements.Contracts.Capabilities.ExperienceCustomComponents], []), ComponentEvents.None,
+            ["/api/v1/experience/sandbox"], TrustTiers.Platform, ComponentStates.Active),
         Manifest("toolbox.world_clock", "clock", new()
         {
             ["zones"] = new PropertySchema("list", Default: JsonSerializer.SerializeToElement(Array.Empty<string>()),

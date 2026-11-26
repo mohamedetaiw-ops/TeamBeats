@@ -1,0 +1,7 @@
+/* A tenant component's frame (spec 032 R3 FR-031): full width of its placement, the height the component asks for. */
+.sandbox-frame {
+  inline-size: 100%;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+}

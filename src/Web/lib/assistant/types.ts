@@ -40,7 +40,11 @@ export type Turn = {
 export type ConversationSummary = { id: string; title: string; turns: number; createdAt: string; lastTurnAt: string };
 
 /** The item a conversation is kept to (spec 025 FR-011): in R1 a policy, from "Ask about this policy". */
-export type AssistantScope = { source: "policies"; itemId: string };
+export type AssistantScope = { source: "policies" | "content" | "documents"; itemId: string };
+
+/** Suggested questions for the page the person is on (spec 014 R3, US9). The page words each one by its key. */
+export type AssistantSuggestion = { key: "summarize" | "key_points" | "explain_policy"; title: string; scope: AssistantScope };
+export type AssistantSuggestions = { available: boolean; on: boolean; suggestions: AssistantSuggestion[] };
 
 export type Conversation = { id: string; title: string; createdAt: string; lastTurnAt: string; turns: Turn[]; scope: AssistantScope | null };
 
@@ -49,7 +53,7 @@ export type ConversationFile = { id: string; conversationId: string | null; name
 
 export const FILE_CLASSIFICATIONS = ["public", "internal", "confidential", "restricted"] as const;
 
-export type AssistantSettings = { retentionDays: number; updatedAt: string | null; guestsAllowed: boolean };
+export type AssistantSettings = { retentionDays: number; updatedAt: string | null; guestsAllowed: boolean; suggestionsEnabled: boolean };
 
 /** Splits an answer into text and citation markers, keeping only markers that have a citation. */
 export function answerParts(answer: string, citations: Citation[]): ({ text: string } | { citation: Citation })[] {

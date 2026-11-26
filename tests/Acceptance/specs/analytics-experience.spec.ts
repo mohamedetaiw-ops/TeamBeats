@@ -36,6 +36,10 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByTestId("experience-templates")).toContainText("T01");
       await expect(page.getByTestId("experience-flags")).toContainText(m("analytics.experience.missed"));
       await expect(page.getByTestId("experience-vitals-device")).toContainText(m("analytics.experience.device.mobile"));
+      // R3 (FR-024): the usefulness of personalization and recommendations, one row per surface.
+      const usefulness = page.getByTestId("experience-recommendations");
+      await expect(usefulness.getByRole("rowheader", { name: m("analytics.experience.surface.search") })).toBeVisible();
+      await expect(usefulness.getByRole("rowheader", { name: m("analytics.experience.surface.assistant") })).toBeVisible();
       await expectAccessible(page, testInfo, `analytics-experience-${locale}`);
     });
   });

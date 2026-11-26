@@ -10,6 +10,7 @@ public static class Capabilities
 
     /// <summary>Spec 014 US8: the assistant as a personal chat with the TeamBeats bot in Microsoft Teams.</summary>
     public const string AiAssistantTeams = "ai.assistant.teams";
+    public const string AiAssistantSuggestions = "ai.assistant.suggestions";
     public const string AiAgentsBasic = "ai.agents.basic";
     public const string AiAgentsWriteTools = "ai.agents.write_tools";
     public const string AiAgentsMaxPublished = "ai.agents.max_published";
@@ -159,6 +160,10 @@ public static class Capabilities
     /// <summary>Spec 021 R3: KPI tiles from connected systems on location dashboards (Enterprise and Government).</summary>
     public const string AnalyticsKpiTiles = "analytics.kpi_tiles";
     public const string AnalyticsExperience = "analytics.experience";
+    public const string AnalyticsExperiments = "analytics.experiments";
+    public const string AnalyticsApi = "analytics.api";
+    /// <summary>Spec 021 R3: benchmarks across anonymized tenants that opted in (Enterprise and Government).</summary>
+    public const string AnalyticsBenchmarks = "analytics.benchmarks";
     public const string AnalyticsSentiment = "analytics.sentiment";
     public const string DeploymentOnPrem = "deployment.on_prem";
     public const string ExperiencePageBuilder = "experience.page_builder";

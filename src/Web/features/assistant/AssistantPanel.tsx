@@ -9,7 +9,8 @@ import { Drawer } from "@/components/ui/Dialog";
 import { Icon } from "@/components/ui/Icon";
 import { Kbd } from "@/components/ui/Status";
 import { problemMessages } from "@/lib/notifications/types";
-import { readTurnStream, type Turn } from "@/lib/assistant/types";
+import { reportOpened } from "@/lib/analytics/recommendations";
+import { readTurnStream, type AssistantScope, type AssistantSuggestions, type Turn } from "@/lib/assistant/types";
 import { TurnItem } from "./Assistant";
 import "./assistant.css";
 
@@ -27,6 +28,8 @@ function isShortcut(event: KeyboardEvent) {
  * back on close. Answers stream and cite their sources as text links, the same as the full page; the text tools,
  * files, voice and history stay on the full page, which the panel links to with the open conversation. On the
  * assistant page itself the button stays a link. Every rule (what is retrieved, cited or routed to an agent) is the API's.
+ * On a page that shows one item the person may read, the panel offers the API's suggested questions about it before the
+ * first turn (spec 014 R3, US9); picking one asks it kept to that item, and the person can turn suggestions off here.
  */
 export function AssistantPanel() {
   const t = useTranslations("assistant");
@@ -40,10 +43,14 @@ export function AssistantPanel() {
   const [pending, setPending] = useState<{ question: string; text: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState("");
+  // Kept with the page they were asked for, so another page never shows them.
+  const [suggested, setSuggested] = useState<{ path: string; view: AssistantSuggestions } | null>(null);
+  const suggestions = suggested?.path === path ? suggested.view : null;
   const input = useRef<HTMLTextAreaElement>(null);
   const end = useRef<HTMLDivElement>(null);
   const inputId = useId();
   const hintId = useId();
+  const suggestId = useId();
 
   useEffect(() => {
     if (onPage) return;
@@ -61,13 +68,44 @@ export function AssistantPanel() {
     if (open) input.current?.focus();
   }, [open]);
 
+  // Suggestions for this page, asked for when the panel opens on it; a failure just shows none.
+  useEffect(() => {
+    if (!open || onPage) return;
+    let live = true;
+    fetch(`/api/v1/assistant/suggestions?${new URLSearchParams({ path }).toString()}`)
+      .then((r) => (r.ok ? (r.json() as Promise<AssistantSuggestions>) : null))
+      .then((view) => {
+        if (live && view) setSuggested({ path, view });
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [open, onPage, path]);
+
+  async function turnOff() {
+    const response = await fetch("/api/v1/assistant/suggestions/preference", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ on: false }),
+    }).catch(() => null);
+    if (response?.ok) {
+      setSuggested({ path, view: (await response.json()) as AssistantSuggestions });
+      setStatus(t("suggestions.turnedOff"));
+      input.current?.focus();
+    }
+  }
+
   useEffect(() => {
     end.current?.scrollIntoView({ block: "end" });
   }, [turns.length, pending?.text]);
 
-  async function ask(e: FormEvent) {
+  function ask(e: FormEvent) {
     e.preventDefault();
-    const q = question.trim();
+    void send(question.trim(), null);
+  }
+
+  async function send(q: string, scope: AssistantScope | null) {
     if (!q || pending) return;
     setError(null);
     setStatus(t("thinking"));
@@ -76,7 +114,7 @@ export function AssistantPanel() {
       const response = await fetch("/api/v1/assistant/turns", {
         method: "POST",
         headers: { "content-type": "application/json", accept: "text/event-stream" },
-        body: JSON.stringify({ question: q, conversationId, scope: null, fileIds: [] }),
+        body: JSON.stringify({ question: q, conversationId, scope: conversationId === null ? scope : null, fileIds: [] }),
       });
       if (!response.ok) {
         setError(response.status === 403 ? t("notAvailable") : (await problemMessages(response)).join(" ") || t("failed"));
@@ -89,7 +127,7 @@ export function AssistantPanel() {
         setStatus("");
         return;
       }
-      setQuestion("");
+      if (scope === null) setQuestion("");
       setConversationId(done.conversationId);
       setTurns((list) => [...list, done]);
       setStatus(t("answerReady"));
@@ -161,6 +199,26 @@ export function AssistantPanel() {
                 {t.rich("panel.intro", { key: (chunks) => <Kbd>{chunks}</Kbd> })}
               </p>
             ) : null}
+            {turns.length === 0 && !pending && suggestions && suggestions.suggestions.length > 0 ? (
+              <section className="assistant-suggestions" aria-labelledby={suggestId} data-testid="assistant-suggestions">
+                <h3 id={suggestId}>{t("suggestions.title")}</h3>
+                <ul>
+                  {suggestions.suggestions.map((s) => (
+                    <li key={s.key}>
+                      <Button variant="secondary" icon="spark" onClick={() => {
+                          reportOpened("assistant");
+                          void send(t(`suggestions.question.${s.key}`, { title: s.title }), s.scope);
+                        }}>
+                        {t(`suggestions.label.${s.key}`)}
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+                <Button variant="quiet" onClick={() => void turnOff()}>
+                  {t("suggestions.turnOff")}
+                </Button>
+              </section>
+            ) : null}
             <ol className="assistant-turns" aria-busy={pending ? true : undefined}>
               {turns.map((turn) => (
                 <TurnItem key={turn.id} turn={turn} voice={false} />
@@ -187,7 +245,7 @@ export function AssistantPanel() {
                 {error}
               </p>
             ) : null}
-            <form className="assistant-composer" onSubmit={(e) => void ask(e)}>
+            <form className="assistant-composer" onSubmit={ask}>
               <label htmlFor={inputId}>{t("label")}</label>
               <textarea
                 id={inputId}

@@ -1033,7 +1033,9 @@
         "learning_classroom": "Classroom sessions with attendance",
         "policy_regulator_feeds": "Regulator change feeds",
         "content_guest_sites": "Sites shared with guest spaces",
-        "content_campaign_automation": "Campaign follow-ups and goals"
+        "content_campaign_automation": "Campaign follow-ups and goals",
+        "ai_assistant_suggestions": "Assistant suggestions",
+        "analytics_benchmarks": "Benchmarks with other organizations"
       },
       "searchLabel": "Search capabilities",
       "searchPlaceholder": "Search by name",
@@ -3117,7 +3119,8 @@
         "routes": "Approval routes",
         "fragments": "Fragments",
         "controls": "Feature controls",
-        "upgrades": "Component upgrades"
+        "upgrades": "Component upgrades",
+        "components": "Your components"
       },
       "routes": {
         "intro": "Choose who approves pages before they go live. The nearest route up the organization applies, then the one for the whole organization.",
@@ -3279,6 +3282,62 @@
         "outcomeLive": "Live pages already show the new version wherever it could be converted.",
         "failed": "The upgrade could not be changed. Try again.",
         "changeLine": "{from} to {to}"
+      },
+      "tenantComponents": {
+        "intro": "Components your organization builds itself. Each version is checked by the platform's security team before it can be turned on, and always runs in a protected frame.",
+        "unavailable": "Your own components are not in your package",
+        "unavailableHint": "Ask your provider about custom components.",
+        "deniedMessage": "You need the right to turn components on for the whole organization.",
+        "failed": "That did not work. Try again.",
+        "submitted": "Sent for security review.",
+        "changed": "Saved.",
+        "caption": "Your components",
+        "component": "Component",
+        "id": "Key",
+        "versions": "Versions",
+        "enabled": "On for pages",
+        "enabledLabel": "Turn {name} on for pages",
+        "emptyTitle": "No components yet",
+        "empty": "Send a first version below.",
+        "status": {
+          "in_review": "Version {version} in review",
+          "approved": "Version {version} approved",
+          "rejected": "Version {version} rejected"
+        },
+        "try": "Try",
+        "tryLabel": "Try version {version}",
+        "tryTitle": "Trying {id} version {version}",
+        "tryHint": "The component runs here as it will on pages: in a frame with no access to your session or this page.",
+        "closeTry": "Close",
+        "newTitle": "Send a version for review",
+        "newHint": "Each version is kept as sent. Script and style must be inside the HTML file.",
+        "idField": "Key",
+        "idHint": "3 to 40 lowercase letters, digits or hyphens. Use the same key for a new version.",
+        "nameEn": "Name in English",
+        "nameAr": "Name in Arabic",
+        "hosts": "Web addresses it may call",
+        "hostsHint": "Up to 5, each starting with https://, one per line.",
+        "context": "Page details it may receive",
+        "contextKey": {
+          "locale": "Language",
+          "direction": "Text direction",
+          "themeMode": "Light or dark mode",
+          "density": "Density",
+          "deviceClass": "Device type",
+          "pageId": "Page",
+          "siteId": "Site",
+          "orgUnitId": "Organization",
+          "tenantId": "Organization account"
+        },
+        "events": "Events it sends",
+        "eventsHint": "Names separated by commas, such as cheered.",
+        "height": "Height",
+        "pixels": "pixels",
+        "file": "HTML file",
+        "fileHint": "Up to 256 KB. Choosing a file fills the box below.",
+        "document": "HTML",
+        "submit": "Send for review",
+        "submitting": "Sending"
       }
     },
     "revisions": {
@@ -3303,6 +3362,44 @@
       "shared": "Shared with {organization}.",
       "unshared": "No longer shared with {organization}.",
       "failed": "Sharing could not be changed. Try again."
+    },
+    "recommend": {
+      "title": "Help me choose",
+      "intro": "Say what the page is for and we mark the templates that fit. Every template stays available.",
+      "purpose": "What the page is for",
+      "choose": "Choose a purpose",
+      "viewport": "Screen most readers use",
+      "density": "How much content",
+      "found": "{count, plural, one {# template fits} other {# templates fit}}, marked below.",
+      "none": "No template stands out for this. Any template works.",
+      "badge": "Recommended",
+      "purposes": {
+        "general": "General page",
+        "news": "News and stories",
+        "department": "Department or team",
+        "project": "Project",
+        "knowledge": "Knowledge and guides",
+        "services": "Services and requests",
+        "campaign": "Campaign",
+        "dashboard": "Dashboard",
+        "onboarding": "Onboarding or journey"
+      },
+      "viewports": {
+        "desktop": "Desktop",
+        "tablet": "Tablet",
+        "mobile": "Phone"
+      },
+      "densities": {
+        "light": "A little",
+        "medium": "Some",
+        "heavy": "A lot"
+      },
+      "reasons": {
+        "purpose": "fits the purpose",
+        "mobile": "reads well on phones",
+        "light": "suits light content",
+        "heavy": "holds a lot of content"
+      }
     }
   },
   "templates": {
@@ -7700,6 +7797,7 @@
     "filters": "Filter by source",
     "allKinds": "All",
     "recommended": "Recommended",
+    "personalized": "Ranked from your use",
     "none": "Nothing matches {q}.",
     "alternatives": "You might be looking for",
     "pages": "Result pages",
@@ -8035,7 +8133,9 @@
       "saved": "Saved.",
       "failed": "That did not work. Try again in a moment.",
       "guests": "Let guests use the assistant",
-      "guestsHint": "Guests see answers only from the spaces they were invited to. Off by default."
+      "guestsHint": "Guests see answers only from the spaces they were invited to. Off by default.",
+      "suggestions": "Suggest questions on pages",
+      "suggestionsHint": "On a news item, document or policy the assistant offers questions about it. Nothing is sent to a model until a person picks one."
     },
     "marker": "[{n}]",
     "tools": {
@@ -8104,6 +8204,21 @@
       "close": "Close the assistant",
       "fullPage": "Open the full page",
       "intro": "Ask about anything you can open in TeamBeats. Answers cite their sources. Press <key>Ctrl /</key>, or <key>⌘ /</key> on a Mac, to open this panel from any page."
+    },
+    "suggestions": {
+      "title": "Suggested for this page",
+      "turnOff": "Don't suggest questions",
+      "turnedOff": "Suggestions are off. You can turn them back on in your preferences.",
+      "label": {
+        "summarize": "Summarize this",
+        "key_points": "What are the key points?",
+        "explain_policy": "What does this policy mean for me?"
+      },
+      "question": {
+        "summarize": "Summarize “{title}”.",
+        "key_points": "What are the key points of “{title}”?",
+        "explain_policy": "What does the policy “{title}” mean for me?"
+      }
     }
   },
   "agents": {
@@ -9732,7 +9847,9 @@
       "knowledgeLink": "Knowledge",
       "engagementLink": "Engagement",
       "hrLink": "HR",
-      "securityLink": "Security trends"
+      "securityLink": "Security trends",
+      "experimentsLink": "Experiments",
+      "benchmarksLink": "Benchmarks"
     },
     "campaigns": {
       "workspace": "Analytics",
@@ -10017,12 +10134,24 @@
         "completed": "Completed",
         "abandoned": "Abandoned",
         "rate": "Completion rate",
-        "dropOff": "Most abandoned step"
+        "dropOff": "Most abandoned step",
+        "surface": "Surface",
+        "shownTo": "Shown to",
+        "opened": "Opened",
+        "dismissed": "Dismissed",
+        "openRate": "Opened rate"
       },
       "vital": {
         "lcp": "LCP",
         "inp": "INP",
         "cls": "CLS"
+      },
+      "recommendations": "Personalization and recommendations",
+      "recommendationsHint": "People each surface showed something to in the period, and of them who opened or dismissed it. Hidden when fewer than {size} people saw it.",
+      "surface": {
+        "search": "Search ranked from use",
+        "assistant": "Assistant suggestions",
+        "learning": "Course recommendations"
       }
     },
     "reports": {
@@ -10677,6 +10806,87 @@
       "saved": "KPI tiles saved.",
       "failed": "The KPI tiles could not be saved. Try again.",
       "readOnly": "You can see the KPI tiles but not change them."
+    },
+    "experiments": {
+      "title": "Experiments",
+      "workspace": "Analytics",
+      "intro": "Try an earlier release of a page on a share of the people who agreed to take part, and compare the results.",
+      "denied": "Experiments are not available to you",
+      "deniedHint": "Tenant administrators and page publishers of the whole organization manage experiments where the plan includes them.",
+      "new": "Propose an experiment",
+      "newHint": "A tenant administrator other than you approves it before anyone sees it. Only people who agreed in their preferences take part.",
+      "noPages": "No page has an earlier release to try yet.",
+      "page": "Page",
+      "pageOption": "{slug} (release {release} now)",
+      "name": "Name",
+      "variantRelease": "Release to try",
+      "variantReleaseHint": "An earlier release of the page.",
+      "percent": "Share of people",
+      "percentHint": "From 1 to 50 percent of the people who agreed.",
+      "propose": "Propose",
+      "busy": "Saving",
+      "proposed": "The experiment was proposed.",
+      "approve": "Approve and start",
+      "approved": "The experiment is running.",
+      "stop": "Stop",
+      "stopped": "The experiment was stopped. Everyone sees the current release.",
+      "notAllowed": "You may not do this.",
+      "failed": "That did not work. Try again.",
+      "none": "No experiments yet",
+      "noneHint": "Proposed, running and stopped experiments show here.",
+      "status": {
+        "proposed": "Waiting for approval",
+        "running": "Running",
+        "stopped": "Stopped"
+      },
+      "arms": "Releases",
+      "armsValue": "Current {control} against {variant}",
+      "proposedAt": "Proposed",
+      "results": "Results per group of people. Hidden when fewer than {size} people are in a group.",
+      "hidden": "Fewer than {size}",
+      "column": {
+        "arm": "Group",
+        "people": "People",
+        "completed": "Completed a task",
+        "opened": "Opened an item",
+        "rate": "Completion rate"
+      },
+      "arm": {
+        "control": "Current release",
+        "variant": "Release tried"
+      }
+    },
+    "benchmarks": {
+      "title": "Benchmarks",
+      "workspace": "Analytics",
+      "intro": "Compare your organization with others that chose to take part. Figures are combined across organizations and no organization is ever named.",
+      "denied": "You cannot see benchmarks",
+      "deniedHint": "Benchmarks are for people who can see analytics for the whole organization.",
+      "error": "Benchmarks could not be loaded",
+      "errorHint": "Try again in a moment.",
+      "setting": "Taking part",
+      "switch": "Take part in benchmarks",
+      "switchHint": "Your organization gives one weekly figure per measure, already combined for the whole organization. Comparisons show once {count} organizations take part. Turning this off removes every figure you gave.",
+      "switchFailed": "The choice could not be saved.",
+      "unavailable": "Benchmarks are not in your package",
+      "unavailableHint": "Ask your provider about the benchmarks feature.",
+      "off": "Your organization does not take part",
+      "offHint": "Only organizations that take part see benchmarks.",
+      "figures": "Last complete week",
+      "figuresHint": "Quartiles show once at least {count} organizations gave a figure. Hidden figures are marked.",
+      "hidden": "Hidden",
+      "column": {
+        "metric": "Measure",
+        "week": "Week of",
+        "own": "Your organization",
+        "tenants": "Organizations",
+        "lower": "Lower quartile",
+        "median": "Median",
+        "upper": "Upper quartile"
+      },
+      "metric": {
+        "weekly_active_share": "Members active in the week"
+      }
     }
   },
   "design_system": {
@@ -12950,6 +13160,20 @@
       "useHintIn": "Nothing is counted until you agree. Turning it off deletes what was counted; your other settings stay.",
       "useHintOut": "It is on unless you decline. Turning it off deletes what was counted; your other settings stay.",
       "failed": "That did not work. Try again."
+    },
+    "assistantSuggestions": {
+      "title": "Assistant suggestions",
+      "title_hint": "Questions the assistant offers about the page you are on.",
+      "use": "Suggest questions about the page I am on",
+      "hint": "Nothing is asked until you pick a question.",
+      "failed": "Your choice could not be saved. Try again."
+    },
+    "experiments": {
+      "title": "Experiments",
+      "title_hint": "Help improve pages by sometimes seeing an earlier version.",
+      "use": "Take part in page experiments",
+      "hint": "You may see a different version of a page. Only counts of groups are ever reported.",
+      "failed": "Your choice could not be saved. Try again."
     }
   },
   "hr_integration": {
@@ -17076,7 +17300,8 @@
       "requests_submit": "Submit service requests for you",
       "tasks_read": "See the tasks in your inbox",
       "events_subscribe": "Receive notifications of changes",
-      "roles_read": "See roles and who holds them, with your own rights"
+      "roles_read": "See roles and who holds them, with your own rights",
+      "analytics_read": "Read analytics figures you can see, as weekly totals for groups only"
     },
     "admin": {
       "title": "API and MCP access",
@@ -18699,5 +18924,11 @@
     },
     "hoursRange": "{start} to {end}",
     "option": "{name}, {range}"
+  },
+  "sandbox": {
+    "unavailable": "This component is not available",
+    "unavailableHint": "It may be turned off or waiting for review.",
+    "frameTitle": "{name}, your organization's component",
+    "title": "Your organization's component"
   }
 }

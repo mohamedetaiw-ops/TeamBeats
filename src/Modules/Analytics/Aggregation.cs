@@ -156,6 +156,7 @@ public sealed class AnalyticsMaintenanceWorker(IServiceScopeFactory scopes, IClo
                 context.SetActor(ActorType.System, null);
                 await scope.ServiceProvider.GetRequiredService<AnalyticsAggregator>().RunAsync(5000, ct);
                 await scope.ServiceProvider.GetRequiredService<AnalyticsRetention>().PurgeAsync(clock.UtcNow, 10_000, ct);
+                await scope.ServiceProvider.GetRequiredService<AnalyticsBenchmarks>().ContributeAsync(ct);
                 await scope.ServiceProvider.GetRequiredService<IDbSession>().CommitAsync(ct);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)

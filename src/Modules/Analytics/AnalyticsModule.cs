@@ -38,6 +38,8 @@ public static class AnalyticsModule
         services.AddScoped<ScopeDashboards>();
         services.AddScoped<KpiTiles>();
         services.AddScoped<ExperienceAnalytics>();
+        services.AddScoped<ExperimentResults>();
+        services.AddScoped<AnalyticsBenchmarks>();
         services.AddScoped<ReportDefinitions>();
         services.AddScoped<AnalyticsReports>();
         services.AddScoped<ReportRunner>();
@@ -106,6 +108,14 @@ public static class AnalyticsModule
         analytics.MapGet("/experience", async (DateOnly? from, DateOnly? to, ExperienceAnalytics experience, CancellationToken ct) =>
             Results.Ok(await experience.GetAsync(from, to, ct)));
         // Sentiment (spec 021 US8, T017): labels only, with the minimum group size; analytics.view for the whole tenant.
+        analytics.MapGet("/benchmarks", async (AnalyticsBenchmarks benchmarks, CancellationToken ct) => Results.Ok(await benchmarks.GetAsync(ct)));
+        analytics.MapPut("/benchmarks", async (BenchmarksRequest request, AnalyticsBenchmarks benchmarks, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await benchmarks.ChangeAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+        analytics.MapGet("/experiments/{id:guid}", async (Guid id, ExperimentResults results, CancellationToken ct) => Results.Ok(await results.GetAsync(id, ct)));
         analytics.MapGet("/sentiment", async (DateOnly? from, DateOnly? to, SentimentAnalytics sentiment, CancellationToken ct) =>
             Results.Ok(await sentiment.GetAsync(from, to, ct)));
         // AI usage (spec 021 section 2, FR-016): figures read from the AI Gateway, the assistant and evaluation.
@@ -180,6 +190,7 @@ public static class AnalyticsModule
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });
+        app.MapAnalyticsPublicEndpoints();
         return app;
     }
 }

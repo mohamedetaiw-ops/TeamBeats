@@ -1,3 +1,4 @@
+using TeamBeats.Modules.Analytics.Contracts;
 using TeamBeats.Modules.Content.Contracts;
 using TeamBeats.Modules.People.Contracts;
 using TeamBeats.Persistence;
@@ -18,7 +19,8 @@ public sealed record RecommendationsView(bool Available, IReadOnlyList<Recommend
 /// completed and ones they dismissed are left out. More matching skills first, then a basic skill before a good one,
 /// then the newest. No model is used.
 /// </summary>
-public sealed class Recommendations(Player player, Courses courses, IDbSession session, IAudiences audiences, IPersonSkills skills, TeamBeats.TenantContext.ITenantContext context, IClock clock)
+public sealed class Recommendations(Player player, Courses courses, IDbSession session, IAudiences audiences, IPersonSkills skills, TeamBeats.TenantContext.ITenantContext context, IClock clock,
+    IAnalyticsEvents analytics)
 {
     public const int Max = 6;
 
@@ -56,6 +58,10 @@ public sealed class Recommendations(Player player, Courses courses, IDbSession s
                 matched.Where(names.ContainsKey).Select(id => names[id]).ToList()), matched.Count, matched.Min(id => growing[id]), row.UpdatedAt));
         }
         var items = found.OrderByDescending(f => f.Matches).ThenBy(f => f.Best).ThenByDescending(f => f.At).Take(Max).Select(f => f.Course).ToList();
+        if (items.Count > 0)
+        {
+            await OutcomeAsync("shown", ct);
+        }
         return new RecommendationsView(true, items);
     }
 
@@ -72,5 +78,10 @@ public sealed class Recommendations(Player player, Courses courses, IDbSession s
             insert into learning.recommendation_dismissal (tenant_id, learner_id, course_id, dismissed_at)
             values (@tenant, @learner, @courseId, @now) on conflict do nothing
             """, new { tenant = context.RequireTenant(), learner, courseId, now = clock.UtcNow }, ct);
+        await OutcomeAsync("dismissed", ct);
     }
+
+    /// <summary>Spec 021 R3 FR-024: an outcome of the course recommendations, for their usefulness report.</summary>
+    private Task OutcomeAsync(string outcome, CancellationToken ct) =>
+        analytics.EmitAsync(AnalyticsEvents.RecommendationOutcome, new Dictionary<string, object?> { ["surface"] = "learning", ["outcome"] = outcome }, ct);
 }

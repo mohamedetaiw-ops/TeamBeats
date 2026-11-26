@@ -54,3 +54,13 @@ R2 covers User Story 6 approval, impact and scheduling, User Story 7 independent
 - [x] T030 Feature controls (`feature_control.manage`): tenant and scope switches for components and templates as versioned configuration, read by the picker and the renderer
 - [x] T031 [US7] Independent component deployment (FR-033): a registered package version is deployable and updatable without rebuilding page definitions, migration hooks run on upgrade, pages that do not use it are untouched
 - [x] T032 Builder pages for approval, schedule, impact, fragments and import, in `ar` and `en`, RTL; OpenAPI, R2 implementation notes, e2e with axe
+
+## R3
+R3 covers FR-023 template recommendations and FR-031 tenant-built components in a sandbox (ADR-0012 point 6).
+
+- [x] T033 Template recommendations (FR-023): rules on purpose, viewport and density over released platform templates, advice only, feature controls respected, checked facts, `page.edit` coverage; tests
+- [x] T034 "Help me choose" on the new page screen: recommended badge with reasons, every template stays available, the variant follows the advice; e2e in `ar` and `en` with axe; plan, notes, evidence, OpenAPI
+- [x] T035 Tenant components: submission with manifest checks and document size, immutable versions, platform security review with approve and reject, audit, capability; tests including another tenant and the package
+- [x] T036 Sandboxed rendering: the served document with its own policy (opaque origin, declared hosts only), the frame placement with the message contract (declared context, tokens, properties in; height and declared events out), three per page; tests
+- [x] T037 Pages: tenant components in the admin component area, the review queue on the platform host, the sandbox placement in the builder and renderer; e2e in `ar` and `en` with axe; notes and evidence
+
