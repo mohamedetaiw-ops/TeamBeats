@@ -39,4 +39,4 @@ Depends on 010 (skills), 013 (AI Gateway), 015. R3 covers User Stories 8 to 10 a
 - [x] T016 [US10] Sessions in the builder, seat booking in the player, facilitator roster page; e2e
 
 ### Final phase (R3)
-- [ ] T017 OpenAPI; R3 implementation notes; spec evidence
+- [x] T017 OpenAPI; R3 implementation notes; spec evidence

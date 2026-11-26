@@ -34,3 +34,21 @@ The spec stays Approved, not Implemented. Every part of the spec is built: cours
 | SC-001 95% on-time completion of mandatory training | Not proven | Needs pilot tenants; the FR-013 reports measure it |
 | SC-002 evidence export for a course in under 2 minutes | Met for the export itself | `LearningReportTests.A_compliance_officer_sees_counts_per_unit_...` returns the export in one request; the time a compliance officer takes is to be checked in the pilot |
 | Cross-tenant, org boundary and package denial | Met | Every class above has a case for another tenant, a sibling unit (Gulf and Africa) and the Workplace package |
+
+## R3
+
+The R3 rows below cover US8 to US10. Defaults and gaps are in the spec 028 R3 section of `docs/architecture/r3-implementation-notes.md`.
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| FR-021 quiz drafts from the course's own lesson text through 013, in every course language | Met | `LearningQuizDraftTests.Drafted_questions_come_marked_in_both_languages_and_wait_for_a_person_before_publishing` (lesson text sent, both languages, broken question dropped); `learning-quiz-draft.spec.ts` |
+| FR-022 AI drafts stay marked until a person keeps, edits or removes them; publishing refused before | Met | Same test (`validation.learning.quiz_unreviewed`, keeping clears the mark and the course publishes); `learning-quiz-draft.spec.ts` |
+| FR-023 a refusal changes nothing and says why; each draft audited | Met | Same test (provider down: outcome `unavailable`, revision unchanged; `learning.quiz_drafted` audited); `A_course_without_lesson_text_is_refused_before_any_model_call_and_Workplace_has_no_courses` |
+| FR-024 course skill tags from the 010 list while skills are on | Met | `LearningRecommendationTests.Courses_for_skills_below_expert_are_recommended_until_started_or_dismissed` (unknown skills dropped, tags kept while skills are off) |
+| FR-025 up to six recommendations for skills below expert, without started or dismissed courses | Met | Same test (ranking, closed and expert left out, dismissal, skills off); `learning-recommendations.spec.ts` |
+| FR-026 classroom lessons with sessions managed by the course's administrators | Met | `LearningSessionTests.Seats_waiting_lists_reminders_and_attendance_finish_the_lesson` (validation of lesson, start and facilitator); `learning-sessions.spec.ts` |
+| FR-027 one seat per lesson, waiting list, cancel before the start promotes the first waiting | Met | Same test (seat held, not enrolled, promotion with notice, capacity below booked refused); `learning-sessions.spec.ts` |
+| FR-028 reminder the day before, notice on cancellation | Met | Same test (two reminders once, none for someone without a seat); `A_cancelled_session_tells_everyone_and_Workplace_and_other_tenants_reach_nothing` |
+| FR-029 attendance by the facilitator or an administrator after the start, completing the lesson, audited | Met | `Seats_waiting_lists_...` (too early refused, learner refused, unseated refused, attended completes the course, absent books again, `learning.attendance_recorded` audited) |
+| FR-030 classroom needs `learning.classroom` | Met in part | Workplace has no sessions (`A_cancelled_session_...`). Every package with `learning.courses` also has `learning.classroom`, so refusing to publish a classroom course cannot be reached with a built-in package; the publish check is in `Courses.PublishAsync` |
+| Cross-tenant and scope denial (R3) | Met | Each R3 class has a case for another tenant; sessions are managed only by the course's administrators |
