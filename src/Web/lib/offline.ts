@@ -8,7 +8,9 @@
  *
  * The offline page reads the same database with public/offline-reader.js, which works with no connection. Both follow
  * this layout: database "tb-offline" version 1, store "cache" holding one record under the key "current":
- * { owner, key, syncedAt, expiresAt, items: [{ id, kind, iv, data }] }, data being the encrypted JSON of one item.
+ * { owner, key, syncedAt, expiresAt, items: [{ id, kind, iv, data }], drafts?: { [name]: { iv, data, savedAt } } }, data
+ * being the encrypted JSON of one item. A draft (spec 030 R3 MOB-025, a leave request filled with no connection) is
+ * encrypted under the same key and goes with the cache: a new session's key cannot read it, and a wipe deletes it.
  */
 
 const database = "tb-offline";
@@ -38,7 +40,8 @@ export type OfflineBundle = {
 };
 
 type StoredItem = { id: string; kind: string; iv: Uint8Array<ArrayBuffer>; data: ArrayBuffer };
-type StoredCache = { owner: string; key: CryptoKey; syncedAt: string; expiresAt: string; items: StoredItem[] };
+type StoredDraft = { iv: Uint8Array<ArrayBuffer>; data: ArrayBuffer; savedAt: string };
+type StoredCache = { owner: string; key: CryptoKey; syncedAt: string; expiresAt: string; items: StoredItem[]; drafts?: Record<string, StoredDraft> };
 
 export function offlineSupported(): boolean {
   return typeof window !== "undefined" && "indexedDB" in window && !!window.crypto?.subtle;
@@ -61,6 +64,19 @@ function keyBytes(base64url: string): Uint8Array<ArrayBuffer> {
   const bytes = new Uint8Array(new ArrayBuffer(raw.length));
   for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
   return bytes;
+}
+
+async function get(): Promise<StoredCache | null> {
+  const db = await open();
+  try {
+    return await new Promise<StoredCache | null>((resolve, reject) => {
+      const request = db.transaction(store, "readonly").objectStore(store).get(record);
+      request.onsuccess = () => resolve((request.result as StoredCache | undefined) ?? null);
+      request.onerror = () => reject(request.error);
+    });
+  } finally {
+    db.close();
+  }
 }
 
 async function put(value: StoredCache): Promise<void> {
@@ -124,6 +140,53 @@ export async function syncOffline(): Promise<SyncResult> {
     bytes += data.byteLength;
     items.push({ id: item.id, kind: item.kind, iv, data });
   }
-  await put({ owner: bundle.owner, key, syncedAt: bundle.syncedAt, expiresAt: bundle.expiresAt, items });
+  // Drafts stay with the same person's cache; under a new session's key they could not be read, so they go.
+  const previous = await get().catch(() => null);
+  const drafts = previous?.owner === bundle.owner ? previous.drafts : undefined;
+  await put({ owner: bundle.owner, key, syncedAt: bundle.syncedAt, expiresAt: bundle.expiresAt, items, drafts });
   return "synced";
+}
+
+/**
+ * Keeps a form filled with no connection on this device (spec 030 R3 MOB-025), encrypted under the cache key. Answers
+ * false when there is no cache to keep it in, for example when offline reading is not in the plan.
+ */
+export async function saveDraft(name: string, value: unknown): Promise<boolean> {
+  if (!offlineSupported()) return false;
+  try {
+    const cache = await get();
+    if (!cache || new Date(cache.expiresAt).getTime() < Date.now()) return false;
+    const iv = crypto.getRandomValues(new Uint8Array(new ArrayBuffer(12)));
+    const data = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, cache.key, new TextEncoder().encode(JSON.stringify(value)));
+    await put({ ...cache, drafts: { ...cache.drafts, [name]: { iv, data, savedAt: new Date().toISOString() } } });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** The draft kept on this device, or null when there is none or it cannot be read under this session's key. */
+export async function readDraft<T>(name: string): Promise<{ value: T; savedAt: string } | null> {
+  if (!offlineSupported()) return null;
+  try {
+    const cache = await get();
+    const draft = cache?.drafts?.[name];
+    if (!cache || !draft) return null;
+    const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: draft.iv }, cache.key, draft.data);
+    return { value: JSON.parse(new TextDecoder().decode(plain)) as T, savedAt: draft.savedAt };
+  } catch {
+    return null;
+  }
+}
+
+export async function clearDraft(name: string): Promise<void> {
+  if (!offlineSupported()) return;
+  try {
+    const cache = await get();
+    if (!cache?.drafts?.[name]) return;
+    const { [name]: _removed, ...rest } = cache.drafts;
+    await put({ ...cache, drafts: rest });
+  } catch {
+    // A draft that cannot be removed is still sent only when the person confirms it.
+  }
 }

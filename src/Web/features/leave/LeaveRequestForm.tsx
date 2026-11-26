@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useState, useSyncExternalStore } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
@@ -11,14 +11,31 @@ import { problemMessages } from "@/lib/notifications/types";
 import { pick } from "@/lib/services/types";
 import { todayIso, type LeavePreview, type LeaveRequest, type LeaveType } from "@/lib/leave";
 import { announceMeaningfulAction } from "@/lib/push";
+import { clearDraft, readDraft, saveDraft } from "@/lib/offline";
 
 type Upload = { id: string; fileName: string; scanState: string };
+
+/** What a leave draft kept offline holds (spec 030 R3 MOB-025): the fields, never an attachment. */
+type Draft = { typeKey: string; start: string; end: string; startHalf: boolean; endHalf: boolean; hours: string; comment: string; replacement: string | null };
+
+const DRAFT = "leave-request";
+
+function subscribeOnline(change: () => void) {
+  window.addEventListener("online", change);
+  window.addEventListener("offline", change);
+  return () => {
+    window.removeEventListener("online", change);
+    window.removeEventListener("offline", change);
+  };
+}
 
 /**
  * The leave request form (spec 022 US1 scenarios 1 to 4). While the person types, the API answers with the working
  * days the request takes, the balance per leave year before and after, who else on the team is away and whether a
  * document is needed. The browser counts nothing itself. The same idempotency key goes with every try of one submit,
- * so a double click files one request.
+ * so a double click files one request. With no connection the request is kept as a draft on this device, encrypted
+ * with the offline cache (spec 030 R3 MOB-025); it comes back filled in and is sent only when the person presses
+ * submit again online, and the API checks it like any new request.
  */
 export function LeaveRequestForm({ types, onSubmitted }: { types: LeaveType[]; onSubmitted: (request: LeaveRequest) => void }) {
   const t = useTranslations("leave.form");
@@ -39,6 +56,29 @@ export function LeaveRequestForm({ types, onSubmitted }: { types: LeaveType[]; o
   const [missing, setMissing] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [key, setKey] = useState(() => crypto.randomUUID());
+  const online = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
+  const [restored, setRestored] = useState<string | null>(null);
+  const [kept, setKept] = useState(false);
+
+  useEffect(() => {
+    let live = true;
+    void readDraft<Draft>(DRAFT).then((draft) => {
+      if (!live || !draft) return;
+      const d = draft.value;
+      if (types.some((x) => x.key === d.typeKey)) setTypeKey(d.typeKey);
+      setStart(d.start);
+      setEnd(d.end);
+      setStartHalf(d.startHalf);
+      setEndHalf(d.endHalf);
+      setHours(d.hours);
+      setComment(d.comment);
+      setReplacement(d.replacement);
+      setRestored(draft.savedAt);
+    });
+    return () => {
+      live = false;
+    };
+  }, [types]);
   const type = types.find((x) => x.key === typeKey) ?? null;
   const byHour = type?.unit === "hour";
   const lastDay = byHour || end < start ? start : end;
@@ -108,6 +148,14 @@ export function LeaveRequestForm({ types, onSubmitted }: { types: LeaveType[]; o
     }
     setBusy(true);
     setMessages([]);
+    if (!online) {
+      const draft: Draft = { typeKey, start, end: lastDay, startHalf, endHalf, hours, comment, replacement };
+      const saved = await saveDraft(DRAFT, draft);
+      setKept(saved);
+      if (!saved) setMessages([t("draftFailed")]);
+      setBusy(false);
+      return;
+    }
     try {
       const response = await fetch("/api/v1/hr/leave/requests", {
         method: "POST",
@@ -120,6 +168,9 @@ export function LeaveRequestForm({ types, onSubmitted }: { types: LeaveType[]; o
         setComment("");
         setReplacement(null);
         setAttached(null);
+        setRestored(null);
+        setKept(false);
+        await clearDraft(DRAFT);
         onSubmitted(request);
         announceMeaningfulAction();
       } else {
@@ -147,6 +198,15 @@ export function LeaveRequestForm({ types, onSubmitted }: { types: LeaveType[]; o
         void submit();
       }}
     >
+      {!online ? (
+        <Alert tone={kept ? "success" : "info"} title={t(kept ? "draftSaved" : "offline")} live>
+          {t(kept ? "draftSavedHint" : "offlineHint")}
+        </Alert>
+      ) : restored ? (
+        <Alert tone="info" title={t("draftRestored")}>
+          {t("draftRestoredHint", { at: format.dateTime(new Date(restored), { dateStyle: "medium", timeStyle: "short" }) })}
+        </Alert>
+      ) : null}
       <SelectField
         label={t("type")}
         name="typeKey"
@@ -228,8 +288,8 @@ export function LeaveRequestForm({ types, onSubmitted }: { types: LeaveType[]; o
         </Alert>
       ) : null}
       <div className="leave-actions">
-        <Button type="submit" variant="primary" busy={busy} busyLabel={t("submitting")} disabled={filled && (blocked || !preview)}>
-          {t("submit")}
+        <Button type="submit" variant="primary" busy={busy} busyLabel={t("submitting")} disabled={online && filled && (blocked || !preview)}>
+          {t(online ? "submit" : "saveDraft")}
         </Button>
       </div>
     </form>

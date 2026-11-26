@@ -30,6 +30,6 @@ Depends on 003, 008, 015, 026, 033. R2.
 - [x] T015 [US6] App lock in the security policy and the shell configuration endpoint, Sessions settings
 - [x] T016 [US6] ADR-0023 and the Capacitor shell: workspace entry, managed configuration, host allow list, app lock, push hand-off
 - [x] T017 [US6] Web bridge: the PWA uses the native push token and lock when it runs in the shell
-- [ ] T018 [US6] Offline leave request draft with send on confirmation
-- [ ] T019 OpenAPI, R3 implementation notes and evidence
+- [x] T018 [US6] Offline leave request draft with send on confirmation
+- [x] T019 OpenAPI, R3 implementation notes and evidence
 

@@ -13604,7 +13604,15 @@
         "start": "Choose the first day",
         "end": "Choose the last day",
         "hours": "Enter the hours"
-      }
+      },
+      "offline": "No connection",
+      "offlineHint": "You can still fill in the request. It is kept on this device and sent only when you press submit again with a connection.",
+      "saveDraft": "Keep on this device",
+      "draftSaved": "Kept on this device",
+      "draftSavedHint": "Nothing has been sent yet. When you are back online, check the request and press submit.",
+      "draftFailed": "The request could not be kept on this device. Try again when you are online.",
+      "draftRestored": "Your request from earlier",
+      "draftRestoredHint": "Kept on this device on {at} while you had no connection. Check it and press submit to send it."
     },
     "mine": {
       "title": "My requests",
