@@ -14,3 +14,9 @@ Depends on 002, 003, 004, 006, 007, 008, 032. All R1 user stories.
 - [x] T010 Wire the reporting line into spec 016 line manager approval and Team requests, spec 009 and 025 manager lists, and spec 018 availability visibility
 - [x] T011 Performance tests; OpenAPI; R1 implementation notes; spec evidence
 - [x] T012 [US3] Directory photos: use the Entra ID photo, resized the same way, for a person who has not uploaded one (US3 scenario 3)
+
+## R2
+- [x] T013 [US6] Skills: capability `people.skills`, migration, skill list and settings, own skills, endorsements with notification and hiding, Find an expert, off and purge after 90 days; integration tests
+- [ ] T014 [US6] Skills on the profile, own skills editor, skill list in people settings, Find an expert page; e2e
+- [ ] T015 [US8] Profile completeness, assistants, active delegation from spec 016 on the profile; tests and pages
+- [ ] T016 OpenAPI; R2 implementation notes; spec evidence

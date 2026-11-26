@@ -214,6 +214,29 @@ public sealed class PeopleService(
             ProfilePhotos.Url(row.UserId, row.PhotoVersion));
     }
 
+    /// <summary>
+    /// The cards of the given people the viewer may see, in the given order: active, and in reach for an app. Throws
+    /// denied without <c>people.view</c>. Used by skills (Find an expert) so its answers follow the directory's rules.
+    /// </summary>
+    internal async Task<IReadOnlyList<PersonCard>> VisibleCardsAsync(IReadOnlyList<Guid> userIds, CancellationToken ct)
+    {
+        var (viewer, policies) = await BeginAsync(ct);
+        var rows = (await store.GetManyAsync(userIds, ct)).Where(r => r.Active && Reaches(r)).ToDictionary(r => r.UserId);
+        return await CardsAsync(viewer, policies, userIds.Where(rows.ContainsKey).Select(id => rows[id]), ct);
+    }
+
+    /// <summary>Whether the viewer may open the person's profile: throws not found, or gone for a person who left.</summary>
+    internal async Task<Guid> RequireVisibleAsync(Guid userId, CancellationToken ct)
+    {
+        await BeginAsync(ct);
+        var row = await store.GetAsync(userId, ct) is { } found && Reaches(found) ? found : throw AppException.NotFound();
+        if (!row.Active)
+        {
+            throw new AppException(ProblemCodes.Gone, 410, "people.no_longer_available");
+        }
+        return context.RequireUser();
+    }
+
     internal static bool CanCorrect(Viewer viewer, ProfileRow row) => viewer.Manage.Covers(row.PrimaryUnitId) || viewer.Hr.Covers(row.PrimaryUnitId);
 
     private async Task<IReadOnlyList<FieldView>> FieldsAsync(Viewer viewer, IReadOnlyList<FieldPolicy> policies, ProfileRow row, CancellationToken ct)

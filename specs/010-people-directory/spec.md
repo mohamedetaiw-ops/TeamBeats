@@ -122,6 +122,14 @@ Layla needs someone who knows Arabic legal translation. She searches "legal tran
 1. **Given** approved leave (spec 022), **Then** the profile shows "out of office until" with the return date, never the leave type unless the leave type's privacy rule allows it.
 2. **Given** an HR system connection (spec 019), **Then** mapped HR fields fill the profile as HR-owned and read-only, and a field owned by both the directory and HR follows the tenant's source of truth setting.
 
+### User Story 8: Complete profiles and know who works with whom (Priority: P3, R2)
+
+**Acceptance scenarios:**
+1. **Given** an employee whose own profile misses fields they can fill (photo, phone, about, skills), **When** they open their profile, **Then** they see how complete it is and the missing items as links, and the prompt disappears when it is complete or they dismiss it for 90 days.
+2. **Given** a people administrator sets Sara as assistant of Omar, **Then** both profiles show the relationship to everyone who may see the names, and only people administrators change it.
+3. **Given** Omar delegated his approvals (spec 016) for a date range, **When** a colleague opens his profile inside that range, **Then** the profile shows "approvals go to Layla until 14 August", without the scope of the delegation.
+4. **Given** recognition in spec 023, **Then** the profile lists the person's latest recognitions and badges only where the tenant has recognition.
+
 ### Edge cases and exception flows
 - Two people with the same display name: results show title, unit and location to tell them apart.
 - A person in two units: the primary membership (spec 002) decides the unit shown; the profile lists all units the viewer may see.
@@ -154,6 +162,10 @@ Layla needs someone who knows Arabic legal translation. She searches "legal tran
 - **PPL-019 / FR-019**: *(R2)* Find an expert MUST rank by declared proficiency and endorsements within visibility rules.
 - **PPL-020 / FR-020**: *(R2)* Out of office status MUST come from approved leave (spec 022) and show only what the leave type's privacy rule allows.
 - **PPL-021 / FR-021**: *(R2)* HR-owned fields MUST come from spec 019 with a tenant source of truth setting per field shared by the directory and HR.
+- **PPL-028 / FR-028**: *(R2)* The own profile MUST show its completeness from the fields the person may fill, the photo and (with `people.skills`) skills, with links to each missing item and a dismissal that lasts 90 days.
+- **PPL-029 / FR-029**: *(R2)* People administrators MUST be able to record an assistant for a person (at most three); the relationship MUST show on both profiles and be audited.
+- **PPL-030 / FR-030**: *(R2)* While a spec 016 delegation is active, the delegator's profile MUST show the delegate and the last day, never what is delegated.
+- **PPL-031 / FR-031**: *(R2)* Skills MUST be hidden everywhere while the tenant has them off or the package has no `people.skills`, and MUST be deleted 90 days after they were turned off unless turned on again.
 - **PPL-022 / FR-022**: Profiles MUST keep their last synced values when the directory is unavailable, with the sync time shown to administrators.
 - **FR-023**: The unit filter MUST make every unit distinguishable: units are listed as a tree with indentation, or with the parent's name when two units share a name ("Operations, Demo Services"). Acceptance: no two entries of the unit filter read the same.
 - **FR-024**: While a search or filter is active, the People page MUST show only the results; the New joiners section shows only without a search. A person card with no title or unit shows "Title not set" in the secondary text style instead of an empty line. Acceptance: searching People hides New joiners; a person with no title shows the fallback.
@@ -167,6 +179,9 @@ Layla needs someone who knows Arabic legal translation. She searches "legal tran
 - A person with no manager is valid.
 - Newcomer period between 7 and 90 days.
 - Skill list (R2) is managed by the tenant; employees cannot add free-text skills unless the tenant allows it.
+- Skills (R2): at most 300 skills in the tenant list, names per locale up to 80 characters; at most 30 skills per person with proficiency basic, good or expert; one endorsement per colleague per skill, never of oneself; an owner may hide an endorsement. A free-text skill, when allowed, joins the tenant list as "suggested" and administrators can merge or remove it.
+- Find an expert ranks by proficiency (expert, good, basic), then by visible endorsements, then by name; at most 50 results.
+- Assistants (R2): at most three per person; nobody is their own assistant.
 
 ## 7. Tenant and organization scope
 - Tenant-owned data: profiles, reporting lines, visibility policy, locations, skills.
@@ -211,6 +226,8 @@ Agents read profiles only through this module's contract as the user, with the s
 | people.visibility_changed | audit | field, old and new rule, actor |
 | people.field_source_changed | audit | field, old and new source, actor |
 | people.manager_set_manually | audit | person, manager, actor |
+| people.skill_list_changed | audit | skills added, renamed, merged or removed, setting changes, actor |
+| people.assistant_set | audit | person, assistants, actor |
 | people.profile_updated | audit | person, field names (no values), actor |
 | people.reporting_cycle_detected | operational | people involved, sync run |
 | people.searched | analytics | pseudonymous user, result count bucket (no query text) |
@@ -243,6 +260,9 @@ Agents read profiles only through this module's contract as the user, with the s
 | EXP-005 | PPL-001, PPL-006 to PPL-010, US1, US2, US4 |
 | EXP-006 | PPL-002, PPL-003, PPL-016, US3 |
 | EXP-008 | PPL-007 |
+| R2 skills | PPL-018, PPL-019, PPL-031, US6 |
+| R2 out of office and HR fields | PPL-020, PPL-021, US7 |
+| R2 completeness, assistants, delegates, badges | PPL-028 to PPL-030, US8 |
 | UC-05 | US1, US6 |
 | Location dimension for 009, 021, 022, 025 | PPL-011, US5 |
 | Reporting line for 009, 016, 025, 026 | PPL-004, PPL-005, US2 |

@@ -3149,5 +3149,19 @@
   "validation.engagement.teams_channel": "أدخل معرّف قناة Teams. يبدأ بـ 19: وينتهي بـ ‎@thread.tacv2.",
   "conflict.engagement.ai_anonymous_off": "لا يُسمح للذكاء الاصطناعي بقراءة المنشورات المجهولة في مؤسستك.",
   "conflict.engagement.summary_short": "هذه المحادثة قصيرة بما يكفي لقراءتها. الملخصات مخصصة للنقاشات الأطول.",
-  "conflict.engagement.ai_setting_changed": "غيّر شخص آخر إعداد الذكاء الاصطناعي. أعد تحميله وحاول مرة أخرى."
+  "conflict.engagement.ai_setting_changed": "غيّر شخص آخر إعداد الذكاء الاصطناعي. أعد تحميله وحاول مرة أخرى.",
+  "notifications.template.people.skill.endorsed.title": "أيّد زميل إحدى مهاراتك",
+  "notifications.template.people.skill.endorsed.body": "أيّد أحد الزملاء إحدى المهارات في ملفك الشخصي. افتح ملفك لرؤيتها.",
+  "conflict.people.skills_off": "المهارات متوقفة في مؤسستك.",
+  "conflict.people.skills_changed": "غيّر أحدهم قائمة المهارات. أعد التحميل وحاول مرة أخرى.",
+  "conflict.people.endorse_self": "لا يمكنك تأييد مهاراتك.",
+  "validation.people.skill_name": "أدخل اسمًا للمهارة.",
+  "validation.people.skill_name_length": "يمكن أن يتكون اسم المهارة من 80 حرفًا على الأكثر.",
+  "validation.people.skill_count": "يمكن أن تضم قائمة المهارات 300 مهارة على الأكثر.",
+  "validation.people.skill_duplicate": "توجد مهارتان بالاسم نفسه.",
+  "validation.people.skill_merge": "اختر مهارة أخرى للدمج فيها.",
+  "validation.people.skills_per_person": "يمكنك إضافة 30 مهارة على الأكثر.",
+  "validation.people.proficiency": "اختر أساسي أو جيد أو خبير.",
+  "validation.people.skill_unknown": "اختر مهارة من القائمة.",
+  "validation.people.skill_free_text": "تسمح مؤسستك بالمهارات من قائمتها فقط."
 }

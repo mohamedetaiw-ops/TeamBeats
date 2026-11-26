@@ -38,6 +38,7 @@ public static class PeopleModule
         services.AddScoped<ICelebrationDates, CelebrationDates>();
         services.AddScoped<DirectoryProfiles>();
         services.AddScoped<HrProfiles>();
+        services.AddScoped<Skills>();
         services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IComponentRegistration, PeopleComponents>();
         services.AddMessageHandler<DirectorySynced, ApplyDirectoryProfiles>("people.directory_profiles");
         services.AddMessageHandler<DirectorySynced, ApplyDirectoryPhotos>("people.directory_photos");
@@ -190,6 +191,86 @@ public static class PeopleModule
             var profile = await service.UpdateOwnAsync(request, ct);
             await session.CommitAsync(ct);
             return Results.Ok(profile);
+        });
+
+        // Skills and Find an expert (spec 010 R2 US6).
+        people.MapGet("/skills", async (Skills skills, IDbSession session, HttpResponse response, CancellationToken ct) =>
+        {
+            var view = await skills.ListAsync(ct);
+            await session.CommitAsync(ct);
+            response.Headers.ETag = view.ETag;
+            return Results.Ok(view);
+        });
+
+        people.MapPut("/skills", async (SkillListRequest request, HttpRequest http, Skills skills, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await skills.SetListAsync(request, IfMatch(http), ct);
+            await session.CommitAsync(ct);
+            http.HttpContext.Response.Headers.ETag = view.ETag;
+            return Results.Ok(view);
+        });
+
+        people.MapPost("/skills/{id:guid}:merge", async (Guid id, MergeSkillRequest request, Skills skills, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await skills.MergeAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        people.MapGet("/experts", async (Guid? skillId, string? q, Skills skills, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await skills.ExpertsAsync(skillId, q, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        }).RequireRateLimiting(SearchRateLimit);
+
+        people.MapGet("/{id:guid}/skills", async (Guid id, Skills skills, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await skills.PersonAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        people.MapPut("/{id:guid}/skills/{skillId:guid}/endorsement", async (Guid id, Guid skillId, Skills skills, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await skills.EndorseAsync(id, skillId, true, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        people.MapDelete("/{id:guid}/skills/{skillId:guid}/endorsement", async (Guid id, Guid skillId, Skills skills, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await skills.EndorseAsync(id, skillId, false, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        me.MapGet("/skills", async (Skills skills, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await skills.MineAsync(ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        me.MapPut("/skills", async (OwnSkillsRequest request, Skills skills, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await skills.SetMineAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        me.MapPost("/skills/{skillId:guid}/endorsements/{endorserId:guid}:hide", async (Guid skillId, Guid endorserId, Skills skills, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await skills.HideAsync(skillId, endorserId, true, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        me.MapPost("/skills/{skillId:guid}/endorsements/{endorserId:guid}:show", async (Guid skillId, Guid endorserId, Skills skills, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await skills.HideAsync(skillId, endorserId, false, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
         });
 
         app.MapPeoplePublicEndpoints();
