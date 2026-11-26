@@ -1030,7 +1030,8 @@
         "notifications_signage": "Signage screens for locations",
         "ai_assistant_teams": "Assistant in Microsoft Teams",
         "people_skills": "Skills and Find an expert",
-        "learning_classroom": "Classroom sessions with attendance"
+        "learning_classroom": "Classroom sessions with attendance",
+        "policy_regulator_feeds": "Regulator change feeds"
       },
       "searchLabel": "Search capabilities",
       "searchPlaceholder": "Search by name",
@@ -6372,7 +6373,8 @@
       "register": "Policy register",
       "exemptions": "Exemptions",
       "evidence": "Evidence packs",
-      "team": "My team"
+      "team": "My team",
+      "regulators": "Regulator changes"
     },
     "status": {
       "draft": "Draft",
@@ -6616,6 +6618,45 @@
           "not_in_package": "Your package does not include AI for this use.",
           "other": "The AI gateway refused the request."
         }
+      },
+      "impact": {
+        "title": "What the change touches",
+        "intro": "Ask AI which linked controls and related policies each changed clause may reach. Every approver then reads the same one.",
+        "action": "Assess the impact",
+        "busy": "Assessing the impact…",
+        "failed": "The impact could not be assessed. Try again.",
+        "none": "No assessment this time",
+        "aiGenerated": "AI-generated",
+        "byClause": "Reach by clause",
+        "clause": "Clause {number}:",
+        "noReach": "AI found no linked control or related policy that the changes reach.",
+        "check": "Written by AI from the clause texts, the linked controls and the related policies. Check it before you decide.",
+        "controlName": "{code} {title}",
+        "policyName": "{code} {name}",
+        "facts": {
+          "clauses": "Changed clauses",
+          "clausesValue": "{count, plural, one {# clause} other {# clauses}}",
+          "attested": "Attested the version in force",
+          "attestedValue": "{count, plural, =0 {Nobody yet} one {# person} other {# people}}",
+          "exemptions": "Open exemptions",
+          "exemptionsValue": "{count, plural, =0 {None} one {# exemption} other {# exemptions}}",
+          "questions": "Check questions to look at",
+          "questionsValue": "{count, plural, one {# question} other {# questions}} on clause {clauses}",
+          "controls": "Linked controls",
+          "related": "Related policies",
+          "onboarding": "New joiners attest",
+          "yes": "Yes",
+          "no": "No",
+          "none": "None"
+        },
+        "denial": {
+          "classification_blocked": "The AI policy does not allow this policy's text to be sent to a model. The facts above still apply.",
+          "provider_unavailable": "The AI provider is not available. Try again later.",
+          "quota_exhausted": "The AI quota is used up for now.",
+          "budget_exhausted": "The AI budget is used up for now.",
+          "not_in_package": "Your package does not include AI for this use.",
+          "other": "The AI gateway refused the request."
+        }
       }
     },
     "campaigns": {
@@ -6816,7 +6857,8 @@
         "major_revision": "Recorded. A draft is ready for your revision.",
         "retire": "Recorded.",
         "revised": "Recorded."
-      }
+      },
+      "cause": "Started for the regulator change:"
     },
     "check": {
       "register": "Policy register",
@@ -7085,6 +7127,50 @@
       "off": "No cycle. Campaigns launch only by hand.",
       "next": "The next campaign launches on {date, date, medium}.",
       "afterFirst": "The cycle starts after the first campaign."
+    },
+    "regulators": {
+      "register": "Policies",
+      "title": "Regulator changes",
+      "description": "What the regulator feeds published. Mark an item as not relevant, or link it to policies and start their reviews.",
+      "filter": "Show",
+      "filters": {
+        "new": "New",
+        "actioned": "Linked",
+        "dismissed": "Not relevant"
+      },
+      "empty": {
+        "new": "No new regulator changes",
+        "actioned": "No linked regulator changes",
+        "dismissed": "No regulator changes marked as not relevant"
+      },
+      "unavailable": "Regulator feeds are not in your package",
+      "unavailableMessage": "Your administrator can tell you which package includes regulator change feeds.",
+      "noFeeds": "No regulator feed is connected",
+      "noFeedsMessage": "An administrator adds a regulator feed under Connections. Items are read every 6 hours.",
+      "statuses": {
+        "new": "New",
+        "dismissed": "Not relevant",
+        "actioned": "Linked"
+      },
+      "published": "Published {date}",
+      "decided": "Decided by {name} on {date}",
+      "linked": "Linked policies",
+      "policyName": "{code} {name}",
+      "reviewStarted": "Review started",
+      "reviewKept": "Review already open",
+      "linkAction": "Link to policies",
+      "dismiss": "Not relevant",
+      "linkTitle": "Link to policies",
+      "policies": "Policies this change bears on",
+      "startReviews": "Start reviews",
+      "startReviewsHint": "Each linked policy in force without an open review gets a review due in 30 days for its owner.",
+      "note": "Note (optional)",
+      "link": "Link",
+      "cancel": "Cancel",
+      "busy": "Saving…",
+      "failed": "That did not work. Try again.",
+      "problem": "The decision was not saved",
+      "choosePolicies": "Choose at least one policy."
     }
   },
   "ai": {
@@ -10723,7 +10809,8 @@
       "lms_rest": "Learning management system (LMS)",
       "hr_oracle_hcm": "Oracle HCM Cloud",
       "hr_sap_successfactors": "SAP SuccessFactors",
-      "occupancy_rest": "Occupancy sensors (REST)"
+      "occupancy_rest": "Occupancy sensors (REST)",
+      "regulator_feed": "Regulator change feed"
     },
     "status": {
       "healthy": "Healthy",
@@ -10765,7 +10852,8 @@
       "lms_rest": "Brings your LMS courses into the catalogue, sends assignments of them to the LMS and reads completions back.",
       "hr_oracle_hcm": "Reads Oracle HCM workers, their assignments and managers every night, with the mapping already filled.",
       "hr_sap_successfactors": "Reads SAP SuccessFactors users and their managers every night, leavers included, with the mapping already filled.",
-      "occupancy_rest": "Facilities map desk and room sensors to resources, for sensed occupancy and optional sensor check-in."
+      "occupancy_rest": "Facilities map desk and room sensors to resources, for sensed occupancy and optional sensor check-in.",
+      "regulator_feed": "Compliance officers follow what a regulator publishes, link it to policies and start their reviews."
     },
     "add": {
       "title": "Add a custom REST connection",
@@ -10800,6 +10888,10 @@
       "occupancy_rest": {
         "addTitle": "Add an occupancy sensor connection",
         "addIntro": "Enter the https address of the sensor service. TeamBeats reads the address followed by /sensors every 5 minutes and keeps only each sensor's ID, whether it is occupied and when."
+      },
+      "regulator_feed": {
+        "addTitle": "Add a regulator feed",
+        "addIntro": "Enter the https address of the regulator's JSON feed. TeamBeats reads it every 6 hours and keeps only each item's id, title, https link, date and summary."
       }
     },
     "slack": {

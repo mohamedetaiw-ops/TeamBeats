@@ -41,7 +41,7 @@ export type RouteStep = { names?: Names | null; approvers?: string[] | null; com
 
 export type PolicyRights = { manage: boolean; edit: boolean; review: boolean; history: boolean; compliance: boolean; ask: boolean; analytics: boolean; comprehension?: boolean; exemptions?: boolean; controls?: boolean; paper?: boolean; pause?: boolean; cycle?: boolean; document?: boolean };
 
-export type RegisterRights = { create: boolean; exemptions?: boolean; evidence?: boolean; team?: boolean };
+export type RegisterRights = { create: boolean; exemptions?: boolean; evidence?: boolean; team?: boolean; regulators?: boolean };
 
 /** One report who still owes an attestation, on the manager's team dashboard (spec 025 R2). */
 export type TeamMember = { person: PolicyPerson; direct: boolean; status: MemberStatus; dueAt: string; pausedUntil: string | null; exemptUntil: string | null };
@@ -110,6 +110,8 @@ export type ReviewView = {
   completedAt: string | null;
   draftVersionId: string | null;
   nextReviewAt: string | null;
+  /** The regulator change the review was started for (spec 025 R3 US10). */
+  cause?: { regulatorChangeId: string; title: string; link: string | null } | null;
 };
 
 export type ReviewsView = {
@@ -393,3 +395,50 @@ export type PaperImportView = {
 };
 export const controlPoliciesHref = (framework: string, code: string) =>
   `/policies/controls?framework=${encodeURIComponent(framework)}&code=${encodeURIComponent(code)}`;
+
+/** Change impact of the version in review (spec 025 R3 US9): facts from the register, and the AI assessment when one is kept. */
+export type ImpactClause = { key: string; number: string; change: "added" | "changed" | "removed" };
+
+export type ImpactFacts = {
+  base: number | null;
+  versionId: string;
+  material: boolean;
+  clauses: ImpactClause[];
+  attestedCurrent: number;
+  openExemptions: number;
+  questions: { position: number; clauseNumber: string }[];
+  controls: MappedControl[];
+  related: PolicySummary[];
+  onboardingRequired: boolean;
+};
+
+export type AssessedImpact = { clause: string; controls: string[]; policies: string[]; reason: string };
+
+export type ImpactView = {
+  outcome: "assessed" | "not_assessed" | "nothing_to_compare" | "policy_blocked" | "unavailable";
+  facts: ImpactFacts | null;
+  assessment: { locale: string; summary: string; impacts: AssessedImpact[]; model: string; generatedAt: string; aiGenerated: boolean } | null;
+  denial?: string | null;
+};
+
+/** Regulator change feeds (spec 025 R3 US10). */
+export type RegulatorChangeStatus = "new" | "dismissed" | "actioned";
+
+export type RegulatorChangeView = {
+  id: string;
+  source: string;
+  title: string;
+  link: string | null;
+  publishedAt: string | null;
+  summary: string | null;
+  receivedAt: string;
+  status: RegulatorChangeStatus;
+  note: string | null;
+  decidedBy: PolicyPerson | null;
+  decidedAt: string | null;
+  policies: { policy: PolicySummary; reviewStarted: boolean }[];
+};
+
+export type RegulatorChangesView = { available: boolean; feeds: { id: string; name: string }[]; items: RegulatorChangeView[] };
+
+export const regulatorChangesHref = "/policies/regulator-changes";

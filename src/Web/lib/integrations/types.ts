@@ -188,7 +188,7 @@ export const CHECK_RESULTS = [
 ] as const;
 
 /** Connector pack kinds with their own name on these pages. */
-export const PACK_KINDS = ["custom_rest", "webhook", "onprem_ad", "servicenow", "jira_service_management", "tasks_planner", "tasks_jira", "occupancy_rest", "camunda8", "mcp_server", "slack", "sms", "clock_import", "finance_rest", "finance_oracle_fusion", "finance_sap_s4", "google_workspace", "hr_rest", "hr_sftp", "hr_oracle_hcm", "hr_sap_successfactors", "lms_rest"] as const;
+export const PACK_KINDS = ["custom_rest", "webhook", "onprem_ad", "servicenow", "jira_service_management", "tasks_planner", "tasks_jira", "occupancy_rest", "regulator_feed", "camunda8", "mcp_server", "slack", "sms", "clock_import", "finance_rest", "finance_oracle_fusion", "finance_sap_s4", "google_workspace", "hr_rest", "hr_sftp", "hr_oracle_hcm", "hr_sap_successfactors", "lms_rest"] as const;
 
 /** Settings of a clock data connection (spec 017 US7). Columns are header names, or numbers from 1 without a header row. */
 export type ClockColumns = {
@@ -351,6 +351,7 @@ export const TICKETING_KINDS = {
   tasks_planner: { auth: ["oauth_client_credentials", "bearer"], desk: false, group: true },
   tasks_jira: { auth: ["basic", "bearer"], desk: false, group: false },
   occupancy_rest: { auth: ["bearer", "api_key", "basic", "oauth_client_credentials"], desk: false, group: false },
+  regulator_feed: { auth: ["none", "bearer", "api_key", "basic"], desk: false, group: false },
   camunda8: { auth: ["oauth_client_credentials", "bearer", "basic"], desk: false, group: false },
   mcp_server: { auth: ["none", "bearer", "api_key", "oauth_client_credentials"], desk: false, group: false },
 } as const;

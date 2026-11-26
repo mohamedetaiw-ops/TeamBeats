@@ -66,6 +66,18 @@ export function ReviewOutcomeForm({ policyId, review, rights }: { policyId: stri
       <p className={review.overdueAt ? "field-error" : "policies-meta"}>
         {t(review.overdueAt ? "overdueSince" : "dueOn", { date: format.dateTime(new Date(review.dueAt), { dateStyle: "long" }), number: review.version })}
       </p>
+      {review.cause ? (
+        <p data-testid="review-cause">
+          {t("cause")}{" "}
+          {review.cause.link ? (
+            <a href={review.cause.link} target="_blank" rel="noopener noreferrer">
+              <bdi>{review.cause.title}</bdi>
+            </a>
+          ) : (
+            <bdi>{review.cause.title}</bdi>
+          )}
+        </p>
+      ) : null}
       {rights.complete ? (
         <>
           <RadioGroup legend={t("outcome")} name="reviewOutcome" options={options} value={outcome} onChange={(e) => setOutcome(e.target.value)} cards required />
