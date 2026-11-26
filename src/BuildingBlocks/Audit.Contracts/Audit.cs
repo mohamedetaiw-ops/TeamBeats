@@ -172,6 +172,9 @@ public static class AuditActions
     public const string ExperienceStarterCreated = "experience.starter_created";
     public const string ExperienceStarterPublished = "experience.starter_published";
     public const string ExperienceBehavioralPersonalizationChanged = "experience.behavioral_personalization_changed";
+    public const string ExperimentProposed = "experience.experiment_proposed";
+    public const string ExperimentApproved = "experience.experiment_approved";
+    public const string ExperimentStopped = "experience.experiment_stopped";
     public const string TenantDomainAdded = "tenant.domain_added";
     public const string TenantDomainVerified = "tenant.domain_verified";
     public const string TenantDomainChanged = "tenant.domain_changed";

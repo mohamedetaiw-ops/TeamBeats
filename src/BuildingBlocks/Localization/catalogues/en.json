@@ -3302,5 +3302,15 @@
   "validation.experience.behavior_choice": "Say whether you agree or decline.",
   "validation.assistant.suggestions_choice": "Choose whether the assistant suggests questions.",
   "validation.assistant.suggestions_unavailable": "Suggestions are not offered in your organization.",
-  "capability.ai.assistant.suggestions": "Assistant suggestions"
+  "capability.ai.assistant.suggestions": "Assistant suggestions",
+  "validation.experience.experiment_name": "Give the experiment a name of up to 120 characters.",
+  "validation.experience.experiment_percent": "Choose a share of people from 1 to 50 percent.",
+  "validation.experience.experiment_page": "Choose a published page.",
+  "validation.experience.experiment_release": "Choose an earlier release of the page to try.",
+  "validation.experience.experiment_scope": "Choose a unit inside the page's own scope.",
+  "validation.experience.experiment_open": "This page already has an experiment that is proposed or running.",
+  "validation.experience.experiment_state": "The experiment can no longer be changed this way.",
+  "validation.experience.experiment_own": "Another administrator must approve an experiment you proposed.",
+  "validation.experience.experiment_choice": "Choose whether you take part in experiments.",
+  "validation.experience.experiment_unavailable": "Experiments are not part of your plan."
 }

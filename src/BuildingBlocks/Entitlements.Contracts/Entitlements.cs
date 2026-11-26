@@ -160,6 +160,8 @@ public static class Capabilities
     /// <summary>Spec 021 R3: KPI tiles from connected systems on location dashboards (Enterprise and Government).</summary>
     public const string AnalyticsKpiTiles = "analytics.kpi_tiles";
     public const string AnalyticsExperience = "analytics.experience";
+    public const string AnalyticsExperiments = "analytics.experiments";
+    public const string AnalyticsApi = "analytics.api";
     public const string AnalyticsSentiment = "analytics.sentiment";
     public const string DeploymentOnPrem = "deployment.on_prem";
     public const string ExperiencePageBuilder = "experience.page_builder";

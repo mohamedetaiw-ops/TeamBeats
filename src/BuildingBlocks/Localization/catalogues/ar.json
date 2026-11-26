@@ -3302,5 +3302,15 @@
   "validation.experience.behavior_choice": "حدد ما إذا كنت توافق أو ترفض.",
   "validation.assistant.suggestions_choice": "اختر ما إذا كان المساعد يقترح أسئلة.",
   "validation.assistant.suggestions_unavailable": "الاقتراحات غير متاحة في مؤسستك.",
-  "capability.ai.assistant.suggestions": "اقتراحات المساعد"
+  "capability.ai.assistant.suggestions": "اقتراحات المساعد",
+  "validation.experience.experiment_name": "أعطِ التجربة اسمًا لا يزيد على 120 حرفًا.",
+  "validation.experience.experiment_percent": "اختر نسبة من الأشخاص بين 1 و50 بالمئة.",
+  "validation.experience.experiment_page": "اختر صفحة منشورة.",
+  "validation.experience.experiment_release": "اختر إصدارًا سابقًا من الصفحة لتجربته.",
+  "validation.experience.experiment_scope": "اختر وحدة ضمن نطاق الصفحة نفسها.",
+  "validation.experience.experiment_open": "لهذه الصفحة تجربة مقترحة أو قيد التشغيل بالفعل.",
+  "validation.experience.experiment_state": "لم يعد ممكنًا تغيير التجربة بهذه الطريقة.",
+  "validation.experience.experiment_own": "يجب أن يوافق مسؤول آخر على تجربة اقترحتها.",
+  "validation.experience.experiment_choice": "اختر ما إذا كنت تشارك في التجارب.",
+  "validation.experience.experiment_unavailable": "التجارب ليست ضمن خطتك."
 }

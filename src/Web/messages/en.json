@@ -9751,7 +9751,8 @@
       "knowledgeLink": "Knowledge",
       "engagementLink": "Engagement",
       "hrLink": "HR",
-      "securityLink": "Security trends"
+      "securityLink": "Security trends",
+      "experimentsLink": "Experiments"
     },
     "campaigns": {
       "workspace": "Analytics",
@@ -10708,6 +10709,55 @@
       "saved": "KPI tiles saved.",
       "failed": "The KPI tiles could not be saved. Try again.",
       "readOnly": "You can see the KPI tiles but not change them."
+    },
+    "experiments": {
+      "title": "Experiments",
+      "workspace": "Analytics",
+      "intro": "Try an earlier release of a page on a share of the people who agreed to take part, and compare the results.",
+      "denied": "Experiments are not available to you",
+      "deniedHint": "Tenant administrators and page publishers of the whole organization manage experiments where the plan includes them.",
+      "new": "Propose an experiment",
+      "newHint": "A tenant administrator other than you approves it before anyone sees it. Only people who agreed in their preferences take part.",
+      "noPages": "No page has an earlier release to try yet.",
+      "page": "Page",
+      "pageOption": "{slug} (release {release} now)",
+      "name": "Name",
+      "variantRelease": "Release to try",
+      "variantReleaseHint": "An earlier release of the page.",
+      "percent": "Share of people",
+      "percentHint": "From 1 to 50 percent of the people who agreed.",
+      "propose": "Propose",
+      "busy": "Saving",
+      "proposed": "The experiment was proposed.",
+      "approve": "Approve and start",
+      "approved": "The experiment is running.",
+      "stop": "Stop",
+      "stopped": "The experiment was stopped. Everyone sees the current release.",
+      "notAllowed": "You may not do this.",
+      "failed": "That did not work. Try again.",
+      "none": "No experiments yet",
+      "noneHint": "Proposed, running and stopped experiments show here.",
+      "status": {
+        "proposed": "Waiting for approval",
+        "running": "Running",
+        "stopped": "Stopped"
+      },
+      "arms": "Releases",
+      "armsValue": "Current {control} against {variant}",
+      "proposedAt": "Proposed",
+      "results": "Results per group of people. Hidden when fewer than {size} people are in a group.",
+      "hidden": "Fewer than {size}",
+      "column": {
+        "arm": "Group",
+        "people": "People",
+        "completed": "Completed a task",
+        "opened": "Opened an item",
+        "rate": "Completion rate"
+      },
+      "arm": {
+        "control": "Current release",
+        "variant": "Release tried"
+      }
     }
   },
   "design_system": {
@@ -12987,6 +13037,13 @@
       "title_hint": "Questions the assistant offers about the page you are on.",
       "use": "Suggest questions about the page I am on",
       "hint": "Nothing is asked until you pick a question.",
+      "failed": "Your choice could not be saved. Try again."
+    },
+    "experiments": {
+      "title": "Experiments",
+      "title_hint": "Help improve pages by sometimes seeing an earlier version.",
+      "use": "Take part in page experiments",
+      "hint": "You may see a different version of a page. Only counts of groups are ever reported.",
       "failed": "Your choice could not be saved. Try again."
     }
   },

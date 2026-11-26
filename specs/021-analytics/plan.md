@@ -29,7 +29,18 @@ Defaults (spec silent):
 - Quick navigation (008) is not a surface: it ranks as the person types, so "shown" would count keystrokes.
 - No breakdown by unit or location, so a small group is never singled out within a surface.
 
+R3 slice 3, **governed experience experiments (US9 scenario 8, FR-022):**
+- Experiments live in the Experience module beside the page renderer (`experience.experiment`, `experience.experiment_consent`), under `analytics.experiments`. A page publisher for the page's scope proposes one: a name, an earlier release of the page as the variant, a share of 1 to 50 percent and optionally a unit inside the page's scope. A tenant administrator (`tenant.settings_manage`) other than the proposer approves it, which starts it; a page publisher or a tenant administrator stops it. Proposed, approved and stopped are audited (`experience.experiment_*`). One open experiment per page.
+- People take part only after agreeing on their preferences page (`/api/v1/me/experiments`). For a running experiment, each consenting viewer in scope is in the variant when a SHA-256 of the experiment and person falls below the share, so the arm is stable and nothing about the person is stored. Shared kiosk devices never take part. The renderer sends `experiment.exposure` (experiment and arm, server only) and shows the variant release; stopping shows the current release to everyone at once.
+- Results: `GET /api/v1/analytics/experiments/{id}` for whole tenant analytics viewers: per arm the people who saw it and, of them, who completed a task flow or opened an item afterwards, with the minimum group size. Page: Analytics > Experiments.
+
+Defaults (spec silent):
+- "Never on mandatory or critical content": pages hold no mandatory content of their own (items to acknowledge and policies are specs 009 and 025, critical alerts are in the shell), so an experiment only changes a page's arrangement and can never hide something a person must read.
+- The variant is an earlier immutable release, so an experiment never shows content nobody published.
+- Consent is opt in; the approver must differ from the proposer.
+
 ### R3 tests
+- Slice 3: proposal checks and permissions; approval only by another tenant administrator; only consenting people take part, each in the same arm every time; exposure counted once per person; results hide small arms and need analytics.view; stopping returns everyone to the current release; package and tenant boundaries; the page and preference in English and Arabic with axe.
 - Slice 2: people counted once per surface, an opening without a showing ignored, unknown surfaces dropped, small groups hidden; the assistant and learning owners send `shown`; the dashboard section in English and Arabic with axe.
 - The latest reading for the location with source and times; another location's reading never shows; a tile with a permission is left out for a viewer without it; the tile set is checked (metric once, names in both languages, a known permission, at most 12) and versioned; changes are audited; the package decides; another tenant sees nothing.
 

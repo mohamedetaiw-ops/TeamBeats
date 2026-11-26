@@ -63,6 +63,7 @@ public static class ExperienceModule
         services.AddScoped<ShellService>();
         services.AddScoped<Favorites>();
         services.AddScoped<Personalization.BehaviorPersonalization>();
+        services.AddScoped<Personalization.Experiments>();
         services.AddScoped<IBehaviorSignals>(sp => sp.GetRequiredService<Personalization.BehaviorPersonalization>());
         services.AddScoped<Commands>();
         services.AddScoped<PreferenceExport>();
@@ -321,13 +322,36 @@ public static class ExperienceModule
         x.MapGet("/pages/{id:guid}/components", async (Guid id, string? region, PageService pages, CancellationToken ct) =>
             Results.Ok(await pages.PickerAsync(id, region, ct)));
 
-        x.MapGet("/render", async (string? slug, PageService pages, RequestLocale locale, HttpRequest http, CancellationToken ct) =>
+        x.MapGet("/render", async (string? slug, PageService pages, RequestLocale locale, HttpRequest http, IDbSession session, CancellationToken ct) =>
         {
             if (string.IsNullOrEmpty(slug))
             {
                 throw Primitives.AppException.NotFound();
             }
-            return Results.Ok(await pages.RenderAsync(slug, locale.Locale, locale.Direction, DeviceClasses.From(http), ct));
+            var rendered = await pages.RenderAsync(slug, locale.Locale, locale.Direction, DeviceClasses.From(http), ct);
+            await session.CommitAsync(ct); // An experiment exposure (spec 021 R3) is queued through the outbox.
+            return Results.Ok(rendered);
+        });
+
+        // Governed experience experiments (spec 021 R3, FR-022).
+        x.MapGet("/experiments", async (Personalization.Experiments e, CancellationToken ct) => Results.Ok(new { experiments = await e.ListAsync(ct) }));
+        x.MapPost("/experiments", async (Personalization.ExperimentRequest request, Personalization.Experiments e, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await e.ProposeAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/experience/experiments/{view.Id}", view);
+        });
+        x.MapPost("/experiments/{id:guid}/approve", async (Guid id, Personalization.Experiments e, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await e.ApproveAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+        x.MapPost("/experiments/{id:guid}/stop", async (Guid id, Personalization.Experiments e, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await e.StopAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
         });
 
         // Feature controls (R2 T030, FR-057).
@@ -911,6 +935,14 @@ public static class ExperienceModule
         });
 
         // ---- Behavioral personalization (spec 008 R3, FR-033) ----
+
+        me.MapGet("/experiments", async (Personalization.Experiments e, CancellationToken ct) => Results.Ok(await e.ChoiceAsync(ct)));
+        me.MapPut("/experiments", async (Personalization.ExperimentChoiceRequest request, Personalization.Experiments e, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await e.ChooseAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
 
         me.MapGet("/personalization/behavior", async (Personalization.BehaviorPersonalization b, CancellationToken ct) => Results.Ok(await b.ChoiceAsync(ct)));
 

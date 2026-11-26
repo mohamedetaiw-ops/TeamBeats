@@ -16,6 +16,8 @@ import type { ProductionOptOutView } from "@/lib/evaluation/types";
 import type { BehaviorChoice as BehaviorChoiceView } from "@/lib/shell/types";
 import { BehaviorChoice } from "@/features/shell/BehaviorChoice";
 import { SuggestionChoice } from "@/features/assistant/SuggestionChoice";
+import { ExperimentChoice } from "@/features/shell/ExperimentChoice";
+import type { ExperimentChoice as ExperimentChoiceView } from "@/lib/experiments";
 import type { AssistantSuggestions } from "@/lib/assistant/types";
 import type { Badge } from "@/lib/kiosk";
 import "@/features/shell/preferences.css";
@@ -35,7 +37,8 @@ export default async function PreferencesPage() {
   // The evaluation opt-out shows only where the tenant samples live runs for evaluation (spec 034 US7).
   // The personalization choice shows only where the tenant turned personalization from use on (spec 008 R3).
   // The assistant suggestions choice shows only where the tenant offers suggestions (spec 014 R3).
-  const [values, t, badge, connected, evaluation, behavior, suggestions] = await Promise.all([
+  // The experiments choice shows only where the package has experiments (spec 021 R3).
+  const [values, t, badge, connected, evaluation, behavior, suggestions, experiments] = await Promise.all([
     getPreferences(),
     getTranslations("preferences"),
     apiGet<Badge>("/api/v1/me/kiosk-badge"),
@@ -43,6 +46,7 @@ export default async function PreferencesPage() {
     apiGet<ProductionOptOutView>("/api/v1/evaluation/production/opt-out"),
     apiGet<BehaviorChoiceView>("/api/v1/me/personalization/behavior"),
     apiGet<AssistantSuggestions>("/api/v1/assistant/suggestions"),
+    apiGet<ExperimentChoiceView>("/api/v1/me/experiments"),
   ]);
   const locales = me.data.tenant.enabledLocales.filter((l) => l === "ar" || l === "en");
   return (
@@ -91,6 +95,11 @@ export default async function PreferencesPage() {
         {suggestions.ok && suggestions.data.available ? (
           <SettingsSection id="pref-assistant" icon="spark" title={t("assistantSuggestions.title")} hint={t("assistantSuggestions.title_hint")}>
             <SuggestionChoice initial={suggestions.data.on} />
+          </SettingsSection>
+        ) : null}
+        {experiments.ok && experiments.data.available ? (
+          <SettingsSection id="pref-experiments" icon="trend-up" title={t("experiments.title")} hint={t("experiments.title_hint")}>
+            <ExperimentChoice initial={experiments.data} />
           </SettingsSection>
         ) : null}
         <SettingsSection id="pref-pages" icon="home" title={t("pages.title")} hint={t("pages.hint")}>

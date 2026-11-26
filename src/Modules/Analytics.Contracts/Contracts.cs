@@ -62,6 +62,11 @@ public static class AnalyticsEvents
     /// </summary>
     public const string RecommendationOutcome = "recommendation.outcome";
 
+    /// <summary>Spec 021 R3 FR-022: a consenting person saw one arm of a running experience experiment.</summary>
+    public const string ExperimentExposure = "experiment.exposure";
+
+    public static readonly IReadOnlySet<string> ExperimentArms = new HashSet<string>(StringComparer.Ordinal) { "control", "variant" };
+
     /// <summary>The sources whose items are viewed: content items, policies and documents.</summary>
     public static readonly IReadOnlySet<string> ItemSources = new HashSet<string>(StringComparer.Ordinal) { "content", "policies", "documents" };
 
@@ -112,7 +117,7 @@ public static class AnalyticsEvents
     /// <summary>Events only modules emit; the web collection endpoint drops them, so nobody can add to these counts by hand.</summary>
     public static readonly IReadOnlySet<string> ServerOnly = new HashSet<string>(StringComparer.Ordinal)
     {
-        EngagementAction, EngagementAnonymousAction, LearningProgress, BookingActivity, MobilePushOptIn, ProcessInstanceEnded, RequestServiceLevelBreached,
+        ExperimentExposure, EngagementAction, EngagementAnonymousAction, LearningProgress, BookingActivity, MobilePushOptIn, ProcessInstanceEnded, RequestServiceLevelBreached,
     };
 
     public static readonly IReadOnlySet<string> DeviceClasses = new HashSet<string>(StringComparer.Ordinal) { "mobile", "tablet", "desktop" };
@@ -156,6 +161,11 @@ public static class AnalyticsEvents
         {
             ["surface"] = new(AnalyticsFieldType.Key, true, RecommendationSurfaces),
             ["outcome"] = new(AnalyticsFieldType.Key, true, RecommendationOutcomes),
+        }),
+        [ExperimentExposure] = new(ExperimentExposure, false, new Dictionary<string, AnalyticsField>
+        {
+            ["experimentId"] = new(AnalyticsFieldType.Id, true),
+            ["arm"] = new(AnalyticsFieldType.Key, true, ExperimentArms),
         }),
         [EngagementAction] = new(EngagementAction, false, new Dictionary<string, AnalyticsField>
         {

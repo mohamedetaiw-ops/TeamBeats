@@ -124,7 +124,8 @@ public sealed partial class PageService(
     Fragments fragments,
     Components.FeatureControls controls,
     Components.ComponentDeployments deployments,
-    Sharing.OrgSharing sharing)
+    Sharing.OrgSharing sharing,
+    Personalization.Experiments experiments)
 {
     private sealed record PageRow(Guid Id, Guid? OrgUnitId, string Slug, string TemplateId, string TemplateVersion, int? CurrentRelease);
 
@@ -668,6 +669,11 @@ public sealed partial class PageService(
         if (!await sharing.SeesAsync(Sharing.OrgSharing.Page, page.Id, page.OrgUnitId, ct))
         {
             throw AppException.NotFound();
+        }
+        // A running experiment (spec 021 R3, FR-022) shows its variant release to the consenting people allocated to it.
+        if (await experiments.ArmAsync(page.Id, (await audiences.ViewerAsync(ct)).Units, ct) is { Variant: true } arm)
+        {
+            current = arm.Release;
         }
         var snapshot = await ReleaseAsync(page.Id, current, ct);
         // A fragment shows its current version on every page that places it (R2 T027); the release keeps only the reference.

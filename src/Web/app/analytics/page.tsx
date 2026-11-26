@@ -46,6 +46,9 @@ export default async function AnalyticsWorkspacePage() {
               <ButtonLink href="/analytics/experience" icon="trend-up" size="sm">
                 {t("experienceLink")}
               </ButtonLink>
+              <ButtonLink href="/analytics/experiments" icon="trend-up" size="sm">
+                {t("experimentsLink")}
+              </ButtonLink>
               <ButtonLink href="/analytics/search" icon="search" size="sm">
                 {t("searchLink")}
               </ButtonLink>
