@@ -25,6 +25,12 @@ public sealed record ProblemView(string ElementId, string Key, string Message);
 public sealed record ProcessModelView(string Key, Guid? OwnerOrgUnitId, IReadOnlyDictionary<string, string> Names, string BpmnXml, IReadOnlyList<ProblemView> Problems,
     DateTimeOffset UpdatedAt, IReadOnlyList<ProcessVersionView> Versions);
 
+/// <summary>One line of an import report, with its message in the caller's language.</summary>
+public sealed record ImportItemView(string ElementId, string Key, string? Detail, string Message);
+
+/// <summary>The result of importing a file from another tool (spec 024 R3, US7): the draft when nothing was unsupported.</summary>
+public sealed record ProcessImportReport(bool Imported, ProcessModelView? Model, IReadOnlyList<ImportItemView> Converted, IReadOnlyList<ImportItemView> Unsupported);
+
 public sealed record StartProcessRequest(string? BusinessKey, Guid? OrgUnitId, JsonElement? Variables);
 
 /// <summary>
@@ -132,6 +138,44 @@ public sealed class ProcessModels(IDbSession session, ITenantContext context, IA
     }
 
     /// <summary>Saves the draft, valid or not, and returns it with the problems the validator found (FR-002).</summary>
+    /// <summary>
+    /// Imports a .bpmn file from Camunda Modeler or another tool as a new draft (US7 scenario 1). Vendor extensions with a
+    /// TeamBeats meaning are converted; if anything cannot be represented the report lists it and no draft is created. An
+    /// existing model is never overwritten by an import. Needs the advanced process package.
+    /// </summary>
+    public async Task<ProcessImportReport> ImportAsync(string key, ProcessModelRequest request, CancellationToken ct = default)
+    {
+        context.RequireUser();
+        await entitlements.DemandAsync(Capabilities.WorkflowBpmn, ct);
+        await entitlements.DemandAsync(Capabilities.WorkflowBpmnAdvanced, ct);
+        if (!BpmnReader.IsValidKey(key) || key.Contains(':') || key.Length > MaxKeyLength)
+        {
+            throw AppException.Validation("key", "validation.process.key");
+        }
+        if (string.IsNullOrWhiteSpace(request.BpmnXml))
+        {
+            throw AppException.Validation("bpmnXml", "validation.process.xml");
+        }
+        if (!await MayDesignAsync(request.OwnerOrgUnitId, ct))
+        {
+            throw AppException.Denied();
+        }
+        if (await RowAsync(key, false, ct) is not null)
+        {
+            throw AppException.Conflict("conflict.process.model_exists");
+        }
+        var result = BpmnImporter.Import(key, request.BpmnXml);
+        ImportItemView View(ImportItem i) => new(i.ElementId, i.Key, i.Detail, localizer.Get(i.Key, locale.Locale));
+        var converted = result.Converted.Select(View).ToList();
+        var unsupported = result.Unsupported.Select(View).ToList();
+        if (unsupported.Count > 0 || result.Xml is null)
+        {
+            return new ProcessImportReport(false, null, converted, unsupported);
+        }
+        var model = await SaveAsync(key, request with { BpmnXml = result.Xml }, ct);
+        return new ProcessImportReport(true, model, converted, unsupported);
+    }
+
     public async Task<ProcessModelView> SaveAsync(string key, ProcessModelRequest request, CancellationToken ct = default)
     {
         var user = context.RequireUser();

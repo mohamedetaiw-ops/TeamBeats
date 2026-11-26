@@ -184,6 +184,7 @@ function setupHeading(kind: ConnectionType): { title: string; intro: string } {
       return { title: "add.title", intro: "add.intro" };
     case "servicenow":
     case "jira_service_management":
+    case "camunda8":
       return { title: `ticketing.${kind}.addTitle`, intro: `ticketing.${kind}.addIntro` };
     case "hr_rest":
       return { title: "hr.addRestTitle", intro: "hr.addIntro" };

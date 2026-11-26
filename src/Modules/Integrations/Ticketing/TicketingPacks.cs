@@ -37,7 +37,7 @@ public abstract partial class TicketingPack(ITenantContext context, RestSignIn s
 
     public int Version => 1;
 
-    public string CapabilityKey => Capabilities.IntegrationConnectors;
+    public virtual string CapabilityKey => Capabilities.IntegrationConnectors;
 
     public abstract IReadOnlyList<ConnectorActionDefinition> Actions { get; }
 
@@ -71,10 +71,11 @@ public abstract partial class TicketingPack(ITenantContext context, RestSignIn s
 
     /// <summary>
     /// One HTTP exchange with the system. Returns the failure the status means, or the JSON answer. An answer that is
-    /// not JSON or over 1 MB is an invalid response that may have acted when <paramref name="writes"/> is true.
+    /// not JSON or over 1 MB is an invalid response that may have acted when <paramref name="writes"/> is true. With
+    /// <paramref name="noContent"/>, a 204 answer is a success with no body.
     /// </summary>
     protected async Task<(PackCallResult? Failure, JsonElement Body)> SendAsync(PackConnection connection, TicketingSettings settings, HttpMethod method,
-        string pathAndQuery, object? body, IReadOnlyDictionary<int, string>? business, bool writes, CancellationToken ct)
+        string pathAndQuery, object? body, IReadOnlyDictionary<int, string>? business, bool writes, CancellationToken ct, bool noContent = false)
     {
         var baseUri = new Uri(settings.BaseUrl.TrimEnd('/') + "/");
         var uri = new Uri(settings.BaseUrl.TrimEnd('/') + pathAndQuery);
@@ -97,6 +98,10 @@ public abstract partial class TicketingPack(ITenantContext context, RestSignIn s
         if (signIn.MapStatus(connection, settings.Rest, response, business) is { } failure)
         {
             return (failure, default);
+        }
+        if (noContent && response.StatusCode == System.Net.HttpStatusCode.NoContent)
+        {
+            return (null, default);
         }
         return await RestSignIn.ReadJsonAsync(response, ct) is { ValueKind: JsonValueKind.Object } json
             ? (null, json)

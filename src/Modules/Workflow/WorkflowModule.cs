@@ -30,6 +30,8 @@ public static class WorkflowModule
         services.AddScoped<Decisions.DecisionModels>();
         services.AddScoped<ProcessModelTasks>();
         services.AddScoped<ITaskSource>(sp => sp.GetRequiredService<ProcessModelTasks>());
+        services.AddScoped<ExternalTasks>();
+        services.AddScoped<IPersonalTaskSource, ExternalTaskInbox>();
         services.AddMessageHandler<WorkingCalendarChanged, CalendarChangeHandler>("workflow.due_recalculation");
         services.AddMessageHandler<ConnectorActionCompleted, ConnectorStepFinished>("workflow.connector_step_finished");
         services.AddMessageHandler<InboundWebhookReceived, InboundMessageReceived>("workflow.inbound_message");
@@ -50,6 +52,25 @@ public static class WorkflowModule
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });
+
+        group.MapGet("/external-tasks/{id:guid}", async (Guid id, ExternalTasks tasks, CancellationToken ct) => Results.Ok(await tasks.GetAsync(id, ct)));
+
+        group.MapPost("/external-tasks/{id:guid}:complete", async (Guid id, CompleteExternalTaskRequest request, ExternalTasks tasks, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await tasks.CompleteAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        group.MapPost("/processes/{key}:import", async (string key, ProcessModelRequest request, ProcessModels models, IDbSession session, CancellationToken ct) =>
+        {
+            var report = await models.ImportAsync(key, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(report);
+        });
+
+        group.MapGet("/decisions/{key}/versions/{version:int}/dmn", async (string key, int version, Decisions.DecisionModels decisions, CancellationToken ct) =>
+            Results.Text(await decisions.DmnAsync(key, version, ct), "application/xml"));
 
         group.MapPost("/processes/{key}:publish", async (string key, ProcessModels models, IDbSession session, CancellationToken ct) =>
         {
@@ -95,6 +116,19 @@ public static class WorkflowModule
             var view = await ops.ResolveIncidentAsync(id, request, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
+        });
+
+        group.MapGet("/processes/{key}/migration", async (string key, int? fromVersion, int? toVersion, ProcessOperations ops, CancellationToken ct) =>
+            Results.Ok(await ops.PlanMigrationAsync(key, fromVersion, toVersion, ct)));
+
+        group.MapPost("/processes/{key}/migration:dry-run", async (string key, MigrationRequest request, ProcessOperations ops, CancellationToken ct) =>
+            Results.Ok(await ops.MigrateAsync(key, request, false, ct)));
+
+        group.MapPost("/processes/{key}/migration:execute", async (string key, MigrationRequest request, ProcessOperations ops, IDbSession session, CancellationToken ct) =>
+        {
+            var report = await ops.MigrateAsync(key, request, true, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(report);
         });
 
         group.MapGet("/processes/{key}/monitoring", async (string key, int? version, DateTimeOffset? from, DateTimeOffset? to, ProcessOperations ops, CancellationToken ct) =>

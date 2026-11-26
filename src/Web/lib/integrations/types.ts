@@ -159,7 +159,7 @@ export const CHECK_RESULTS = [
 ] as const;
 
 /** Connector pack kinds with their own name on these pages. */
-export const PACK_KINDS = ["custom_rest", "webhook", "onprem_ad", "servicenow", "jira_service_management", "slack", "sms", "clock_import", "finance_rest", "google_workspace", "hr_rest", "hr_sftp", "lms_rest"] as const;
+export const PACK_KINDS = ["custom_rest", "webhook", "onprem_ad", "servicenow", "jira_service_management", "camunda8", "slack", "sms", "clock_import", "finance_rest", "google_workspace", "hr_rest", "hr_sftp", "lms_rest"] as const;
 
 /** Settings of a clock data connection (spec 017 US7). Columns are header names, or numbers from 1 without a header row. */
 export type ClockColumns = {
@@ -287,6 +287,7 @@ export type ClockProblem = { line: number; employeeNumber: string | null; reason
 export const TICKETING_KINDS = {
   servicenow: { auth: ["basic", "oauth_client_credentials"], desk: false },
   jira_service_management: { auth: ["basic", "bearer"], desk: true },
+  camunda8: { auth: ["oauth_client_credentials", "bearer", "basic"], desk: false },
 } as const;
 export type TicketingKind = keyof typeof TICKETING_KINDS;
 export const isTicketing = (kind: string): kind is TicketingKind => Object.prototype.hasOwnProperty.call(TICKETING_KINDS, kind);

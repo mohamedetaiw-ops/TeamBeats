@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Modules.Workflow.Contracts;
@@ -32,6 +33,20 @@ public sealed record ElementMonitoring(string ElementId, string Name, int Active
 public sealed record ProcessMonitoring(string Process, int Version, DateTimeOffset From, DateTimeOffset To, int Active, int Completed, int Cancelled, int WithIncidents,
     double? AverageSeconds, double? P90Seconds, IReadOnlyList<ElementMonitoring> Elements, IReadOnlyList<string> Slowest);
 
+public sealed record MigrationElement(string ElementId, string Name, string Type);
+
+/// <summary>A proposed plan (US6 scenario 1): each source element with the target element of the same ID and kind, or null to choose.</summary>
+public sealed record MigrationPlan(string Process, int FromVersion, int ToVersion, IReadOnlyList<MigrationPlanRow> Elements, IReadOnlyList<MigrationElement> TargetElements,
+    int ActiveInstances);
+
+public sealed record MigrationPlanRow(string ElementId, string Name, string Type, string? Target);
+
+public sealed record MigrationRequest(int? FromVersion, int? ToVersion, IReadOnlyDictionary<string, string>? Mapping, IReadOnlyList<Guid>? InstanceIds);
+
+public sealed record MigrationOutcome(Guid InstanceId, string? BusinessKey, bool Migratable, string? Reason, string? ElementId);
+
+public sealed record MigrationReport(bool Executed, int Migratable, int Refused, IReadOnlyList<MigrationOutcome> Instances);
+
 /// <summary>
 /// The operator view and monitoring of spec 024 (FR-013, FR-014, US5) for process model instances. Operators
 /// (<c>process.operate</c> at the instance's unit) search instances, read their variables and history, change variables
@@ -40,8 +55,9 @@ public sealed record ProcessMonitoring(string Process, int Version, DateTimeOffs
 /// Approval routes of requests are operated from their requests (spec 016), not here.
 /// </summary>
 public sealed class ProcessOperations(IDbSession session, ITenantContext context, IAuthorizationService authz, IEntitlementService entitlements, IClock clock,
-    ProcessEngine engine)
+    ProcessEngine engine, IAuditWriter audit)
 {
+    public const int MaxMigrationInstances = 100;
     public const int MaxResults = 100;
     public const int MaxScan = 1000;
     public const int ReasonMax = 500;
@@ -283,5 +299,96 @@ public sealed class ProcessOperations(IDbSession session, ITenantContext context
             .Take(5).Select(e => e.ElementId).ToList();
         return new ProcessMonitoring(key, v, start, end, counts.Active, counts.Completed, counts.Cancelled, counts.Incidents,
             counts.Avg is { } avg ? Math.Round(avg, 1) : null, counts.P90 is { } p90 ? Math.Round(p90, 1) : null, elements, slowest);
+    }
+
+    // ---- Instance migration (spec 024 R3, FR-015, US6) ----
+
+    /// <summary>The model, its owner unit checked for <c>process.operate</c>, with the advanced package.</summary>
+    private async Task<string> MigrationModelAsync(string key, CancellationToken ct)
+    {
+        await DemandAsync(ct);
+        await entitlements.DemandAsync(Capabilities.WorkflowBpmnAdvanced, ct);
+        var model = await session.QuerySingleOrDefaultAsync("select owner_org_unit_id from workflow.process_model where key = @key", new { key },
+            r => (Found: true, Owner: r.Get<Guid?>("owner_org_unit_id")), ct);
+        if (!model.Found || !await MayOperateAsync(model.Owner, null, ct))
+        {
+            throw AppException.NotFound();
+        }
+        return ProcessEngine.ModelPrefix + key;
+    }
+
+    private async Task<(Graph.ProcessGraph From, Graph.ProcessGraph To)> VersionsAsync(string definition, int? fromVersion, int? toVersion, CancellationToken ct)
+    {
+        if (fromVersion is not { } from || toVersion is not { } to || from == to)
+        {
+            throw AppException.Validation("toVersion", "validation.process.migration_versions");
+        }
+        var source = await engine.GraphAsync(definition, from, ct);
+        var target = await engine.GraphAsync(definition, to, ct);
+        if (source is null || target is null)
+        {
+            throw AppException.Validation("toVersion", "validation.process.migration_versions");
+        }
+        return (source, target);
+    }
+
+    /// <summary>Proposes a mapping between two versions (US6 scenario 1): same ID and kind map to themselves, the rest is for the operator.</summary>
+    public async Task<MigrationPlan> PlanMigrationAsync(string key, int? fromVersion, int? toVersion, CancellationToken ct = default)
+    {
+        var definition = await MigrationModelAsync(key, ct);
+        var (from, to) = await VersionsAsync(definition, fromVersion, toVersion, ct);
+        var proposal = Graph.InstanceMigration.Propose(from, to);
+        var active = await session.QuerySingleOrDefaultAsync(
+            "select count(*)::int from workflow.process_instance where definition_key = @definition and definition_version = @fromVersion and status = 'active'",
+            new { definition, fromVersion }, r => r.GetInt32(0), ct);
+        return new MigrationPlan(key, fromVersion!.Value, toVersion!.Value,
+            from.Elements.Select(e => new MigrationPlanRow(e.Id, e.Name(Locale), e.Type, proposal[e.Id])).ToList(),
+            to.Elements.Select(e => new MigrationElement(e.Id, e.Name(Locale), e.Type)).ToList(), active);
+    }
+
+    /// <summary>
+    /// Checks the selected instances against a mapping (US6 scenario 2) and, when <paramref name="execute"/> is set, moves
+    /// those that can move (scenario 3) and audits the run with its counts. An instance the caller does not operate is
+    /// reported as not found, like one that does not exist.
+    /// </summary>
+    public async Task<MigrationReport> MigrateAsync(string key, MigrationRequest request, bool execute, CancellationToken ct = default)
+    {
+        var definition = await MigrationModelAsync(key, ct);
+        var (from, to) = await VersionsAsync(definition, request.FromVersion, request.ToVersion, ct);
+        var mapping = request.Mapping ?? new Dictionary<string, string>();
+        if (mapping.Count > from.Elements.Count || mapping.Any(m => !from.Has(m.Key) || !to.Has(m.Value) || !Graph.InstanceMigration.SameKind(from.Element(m.Key), to.Element(m.Value))))
+        {
+            throw AppException.Validation("mapping", "validation.process.migration_mapping");
+        }
+        var ids = request.InstanceIds?.Distinct().ToList() ?? [];
+        if (ids.Count is 0 or > MaxMigrationInstances)
+        {
+            throw AppException.Validation("instanceIds", "validation.process.migration_instances");
+        }
+        var outcomes = new List<MigrationOutcome>(ids.Count);
+        var units = new Dictionary<Guid, bool>();
+        foreach (var id in ids)
+        {
+            var row = await session.QuerySingleOrDefaultAsync(
+                "select business_key, org_unit_id from workflow.process_instance where id = @id and definition_key = @definition", new { id, definition },
+                r => (Found: true, BusinessKey: r.GetString(0), Unit: r.Get<Guid?>("org_unit_id")), ct);
+            if (!row.Found || !await MayOperateAsync(row.Unit, units, ct))
+            {
+                outcomes.Add(new MigrationOutcome(id, null, false, "not_found", null));
+                continue;
+            }
+            var check = await engine.MigrateInstanceAsync(id, request.FromVersion!.Value, request.ToVersion!.Value, mapping, execute, ct);
+            outcomes.Add(new MigrationOutcome(id, row.BusinessKey, check.Migratable, check.Reason, check.ElementId));
+        }
+        var movable = outcomes.Count(o => o.Migratable);
+        if (execute)
+        {
+            await audit.WriteAsync(new AuditEntry(AuditActions.ProcessMigrationExecuted, "process_model", key, Changes: new
+            {
+                fromVersion = request.FromVersion, toVersion = request.ToVersion, selected = ids.Count, migrated = movable, refused = ids.Count - movable,
+                mapping = mapping.Where(m => m.Key != m.Value).ToDictionary(m => m.Key, m => m.Value),
+            }), ct);
+        }
+        return new MigrationReport(execute, movable, outcomes.Count - movable, outcomes);
     }
 }

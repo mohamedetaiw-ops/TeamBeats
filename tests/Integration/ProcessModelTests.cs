@@ -272,6 +272,129 @@ public sealed class ProcessModelTests(TenantWorld world)
         Assert.Equal(["order", "reserve"], history.Where(h => h.Event == "compensated").Select(h => h.ElementId));
     }
 
+    [Fact]
+    public async Task Operators_dry_run_and_move_running_instances_to_a_new_version_with_a_mapping()
+    {
+        var o = await FreshAsync();
+        var t = o.T;
+        var amal = $"users=\"{t["amal"].Id}\"";
+        string Version(string second, string sub) => Model($"""
+            <bpmn:startEvent id="s"/>{UserTask("review", amal)}{UserTask(second, amal, "Approve")}
+            <bpmn:subProcess id="check"><bpmn:startEvent id="cs"/>{sub}<bpmn:endEvent id="ce"/></bpmn:subProcess>
+            <bpmn:endEvent id="done"/>
+            {Flow("f1", "s", "review")}{Flow("f2", "review", second)}{Flow("f3", second, "check")}{Flow("f4", "check", "done")}
+            """);
+        var inner = $"""{UserTask("inspect", amal, "Inspect")}{Flow("c1", "cs", "inspect")}{Flow("c2", "inspect", "ce")}""";
+        await SaveAsync(t, "owner", "moving", Version("approve", inner));
+        await PublishAsync(t, "owner", "moving");
+        var atApprove = await StartAsync(t, "moving", null, o.Gulf, "MV-1");
+        var inside = await StartAsync(t, "moving", null, o.Gulf, "MV-2");
+        var africa = await StartAsync(t, "moving", null, o.Africa, "MV-3");
+        async Task Finish(Guid instance, string element)
+        {
+            var task = (await TasksAsync(t, "amal")).Single(x => x.InstanceId == instance && x.ElementId == element);
+            await CompleteAsync(t, "amal", task.Id);
+        }
+        await Finish(atApprove, "review");
+        await Finish(inside, "review");
+        await Finish(inside, "approve");
+
+        // Version 2 renames the approval step and adds a step inside the check.
+        await SaveAsync(t, "owner", "moving", Version("sign_off", $"""{UserTask("inspect", amal, "Inspect")}{UserTask("record", amal, "Record")}{Flow("c1", "cs", "inspect")}{Flow("c2", "inspect", "record")}{Flow("c3", "record", "ce")}"""));
+        await PublishAsync(t, "owner", "moving");
+        const string Migration = $"{Api}/moving/migration";
+
+        // Migration needs the advanced package and process.operate.
+        Assert.Equal(HttpStatusCode.Forbidden, (await t["operator"].Client.GetAsync($"{Migration}?fromVersion=1&toVersion=2")).StatusCode);
+        await world.SetCapabilityAsync(t, Capabilities.WorkflowBpmnAdvanced, new { enabled = true });
+        var plan = await OkAsync(t["operator"].Client.GetAsync($"{Migration}?fromVersion=1&toVersion=2"));
+        var rows = plan.GetProperty("elements").EnumerateArray().ToDictionary(r => r.GetProperty("elementId").GetString()!, r => r.GetProperty("target"));
+        Assert.Equal("review", rows["review"].GetString());
+        Assert.Equal(JsonValueKind.Null, rows["approve"].ValueKind);
+        Assert.Equal(3, plan.GetProperty("activeInstances").GetInt32());
+        Assert.Equal(HttpStatusCode.NotFound, (await t["employee"].Client.GetAsync($"{Migration}?fromVersion=1&toVersion=2")).StatusCode);
+        Assert.Equal("validation.process.migration_versions", await ProblemKeyAsync(t["operator"].Client.GetAsync($"{Migration}?fromVersion=1&toVersion=1"), HttpStatusCode.BadRequest));
+        Assert.Equal("validation.process.migration_mapping", await ProblemKeyAsync(t["operator"].Client.PostAsJsonAsync($"{Migration}:dry-run",
+            new { fromVersion = 1, toVersion = 2, mapping = new Dictionary<string, string> { ["approve"] = "check" }, instanceIds = new[] { atApprove } }), HttpStatusCode.BadRequest));
+
+        object Body(params Guid[] ids) => new { fromVersion = 1, toVersion = 2, mapping = new Dictionary<string, string> { ["approve"] = "sign_off" }, instanceIds = ids };
+        var other = await FreshAsync("enterprise_gov");
+        var stranger = Guid.NewGuid();
+        var dry = await OkAsync(t["operator"].Client.PostAsJsonAsync($"{Migration}:dry-run", Body(atApprove, inside, africa, stranger)));
+        var report = dry.GetProperty("instances").EnumerateArray().ToDictionary(i => i.GetProperty("instanceId").GetGuid(), i => i);
+        Assert.True(report[atApprove].GetProperty("migratable").GetBoolean());
+        Assert.Equal(("structure_changed", "check"), (report[inside].GetProperty("reason").GetString(), report[inside].GetProperty("elementId").GetString()));
+        Assert.True(report[africa].GetProperty("migratable").GetBoolean());
+        Assert.Equal("not_found", report[stranger].GetProperty("reason").GetString());
+        Assert.Equal(1, (await InstanceAsync(t, atApprove))!.DefinitionVersion);
+
+        // Executing moves the instance: its open task now belongs to the renamed step and it finishes on version 2.
+        var executed = await OkAsync(t["operator"].Client.PostAsJsonAsync($"{Migration}:execute", Body(atApprove, inside)));
+        Assert.Equal((1, 1), (executed.GetProperty("migratable").GetInt32(), executed.GetProperty("refused").GetInt32()));
+        Assert.Equal(2, (await InstanceAsync(t, atApprove))!.DefinitionVersion);
+        Assert.Equal(1, (await InstanceAsync(t, inside))!.DefinitionVersion);
+        Assert.Equal(1, await world.Database.AuditCountAsync(t.Id, AuditActions.ProcessMigrationExecuted));
+        await Finish(atApprove, "sign_off");
+        await Finish(atApprove, "inspect");
+        await Finish(atApprove, "record");
+        Assert.Equal("completed", (await InstanceAsync(t, atApprove))!.Status);
+        var history = await AsAsync(t, null, sp => sp.GetRequiredService<IProcessEngine>().HistoryAsync(atApprove));
+        Assert.Contains(history, h => h.Event == "migrated");
+        Assert.Contains(history, h => h.ElementId == "review" && h.Event == "completed");
+
+        // The instance left behind still runs on version 1; another tenant cannot plan or move this tenant's instances.
+        await Finish(inside, "inspect");
+        Assert.Equal("completed", (await InstanceAsync(t, inside))!.Status);
+        Assert.Equal(HttpStatusCode.NotFound, (await other.T["operator"].Client.GetAsync($"{Migration}?fromVersion=1&toVersion=2")).StatusCode);
+        Assert.Equal(1, (await InstanceAsync(t, africa))!.DefinitionVersion);
+    }
+
+    [Fact]
+    public async Task A_Camunda_file_imports_as_a_draft_and_one_with_unsupported_parts_is_listed_and_not_saved()
+    {
+        var o = await FreshAsync();
+        var t = o.T;
+        string Camunda(string extra) => $"""
+            <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" id="d">
+              <bpmn:process id="leave" name="Leave" isExecutable="true">
+                <bpmn:startEvent id="s"/>
+                <bpmn:userTask id="approve" name="Approve"><bpmn:extensionElements><zeebe:assignmentDefinition candidateUsers="{t["amal"].Id}"/>{extra}</bpmn:extensionElements></bpmn:userTask>
+                <bpmn:endEvent id="e"/>
+                <bpmn:sequenceFlow id="f1" sourceRef="s" targetRef="approve"/><bpmn:sequenceFlow id="f2" sourceRef="approve" targetRef="e"/>
+              </bpmn:process>
+            </bpmn:definitions>
+            """;
+
+        // Import needs the advanced package and process.design.
+        Assert.Equal(HttpStatusCode.Forbidden, (await t["owner"].Client.PostAsJsonAsync($"{Api}/leave:import", new { bpmnXml = Camunda("") })).StatusCode);
+        await world.SetCapabilityAsync(t, Capabilities.WorkflowBpmnAdvanced, new { enabled = true });
+        Assert.Equal(HttpStatusCode.Forbidden, (await t["employee"].Client.PostAsJsonAsync($"{Api}/leave:import", new { bpmnXml = Camunda("") })).StatusCode);
+
+        // A form of the other tool cannot run here: the report lists it and nothing is saved.
+        var refused = await OkAsync(t["owner"].Client.PostAsJsonAsync($"{Api}/leave:import", new { bpmnXml = Camunda("""<zeebe:formDefinition formKey="camunda-forms:bpmn:leave"/>""") }));
+        Assert.False(refused.GetProperty("imported").GetBoolean());
+        var item = Assert.Single(refused.GetProperty("unsupported").EnumerateArray());
+        Assert.Equal(("approve", "process.import.vendor_extension", "formDefinition"),
+            (item.GetProperty("elementId").GetString(), item.GetProperty("key").GetString(), item.GetProperty("detail").GetString()));
+        Assert.False(string.IsNullOrEmpty(item.GetProperty("message").GetString()));
+        Assert.Equal(HttpStatusCode.NotFound, (await t["owner"].Client.GetAsync($"{Api}/leave")).StatusCode);
+
+        // Without it the draft is created with the converted assignment, publishes and runs.
+        var imported = await OkAsync(t["owner"].Client.PostAsJsonAsync($"{Api}/leave:import", new { bpmnXml = Camunda("""<zeebe:userTask/>""") }));
+        Assert.True(imported.GetProperty("imported").GetBoolean(), imported.ToString());
+        Assert.Contains(imported.GetProperty("converted").EnumerateArray(), c => c.GetProperty("key").GetString() == "process.import.users");
+        Assert.Equal(0, imported.GetProperty("model").GetProperty("problems").GetArrayLength());
+        await PublishAsync(t, "owner", "leave");
+        var instance = await StartAsync(t, "leave", null, o.Gulf, "LV-1");
+        Assert.Equal("approve", Assert.Single(await TasksAsync(t, "amal")).ElementId);
+
+        // An import never overwrites a model, and another tenant does not see the draft.
+        Assert.Equal("conflict.process.model_exists", await ProblemKeyAsync(t["owner"].Client.PostAsJsonAsync($"{Api}/leave:import", new { bpmnXml = Camunda("") }), HttpStatusCode.Conflict));
+        var other = await FreshAsync("enterprise_gov");
+        Assert.Equal(HttpStatusCode.NotFound, (await other.T["owner"].Client.GetAsync($"{Api}/leave")).StatusCode);
+        Assert.Equal("active", (await InstanceAsync(t, instance))!.Status);
+    }
+
     private async Task<HttpStatusCode> AssertDeniedAsync(TestTenant t, string user, Guid task)
     {
         try
@@ -467,6 +590,12 @@ public sealed class ProcessModelTests(TenantWorld world)
         Assert.Equal(1, published.GetProperty("versions")[0].GetProperty("version").GetInt32());
         Assert.Equal(1, (await OkAsync(t["owner"].Client.PostAsync($"{Decisions}/band:publish", null))).GetProperty("versions").GetArrayLength());
         Assert.Equal(1, await world.Database.AuditCountAsync(t.Id, AuditActions.DecisionPublished));
+        // A published version exports as DMN for standard tools (US7 scenario 2); operators do not read decisions.
+        var dmn = await t["owner"].Client.GetAsync($"{Decisions}/band/versions/1/dmn");
+        Assert.Equal("application/xml", dmn.Content.Headers.ContentType?.MediaType);
+        Assert.Contains("https://www.omg.org/spec/DMN/", await dmn.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+        Assert.Equal(HttpStatusCode.NotFound, (await t["owner"].Client.GetAsync($"{Decisions}/band/versions/9/dmn")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await t["operator"].Client.GetAsync($"{Decisions}/band/versions/1/dmn")).StatusCode);
 
         // Employees and process operators do not edit decisions; another tenant does not see them.
         Assert.Equal(HttpStatusCode.Forbidden, (await t["employee"].Client.PutAsJsonAsync($"{Decisions}/other", new { dmnXml = Bands() })).StatusCode);

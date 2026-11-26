@@ -94,6 +94,40 @@ R3 adds compensation, instance migration, BPMN import from other tools and the C
 - History records `compensation` on the event with the list, then `compensating` and `compensated` on each activity, so Tracking shows each handler.
 - Defaults where the spec is silent: no compensation of multi-instance activities or of sub-processes as a whole, no compensation event sub-processes, and a compensation event inside a sub-process compensates only what completed in that sub-process.
 
+### Instance migration (FR-015, US6)
+- `GET /api/v1/workflow/processes/{key}/migration?fromVersion&toVersion` proposes a plan: each step of the source version with the step of the same ID and kind in the target, or none, and the target's steps to choose from.
+- `POST .../migration:dry-run` and `POST .../migration:execute` take the versions, a mapping (source step to target step of the same kind) and 1 to 100 instance IDs, and report per instance whether it can move and why not. Execute moves those that can and writes one audit event `process.migration_executed` with the counts and the mapping.
+- An instance moves only when every token maps to a step of the same kind, a token waiting at a join still has its incoming flow, every timer or message it waits for maps to the same kind of event with the same message and key on the mapped step, every completed step it could still compensate keeps a compensation boundary, it is not compensating, and every sub-process or multi-instance it is inside keeps the same ID and the same inside (US6 scenario 4).
+- Moving keeps tokens, variables and history; open tasks, service steps, incidents, timers and subscriptions take the target's step IDs in one statement per table, and history records `migrated`.
+- Needs `process.operate` at the model's owner unit and, per instance, at the instance's unit; an instance the operator does not operate is reported as not found. Needs `workflow.bpmn_advanced`.
+- Defaults where the spec is silent: an open task keeps its candidates and due time; a timer keeps its due time; boundary events that are new in the target are armed only the next time their step starts; child instances of call activities are migrated on their own process.
+- Operations page: a third tab "Move to new version" with the plan, a step picker per step, the instance list with selection, a dry run and the move.
+
+### BPMN import and export (US7)
+- `POST /api/v1/workflow/processes/{key}:import` takes a .bpmn file from Camunda 7, Camunda 8 or another BPMN 2.0 tool for a new key (an import never overwrites a model). `BpmnImporter` keeps standard BPMN and converts vendor extensions with a TeamBeats meaning: assignee (a TeamBeats user ID, a Camunda 8 `=` expression or a Camunda 7 `${variable}`), candidate users and groups given as TeamBeats IDs, due dates of whole days (as working days), retries (Camunda 8 task definition or Camunda 7 retry cycle), called process, message correlation keys, input and output mappings, multi-instance collections and conditions (`=` and `${}` wrappers removed, `&&`, `||` and `==` turned into FEEL).
+- Unsupported, listed with the element and detail, and nothing saved: several pools or message flows, more than one process, elements outside the subset, user or group names that are not TeamBeats IDs, other due dates, forms, listeners, properties and any other vendor attribute or extension. Vendor settings that only tune the other engine (async, priority, history time to live, version tag) are dropped with a note.
+- The other engine's workers (job type, Java class, delegate, external task topic) are dropped with a note; the service step gets an empty `tb:connector` the designer binds, which stays an ordinary draft problem.
+- Export: `GET .../processes/{key}/versions/{version}/bpmn` (R2) and `GET /api/v1/workflow/decisions/{key}/versions/{version}/dmn` give the standard files with TeamBeats settings in the `teambeats` namespace.
+- Needs `process.design` at the owner unit and `workflow.bpmn_advanced`. The processes page has an "Import from another tool" panel with the report.
+
+### Camunda 8 user tasks (US8)
+- A `camunda8` connector pack (Integrations, behind `workflow.bpmn_advanced`) talks to the Orchestration Cluster REST API v2: `search_user_tasks` (read, a page of 100 open tasks with an assignee, canonical key, name, process, assignee and dates, next cursor) and `complete_user_task` (write, idempotent, sends the outcome and comment as the variables `outcome` and `comment`; 404 and 409 are the business errors `not_found` and `not_open`). Sign-in is OAuth client credentials, bearer or basic, the address on the tenant allowlist.
+- `workflow.external_task` keeps one reference per task: connection, Camunda key, TeamBeats assignee, name, process name, dates and the state of the completion sent from TeamBeats. The outcome and comment are kept only until Camunda has them. Process state and variables stay in Camunda.
+- `ExternalTaskWorker` runs every minute per tenant: it reads the tasks of every enabled Camunda 8 connection through the connector runtime, matches the assignee to an active TeamBeats person by email, and closes tasks Camunda no longer lists once a full read finished. It also sends again completions that failed for a technical reason (up to 6 attempts, 5 minutes doubling).
+- The tasks are personal tasks in the spec 016 inbox (source `camunda_task`), linked to `/tasks/external/{id}`, where only the assignee sees the task and completes it with an outcome (done, approved, rejected) and an optional comment. `GET /api/v1/workflow/external-tasks/{id}` and `POST .../{id}:complete`; a failure shows on the task with the next attempt. A completion Camunda refuses as no longer open closes the task. Audit `process.external_task_completed` when Camunda accepted it.
+- Defaults (spec silent): only tasks assigned to one person are shown, matched by email; candidate users and groups are not shown; the outcome set is fixed; the link is the TeamBeats task page rather than a Camunda form (Camunda forms are not rendered).
+
 ### Tests (R3 slice 1)
 - Unit: `ProcessCompensationTests` (reverse order, throw and end events, activity reference, each activity once, skipped activities, a plain end does not compensate, validator problems).
 - Integration: `ProcessModelTests.Compensation_needs_the_advanced_package_and_undoes_completed_steps_newest_first` (publish refused without the capability, handlers as inbox tasks in reverse order across saved steps).
+
+### Tests (R3 slice 3)
+- Unit: `BpmnImporterTests` (a Camunda 8 file with pool and diagram, a Camunda 7 file, several pools or processes, elements outside the subset and DTDs, a TeamBeats export imports unchanged).
+- Integration: `ProcessModelTests.A_Camunda_file_imports_as_a_draft_and_one_with_unsupported_parts_is_listed_and_not_saved` (package and design refusal, a form listed and nothing saved, the converted draft publishes and runs, no overwrite, other tenant); DMN export in `Decision_owners_test_and_publish_tables_and_a_business_rule_task_routes_on_the_current_version`.
+
+### Tests (R3 slice 4)
+- Integration: `ExternalTaskTests` (inbox for the assignee only, other people and tenants refused, outcome and comment sent and then cleared, audit, a failed completion shown and retried, a task closed in Camunda leaves the inbox, package refusal).
+
+### Tests (R3 slice 2)
+- Unit: `InstanceMigrationTests` (proposal, explicit mapping, kind and wait changes, sub-process and multi-instance structure).
+- Integration: `ProcessModelTests.Operators_dry_run_and_move_running_instances_to_a_new_version_with_a_mapping` (package refusal, plan proposal, bad versions and mapping, dry run changes nothing, a changed sub-process stays, an unknown instance is not found, the moved task completes on the new version, audit, other tenant refused).

@@ -25,6 +25,11 @@ export const unseededRoutes: readonly Unseeded[] = [
     review: "2027-02-28",
   },
   {
+    route: "/tasks/external/[id]",
+    reason: "an external task comes from a Camunda 8 cluster polled by the connector; the integration suite covers it with a fake cluster, and the checked task inbox shares its parts",
+    review: "2027-02-28",
+  },
+  {
     route: "/agents/approvals/[id]",
     reason: "an approval needs an L3 agent whose tool rule is approval, which only the integration suite's test tools reach; the checked AI action page shares its parts",
     review: "2027-02-28",

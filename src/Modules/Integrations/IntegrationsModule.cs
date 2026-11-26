@@ -73,6 +73,8 @@ public static class IntegrationsModule
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Ticketing.ServiceNowPack>());
         services.AddScoped<Ticketing.JiraServiceManagementPack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Ticketing.JiraServiceManagementPack>());
+        services.AddScoped<Ticketing.Camunda8Pack>();
+        services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Ticketing.Camunda8Pack>());
         services.AddScoped<Slack.SlackPack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Slack.SlackPack>());
         services.AddScoped<Runtime.TenantLinks>();

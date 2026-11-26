@@ -4646,7 +4646,8 @@
       "policyReview": "Policy review",
       "policyExemption": "Policy exemption",
       "pageApproval": "Page approval",
-      "themeApproval": "Theme approval"
+      "themeApproval": "Theme approval",
+      "camundaTask": "Camunda task"
     },
     "delegation": {
       "none": "No delegation set. Your approvals stay with you.",
@@ -10443,6 +10444,7 @@
       "onprem_ad": "On-premises Active Directory",
       "servicenow": "ServiceNow",
       "jira_service_management": "Jira Service Management",
+      "camunda8": "Camunda 8",
       "slack": "Slack",
       "sms": "SMS gateway",
       "clock_import": "Clock data import",
@@ -10484,6 +10486,7 @@
       "microsoft365": "Directory sync, mail, calendar and free and busy times from your Microsoft 365 tenant, each with its own consent.",
       "servicenow": "Services and agents create incidents in ServiceNow and read their status.",
       "jira_service_management": "Services and agents create requests in Jira Service Management and read their status.",
+      "camunda8": "Camunda user tasks assigned to TeamBeats people appear in their task inbox and are completed from TeamBeats.",
       "lms_rest": "Brings your LMS courses into the catalogue, sends assignments of them to the LMS and reads completions back."
     },
     "add": {
@@ -10499,6 +10502,10 @@
       "jira_service_management": {
         "addTitle": "Add a Jira Service Management connection",
         "addIntro": "Enter your site address, such as https://your-site.atlassian.net, how TeamBeats signs in, and the service desk and request type new requests go to. For a cloud site, sign in with the account email and an API token."
+      },
+      "camunda8": {
+        "addTitle": "Add a Camunda 8 connection",
+        "addIntro": "Enter the Orchestration Cluster REST address, such as https://cluster.example.com, and how TeamBeats signs in. Tasks are matched to people by the assignee email."
       }
     },
     "slack": {
@@ -16446,7 +16453,8 @@
       "history": "History",
       "instanceLevel": "Instance",
       "cancelInstance": "Cancel this instance",
-      "cancelled": "The instance is cancelled."
+      "cancelled": "The instance is cancelled.",
+      "migrationTab": "Move to new version"
     },
     "monitoring": {
       "title": "Monitoring",
@@ -16822,6 +16830,114 @@
         "action_not_run": "not carried out in a test run"
       },
       "testGroups": "members of the step's groups ({count})"
+    },
+    "migration": {
+      "title": "Move instances to a new version",
+      "intro": "Choose two versions of a process, check which step of the old version becomes which step of the new one, then try the move on the instances you pick before you run it. Instances that cannot move safely stay where they are.",
+      "nothingToMove": "No process has a second published version yet.",
+      "process": "Process",
+      "fromVersion": "From version",
+      "toVersion": "To version",
+      "prepare": "Prepare the plan",
+      "loading": "Preparing",
+      "failed": "The migration could not be prepared or run.",
+      "mappingTitle": "Steps of version {from} in version {to}",
+      "mappingHint": "Steps with the same ID and kind are matched for you. Choose a step for the others, or leave them unmapped if no instance is there.",
+      "noSteps": "This version has no steps.",
+      "step": "Step",
+      "target": "In the new version",
+      "targetFor": "{step} becomes",
+      "notMapped": "Not mapped",
+      "instancesTitle": "Running instances ({count})",
+      "noInstances": "No running instances of this version.",
+      "businessKey": "Business key",
+      "dryRun": "Try the move",
+      "checking": "Checking",
+      "move": "Move {count, plural, one {# instance} other {# instances}}",
+      "moving": "Moving",
+      "checkedTitle": "Dry run finished",
+      "checked": "{migratable} can move and {refused} cannot. Nothing was changed.",
+      "movedTitle": "Instances moved",
+      "moved": "{migratable} moved and {refused} stayed on the old version.",
+      "reportTitle": "Result per instance",
+      "result": "Result",
+      "resultCanMove": "Can move",
+      "resultMoved": "Moved",
+      "resultCannotMove": "Stays",
+      "reason": "Why",
+      "reasonAt": "{reason} ({step})",
+      "reasons": {
+        "unmapped": "A step it is at has no step in the new version",
+        "kind_changed": "The new step is of another kind",
+        "structure_changed": "It is inside a part that changed",
+        "wait_changed": "An event it waits for changed",
+        "join_changed": "A join it waits at changed",
+        "compensating": "It is undoing finished steps",
+        "compensation_changed": "A finished step can no longer be undone",
+        "not_active": "It is no longer running",
+        "other_version": "It runs on another version",
+        "not_found": "Not found",
+        "other": "It cannot move"
+      }
+    },
+    "import": {
+      "title": "Import from another tool",
+      "intro": "Bring in a .bpmn file from Camunda Modeler or another BPMN tool. Settings that TeamBeats understands, such as assignees, candidate groups, due days and retries, are converted. If anything cannot run here, it is listed and nothing is saved.",
+      "file": "BPMN file",
+      "fileHint": "One .bpmn file exported from Camunda 7, Camunda 8 or another BPMN 2.0 tool, up to 2 MB.",
+      "key": "Process key",
+      "keyHint": "Lowercase letters, digits and dashes. It must be new.",
+      "owner": "Owned by",
+      "wholeOrganization": "Whole organization",
+      "submit": "Import",
+      "importing": "Importing",
+      "failed": "The file could not be imported.",
+      "importedTitle": "Process imported",
+      "imported": "The draft is saved. Open it from the list to finish any steps marked with a problem, then publish it.",
+      "refusedTitle": "Nothing was imported",
+      "refused": "{count, plural, one {# part of the file cannot run in TeamBeats.} other {# parts of the file cannot run in TeamBeats.}} Change it in the other tool and import it again.",
+      "unsupportedTitle": "What cannot be imported",
+      "convertedTitle": "What was converted",
+      "nothing": "Nothing to show.",
+      "element": "Element",
+      "wholeFile": "Whole file",
+      "what": "What happened",
+      "detail": "Detail"
+    },
+    "externalTask": {
+      "eyebrow": "Camunda task",
+      "title": "Camunda task",
+      "denied": "This task is not available in your organization's plan.",
+      "failed": "The task could not be completed. Try again.",
+      "status": "Status",
+      "created": "Created",
+      "due": "Due",
+      "completedAt": "Completed",
+      "statuses": {
+        "open": "Open",
+        "completing": "Sending to Camunda",
+        "completed": "Completed",
+        "failed": "Not sent",
+        "closed": "Closed in Camunda"
+      },
+      "sendFailed": "Camunda did not accept the completion yet.",
+      "retrying": "TeamBeats will try again at {when}. You can also try again now.",
+      "noRetry": "TeamBeats stopped retrying. Try again, or ask your administrator to check the Camunda connection.",
+      "sending": "Your answer is on its way to Camunda.",
+      "done": "Camunda has your answer. The task is done.",
+      "closed": "This task was completed, cancelled or reassigned in Camunda.",
+      "formTitle": "Complete the task",
+      "outcome": "How did it end?",
+      "outcomes": {
+        "completed": "Done",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "comment": "Comment",
+      "commentHint": "Optional. Camunda receives it with the outcome.",
+      "working": "Sending…",
+      "complete": "Complete task",
+      "tryAgain": "Try again"
     }
   },
   "records": {

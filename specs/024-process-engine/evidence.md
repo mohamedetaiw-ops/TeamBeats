@@ -51,4 +51,8 @@ R2 adds the modeler, the BPMN subset of section 12, DMN, messages, timers, servi
 | Requirement | Status | Evidence |
 |---|---|---|
 | US4.3 and FR-011 compensation handlers in reverse order, shown in Tracking | Met | `ProcessCompensationTests`, `ProcessModelTests.Compensation_needs_the_advanced_package_and_undoes_completed_steps_newest_first` |
-| Package split for R3 items (section 9) | Met for compensation | Publish refused with `validation.process.advanced_package` without `workflow.bpmn_advanced` in the same integration test |
+| US6.1 to US6.4 and FR-015 migration plan, dry run, audited move, unsafe instances stay | Met | `InstanceMigrationTests`, `ProcessModelTests.Operators_dry_run_and_move_running_instances_to_a_new_version_with_a_mapping` |
+| US7.1 import from Camunda Modeler and other tools, unsupported listed, draft only when none | Met | `BpmnImporterTests`, `ProcessModelTests.A_Camunda_file_imports_as_a_draft_and_one_with_unsupported_parts_is_listed_and_not_saved` |
+| US7.2 export of .bpmn and .dmn with the `teambeats` namespace | Met | BPMN export (R2) in `A_draft_keeps_its_problems_publishing_makes_immutable_versions_and_owners_act_in_their_scope`; DMN export in `Decision_owners_test_and_publish_tables_and_a_business_rule_task_routes_on_the_current_version` |
+| US8.1 to US8.3 and FR-016 Camunda 8 tasks in the inbox, completion sent with retry, only the reference kept | Met | `ExternalTaskTests` |
+| Package split for R3 items (section 9) | Met | Publish refused with `validation.process.advanced_package` without `workflow.bpmn_advanced`; migration, import and the Camunda 8 connection refused without it |
