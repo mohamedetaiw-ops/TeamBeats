@@ -10,6 +10,7 @@
     <ProjectReference Include="../../BuildingBlocks/Audit.Contracts/TeamBeats.Audit.Contracts.csproj" />
     <ProjectReference Include="../../BuildingBlocks/TenantContext/TeamBeats.TenantContext.csproj" />
     <ProjectReference Include="../AiGateway.Contracts/TeamBeats.Modules.AiGateway.Contracts.csproj" />
+    <ProjectReference Include="../Analytics.Contracts/TeamBeats.Modules.Analytics.Contracts.csproj" />
     <ProjectReference Include="../Search.Contracts/TeamBeats.Modules.Search.Contracts.csproj" />
     <ProjectReference Include="../Agents.Contracts/TeamBeats.Modules.Agents.Contracts.csproj" />
     <ProjectReference Include="../Experience.Contracts/TeamBeats.Modules.Experience.Contracts.csproj" />

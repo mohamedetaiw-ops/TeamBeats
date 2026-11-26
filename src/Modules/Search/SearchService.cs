@@ -135,6 +135,11 @@ public sealed class SearchService(IDbSession session, ITenantContext context, IE
             }
             await analytics.EmitAsync(AnalyticsEvents.SearchQueried, fields, ct);
         }
+        if (results.Any(r => r.Personalized))
+        {
+            // Spec 021 R3 FR-024: personalized results were shown, so their usefulness can be measured.
+            await analytics.EmitAsync(AnalyticsEvents.RecommendationOutcome, new Dictionary<string, object?> { ["surface"] = "search", ["outcome"] = "shown" }, ct);
+        }
         return new SearchPage(query, filtered.Count, more, number, PageSize, results, facets, degraded, alternatives);
     }
 

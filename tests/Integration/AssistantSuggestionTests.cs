@@ -89,6 +89,14 @@ public sealed class AssistantSuggestionTests(TenantWorld world)
             Assert.Equal(w.Open, s.GetProperty("scope").GetProperty("itemId").GetGuid());
         });
 
+        // Showing them is an outcome for the usefulness report of spec 021 (FR-024).
+        var dispatcher = world.Factory.Services.GetRequiredService<OutboxDispatcher>();
+        for (var i = 0; i < 20 && await dispatcher.DispatchBatchAsync(500, CancellationToken.None) > 0; i++)
+        {
+        }
+        Assert.True(await world.Database.TenantScalarAsync<long>(w.T.Id,
+            "select count(*) from analytics.event where name = 'recommendation.outcome' and fields->>'surface' = 'assistant' and fields->>'outcome' = 'shown'") >= 1);
+
         // Nothing for an item they may not read, one that does not exist, or a page that shows no item.
         Assert.Empty(List(await ForAsync(emp, $"/content/read/{w.Closed}")));
         Assert.Empty(List(await ForAsync(emp, $"/content/read/{Guid.NewGuid()}")));

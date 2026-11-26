@@ -159,8 +159,12 @@ public static class AgentsModule
         });
 
         // Proactive suggestions for the page the person is on (spec 014 R3, US9, FR-023), and their own on or off.
-        root.MapGet("/suggestions", async (string? path, AssistantSuggestions suggestions, CancellationToken ct) =>
-            Results.Ok(await suggestions.ForPageAsync(path, ct)));
+        root.MapGet("/suggestions", async (string? path, AssistantSuggestions suggestions, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await suggestions.ForPageAsync(path, ct);
+            await session.CommitAsync(ct); // The "shown" outcome of spec 021 FR-024 is queued through the outbox.
+            return Results.Ok(view);
+        });
         root.MapPut("/suggestions/preference", async (AssistantSuggestionPreference request, AssistantSuggestions suggestions, IDbSession session,
             CancellationToken ct) =>
         {

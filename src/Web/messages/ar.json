@@ -10036,12 +10036,24 @@
         "completed": "اكتمل",
         "abandoned": "تُرك",
         "rate": "نسبة الإكمال",
-        "dropOff": "أكثر خطوة تُرك عندها"
+        "dropOff": "أكثر خطوة تُرك عندها",
+        "surface": "الجزء",
+        "shownTo": "عُرض على",
+        "opened": "فُتح",
+        "dismissed": "تُجوهل",
+        "openRate": "نسبة الفتح"
       },
       "vital": {
         "lcp": "LCP",
         "inp": "INP",
         "cls": "CLS"
+      },
+      "recommendations": "التخصيص والتوصيات",
+      "recommendationsHint": "الأشخاص الذين عرض عليهم كل جزء شيئًا خلال الفترة، ومنهم من فتحه أو تجاهله. يُخفى إذا رآه أقل من {size} أشخاص.",
+      "surface": {
+        "search": "بحث مرتب حسب الاستخدام",
+        "assistant": "اقتراحات المساعد",
+        "learning": "توصيات الدورات"
       }
     },
     "reports": {

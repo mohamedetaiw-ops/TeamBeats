@@ -46,7 +46,7 @@ export default async function SearchResultsPage({ searchParams }: { searchParams
   const all = page ? Object.values(page.facets).reduce((sum, n) => sum + (n ?? 0), 0) : 0;
 
   const item = (r: SearchResult, at: number) => (
-    <li key={`${r.source}:${r.itemId}`} className="search-result" lang={r.locale} data-position={(number - 1) * (page?.pageSize ?? 20) + at + 1}>
+    <li key={`${r.source}:${r.itemId}`} className="search-result" lang={r.locale} data-personalized={r.personalized ? "" : undefined} data-position={(number - 1) * (page?.pageSize ?? 20) + at + 1}>
       <div className="search-result-meta">
         <span className="search-kind">{t(`kinds.${r.kind}`)}</span>
         {r.recommended ? <span className="search-recommended">{t("recommended")}</span> : null}

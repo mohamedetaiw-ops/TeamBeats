@@ -253,7 +253,12 @@ public static class LearningModule
             return Results.Ok(view);
         });
 
-        root.MapGet("/recommendations", async (Recommendations recommendations, CancellationToken ct) => Results.Ok(await recommendations.ListAsync(ct)));
+        root.MapGet("/recommendations", async (Recommendations recommendations, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await recommendations.ListAsync(ct);
+            await session.CommitAsync(ct); // The "shown" outcome of spec 021 FR-024 is queued through the outbox.
+            return Results.Ok(view);
+        });
 
         root.MapPost("/recommendations/{courseId:guid}:dismiss", async (Guid courseId, Recommendations recommendations, IDbSession session, CancellationToken ct) =>
         {

@@ -56,8 +56,19 @@ public static class AnalyticsEvents
     public const string MobilePushOptIn = "mobile.push_optin";
     public const string ProcessInstanceEnded = "process.instance_ended";
 
+    /// <summary>
+    /// Spec 021 R3 FR-024: what happened to something personalized or recommended for a person, by surface, so usefulness
+    /// is measured from outcomes and only shown for groups of at least the minimum size.
+    /// </summary>
+    public const string RecommendationOutcome = "recommendation.outcome";
+
     /// <summary>The sources whose items are viewed: content items, policies and documents.</summary>
     public static readonly IReadOnlySet<string> ItemSources = new HashSet<string>(StringComparer.Ordinal) { "content", "policies", "documents" };
+
+    /// <summary>Where a person met something ranked or suggested for them: search results (012), assistant suggestions (014), course recommendations (028).</summary>
+    public static readonly IReadOnlySet<string> RecommendationSurfaces = new HashSet<string>(StringComparer.Ordinal) { "search", "assistant", "learning" };
+
+    public static readonly IReadOnlySet<string> RecommendationOutcomes = new HashSet<string>(StringComparer.Ordinal) { "shown", "opened", "dismissed" };
 
     public static readonly IReadOnlySet<string> TaskOutcomes = new HashSet<string>(StringComparer.Ordinal) { "start", "complete", "abandon" };
 
@@ -140,6 +151,11 @@ public static class AnalyticsEvents
             ["flow"] = new(AnalyticsFieldType.Key, true),
             ["step"] = new(AnalyticsFieldType.Key),
             ["outcome"] = new(AnalyticsFieldType.Key, true, TaskOutcomes),
+        }),
+        [RecommendationOutcome] = new(RecommendationOutcome, false, new Dictionary<string, AnalyticsField>
+        {
+            ["surface"] = new(AnalyticsFieldType.Key, true, RecommendationSurfaces),
+            ["outcome"] = new(AnalyticsFieldType.Key, true, RecommendationOutcomes),
         }),
         [EngagementAction] = new(EngagementAction, false, new Dictionary<string, AnalyticsField>
         {

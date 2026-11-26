@@ -50,4 +50,4 @@ R2 builds the analytics workspace and its dashboards, scheduled reports, export,
 | FR-010 KPI tiles from connected systems with source and freshness | Met | `KpiTileTests.A_location_dashboard_shows_each_tiles_latest_reading_with_its_source_and_hides_tiles_the_viewer_may_not_see` |
 | US6 scenario 2 tile hidden without permission to the data | Met | Same test (viewer without the tile's permission) |
 | KPI tile settings versioned, checked, audited, package and tenant boundary | Met | `KpiTileTests.The_tile_set_is_checked_and_versioned_the_package_decides_and_nothing_crosses_tenants`, `analytics-kpi-tiles.spec.ts` (en, ar, axe) |
-
+| FR-024 personalization and recommendations evaluated from outcomes, minimum group size, no individual scored | Met | `ExperienceAnalyticsTests.Recommendation_usefulness_counts_people_per_surface_and_hides_small_groups`, `AssistantSuggestionTests` (shown outcome), `analytics-experience.spec.ts` (en, ar, axe) |

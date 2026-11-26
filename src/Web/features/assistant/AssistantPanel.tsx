@@ -9,6 +9,7 @@ import { Drawer } from "@/components/ui/Dialog";
 import { Icon } from "@/components/ui/Icon";
 import { Kbd } from "@/components/ui/Status";
 import { problemMessages } from "@/lib/notifications/types";
+import { reportOpened } from "@/lib/analytics/recommendations";
 import { readTurnStream, type AssistantScope, type AssistantSuggestions, type Turn } from "@/lib/assistant/types";
 import { TurnItem } from "./Assistant";
 import "./assistant.css";
@@ -204,7 +205,10 @@ export function AssistantPanel() {
                 <ul>
                   {suggestions.suggestions.map((s) => (
                     <li key={s.key}>
-                      <Button variant="secondary" icon="spark" onClick={() => void send(t(`suggestions.question.${s.key}`, { title: s.title }), s.scope)}>
+                      <Button variant="secondary" icon="spark" onClick={() => {
+                          reportOpened("assistant");
+                          void send(t(`suggestions.question.${s.key}`, { title: s.title }), s.scope);
+                        }}>
                         {t(`suggestions.label.${s.key}`)}
                       </Button>
                     </li>

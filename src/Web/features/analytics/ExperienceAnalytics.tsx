@@ -11,7 +11,8 @@ const dimensions = ["device", "theme", "unit", "template", "release"] as const;
 
 /**
  * Experience dashboards (spec 021 US9): template use by owning unit, layouts, personalization against use and resets,
- * p75 Core Web Vitals with the published variants that miss the spec 032 targets, and task flows.
+ * p75 Core Web Vitals with the published variants that miss the spec 032 targets, and task flows. In R3, how useful
+ * personalized and recommended things were per surface (FR-024), counted by person with the minimum group size.
  */
 export function ExperienceDashboard({ view }: { view: ExperienceAnalyticsView }) {
   const t = useTranslations("analytics.experience");
@@ -254,6 +255,35 @@ export function ExperienceDashboard({ view }: { view: ExperienceAnalyticsView })
             </table>
           </div>
         )}
+      </section>
+
+      <section className="analytics-card" aria-labelledby="experience-recommendations">
+        <h2 id="experience-recommendations">{t("recommendations")}</h2>
+        <p className="analytics-meta">{t("recommendationsHint", { size: view.minGroupSize })}</p>
+        <div className="analytics-table">
+          <table data-testid="experience-recommendations">
+            <thead>
+              <tr>
+                <th scope="col">{t("column.surface")}</th>
+                <th scope="col">{t("column.shownTo")}</th>
+                <th scope="col">{t("column.opened")}</th>
+                <th scope="col">{t("column.dismissed")}</th>
+                <th scope="col">{t("column.openRate")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(view.recommendations ?? []).map((r) => (
+                <tr key={r.surface}>
+                  <th scope="row">{t(`surface.${r.surface}`)}</th>
+                  <td data-number>{format.number(r.people)}</td>
+                  <td data-number>{number(r.opened)}</td>
+                  <td data-number>{number(r.dismissed)}</td>
+                  <td data-number>{percent(r.openRate)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
     </div>
   );

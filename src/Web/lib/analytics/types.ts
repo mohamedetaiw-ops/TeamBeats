@@ -261,6 +261,8 @@ export type ExperienceAnalyticsView = {
     flags: { pageId: string; template: string; release: number | null; deviceClass: string; samples: number; lcp: number | null; inp: number | null; cls: number | null; missed: string[] }[];
   };
   outcomes: { flow: string; started: number; completed: number; abandoned: number; completionRate: number | null; dropOffStep: string | null }[];
+  /** Spec 021 R3 FR-024: usefulness per surface; counts and rate are null under the minimum group size. */
+  recommendations?: { surface: RecommendationSurface; people: number; opened: number | null; dismissed: number | null; openRate: number | null }[];
 };
 
 // Spec 021 T017 (US8): sentiment labels with the minimum group size; no text is ever shown.
@@ -360,3 +362,6 @@ export type AreaView = {
   totals: { key: string; value: number | null; share: boolean }[];
   sections: AreaSection[];
 };
+
+/** Where something was ranked or suggested for a person (spec 021 R3, FR-024). */
+export type RecommendationSurface = "search" | "assistant" | "learning";

@@ -20,7 +20,17 @@ Defaults (spec silent):
 - Tiles are on location dashboards only, since KPI feeds carry a location code and not an organization unit.
 - A tile without a reading says so rather than being left out, so the administrator can see that a feed is not arriving.
 
+R3 slice 2, **personalization and recommendation usefulness (US10 scenario 3, FR-024):**
+- One declared event, `recommendation.outcome` with `surface` (`search` for results ranked from use in 012, `assistant` for suggestions in 014, `learning` for course recommendations in 028) and `outcome` (`shown`, `opened`, `dismissed`). Owners send `shown` and `dismissed` from the server when something was shown or declined; the pages send `opened` when the person opens a ranked or suggested thing.
+- The experience dashboard gains `recommendations`: per surface, the people something was shown to, and of them who opened or dismissed it and the opened rate. Counted by person, not event; an opening by someone who was not shown anything is not counted; under the minimum group size only the number of people shows.
+
+Defaults (spec silent):
+- Judged samples for search stay the judged query sets of spec 034 (R2), which run without personalization, so a ranking change is still judged the same way; personalization itself is judged from outcomes only.
+- Quick navigation (008) is not a surface: it ranks as the person types, so "shown" would count keystrokes.
+- No breakdown by unit or location, so a small group is never singled out within a surface.
+
 ### R3 tests
+- Slice 2: people counted once per surface, an opening without a showing ignored, unknown surfaces dropped, small groups hidden; the assistant and learning owners send `shown`; the dashboard section in English and Arabic with axe.
 - The latest reading for the location with source and times; another location's reading never shows; a tile with a permission is left out for a viewer without it; the tile set is checked (metric once, names in both languages, a known permission, at most 12) and versioned; changes are audited; the package decides; another tenant sees nothing.
 
 ## Constitution check

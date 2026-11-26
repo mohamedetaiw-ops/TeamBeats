@@ -10036,12 +10036,24 @@
         "completed": "Completed",
         "abandoned": "Abandoned",
         "rate": "Completion rate",
-        "dropOff": "Most abandoned step"
+        "dropOff": "Most abandoned step",
+        "surface": "Surface",
+        "shownTo": "Shown to",
+        "opened": "Opened",
+        "dismissed": "Dismissed",
+        "openRate": "Opened rate"
       },
       "vital": {
         "lcp": "LCP",
         "inp": "INP",
         "cls": "CLS"
+      },
+      "recommendations": "Personalization and recommendations",
+      "recommendationsHint": "People each surface showed something to in the period, and of them who opened or dismissed it. Hidden when fewer than {size} people saw it.",
+      "surface": {
+        "search": "Search ranked from use",
+        "assistant": "Assistant suggestions",
+        "learning": "Course recommendations"
       }
     },
     "reports": {

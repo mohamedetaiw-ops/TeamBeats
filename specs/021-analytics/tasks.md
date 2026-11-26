@@ -39,3 +39,4 @@ R2 covers User Stories 1 (dashboard), 2, 4 to 8 and 9 (dashboards). Search gaps 
 
 ## R3
 - [x] T022 [US6] KPI tiles on location dashboards (FR-010, US6 scenario 2) on the spec 017 KPI feed contract: versioned tile set with a permission per tile, latest reading with source and times, admin page, e2e
+- [x] T023 [US10] Personalization and recommendation usefulness (FR-024, US10 scenario 3): `recommendation.outcome` from search, assistant and learning, per surface counts by person with the minimum group size on the experience dashboard, e2e

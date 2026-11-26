@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Modules.AiGateway.Contracts;
+using TeamBeats.Modules.Analytics.Contracts;
 using TeamBeats.Modules.Search.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
@@ -31,7 +32,7 @@ public sealed record AssistantSuggestionPreference(bool? On);
 /// and the request quota all apply as usual. They never come as notifications.
 /// </summary>
 public sealed partial class AssistantSuggestions(IDbSession session, ITenantContext context, IEntitlementService entitlements,
-    ISearchRetrieval retrieval, AssistantGuests guests, IClock clock)
+    ISearchRetrieval retrieval, AssistantGuests guests, IClock clock, IAnalyticsEvents analytics)
 {
     public const int Max = 3;
 
@@ -94,6 +95,7 @@ public sealed partial class AssistantSuggestions(IDbSession session, ITenantCont
         {
             return new AssistantSuggestionsView(true, true, []);
         }
+        await OutcomeAsync("shown", ct);
         var title = item.Passages[0].Title;
         var scope = new AssistantScope(page.Source, page.ItemId);
         return new AssistantSuggestionsView(true, true, [.. page.Keys.Take(Max).Select(k => new AssistantSuggestion(k, title, scope))]);
@@ -116,6 +118,14 @@ public sealed partial class AssistantSuggestions(IDbSession session, ITenantCont
             insert into agents.assistant_preference (tenant_id, user_id, suggestions_on, updated_at) values (platform.current_tenant_id(), @user, @on, @now)
             on conflict (tenant_id, user_id) do update set suggestions_on = excluded.suggestions_on, updated_at = excluded.updated_at
             """, new { user, on, now = clock.UtcNow }, ct);
+        if (!on)
+        {
+            await OutcomeAsync("dismissed", ct);
+        }
         return new AssistantSuggestionsView(true, on, []);
     }
+
+    /// <summary>Spec 021 R3 FR-024: an outcome of the suggestions, for their usefulness report.</summary>
+    private Task OutcomeAsync(string outcome, CancellationToken ct) =>
+        analytics.EmitAsync(AnalyticsEvents.RecommendationOutcome, new Dictionary<string, object?> { ["surface"] = "assistant", ["outcome"] = outcome }, ct);
 }

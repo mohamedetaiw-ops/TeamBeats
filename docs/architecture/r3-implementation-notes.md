@@ -166,6 +166,12 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - The admin page is `/admin/analytics/kpi-tiles`; the permission picker offers the permissions the workspace's roles grant.
 - Gaps: a location dashboard e2e with readings is not possible yet, since locations come only from directory sync; the integration suite covers the tiles on the dashboard. Tiles show the latest value only, without a trend.
 
+
+## Spec 021 R3 slice 2: usefulness of personalization and recommendations (T023)
+
+- Event `recommendation.outcome` (nonessential, user keyed) with `surface` in `search`, `assistant`, `learning` and `outcome` in `shown`, `opened`, `dismissed`. `SearchService` sends `shown` when a page holds a result ranked from use; `AssistantSuggestions` sends `shown` when it offers questions and `dismissed` when the person turns them off; Learning `Recommendations` sends `shown` and `dismissed`. The search results page, the assistant panel and the recommended courses send `opened`. The suggestions and recommendations GET routes now commit so the outbox event goes out.
+- `GET /api/v1/analytics/experience` gains `recommendations`: people shown something per surface and, at or above the minimum group size, how many opened or dismissed and the opened rate. Shown on the experience dashboard as "Personalization and recommendations".
+- Defaults recorded in the plan: judged samples stay the spec 034 search sets (unpersonalized); quick navigation is not a surface; no unit or location breakdown.
 ## Spec 019 R3 slice 1: Oracle HCM and SAP SuccessFactors packs (T015)
 - The named packs are presets, not new adapters: the stored settings are HR REST settings, so every HR path (sync, live read, payslips, leave, data change) keeps one implementation. The preset decides the paths and paging; a tenant may override single fields. Recorded default: the first entry of each Oracle list (names, emails, work relationships, assignments, managers) is used, as Oracle lists the primary first; a suspended assignment counts as active.
 - SuccessFactors returns active users only unless asked, so the preset filters on `status in 't','f','T','F'` to see leavers (FR-020). Its `/Date(ms)/` values are read by `HrMapping` for every HR pack.
