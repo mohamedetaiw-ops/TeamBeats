@@ -8,7 +8,8 @@ import { hostOrigin } from "../support/stack";
  * Spec 029 R3 T013 and T014 (US8, US9): the administrator owns a project space with two dated tasks. On the second
  * task's page they say it waits for the first, see the schedule conflict, log time, and find both tasks on the
  * timeline with the conflict and the time on the owners' totals. Loops, viewer refusal, author rules and the tenant
- * boundary: SpaceScheduleTests. In English and Arabic, with axe. Names are fictional.
+ * boundary: SpaceScheduleTests. T015 (US11): the owner asks for a status summary, sees it marked as AI generated and starts the
+ * status note from it. In English and Arabic, with axe. Names are fictional.
  */
 for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
   test.describe(`space plan and time in ${locale}`, () => {
@@ -75,6 +76,21 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(main.getByRole("link", { name: migrate })).toBeVisible();
       await expect(main.getByRole("link", { name: m("spaces.time.export") })).toBeVisible();
       await expectAccessible(page, testInfo, `spaces-plan-time-${locale}`);
+    });
+
+    test("the owner gets a status summary marked as AI generated and starts the note from it", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/spaces/${spaceId}`);
+      const main = page.getByRole("main");
+      await expect(async () => {
+        await main.getByRole("button", { name: m("spaces.overview.summarize") }).click();
+        await expect(page.getByTestId("space-status-summary")).toBeVisible({ timeout: 5000 });
+      }).toPass();
+      const summary = page.getByTestId("space-status-summary");
+      await expect(summary.getByText(m("spaces.overview.aiGenerated"))).toBeVisible();
+      await summary.getByRole("button", { name: m("spaces.overview.useSummary") }).click();
+      await expect(main.getByLabel(m("spaces.overview.note"))).not.toHaveValue("");
+      await expectAccessible(page, testInfo, `spaces-plan-summary-${locale}`);
     });
   });
 }

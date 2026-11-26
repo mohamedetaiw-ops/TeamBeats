@@ -216,4 +216,56 @@ public sealed class SpaceScheduleTests(TenantWorld world)
         Assert.Equal(HttpStatusCode.NotFound, (await stranger.GetAsync($"{Api}/{space}/time")).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await stranger.GetAsync($"{Api}/{space}/tasks/{task.Id}/time")).StatusCode);
     }
+
+    [Fact]
+    public async Task Status_summaries_use_only_the_readers_space_and_respect_the_ai_policy()
+    {
+        var (t, space) = await SetupAsync();
+        var omar = t["omar"].Client;
+        var marker = "Quokka" + Guid.NewGuid().ToString("N")[..6];
+        await TaskAsync(omar, space, $"{marker} ledger import");
+        // Another space of Omar's must never reach the prompt.
+        var other = (await OkAsync(omar.PostAsJsonAsync(Api, new { name = "Office move", description = "", visibility = "private", template = "project" }), HttpStatusCode.Created))
+            .GetProperty("id").GetGuid();
+        var secret = "Wombat" + Guid.NewGuid().ToString("N")[..6];
+        await TaskAsync(omar, other, $"{secret} boxes");
+        await OkAsync(omar.PostAsJsonAsync($"{Api}/{space}/status", new { status = "at_risk", note = "Vendor is late." }));
+
+        var before = world.Factory.OpenRouter.UserPrompts.Count;
+        var summary = await OkAsync(t["huda"].Client.PostAsync($"{Api}/{space}/status-summary", null));
+        Assert.Equal("summarized", summary.GetProperty("outcome").GetString());
+        Assert.True(summary.GetProperty("aiGenerated").GetBoolean());
+        Assert.False(string.IsNullOrWhiteSpace(summary.GetProperty("summary").GetString()));
+        var prompts = world.Factory.OpenRouter.UserPrompts.Skip(before).ToList();
+        Assert.Contains(prompts, p => p.Contains(marker, StringComparison.Ordinal) && p.Contains("Vendor is late.", StringComparison.Ordinal));
+        Assert.DoesNotContain(prompts, p => p.Contains(secret, StringComparison.Ordinal));
+        Assert.Equal(1L, await world.Database.CountInTenantAsync(t.Id, "select count(*) from audit.audit_event where action = @a and target_id = @s",
+            ("a", TeamBeats.Audit.Contracts.AuditActions.SpacesStatusSummarized), ("s", space.ToString())));
+
+        // Kofi is not in the space; another tenant never finds it.
+        Assert.Equal("authz.denied.spaces_private", await ProblemKeyAsync(await t["kofi"].Client.PostAsync($"{Api}/{space}/status-summary", null), HttpStatusCode.Forbidden));
+        var stranger = (await world.CreateTenantAsync("ssx-" + Guid.NewGuid().ToString("N")[..8], "workplace_plus"))["admin"].Client;
+        Assert.Equal(HttpStatusCode.NotFound, (await stranger.PostAsync($"{Api}/{space}/status-summary", null)).StatusCode);
+
+        // A Confidential space is blocked by the default AI policy, and nothing is sent.
+        var classified = (await OkAsync(omar.PostAsJsonAsync(Api, new { name = "Board pay review", description = "", visibility = "private", template = "project", classification = "confidential" }),
+            HttpStatusCode.Created)).GetProperty("id").GetGuid();
+        before = world.Factory.OpenRouter.UserPrompts.Count;
+        var blocked = await OkAsync(omar.PostAsync($"{Api}/{classified}/status-summary", null));
+        Assert.Equal("policy_blocked", blocked.GetProperty("outcome").GetString());
+        Assert.Equal(JsonValueKind.Null, blocked.GetProperty("summary").ValueKind);
+        Assert.Equal(before, world.Factory.OpenRouter.UserPrompts.Count);
+
+        // When the gateway cannot answer, the reader is told and nothing changes.
+        world.Factory.OpenRouter.Unavailable = true;
+        try
+        {
+            Assert.Equal("unavailable", (await OkAsync(omar.PostAsync($"{Api}/{space}/status-summary", null))).GetProperty("outcome").GetString());
+        }
+        finally
+        {
+            world.Factory.OpenRouter.Unavailable = false;
+        }
+        Assert.Equal("at_risk", (await OkAsync(omar.GetAsync($"{Api}/{space}/overview"))).GetProperty("status").GetProperty("status").GetString());
+    }
 }

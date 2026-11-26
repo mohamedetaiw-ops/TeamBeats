@@ -15746,7 +15746,17 @@
       "noOverdue": "كل المهام المفتوحة في موعدها.",
       "overdueTitle": "{count, plural, zero {لا مهام متأخرة} one {مهمة متأخرة واحدة} two {مهمتان متأخرتان} few {# مهام متأخرة} many {# مهمة متأخرة} other {# مهمة متأخرة}}",
       "overdueList": "المهام المتأخرة",
-      "owners": "المالكون: {names}"
+      "owners": "المالكون: {names}",
+      "summarize": "تلخيص الحالة",
+      "summarizing": "جارٍ التلخيص",
+      "summaryTitle": "ملخص الحالة",
+      "aiGenerated": "مولّد بالذكاء الاصطناعي",
+      "summaryHint": "كُتب من {count, plural, zero {لا مهام} one {مهمة واحدة} two {مهمتين} few {# مهام} many {# مهمة} other {# مهمة}} ومراحل هذه المساحة وملاحظات حالتها فقط. راجعه قبل مشاركته.",
+      "useSummary": "ابدأ الملاحظة من هذا الملخص",
+      "summaryBlockedTitle": "لا يمكن تلخيص هذه المساحة",
+      "summaryBlocked": "سياسة الذكاء الاصطناعي في مؤسستك لا تسمح بإرسال تصنيف هذه المساحة إلى المساعد.",
+      "summaryUnavailableTitle": "لا يوجد ملخص الآن",
+      "summaryUnavailable": "لم يتمكن المساعد من الرد. حاول لاحقًا."
     },
     "board": {
       "failed": "تعذر تغيير المهمة.",

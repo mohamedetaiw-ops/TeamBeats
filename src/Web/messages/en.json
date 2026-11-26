@@ -15746,7 +15746,17 @@
       "noOverdue": "Every open task is on time.",
       "overdueTitle": "{count, plural, one {# overdue task} other {# overdue tasks}}",
       "overdueList": "Overdue tasks",
-      "owners": "Owners: {names}"
+      "owners": "Owners: {names}",
+      "summarize": "Summarize status",
+      "summarizing": "Summarizing",
+      "summaryTitle": "Status summary",
+      "aiGenerated": "AI generated",
+      "summaryHint": "Written from {count, plural, one {# task} other {# tasks}}, the milestones and the status notes of this space only. Check it before you share it.",
+      "useSummary": "Start the note from this summary",
+      "summaryBlockedTitle": "This space cannot be summarized",
+      "summaryBlocked": "Your organization's AI policy does not allow this space's classification to be sent to the assistant.",
+      "summaryUnavailableTitle": "No summary right now",
+      "summaryUnavailable": "The assistant could not answer. Try again later."
     },
     "board": {
       "failed": "The task could not be changed.",

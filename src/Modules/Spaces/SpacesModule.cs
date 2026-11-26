@@ -29,6 +29,7 @@ public static class SpacesModule
         services.AddScoped<SpaceCalendar>();
         services.AddScoped<SpaceSchedule>();
         services.AddScoped<SpaceTime>();
+        services.AddScoped<SpaceSummaries>();
         services.AddScoped<SpaceGuests>();
         services.AddScoped<IGuestInvitationSource>(sp => sp.GetRequiredService<SpaceGuests>());
         services.AddScoped<Contracts.ISpaceGuestReview>(sp => sp.GetRequiredService<SpaceGuests>());
@@ -206,6 +207,10 @@ public static class SpacesModule
             await session.CommitAsync(ct);
             return Results.NoContent();
         });
+
+        // R3 US11: a status summary through the AI Gateway, from this space only. Nothing is stored, but the request is audited.
+        space.MapPost("/status-summary", async (Guid id, SpaceSummaries summaries, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await summaries.SummarizeAsync(id, ct), ct));
 
         space.MapPost("/status", async (Guid id, StatusRequest request, SpaceMilestones milestones, IDbSession session, CancellationToken ct) =>
             await CommitAsync(session, await milestones.SetStatusAsync(id, request, ct), ct));

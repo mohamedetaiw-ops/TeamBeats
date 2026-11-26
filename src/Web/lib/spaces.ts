@@ -254,3 +254,6 @@ export function announceTaskChanged(taskId: string): void {
 
 /** Hours and minutes for a number of minutes, as numbers the messages format. */
 export const hoursOf = (minutes: number) => ({ hours: Math.floor(minutes / 60), minutes: minutes % 60 });
+
+/** A status summary written through the AI Gateway (spec 029 R3 US11). Never stored; always AI generated. */
+export type StatusSummary = { outcome: "summarized" | "policy_blocked" | "unavailable"; summary: string | null; denial: string | null; tasks: number; aiGenerated: boolean; at: string };
