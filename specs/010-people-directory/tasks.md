@@ -19,4 +19,4 @@ Depends on 002, 003, 004, 006, 007, 008, 032. All R1 user stories.
 - [x] T013 [US6] Skills: capability `people.skills`, migration, skill list and settings, own skills, endorsements with notification and hiding, Find an expert, off and purge after 90 days; integration tests
 - [x] T014 [US6] Skills on the profile, own skills editor, skill list in people settings, Find an expert page; e2e
 - [x] T015 [US8] Profile completeness, assistants, active delegation from spec 016 on the profile; tests and pages
-- [ ] T016 OpenAPI; R2 implementation notes; spec evidence
+- [x] T016 OpenAPI; R2 implementation notes; spec evidence
