@@ -68,6 +68,13 @@ public static class HrModule
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<Expenses.ExpenseTaskSource>());
         services.AddMessageHandler<Integrations.Contracts.FinanceHandOffChanged, Expenses.ExpenseTaskSource>("hr.expense_finance_changed");
         services.AddSingleton<Services.Contracts.IModuleServiceSource, Expenses.ExpenseModuleServices>();
+        services.AddScoped<Rosters.Rosters>();
+        services.AddScoped<Rosters.ShiftRoster>();
+        services.AddScoped<Milestones.Milestones>();
+        services.AddScoped<Milestones.MilestoneHandlers>();
+        services.AddScoped<Workflow.Contracts.IPersonalTaskSource>(sp => sp.GetRequiredService<Milestones.MilestoneHandlers>());
+        services.AddMessageHandler<Integrations.Contracts.HrSyncCompleted, Milestones.MilestoneHandlers>("hr.milestones_hr_sync");
+        services.AddMessageHandler<Integrations.Contracts.HrDataChangeHandOffChanged, Milestones.MilestoneHandlers>("hr.milestone_written_back");
         services.AddScoped<JourneyTaskSource>();
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<JourneyTaskSource>());
         services.AddScoped<Contracts.IHrFigures, HrFigures>();
@@ -162,6 +169,8 @@ public static class HrModule
         app.MapLetterEndpoints();
         DataChanges.DataChangeEndpoints.MapDataChangeEndpoints(app);
         Expenses.ExpenseEndpoints.MapExpenseEndpoints(app);
+        Milestones.MilestoneEndpoints.MapMilestoneEndpoints(app);
+        Rosters.RosterEndpoints.MapRosterEndpoints(app);
         return app;
     }
 }

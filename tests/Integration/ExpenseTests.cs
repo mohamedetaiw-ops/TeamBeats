@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
+using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Modules.AiGateway.Contracts;
 using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Testing;
@@ -348,5 +349,15 @@ public sealed class ExpenseTests(TenantWorld world)
         Assert.Equal(HttpStatusCode.NotFound, (await other["admin"].Client.PostAsync($"{Mine}/receipts/{blank}:read", null)).StatusCode);
         var basic = await world.CreateTenantAsync("ex-r-" + Guid.NewGuid().ToString("N")[..6], "workplace");
         Assert.Equal(HttpStatusCode.Forbidden, (await basic["admin"].Client.PostAsync($"{Mine}/receipts/{blank}:read", null)).StatusCode);
+    }
+    [Fact]
+    public async Task Receipt_reading_comes_with_expenses_in_every_package()
+    {
+        // Spec 022 R3 FR-030: Workplace has receipt reading, so once expenses are added the form offers it.
+        var basic = await world.CreateTenantAsync("ex-a-" + Guid.NewGuid().ToString("N")[..6], "workplace");
+        Assert.Equal(HttpStatusCode.Forbidden, (await basic["admin"].Client.GetAsync($"{Mine}/form")).StatusCode);
+        (await world.Platform.PutAsJsonAsync($"/api/v1/platform/tenants/{basic.Id}/addons/{Capabilities.HrExpenses}",
+            new { enabled = true, reason = "Expenses add-on" })).EnsureSuccessStatusCode();
+        Assert.True((await OkAsync(basic["admin"].Client.GetAsync($"{Mine}/form"))).GetProperty("receiptReading").GetBoolean());
     }
 }

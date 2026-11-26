@@ -537,6 +537,8 @@ export const HR_FIELDS = [
   "manager_employee_number",
   "assignment_date",
   "personal_email",
+  "probation_end_date",
+  "contract_end_date",
 ] as const;
 export const HR_REQUIRED = ["record_id", "status"] as const;
 export const HR_STATUSES = ["active", "terminated"] as const;

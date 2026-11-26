@@ -81,7 +81,8 @@ public sealed class AttendanceService(
     IUserDirectory users,
     IClockData clockData,
     LeaveLedger people,
-    LeaveConfig leaveConfig)
+    LeaveConfig leaveConfig,
+    Rosters.ShiftRoster roster)
 {
     public const int MaxSites = 20;
     public const int MaxSiteName = 80;
@@ -440,13 +441,15 @@ public sealed class AttendanceService(
             "select distinct date from hr.attendance_request where user_id = @userId and kind = 'correction' and status = 'approved' and date between @from and @to",
             new { userId = person.UserId, from, to }, r => DateOnly.FromDateTime(r.GetDateTime(0)), ct)).ToHashSet();
         var rule = ToRule(ruleView);
+        // A published shift replaces the working week and the rule's hours for its day (spec 022 FR-029).
+        var shifts = await roster.ShiftsAsync([person.UserId], from, to, ct);
         var byDay = punches.GroupBy(p => DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(p.At, calendar.Zone).DateTime)).ToDictionary(g => g.Key, g => g.ToList());
         var days = new List<AttendanceDayView>();
         for (var d = from; d <= to; d = d.AddDays(1))
         {
             var mine = byDay.GetValueOrDefault(d) ?? [];
             var day = AttendanceMath.Evaluate(d, mine.Select(p => new Punch(p.At, p.Direction, p.Remote, p.Source)).ToList(), rule, calendar,
-                leave.GetValueOrDefault(d), today);
+                leave.GetValueOrDefault(d), today, shifts.GetValueOrDefault((person.UserId, d)));
             days.Add(new AttendanceDayView(d, day.Kind, day.FirstIn?.ToString("HH:mm", CultureInfo.InvariantCulture), day.LastOut?.ToString("HH:mm", CultureInfo.InvariantCulture),
                 day.HoursWorked, day.ExpectedHours, corrected.Contains(d) ? [.. day.Flags, AttendanceFlags.Corrected] : day.Flags, mine));
         }
@@ -489,6 +492,7 @@ public sealed class AttendanceService(
             where r.user_id = any(@ids) and r.status = 'approved' and d.date between @from and @to group by r.user_id, d.date
             """, new { ids, from, to }, r => (User: r.GetGuid(0), Date: DateOnly.FromDateTime(r.GetDateTime(1)), Fraction: r.GetDecimal(2)), ct))
             .ToDictionary(x => (x.User, x.Date), x => x.Fraction);
+        var shifts = await roster.ShiftsAsync(ids, from, to, ct);
         var calendarsByUnit = new Dictionary<Guid, WorkingCalendarSnapshot>();
         WorkingCalendarSnapshot? fallback = null;
         int exceptions = 0, working = 0;
@@ -510,7 +514,8 @@ public sealed class AttendanceService(
             var byDay = punches[person.UserId].GroupBy(p => DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(p.At, calendar.Zone).DateTime)).ToDictionary(g => g.Key, g => g.ToList());
             for (var d = from; d <= to; d = d.AddDays(1))
             {
-                var day = AttendanceMath.Evaluate(d, byDay.GetValueOrDefault(d) ?? [], rule, calendar, leave.GetValueOrDefault((person.UserId, d)), today);
+                var day = AttendanceMath.Evaluate(d, byDay.GetValueOrDefault(d) ?? [], rule, calendar, leave.GetValueOrDefault((person.UserId, d)), today,
+                    shifts.GetValueOrDefault((person.UserId, d)));
                 if (day.Kind != AttendanceDayKinds.Working)
                 {
                     continue;

@@ -145,6 +145,8 @@ public sealed class HrSync(
         Put(HrFields.ManagerEmployeeNumber, e.ManagerEmployeeNumber);
         Put(HrFields.AssignmentDate, e.AssignmentDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
         Put(HrFields.PersonalEmail, e.PersonalEmail);
+        Put(HrFields.ProbationEndDate, e.ProbationEndDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+        Put(HrFields.ContractEndDate, e.ContractEndDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
         return d;
     }
 

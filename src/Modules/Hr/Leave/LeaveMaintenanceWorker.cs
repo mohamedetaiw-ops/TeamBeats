@@ -8,7 +8,7 @@ namespace TeamBeats.Modules.Hr.Leave;
 
 /// <summary>
 /// Every hour, for every active tenant in its own scope and transaction: monthly or yearly accrual and the carry-over of
-/// the leave year that ended (spec 022 R2 plan, "Jobs"). Each period is written once per person and type, so running
+/// the leave year that ended (spec 022 R2 plan, "Jobs"), then probation and contract milestones (R3). Each period is written once per person and type, so running
 /// often is safe. Runs as the system actor. Hosted by the worker, and by the development host when
 /// <c>Hr:Leave:InProcess</c> is true.
 /// </summary>
@@ -53,6 +53,20 @@ public sealed class LeaveMaintenanceWorker(IServiceScopeFactory scopes, ILogger<
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 logger.LogError(ex, "Leave accrual failed for tenant {TenantId}", tenant.Id);
+            }
+            // Probation and contract milestones (spec 022 R3): each alert, review and reminder is sent once per date, so the hourly run is safe.
+            try
+            {
+                await using var scope = scopes.CreateAsyncScope();
+                var context = scope.ServiceProvider.GetRequiredService<TenantContextAccessor>();
+                context.SetTenant(tenant.Id);
+                context.SetActor(ActorType.System, null);
+                await scope.ServiceProvider.GetRequiredService<Milestones.Milestones>().RefreshAsync(ct);
+                await scope.ServiceProvider.GetRequiredService<IDbSession>().CommitAsync(ct);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                logger.LogError(ex, "Milestones failed for tenant {TenantId}", tenant.Id);
             }
         }
     }

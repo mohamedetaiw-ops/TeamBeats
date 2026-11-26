@@ -153,4 +153,25 @@ public sealed class AttendanceMathTests
         Assert.Equal(0m, AttendanceMath.CompensationDays(3.99m, WorkRule.Default));
         Assert.Equal(1m, AttendanceMath.CompensationDays(6m, new WorkRule(new TimeOnly(8, 0), new TimeOnly(14, 0), 0, 0)));
     }
+    [Fact]
+    public void A_published_shift_replaces_the_week_and_the_rule_hours_for_the_day()
+    {
+        var evening = new Shift(new TimeOnly(14, 0), new TimeOnly(22, 0), 30, false);
+        // On time for the shift, though late for the 9:00 rule; the break comes off the expected hours.
+        var day = AttendanceMath.Evaluate(Monday, [P(Monday, 14, 5, "in"), P(Monday, 21, 55, "out")], WorkRule.Default, Calendar(), 0m, Later, evening);
+        Assert.Equal(AttendanceDayKinds.Working, day.Kind);
+        Assert.Empty(day.Flags);
+        Assert.Equal(7.5m, day.ExpectedHours);
+        // Late for the shift.
+        Assert.Contains(AttendanceFlags.Late, AttendanceMath.Evaluate(Monday, [P(Monday, 14, 20, "in"), P(Monday, 22, 0, "out")], WorkRule.Default, Calendar(), 0m, Later, evening).Flags);
+        // A shift on Friday, a day off of the week, is a working day; missing it is an absence.
+        var friday = AttendanceMath.Evaluate(Friday, [], WorkRule.Default, Calendar(), 0m, Later, evening);
+        Assert.Equal(AttendanceDayKinds.Working, friday.Kind);
+        Assert.Contains(AttendanceFlags.Absent, friday.Flags);
+        // A day off on the roster is a day off even on a working Monday.
+        var off = AttendanceMath.Evaluate(Monday, [], WorkRule.Default, Calendar(), 0m, Later, Shift.Off);
+        Assert.Equal(AttendanceDayKinds.DayOff, off.Kind);
+        Assert.Empty(off.Flags);
+        Assert.Equal(0m, off.ExpectedHours);
+    }
 }

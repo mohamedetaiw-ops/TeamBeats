@@ -153,7 +153,7 @@ public sealed partial class HrSyncTests(TenantWorld world)
         ["record_id"] = "$.id", ["work_email"] = "$.email", ["employee_number"] = "$.number", ["name_en"] = "$.name", ["name_ar"] = "$.nameAr", ["status"] = "$.state",
         ["hire_date"] = "$.hired", ["job_title"] = "$.job.title", ["grade"] = "$.job.grade", ["cost_centre"] = "$.costCentre", ["location"] = "$.site",
         ["org_unit_code"] = "$.dept", ["manager_employee_number"] = "$.manager", ["employment_type"] = "$.type", ["termination_date"] = "$.left",
-        ["assignment_date"] = "$.since",
+        ["assignment_date"] = "$.since", ["probation_end_date"] = "$.probationEnd", ["contract_end_date"] = "$.contractEnd",
     };
 
     private static object StatusValues => new Dictionary<string, string[]> { ["active"] = ["Active"], ["terminated"] = ["Terminated", "Left"] };

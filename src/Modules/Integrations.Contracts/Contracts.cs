@@ -1114,7 +1114,9 @@ public sealed record HrEmployee(
     string? OrgUnitCode,
     string? ManagerEmployeeNumber,
     DateOnly? AssignmentDate = null,
-    string? PersonalEmail = null);
+    string? PersonalEmail = null,
+    DateOnly? ProbationEndDate = null,
+    DateOnly? ContractEndDate = null);
 
 public static class HrEmployeeStatuses
 {
@@ -1144,6 +1146,10 @@ public static class HrFields
     public const string ManagerEmployeeNumber = "manager_employee_number";
     public const string AssignmentDate = "assignment_date";
 
+    /// <summary>The last day of probation and of a fixed-term contract (spec 022 FR-027, FR-028): milestones read them.</summary>
+    public const string ProbationEndDate = "probation_end_date";
+    public const string ContractEndDate = "contract_end_date";
+
     /// <summary>
     /// The joiner's own email outside the tenant, used only to send pre-boarding before day one (spec 022 FR-016). It
     /// never leaves this module in <see cref="HrRecordView"/>; <see cref="IHrRecords.PreHireAsync"/> is its one reader.
@@ -1153,7 +1159,7 @@ public static class HrFields
     public static readonly IReadOnlyList<string> All =
     [
         RecordId, EmployeeNumber, WorkEmail, NameEn, NameAr, Status, HireDate, TerminationDate, JobTitle, Grade, EmploymentType, CostCentre, Location,
-        OrgUnitCode, ManagerEmployeeNumber, AssignmentDate, PersonalEmail,
+        OrgUnitCode, ManagerEmployeeNumber, AssignmentDate, PersonalEmail, ProbationEndDate, ContractEndDate,
     ];
 
     /// <summary>Fields kept out of <see cref="HrRecordView"/>: other modules never see them with a person's record.</summary>

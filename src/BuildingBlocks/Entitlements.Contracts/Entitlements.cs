@@ -90,6 +90,10 @@ public static class Capabilities
     public const string HrExpenses = "hr.expenses";
     public const string AiReceiptReading = "ai.receipt_reading";
 
+    // Spec 022 R3: probation and contract milestones, and shift rosters, are Workplace Plus and above.
+    public const string HrMilestones = "hr.milestones";
+    public const string HrRosters = "hr.rosters";
+
     // Spec 023 section 9: communities, recognition and galleries in every package; Speak Up, surveys and points Workplace
     // Plus and above. Workplace runs polls without surveys.
     public const string EngagementCommunities = "engagement.communities";
