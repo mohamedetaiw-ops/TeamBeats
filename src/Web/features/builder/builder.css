@@ -567,3 +567,20 @@
   gap: var(--tb-space-sm);
   margin-block-start: var(--tb-space-md);
 }
+
+/* Trying a tenant component in its sandbox (spec 032 R3 FR-031). */
+.builder-sandbox-try {
+  inline-size: 100%;
+  block-size: 20rem;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+}
+
+.builder-manage-checks {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}

@@ -60,7 +60,7 @@ R3 covers FR-023 template recommendations and FR-031 tenant-built components in 
 
 - [x] T033 Template recommendations (FR-023): rules on purpose, viewport and density over released platform templates, advice only, feature controls respected, checked facts, `page.edit` coverage; tests
 - [x] T034 "Help me choose" on the new page screen: recommended badge with reasons, every template stays available, the variant follows the advice; e2e in `ar` and `en` with axe; plan, notes, evidence, OpenAPI
-- [ ] T035 Tenant components: submission with manifest checks and document size, immutable versions, platform security review with approve and reject, audit, capability; tests including another tenant and the package
-- [ ] T036 Sandboxed rendering: the served document with its own policy (opaque origin, declared hosts only), the frame placement with the message contract (declared context, tokens, properties in; height and declared events out), three per page; tests
-- [ ] T037 Pages: tenant components in the admin component area, the review queue on the platform host, the sandbox placement in the builder and renderer; e2e in `ar` and `en` with axe; notes and evidence
+- [x] T035 Tenant components: submission with manifest checks and document size, immutable versions, platform security review with approve and reject, audit, capability; tests including another tenant and the package
+- [x] T036 Sandboxed rendering: the served document with its own policy (opaque origin, declared hosts only), the frame placement with the message contract (declared context, tokens, properties in; height and declared events out), three per page; tests
+- [x] T037 Pages: tenant components in the admin component area, the review queue on the platform host, the sandbox placement in the builder and renderer; e2e in `ar` and `en` with axe; notes and evidence
 

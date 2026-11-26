@@ -9,6 +9,7 @@ using TeamBeats.Modules.Experience.Catalogue;
 using TeamBeats.Modules.Experience.Components;
 using TeamBeats.Modules.Experience.Contracts;
 using TeamBeats.Modules.Experience.Pages;
+using TeamBeats.Modules.Experience.Sandbox;
 using TeamBeats.Modules.Experience.Personalization;
 using TeamBeats.Modules.Experience.Shell;
 using TeamBeats.Modules.Experience.Themes;
@@ -42,6 +43,7 @@ public static class ExperienceModule
         services.AddScoped<Templates.TemplateStore>();
         services.AddScoped<Templates.TemplateService>();
         services.AddScoped<Templates.TemplateRecommendations>();
+        services.AddScoped<Sandbox.TenantComponents>();
         services.AddScoped<PageService>();
         services.AddScoped<Pages.PageRoutes>();
         services.AddScoped<Pages.Fragments>();
@@ -378,6 +380,8 @@ public static class ExperienceModule
 
         x.MapGet("/feature-controls/{controlId:guid}/versions", async (Guid controlId, FeatureControls controls, CancellationToken ct) =>
             Results.Ok(await controls.VersionsAsync(controlId, ct)));
+
+        app.MapSandboxEndpoints();
 
         x.MapGet("/components", async (ComponentEnablement enablement, CancellationToken ct) => Results.Ok(await enablement.ListAsync(ct)));
 

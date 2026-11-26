@@ -246,3 +246,22 @@ export type ComponentUpgradeResult = { from: string; to: string; upgraded: strin
 
 /** A kept draft revision (R2 T026): the last 50 saves of a page's draft. */
 export type DraftRevision = { revision: number; updatedBy: string; updatedAt: string };
+
+/** Spec 032 R3 FR-031: a component the tenant built, with its versions newest first and the live (approved) one. */
+export type TenantComponentVersion = {
+  version: number;
+  status: "in_review" | "approved" | "rejected";
+  sha256: string;
+  size: number;
+  hosts: string[];
+  context: string[];
+  events: string[];
+  height: number;
+  submittedAt: string;
+  reviewedAt: string | null;
+  reviewNote: string | null;
+};
+
+export type TenantComponent = { id: string; names: Record<string, string>; enabled: boolean; live: number | null; versions: TenantComponentVersion[] };
+
+export type TenantComponents = { available: boolean; canManage: boolean; components: TenantComponent[] };

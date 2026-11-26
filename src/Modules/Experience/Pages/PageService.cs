@@ -125,7 +125,8 @@ public sealed partial class PageService(
     Components.FeatureControls controls,
     Components.ComponentDeployments deployments,
     Sharing.OrgSharing sharing,
-    Personalization.Experiments experiments)
+    Personalization.Experiments experiments,
+    Sandbox.TenantComponents tenantComponents)
 {
     private sealed record PageRow(Guid Id, Guid? OrgUnitId, string Slug, string TemplateId, string TemplateVersion, int? CurrentRelease);
 
@@ -839,6 +840,7 @@ public sealed partial class PageService(
         var findings = PageValidator.Validate(definition, template, catalogue, registry, availability, mode, rules,
             await entitlements.IsEnabledAsync(Capabilities.ExperienceAudienceVariants, ct));
         findings.AddRange(await TranslationFindingsAsync(definition, ct));
+        findings.AddRange(await tenantComponents.FindingsAsync(definition, mode, ct));
         // A finding inside a fragment is shown on the page's reference to it.
         findings = findings.Select(f => f.Placement is { } id && references.FirstOrDefault(r => id.StartsWith(r, StringComparison.Ordinal)) is { } r
             ? f with { Placement = r[..^1] } : f).ToList();

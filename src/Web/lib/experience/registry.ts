@@ -46,6 +46,8 @@ const product: Record<string, Loader> = {
   "engagement.poll@1": () => import("@/components/placements/engagement.poll"),
   // My learning home card (spec 028 T005).
   "learning.my@1": () => import("@/components/placements/learning.my"),
+  // A component the tenant built itself, in a sandboxed frame (spec 032 R3 FR-031).
+  "sandbox.tenant_component@1": () => import("@/components/placements/sandbox.tenant_component"),
 };
 
 const reference: Record<string, Loader> =

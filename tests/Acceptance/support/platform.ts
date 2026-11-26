@@ -81,3 +81,13 @@ export async function platformPut(path: string, data: unknown): Promise<void> {
   }
   await platform.dispose();
 }
+
+/** A platform operator call that records a decision, such as a security review (spec 032 R3 FR-031). */
+export async function platformPost(path: string, data: unknown): Promise<void> {
+  const platform = await platformClient();
+  const response = await platform.post(path, { data });
+  if (!response.ok()) {
+    throw new Error(`POST ${path} failed with ${response.status()}: ${await response.text()}`);
+  }
+  await platform.dispose();
+}

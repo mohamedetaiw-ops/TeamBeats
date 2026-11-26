@@ -184,7 +184,7 @@ public sealed class ExperienceValidationTests
     {
         var registry = new ComponentRegistry([new PlatformComponents()], Localizer, NullLogger<ComponentRegistry>.Instance);
         Assert.Empty(registry.Rejected);
-        Assert.Equal(["home.briefing@1", "home.your_day@1", "toolbox.time_converter@1", "toolbox.weather@1", "toolbox.world_clock@1"], registry.All.Select(m => m.Reference));
+        Assert.Equal(["home.briefing@1", "home.your_day@1", "sandbox.tenant_component@1", "toolbox.time_converter@1", "toolbox.weather@1", "toolbox.world_clock@1"], registry.All.Select(m => m.Reference));
         Assert.All(registry.All.Where(m => m.Id.StartsWith("toolbox.", StringComparison.Ordinal)), m =>
         {
             Assert.Equal("utility", m.Display.Category);

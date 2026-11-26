@@ -3119,7 +3119,8 @@
         "routes": "Approval routes",
         "fragments": "Fragments",
         "controls": "Feature controls",
-        "upgrades": "Component upgrades"
+        "upgrades": "Component upgrades",
+        "components": "Your components"
       },
       "routes": {
         "intro": "Choose who approves pages before they go live. The nearest route up the organization applies, then the one for the whole organization.",
@@ -3281,6 +3282,62 @@
         "outcomeLive": "Live pages already show the new version wherever it could be converted.",
         "failed": "The upgrade could not be changed. Try again.",
         "changeLine": "{from} to {to}"
+      },
+      "tenantComponents": {
+        "intro": "Components your organization builds itself. Each version is checked by the platform's security team before it can be turned on, and always runs in a protected frame.",
+        "unavailable": "Your own components are not in your package",
+        "unavailableHint": "Ask your provider about custom components.",
+        "deniedMessage": "You need the right to turn components on for the whole organization.",
+        "failed": "That did not work. Try again.",
+        "submitted": "Sent for security review.",
+        "changed": "Saved.",
+        "caption": "Your components",
+        "component": "Component",
+        "id": "Key",
+        "versions": "Versions",
+        "enabled": "On for pages",
+        "enabledLabel": "Turn {name} on for pages",
+        "emptyTitle": "No components yet",
+        "empty": "Send a first version below.",
+        "status": {
+          "in_review": "Version {version} in review",
+          "approved": "Version {version} approved",
+          "rejected": "Version {version} rejected"
+        },
+        "try": "Try",
+        "tryLabel": "Try version {version}",
+        "tryTitle": "Trying {id} version {version}",
+        "tryHint": "The component runs here as it will on pages: in a frame with no access to your session or this page.",
+        "closeTry": "Close",
+        "newTitle": "Send a version for review",
+        "newHint": "Each version is kept as sent. Script and style must be inside the HTML file.",
+        "idField": "Key",
+        "idHint": "3 to 40 lowercase letters, digits or hyphens. Use the same key for a new version.",
+        "nameEn": "Name in English",
+        "nameAr": "Name in Arabic",
+        "hosts": "Web addresses it may call",
+        "hostsHint": "Up to 5, each starting with https://, one per line.",
+        "context": "Page details it may receive",
+        "contextKey": {
+          "locale": "Language",
+          "direction": "Text direction",
+          "themeMode": "Light or dark mode",
+          "density": "Density",
+          "deviceClass": "Device type",
+          "pageId": "Page",
+          "siteId": "Site",
+          "orgUnitId": "Organization",
+          "tenantId": "Organization account"
+        },
+        "events": "Events it sends",
+        "eventsHint": "Names separated by commas, such as cheered.",
+        "height": "Height",
+        "pixels": "pixels",
+        "file": "HTML file",
+        "fileHint": "Up to 256 KB. Choosing a file fills the box below.",
+        "document": "HTML",
+        "submit": "Send for review",
+        "submitting": "Sending"
       }
     },
     "revisions": {
@@ -18867,5 +18924,11 @@
     },
     "hoursRange": "{start} to {end}",
     "option": "{name}, {range}"
+  },
+  "sandbox": {
+    "unavailable": "This component is not available",
+    "unavailableHint": "It may be turned off or waiting for review.",
+    "frameTitle": "{name}, your organization's component",
+    "title": "Your organization's component"
   }
 }

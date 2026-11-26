@@ -9,6 +9,7 @@ const items = [
   { key: "fragments", href: "/admin/pages/fragments" },
   { key: "controls", href: "/admin/pages/controls" },
   { key: "upgrades", href: "/admin/pages/upgrades" },
+  { key: "components", href: "/admin/pages/components" },
 ] as const;
 
 /** The pages of the Pages area (spec 032 R2 T032). Each screen asks the API again, so a tab never grants anything. */

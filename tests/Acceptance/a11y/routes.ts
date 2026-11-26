@@ -94,6 +94,7 @@ export const routes: readonly Route[] = [
   { path: "/admin/pages/new", tier: "other" },
   { path: "/admin/pages/routes", tier: "other" },
   { path: "/admin/pages/upgrades", tier: "other" },
+  { path: "/admin/pages/components", tier: "other" },
   { path: "/admin/people", tier: "other" },
   { path: "/admin/plan", tier: "primary" },
   { path: "/admin/process-operations", tier: "other" },
