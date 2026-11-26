@@ -54,11 +54,40 @@ public static class ShiftTones
 /// </summary>
 public sealed class ShiftRoster(IDbSession session, IEntitlementService entitlements)
 {
-    public async Task<IReadOnlyDictionary<(Guid User, DateOnly Date), Shift>> ShiftsAsync(IReadOnlyCollection<Guid> userIds, DateOnly from, DateOnly to, CancellationToken ct)
+    /// <summary>The published shifts with their pattern's names and times, for the calendar feed (spec 037 FR-034).</summary>
+    public async Task<IReadOnlyList<ShiftEntry>> EntriesAsync(IReadOnlyCollection<Guid> userIds, DateOnly from, DateOnly to, CancellationToken ct)
     {
+        var planned = await PlannedAsync(userIds, from, to, ct);
+        if (planned.Count == 0)
+        {
+            return [];
+        }
+        var patterns = (await session.QueryAsync("select id, names::text, start_time, end_time, tone from hr.shift_pattern", null,
+            r => (Id: r.GetGuid(0), Names: JsonSerializer.Deserialize<Dictionary<string, string>>(r.GetString(1), JsonDefaults.Options) ?? [],
+                Start: TimeOnly.FromTimeSpan(r.GetFieldValue<TimeSpan>(2)), End: TimeOnly.FromTimeSpan(r.GetFieldValue<TimeSpan>(3)), Tone: r.GetString(4)), ct))
+            .ToDictionary(p => p.Id);
+        var list = new List<ShiftEntry>();
+        foreach (var ((user, date), value) in planned.OrderBy(p => p.Key.Date).ThenBy(p => p.Key.User))
+        {
+            if (value == Rosters.Off)
+            {
+                list.Add(new ShiftEntry(user, date, true, null, null, null, null));
+            }
+            else if (Guid.TryParse(value, out var id) && patterns.TryGetValue(id, out var p))
+            {
+                list.Add(new ShiftEntry(user, date, false, p.Start, p.End, p.Names, p.Tone));
+            }
+        }
+        return list;
+    }
+
+    /// <summary>For each person and day, the value of the latest published week that plans it: a pattern ID or <see cref="Rosters.Off"/>.</summary>
+    private async Task<Dictionary<(Guid User, DateOnly Date), string>> PlannedAsync(IReadOnlyCollection<Guid> userIds, DateOnly from, DateOnly to, CancellationToken ct)
+    {
+        var planned = new Dictionary<(Guid, DateOnly), string>();
         if (userIds.Count == 0 || to < from || !await entitlements.IsEnabledAsync(Capabilities.HrRosters, ct))
         {
-            return new Dictionary<(Guid, DateOnly), Shift>();
+            return planned;
         }
         var weeks = await session.QueryAsync(
             """
@@ -66,15 +95,7 @@ public sealed class ShiftRoster(IDbSession session, IEntitlementService entitlem
             where status = 'published' and published is not null and week_start between @earliest and @to
             order by published_at
             """, new { earliest = from.AddDays(-6), to }, r => r.GetString(0), ct);
-        if (weeks.Count == 0)
-        {
-            return new Dictionary<(Guid, DateOnly), Shift>();
-        }
-        var patterns = (await session.QueryAsync("select id, start_time, end_time, break_minutes from hr.shift_pattern", null,
-            r => (Id: r.GetGuid(0), Shift: new Shift(TimeOnly.FromTimeSpan(r.GetFieldValue<TimeSpan>(1)), TimeOnly.FromTimeSpan(r.GetFieldValue<TimeSpan>(2)), r.GetInt32(3), false)), ct))
-            .ToDictionary(p => p.Id, p => p.Shift);
         var wanted = userIds.ToHashSet();
-        var shifts = new Dictionary<(Guid, DateOnly), Shift>();
         foreach (var json in weeks)
         {
             foreach (var (user, days) in Rosters.ReadSnapshot(json))
@@ -85,19 +106,36 @@ public sealed class ShiftRoster(IDbSession session, IEntitlementService entitlem
                 }
                 foreach (var (date, value) in days)
                 {
-                    if (date < from || date > to)
+                    if (date >= from && date <= to)
                     {
-                        continue;
-                    }
-                    if (value == Rosters.Off)
-                    {
-                        shifts[(user, date)] = Shift.Off;
-                    }
-                    else if (Guid.TryParse(value, out var pattern) && patterns.TryGetValue(pattern, out var shift))
-                    {
-                        shifts[(user, date)] = shift;
+                        planned[(user, date)] = value;
                     }
                 }
+            }
+        }
+        return planned;
+    }
+
+    public async Task<IReadOnlyDictionary<(Guid User, DateOnly Date), Shift>> ShiftsAsync(IReadOnlyCollection<Guid> userIds, DateOnly from, DateOnly to, CancellationToken ct)
+    {
+        var planned = await PlannedAsync(userIds, from, to, ct);
+        var shifts = new Dictionary<(Guid, DateOnly), Shift>();
+        if (planned.Count == 0)
+        {
+            return shifts;
+        }
+        var patterns = (await session.QueryAsync("select id, start_time, end_time, break_minutes from hr.shift_pattern", null,
+            r => (Id: r.GetGuid(0), Shift: new Shift(TimeOnly.FromTimeSpan(r.GetFieldValue<TimeSpan>(1)), TimeOnly.FromTimeSpan(r.GetFieldValue<TimeSpan>(2)), r.GetInt32(3), false)), ct))
+            .ToDictionary(p => p.Id, p => p.Shift);
+        foreach (var (key, value) in planned)
+        {
+            if (value == Rosters.Off)
+            {
+                shifts[key] = Shift.Off;
+            }
+            else if (Guid.TryParse(value, out var pattern) && patterns.TryGetValue(pattern, out var shift))
+            {
+                shifts[key] = shift;
             }
         }
         return shifts;

@@ -32,3 +32,14 @@ Depends on 009 (audience), 010 (reporting line), 017 (Google Workspace connectio
 
 ## Phase 7: Demo and staging
 - [x] T017 Staging data: distinct team meetings per manager (no look-alike repeats), demo company events, RSVP, holidays and leave for the test accounts
+
+## R3
+
+Depends on 022 R3 (rosters), 015 (notifications), 011 (scanning). Covers User Stories 8 to 11 and FR-028 to FR-036. CAL-032 is not built.
+
+- [x] T018 [US8] Registration with capacity, waiting list, closing time and promotion; calendar file; tests
+- [x] T019 [US9] Reminders and cancellation notices through spec 015 with the maintenance job; tests
+- [x] T020 [US10] Event attachments with scanning and audience checked download; tests
+- [x] T021 [US11] Published shifts layer and roster days in team availability; provisional and observed holidays in Hr and the calendar; tests
+- [x] T022 Pages: event details registration and attachments, manage event fields and upload, shifts layer, holiday tags; e2e
+- [x] T023 OpenAPI, R3 implementation notes, spec evidence

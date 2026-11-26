@@ -8,8 +8,8 @@
 | Version | 1.0 |
 | Owner | Mohamed |
 | Approver | Mohamed |
-| Target release | R2 (calendar workspace with agenda, week, month and team availability views, home calendar card, layers and preferences, company and department events with audience and RSVP, location holidays, my leave and team leave, team availability heatmap, Outlook and Google Calendar meetings through the same port, deduplication, calendar tools for the assistant), R3 (event registration with capacity and waitlist through spec 009 event items, reminders through spec 015, attachments, shift rosters and part-time patterns from spec 022 R3, provisional and observed holidays, background sync of external calendars if spec 018 section 6 changes) |
-| Last updated | 2026-11-14 |
+| Target release | R2 (calendar workspace with agenda, week, month and team availability views, home calendar card, layers and preferences, company and department events with audience and RSVP, location holidays, my leave and team leave, team availability heatmap, Outlook and Google Calendar meetings through the same port, deduplication, calendar tools for the assistant), R3 (event registration with capacity and waitlist, also used by spec 009 event items, calendar files, reminders through spec 015, attachments, published shifts and roster days off from spec 022 R3, provisional and observed holidays; background sync of external calendars only if spec 018 section 6 changes) |
+| Last updated | 2026-11-26 |
 | Approved | 2026-11-11 under Mohamed's standing approval of 2026-11-07 (request of 2026-11-11 in the thread "Build the unified team calendar") |
 | Requirement IDs | CAL-001 to CAL-032 (new); INT-002 (calendar part), UC-10 (calendar part), LVA-001 and LVA-009 (calendar part) |
 | Use cases | UC-10 |
@@ -146,6 +146,56 @@ Leila asks the assistant "What is on today?" and Sara asks "Which days next mont
 1. **Given** the calendar tools are allowed for the tenant (spec 027), **Then** the assistant can list the employee's merged calendar for up to 31 days and, for a manager, team availability aggregates for up to 62 days, with the same filtering as the page; it never receives another employee's private subject, leave type or reason it could not see on the page. *(CAL-026)*
 2. **Given** a person who is not a manager, **Then** the team tool answers that there is no team, not an error with data. *(CAL-026)*
 
+### User Story 8: Register for an event with limited seats (Priority: P1, R3)
+
+Huda publishes "First aid course" for 14 December with 20 seats and a waiting list, closing registration the day before. Omar registers and gets seat 12. When the course is full, Leila joins the waiting list as number 1. Two days later someone cancels; Leila is moved up, told by a notification, and the course shows as registered on her calendar. Omar downloads the calendar file and adds it to Outlook.
+
+**Why this priority:** training, town halls with a room limit and site visits need seats; spec 009 event items publish into these events, so registration must live here once.
+
+**Independent test:** fill an event with capacity 2, add one to the waiting list, cancel one registration and see the first waiting person moved up and notified; a person outside the audience cannot register.
+
+**Acceptance scenarios:**
+1. **Given** `content.publish` at the owning unit, **When** a communicator sets an event to registration, **Then** they set the capacity (1 to 10,000), whether a waiting list is kept and an optional time registration closes, which is before the event starts. An event uses either RSVP or registration, not both. *(CAL-027)*
+2. **Given** an audience member and an occurrence with free seats that has not closed, **When** they register, **Then** they hold a seat for that occurrence and the item shows Registered. **Given** no free seat, **Then** they join the waiting list when it is kept, in order of joining, or are refused with "This event is full". *(CAL-027)*
+3. **Given** a registered person cancels before the occurrence starts, **Then** the seat is freed and the first person on the waiting list takes it and is notified. The same happens when the communicator raises the capacity. The capacity cannot be lowered below the seats taken. *(CAL-027)*
+4. **Given** the communicator, **Then** they see seats taken, seats left and the waiting list length per occurrence, and the names only with `content.publish` on the owning unit, as for RSVP. *(CAL-027)*
+5. **Given** an audience member, **When** they download the calendar file of an occurrence, **Then** they get an iCalendar file with the event UID `<event id>@teambeats`, so an imported copy merges with the TeamBeats item (FR-004). Someone outside the audience gets not found. *(CAL-027)*
+
+### User Story 9: Be reminded before an event (Priority: P2, R3)
+
+Omar registered for the first aid course. The day before, he gets a reminder in TeamBeats and by email with the time, place and link. When Huda cancels the course, everyone registered, waiting or going is told.
+
+**Independent test:** a registered person and a person who answered Going get one reminder at the offset; a person who answered Not going gets none; a cancelled event sends a cancellation notice once.
+
+**Acceptance scenarios:**
+1. **Given** an event with a reminder offset (none, 15 minutes, 1 hour or 1 day before), **When** the time comes, **Then** each person registered or who answered Going for that occurrence gets one reminder through spec 015 (template `calendar.event_reminder`) on the channels their notification preferences allow. *(CAL-028)*
+2. **Given** a person was reminded, **Then** they are not reminded again for that occurrence, even after the event changes. A person who registers after the reminder time gets no reminder. *(CAL-028)*
+3. **Given** an event or occurrence is cancelled, **Then** people registered, waiting or Going are told once (template `calendar.event_cancelled`). *(CAL-028)*
+4. **Given** a new event, **Then** the offset defaults to 1 hour for timed events and 1 day for all-day events; the communicator may change it or turn it off. *(CAL-028)*
+
+### User Story 10: Add the agenda to an event (Priority: P2, R3)
+
+Huda attaches the agenda and the slides to the town hall. Employees in the audience open them from the event's details; nobody else can.
+
+**Independent test:** attach a PDF, read it as an audience member, get not found outside the audience and from another tenant, and see an infected file refused.
+
+**Acceptance scenarios:**
+1. **Given** `content.publish` at the owning unit, **When** a communicator attaches files to an event, **Then** up to 5 files of at most 20 MB each in PDF, Word, Excel, PowerPoint, PNG or JPEG are checked by signature and size, scanned for malware and stored in tenant object storage. Other types and infected files are refused. *(CAL-029)*
+2. **Given** an audience member, **Then** the event's details list the attachments with name and size and each opens through the calendar API with the same audience check; outside the audience the file is not found. *(CAL-029)*
+3. **Given** an event is deleted, **Then** its attachments are removed with it; a communicator can also remove one attachment. *(CAL-029)*
+
+### User Story 11: See my shifts and holidays as they really are (Priority: P2, R3)
+
+Ahmed works shifts. His calendar shows Tuesday 06:00 to 14:00 Morning shift and Wednesday as a roster day off. His manager's team availability does not count Ahmed as available on his day off. The Eid holiday shows as provisional until HR confirms the date, and National Day, falling on a Saturday, shows on Sunday as "Observed for 2 December".
+
+**Independent test:** publish a roster with a shift and a day off; the person sees both in the shifts layer, team availability scores the day off as not working; a provisional holiday is marked and an observed holiday names its original date.
+
+**Acceptance scenarios:**
+1. **Given** `hr.rosters` is on and a roster for the person's week is published (spec 022 FR-029), **Then** a My shifts layer shows each published shift with its name and times in the person's time zone, and each roster day off as an all-day item. Drafts are never shown. *(CAL-030)*
+2. **Given** a manager's team availability, **Then** a report's published day off is not a working day for that person and a published shift on a day the working week marks off is a working day; other days follow the working calendar. *(CAL-030)*
+3. **Given** a holiday HR marked provisional (spec 022 FR-007), **Then** the calendar and the home card show it with the word "Provisional"; once confirmed the word goes. *(CAL-031)*
+4. **Given** a holiday observed on another day than the one it marks, **Then** it shows on the observed day with "Observed for" and the original date. *(CAL-031)*
+
 ### Edge cases and exception flows
 - A meeting that crosses midnight shows on both days in week and month views and once in the agenda, on its start day, with its end date.
 - An all-day item keeps its local dates in every time zone: dates are stored as calendar dates with an exclusive end, never as instants.
@@ -157,6 +207,9 @@ Leila asks the assistant "What is on today?" and Sara asks "Which days next mont
 - Leave cancelled after being shown: it disappears on the next read; nothing is cached across requests for leave.
 - Two Outlook occurrences of a series on the same day are different occurrences, not duplicates.
 - A company event that a communicator also sent as an Outlook invitation is shown once, as the company event, with Join from the Outlook copy when it has one.
+- (R3) Two people take the last seat at the same moment: one registers, the other joins the waiting list or is refused; seats taken never exceed the capacity.
+- (R3) An event turned from registration back to off keeps no seats; registered and waiting people are told it no longer takes registrations.
+- (R3) A shift that crosses midnight shows on both days, like a meeting.
 
 ## 5. Functional requirements
 
@@ -203,6 +256,20 @@ Leila asks the assistant "What is on today?" and Sara asks "Which days next mont
 - **FR-026**: The layer controls MUST read as one group: chips with one neutral outline, the layer's colour as a marker, its icon and its label, pressed when the layer is on (spec 036 DLS-070). The week view MUST show the current time line and the working hours of the person's working calendar.
 - **FR-027**: The home calendar component MUST be the summary variant: today's remaining items and the next one after them, at most five rows, with "Open the calendar". It MUST NOT embed the full view switch or the layer legend.
 
+### Registration, reminders and attachments (R3)
+- **FR-028 / CAL-027**: An event MUST offer one of: no answers, RSVP (FR-019) or registration. Registration MUST have a capacity of 1 to 10,000 per occurrence, an optional waiting list and an optional closing time before the start. Registering MUST be allowed only to audience members, before the closing time and before the occurrence starts; seats taken MUST never exceed the capacity, also under parallel requests.
+- **FR-029 / CAL-027**: When a seat frees up (a cancelled registration or a raised capacity) the first person on the waiting list MUST take it in order of joining and be notified. The capacity MUST NOT be lowered below the seats taken. Changes MUST publish `EventRegistrationChanged` (registered, waitlisted, cancelled, promoted) with IDs only.
+- **FR-030 / CAL-027**: Seats and waiting list counts per occurrence MUST be visible to the communicator, names only to `content.publish` holders on the owning unit; each person sees only their own state.
+- **FR-031 / CAL-027**: Audience members MUST be able to download an iCalendar file for an occurrence with UID `<event id>@teambeats`, the occurrence start as RECURRENCE-ID for a series, title in their language, time, location and online link; the description is plain text.
+- **FR-032 / CAL-028**: Each event MUST have a reminder offset (none, 15 minutes, 1 hour, 1 day; default 1 hour timed, 1 day all-day). A job MUST send one reminder per person and occurrence through spec 015 to people registered or Going, never twice, and a cancellation notice once to people registered, waiting or Going.
+- **FR-033 / CAL-029**: Communicators MUST be able to attach up to 5 files (PDF, Word, Excel, PowerPoint, PNG, JPEG; at most 20 MB each) to an event, checked by signature and size and scanned for malware before storing in tenant object storage. Files MUST be served only through the calendar API to audience members and the event's managers, and removed with the event.
+
+### Shifts and holidays (R3)
+- **FR-034 / CAL-030**: When `hr.rosters` is on, the `my_shifts` layer MUST show the person's published shifts and roster days off from the `Hr` calendar feed; the layer is offered only to people with a published roster in the range or within the last 28 days. Drafts MUST never reach the calendar.
+- **FR-035 / CAL-030**: Team availability MUST take each report's working days from their published roster where one exists for the day, and from their working calendar otherwise.
+- **FR-036 / CAL-031**: Holidays MUST carry their status (confirmed or provisional) and, for an observed holiday, the date it is observed for, from spec 022; the calendar and card MUST show "Provisional" and "Observed for" with the date. Counting leave and working days does not change: a provisional holiday counts like a confirmed one (spec 022).
+- **CAL-032** (background sync of external calendars) stays out of R3 builds until spec 018 section 6 allows storing meeting copies (section 17).
+
 ## 6. Business and validation rules
 - Ranges: events and summary up to 62 days, team availability up to 62 days, holidays up to 366 days.
 - Events: title 1 to 200 characters per language, description up to 4,000, location up to 200, online link https only, end after start, all-day end date after start date, at most 100 occurrences, at most 5 years ahead.
@@ -210,6 +277,9 @@ Leila asks the assistant "What is on today?" and Sara asks "Which days next mont
 - Preferences: layers from the known list only; unknown layers are refused.
 - Team availability: a person counts as away on a day with approved leave, half away with half a day; pending leave is shown but not counted as away. Working days come from each person's calendar.
 - Threshold breach: available share strictly below the threshold.
+- (R3) Registration: capacity 1 to 10,000; closing time before the start; registering and cancelling only before the occurrence starts; RSVP and registration never on the same event.
+- (R3) Attachments: at most 5 per event, 20 MB each, names up to 200 characters, the allowed types only.
+- (R3) Reminder offsets: none, 15 minutes, 1 hour, 1 day.
 
 ## 7. Tenant and organization scope
 - Tenant-owned data: events, occurrences answers, preferences, settings. Every table carries `tenant_id` with forced row level security.
@@ -224,6 +294,10 @@ Leila asks the assistant "What is on today?" and Sara asks "Which days next mont
 | Company, department events and important dates | TeamBeats `Calendar` | Internal | Until deleted; cancelled events kept 1 year for audit | No (owner reference) |
 | RSVP answers | TeamBeats `Calendar` | Internal | 1 year after the occurrence | Yes |
 | Calendar preferences | TeamBeats `Calendar` | Internal | While the membership exists | Yes |
+| Registrations and waiting list (R3) | TeamBeats `Calendar` | Internal | 1 year after the occurrence | Yes |
+| Reminders sent (R3) | TeamBeats `Calendar` | Internal | 1 year after the occurrence | Yes |
+| Event attachments (R3) | TeamBeats `Calendar` | Internal | With the event | No |
+| Published shifts (R3) | TeamBeats `Hr` | Internal | Spec 022; not stored by the calendar | Yes |
 | Calendar settings | TeamBeats `Calendar` | Internal | Versions kept | No |
 | Meetings | Microsoft 365 or Google | Confidential | Not stored; in-memory cache up to 5 minutes per tenant and membership (spec 018) | Yes |
 | Holidays | TeamBeats `Hr` | Internal | Spec 022 | No |
@@ -254,6 +328,8 @@ Leila asks the assistant "What is on today?" and Sara asks "Which days next mont
 |---|---|---|
 | calendar.event_created, calendar.event_changed, calendar.event_cancelled, calendar.event_deleted | audit | event, unit, actor, changed fields |
 | calendar.settings_changed | audit | version, changed fields, actor |
+| calendar.attachment_added, calendar.attachment_removed (R3) | audit | event, file name, size, actor |
+| calendar.registration_changed (R3) | telemetry | event, occurrence, change (no person) |
 | calendar.team_viewed | audit | manager, range, number of people (sensitive leave access, constitution audit rule) |
 | calendar.source_failed | telemetry | source, error class |
 
@@ -278,7 +354,9 @@ Leila asks the assistant "What is on today?" and Sara asks "Which days next mont
 
 ## 17. Open questions
 - External meetings are read live through the employee's delegated access with the 5 minute cache of spec 018. Storing a synced copy with cursors and change notifications, as proposed in the request, would change spec 018 section 6 ("not stored") and needs Mohamed's decision. Default: keep live reads; revisit in R3.
-- Provisional and observed holidays need a field on spec 022 holidays. Default: not shown until spec 022 adds it.
+- Provisional and observed holidays: spec 022 FR-007 now gives holidays a status and an observed-for date (R3).
+- (R3) Background sync (CAL-032) still waits on the decision above; R3 keeps live reads.
+- (R3) Registration has no approval step and no external guests. Default: audience members only, first come first served.
 - Colleague (non-report) availability beyond free and busy on profiles (spec 018 FR-018). Default: not in the calendar.
 
 ## 18. Traceability
@@ -293,7 +371,12 @@ Leila asks the assistant "What is on today?" and Sara asks "Which days next mont
 | CAL-019, CAL-020 | FR-005, FR-023, US6 |
 | CAL-021 to CAL-025 | FR-017 to FR-020, US5 |
 | CAL-026 | FR-022, US7 |
-| CAL-027 to CAL-032 | Reserved for R3 (registration, reminders, attachments, rosters, provisional holidays, background sync) |
+| CAL-027 | FR-028 to FR-031, US8 |
+| CAL-028 | FR-032, US9 |
+| CAL-029 | FR-033, US10 |
+| CAL-030 | FR-034, FR-035, US11 |
+| CAL-031 | FR-036, US11 |
+| CAL-032 | Not built; waits on spec 018 section 6 (section 17) |
 
 ## Review checklist
 - [x] No [NEEDS CLARIFICATION] left; open questions have safe defaults

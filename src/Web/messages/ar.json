@@ -3624,7 +3624,11 @@
       "halfDayFor": "العطلة {number} نصف يوم",
       "remove": "إزالة العطلة {number}",
       "add": "إضافة عطلة",
-      "save": "حفظ العطلات"
+      "save": "حفظ العطلات",
+      "provisional": "مبدئية",
+      "observedFor": "بدلاً من",
+      "provisionalFor": "العطلة {number} مبدئية",
+      "observedForFor": "التاريخ الذي تُنقل منه العطلة {number}"
     },
     "assign": {
       "title": "نطاق تطبيق كل تقويم",
@@ -13753,7 +13757,8 @@
       "important": "تواريخ مهمة",
       "holiday": "العطلات",
       "my_leave": "إجازاتي",
-      "team_leave": "إجازات الفريق"
+      "team_leave": "إجازات الفريق",
+      "my_shifts": "مناوباتي"
     },
     "sources": {
       "outlook": "Outlook",
@@ -13761,20 +13766,23 @@
       "events": "فعاليات TeamBeats",
       "holidays": "العطلات",
       "leave": "الإجازات",
-      "other": "التقويم"
+      "other": "التقويم",
+      "shifts": "المناوبات"
     },
     "status": {
       "pending": "بانتظار الموافقة",
       "cancelled": "ملغى",
       "tentative": "مبدئي",
-      "free": "متاح"
+      "free": "متاح",
+      "provisional": "مبدئي"
     },
     "actions": {
       "join": "انضم",
       "openOutlook": "افتح في Outlook",
       "openGoogle": "افتح في تقويم Google",
       "openLeave": "افتح الطلب",
-      "viewTeam": "عرض توفر الفريق"
+      "viewTeam": "عرض توفر الفريق",
+      "calendarFile": "أضف إلى تطبيق التقويم"
     },
     "fresh": {
       "stale": "تعذر تحديث {source}. المعروض هو آخر مزامنة في {time}.",
@@ -13784,7 +13792,8 @@
     },
     "alerts": {
       "holiday": "{title} في {date}",
-      "team": "{count, plural, one {عضو واحد من الفريق في إجازة اليوم} two {عضوان من الفريق في إجازة اليوم} few {# أعضاء من الفريق في إجازة اليوم} many {# عضوًا من الفريق في إجازة اليوم} other {# عضو من الفريق في إجازة اليوم}}"
+      "team": "{count, plural, one {عضو واحد من الفريق في إجازة اليوم} two {عضوان من الفريق في إجازة اليوم} few {# أعضاء من الفريق في إجازة اليوم} many {# عضوًا من الفريق في إجازة اليوم} other {# عضو من الفريق في إجازة اليوم}}",
+      "holidayProvisional": "{title} في {date} (مبدئي)"
     },
     "rsvp": {
       "question": "هل ستحضر؟",
@@ -13850,7 +13859,6 @@
       "location": "المكان",
       "onlineUrl": "رابط الاجتماع عبر الإنترنت",
       "onlineUrlHint": "يجب أن يبدأ بـ https://",
-      "rsvp": "اسأل الناس إن كانوا سيحضرون",
       "save": "حفظ الفعالية",
       "saving": "جارٍ الحفظ",
       "close": "إغلاق",
@@ -13867,7 +13875,26 @@
         "published": "منشورة",
         "cancelled": "ملغاة"
       },
-      "keep": "الإبقاء عليها"
+      "keep": "الإبقاء عليها",
+      "answers": "الردود",
+      "answerModes": {
+        "none": "بلا ردود",
+        "rsvp": "اسأل الموظفين إن كانوا سيحضرون",
+        "registration": "تسجيل بمقاعد محددة"
+      },
+      "reminder": "التذكير",
+      "reminders": {
+        "none": "بلا تذكير",
+        "15m": "قبل 15 دقيقة",
+        "1h": "قبل ساعة",
+        "1d": "قبل يوم"
+      },
+      "reminderHint": "يُرسل إلى من سجّلوا أو قالوا إنهم سيحضرون.",
+      "capacity": "المقاعد",
+      "closesDate": "يُغلق التسجيل في",
+      "closesTime": "الساعة",
+      "closesHint": "اتركه فارغاً ليبقى مفتوحاً حتى البداية.",
+      "waitlist": "احتفظ بقائمة انتظار عند اكتمال المقاعد"
     },
     "settings": {
       "title": "إعدادات توفر الفريق",
@@ -13897,6 +13924,32 @@
         "conditional_access": "تمنع قواعد تسجيل الدخول في مؤسستك ذلك. أرسل ردك من Outlook.",
         "failed": "لم يتم إرسال ردك. حاول مرة أخرى."
       }
+    },
+    "dayOff": "يوم إجازة",
+    "observedFor": "بدلاً من {date}",
+    "provisionalNote": "لم يُؤكَّد التاريخ بعد وقد يتغير.",
+    "registration": {
+      "registered": "أنت مسجل.",
+      "waiting": "ترتيبك {position} في قائمة الانتظار.",
+      "closed": "التسجيل مغلق.",
+      "seatsLeft": "{count, plural, zero {لا مقاعد متبقية} one {مقعد واحد متبقٍ} two {مقعدان متبقيان} few {# مقاعد متبقية} many {# مقعداً متبقياً} other {# مقعد متبقٍ}}",
+      "full": "اكتمل عدد المقاعد. يمكنك الانضمام إلى قائمة الانتظار.",
+      "fullNoList": "اكتمل عدد المقاعد.",
+      "register": "سجّل",
+      "registerFor": "سجّل في {title}",
+      "joinList": "انضم إلى قائمة الانتظار",
+      "joinListFor": "انضم إلى قائمة الانتظار في {title}",
+      "cancel": "ألغِ تسجيلي",
+      "leaveList": "اترك قائمة الانتظار",
+      "cancelFor": "تخلَّ عن مكاني في {title}",
+      "counts": "{taken} مسجلون، {left} مقاعد متبقية، {waiting} في الانتظار",
+      "failed": "تعذّر تغيير تسجيلك. حاول مرة أخرى."
+    },
+    "attachments": {
+      "title": "المرفقات",
+      "add": "أرفق ملفات",
+      "hint": "PDF أو Word أو Excel أو PowerPoint أو PNG أو JPEG، حتى 20 ميغابايت لكل ملف و5 ملفات إجمالاً.",
+      "failed": "تعذّر إرفاق الملف. حاول مرة أخرى."
     }
   },
   "letters": {

@@ -10,14 +10,17 @@ import { Dialog } from "@/components/ui/Dialog";
 import { FormField, SelectField, TextAreaField } from "@/components/ui/FormField";
 import { Switch } from "@/components/ui/Switch";
 import { ConfirmAction } from "@/components/ui/ConfirmAction";
+import { FileUpload, type UploadItem } from "@/components/ui/FileUpload";
 import { problemMessages } from "@/lib/notifications/types";
-import { LAYERS, type AdminEvent, type Layer, type Settings } from "@/lib/calendar";
+import { LAYERS, type AdminEvent, type Attachment, type Layer, type Reminder, type Settings } from "@/lib/calendar";
 import { layerOptions } from "./shared";
 
 type Unit = { id: string; names: Record<string, string>; level: number };
 
 const KINDS = ["company", "department", "important"] as const;
 const REPEATS = ["none", "daily", "weekly", "monthly"] as const;
+const ANSWERS = ["none", "rsvp", "registration"] as const;
+const REMINDERS = ["none", "15m", "1h", "1d"] as const satisfies readonly Reminder[];
 
 type Draft = {
   titleEn: string;
@@ -34,7 +37,12 @@ type Draft = {
   timeZone: string;
   location: string;
   onlineUrl: string;
-  rsvp: boolean;
+  answers: (typeof ANSWERS)[number];
+  capacity: string;
+  waitlist: boolean;
+  closesDate: string;
+  closesTime: string;
+  reminder: Reminder;
   repeat: (typeof REPEATS)[number];
   count: string;
 };
@@ -42,7 +50,7 @@ type Draft = {
 function blank(): Draft {
   const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
   const day = new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10);
-  return { titleEn: "", titleAr: "", descriptionEn: "", descriptionAr: "", kind: "company", orgUnitId: "", allDay: false, date: day, endDate: day, startTime: "10:00", endTime: "11:00", timeZone: zone, location: "", onlineUrl: "", rsvp: false, repeat: "none", count: "4" };
+  return { titleEn: "", titleAr: "", descriptionEn: "", descriptionAr: "", kind: "company", orgUnitId: "", allDay: false, date: day, endDate: day, startTime: "10:00", endTime: "11:00", timeZone: zone, location: "", onlineUrl: "", answers: "none", capacity: "20", waitlist: true, closesDate: "", closesTime: "", reminder: "1h", repeat: "none", count: "4" };
 }
 
 /** The local wall time of a day and HH:MM in an IANA zone, as an ISO instant with the zone's offset at that moment. */
@@ -62,6 +70,7 @@ function fromEvent(e: AdminEvent): Draft {
   };
   const s = local(e.start);
   const f = local(e.end);
+  const closes = local(e.registrationClosesAt);
   return {
     titleEn: e.titles.en ?? "",
     titleAr: e.titles.ar ?? "",
@@ -77,7 +86,12 @@ function fromEvent(e: AdminEvent): Draft {
     timeZone: e.timeZone,
     location: e.location ?? "",
     onlineUrl: e.onlineUrl ?? "",
-    rsvp: e.rsvp,
+    answers: e.registration ? "registration" : e.rsvp ? "rsvp" : "none",
+    capacity: String(e.capacity ?? 20),
+    waitlist: e.waitlist,
+    closesDate: closes.day,
+    closesTime: closes.time,
+    reminder: e.reminder,
     repeat: e.recurrence?.frequency ?? "none",
     count: String(e.recurrence?.count ?? 4),
   };
@@ -105,7 +119,12 @@ function body(d: Draft) {
     onlineUrl: d.onlineUrl.trim() || null,
     audience: null,
     recurrence: d.repeat === "none" ? null : { frequency: d.repeat, interval: 1, weekdays: null, until: null, count: Number(d.count) || null },
-    rsvp: d.rsvp,
+    rsvp: d.answers === "rsvp",
+    registration: d.answers === "registration",
+    capacity: d.answers === "registration" ? Number(d.capacity) || null : null,
+    waitlist: d.answers === "registration" && d.waitlist,
+    registrationClosesAt: d.answers === "registration" && d.closesDate ? instant(d.closesDate, d.closesTime || "00:00", d.timeZone) : null,
+    reminder: d.reminder,
   };
 }
 
@@ -118,7 +137,7 @@ export function ManageCalendar({ events: initial, settings: initialSettings }: {
   const locale = useLocale();
   const [events, setEvents] = useState(initial);
   const [units, setUnits] = useState<Unit[]>([]);
-  const [editing, setEditing] = useState<{ id: string | null; eTag: string | null; draft: Draft } | null>(null);
+  const [editing, setEditing] = useState<{ id: string | null; eTag: string | null; draft: Draft; files: Attachment[] } | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -191,7 +210,7 @@ export function ManageCalendar({ events: initial, settings: initialSettings }: {
         <section aria-labelledby="manage-events">
           <div className="cal-manage-head">
             <h2 id="manage-events">{t("manage.events")}</h2>
-            <Button variant="primary" icon="plus" onClick={() => setEditing({ id: null, eTag: null, draft: blank() })}>
+            <Button variant="primary" icon="plus" onClick={() => setEditing({ id: null, eTag: null, draft: blank(), files: [] })}>
               {t("manage.create")}
             </Button>
           </div>
@@ -211,7 +230,7 @@ export function ManageCalendar({ events: initial, settings: initialSettings }: {
                   <Badge tone={e.status === "published" ? "success" : "warning"}>{t(`manage.status.${e.status}`)}</Badge>
                   <div className="cal-actions">
                     {e.status === "published" ? (
-                      <Button size="sm" onClick={() => setEditing({ id: e.id, eTag: e.eTag, draft: fromEvent(e) })}>
+                      <Button size="sm" onClick={() => setEditing({ id: e.id, eTag: e.eTag, draft: fromEvent(e), files: e.attachments ?? [] })}>
                         {t("manage.edit")}
                       </Button>
                     ) : null}
@@ -276,7 +295,23 @@ export function ManageCalendar({ events: initial, settings: initialSettings }: {
             </div>
             <TextAreaField label={t("manage.descriptionEn")} name="descriptionEn" value={editing.draft.descriptionEn} onChange={(e) => set("descriptionEn", e.target.value)} />
             <TextAreaField label={t("manage.descriptionAr")} name="descriptionAr" dir="rtl" lang="ar" value={editing.draft.descriptionAr} onChange={(e) => set("descriptionAr", e.target.value)} />
-            <Checkbox label={t("manage.rsvp")} checked={editing.draft.rsvp} onChange={(e) => set("rsvp", e.target.checked)} />
+            <div className="cal-form-row">
+              <SelectField label={t("manage.answers")} name="answers" value={editing.draft.answers} onChange={(e) => set("answers", e.target.value as Draft["answers"])}
+                options={ANSWERS.map((a) => ({ value: a, label: t(`manage.answerModes.${a}`) }))} />
+              <SelectField label={t("manage.reminder")} name="reminder" value={editing.draft.reminder} onChange={(e) => set("reminder", e.target.value as Reminder)}
+                options={REMINDERS.map((r) => ({ value: r, label: t(`manage.reminders.${r}`) }))} hint={t("manage.reminderHint")} />
+            </div>
+            {editing.draft.answers === "registration" ? (
+              <>
+                <div className="cal-form-row">
+                  <FormField label={t("manage.capacity")} name="capacity" type="number" min={1} max={10000} value={editing.draft.capacity} onChange={(e) => set("capacity", e.target.value)} />
+                  <FormField label={t("manage.closesDate")} name="closesDate" type="date" value={editing.draft.closesDate} onChange={(e) => set("closesDate", e.target.value)} hint={t("manage.closesHint")} />
+                  <FormField label={t("manage.closesTime")} name="closesTime" type="time" value={editing.draft.closesTime} onChange={(e) => set("closesTime", e.target.value)} />
+                </div>
+                <Checkbox label={t("manage.waitlist")} checked={editing.draft.waitlist} onChange={(e) => set("waitlist", e.target.checked)} />
+              </>
+            ) : null}
+            {editing.id ? <EventFiles eventId={editing.id} files={editing.files} onChange={(files) => setEditing((c) => (c ? { ...c, files } : c))} /> : null}
             <div className="cal-actions">
               <Button onClick={() => setEditing(null)}>{t("manage.close")}</Button>
               <Button type="submit" variant="primary" busy={busy} busyLabel={t("manage.saving")}>
@@ -288,6 +323,55 @@ export function ManageCalendar({ events: initial, settings: initialSettings }: {
       </Dialog>
     </div>
   );
+}
+
+/**
+ * Files attached to an event (FR-033): each file is sent as it is chosen and the API checks its type, size and malware.
+ * Only an event that exists can take files, so a new event saves first.
+ */
+function EventFiles({ eventId, files, onChange }: { eventId: string; files: Attachment[]; onChange: (files: Attachment[]) => void }) {
+  const t = useTranslations("calendar");
+  const [pending, setPending] = useState<UploadItem[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  async function add(chosen: File[]) {
+    setError(null);
+    let list = files;
+    for (const file of chosen) {
+      const key = crypto.randomUUID();
+      setPending((p) => [...p, { key, name: file.name, size: file.size, progress: 0 }]);
+      try {
+        const response = await fetch(`/api/v1/calendar/admin-events/${eventId}/attachments?name=${encodeURIComponent(file.name)}`, {
+          method: "POST",
+          headers: { "Content-Type": file.type || "application/octet-stream" },
+          body: file,
+        });
+        if (response.ok) {
+          list = [...list, (await response.json()) as Attachment];
+          onChange(list);
+          setPending((p) => p.filter((x) => x.key !== key));
+        } else {
+          const message = (await problemMessages(response)).join(" ") || t("attachments.failed");
+          setPending((p) => p.map((x) => (x.key === key ? { ...x, progress: undefined, error: message } : x)));
+        }
+      } catch {
+        setPending((p) => p.map((x) => (x.key === key ? { ...x, progress: undefined, error: t("attachments.failed") } : x)));
+      }
+    }
+  }
+
+  async function remove(key: string) {
+    if (pending.some((p) => p.key === key)) {
+      setPending((p) => p.filter((x) => x.key !== key));
+      return;
+    }
+    const response = await fetch(`/api/v1/calendar/admin-events/${eventId}/attachments/${key}`, { method: "DELETE" });
+    if (response.ok || response.status === 404) onChange(files.filter((f) => f.id !== key));
+    else setError((await problemMessages(response)).join(" ") || t("attachments.failed"));
+  }
+
+  const items: UploadItem[] = [...files.map((f) => ({ key: f.id, name: f.name, size: f.size })), ...pending];
+  return <FileUpload label={t("attachments.add")} hint={t("attachments.hint")} accept=".pdf,.docx,.xlsx,.pptx,.png,.jpg,.jpeg" items={items} onAdd={(f) => void add(f)} onRemove={(k) => void remove(k)} error={error} />;
 }
 
 /** Calendar settings (FR-021): the staffing threshold, indirect reports and the default layers. Versioned by the API. */

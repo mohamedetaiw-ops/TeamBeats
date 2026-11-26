@@ -11,7 +11,7 @@ using TeamBeats.TenantContext;
 
 namespace TeamBeats.Modules.Hr;
 
-public sealed record HolidayView(DateOnly Date, IReadOnlyDictionary<string, string> Name, bool HalfDay);
+public sealed record HolidayView(DateOnly Date, IReadOnlyDictionary<string, string> Name, bool HalfDay, bool Provisional = false, DateOnly? ObservedFor = null);
 
 public sealed record PeriodView(Guid Id, IReadOnlyDictionary<string, string> Name, DateOnly Start, DateOnly End, decimal Hours);
 
@@ -33,7 +33,7 @@ public sealed record CalendarView(
 
 public sealed record CalendarRequest(IReadOnlyDictionary<string, string>? Name, string? Country, IReadOnlyList<int>? WeekDays, Guid? OwnerOrgUnitId);
 
-public sealed record HolidayInput(DateOnly Date, IReadOnlyDictionary<string, string>? Name, bool HalfDay);
+public sealed record HolidayInput(DateOnly Date, IReadOnlyDictionary<string, string>? Name, bool HalfDay, bool Provisional = false, DateOnly? ObservedFor = null);
 
 public sealed record HolidaysRequest(int Year, IReadOnlyList<HolidayInput>? Holidays);
 
@@ -170,6 +170,10 @@ public sealed partial class CalendarService(
         {
             errors.Add("holidays", "validation.calendar.holiday_date");
         }
+        if (holidays.Any(h => h.ObservedFor is { } of && (of == h.Date || Math.Abs(of.DayNumber - h.Date.DayNumber) > 7)))
+        {
+            errors.Add("holidays", "validation.calendar.holiday_observed");
+        }
         var named = holidays.Select(h => (Holiday: h, Name: CleanName(h.Name))).ToList();
         if (named.Any(n => n.Name is null))
         {
@@ -184,8 +188,11 @@ public sealed partial class CalendarService(
         foreach (var (h, name) in named)
         {
             await session.ExecAsync(
-                "insert into hr.calendar_holiday (tenant_id, calendar_id, date, name, half_day) values (platform.current_tenant_id(), @id, @date, @name, @half)",
-                new { id, date = h.Date, name = Jsonb.From(name!), half = h.HalfDay }, ct);
+                """
+                insert into hr.calendar_holiday (tenant_id, calendar_id, date, name, half_day, provisional, observed_for)
+                values (platform.current_tenant_id(), @id, @date, @name, @half, @provisional, @observedFor)
+                """,
+                new { id, date = h.Date, name = Jsonb.From(name!), half = h.HalfDay, provisional = h.Provisional, observedFor = h.ObservedFor }, ct);
         }
         await session.ExecAsync(
             "update hr.working_calendar set version = version + 1, updated_at = @now, updated_by = @actor where id = @id",
@@ -399,10 +406,11 @@ public sealed partial class CalendarService(
 
     private Task<List<HolidayView>> HolidaysAsync(Guid id, CancellationToken ct) =>
         session.QueryAsync(
-            "select date, name::text, half_day from hr.calendar_holiday where calendar_id = @id order by date",
+            "select date, name::text, half_day, provisional, observed_for from hr.calendar_holiday where calendar_id = @id order by date",
             new { id },
             r => new HolidayView(DateOnly.FromDateTime(r.GetDateTime(0)),
-                JsonSerializer.Deserialize<Dictionary<string, string>>(r.GetString(1)) ?? [], r.GetBoolean(2)),
+                JsonSerializer.Deserialize<Dictionary<string, string>>(r.GetString(1)) ?? [], r.GetBoolean(2), r.GetBoolean(3),
+                r.IsDBNull(4) ? null : DateOnly.FromDateTime(r.GetDateTime(4))),
             ct);
 
     private Task<List<PeriodView>> PeriodsAsync(Guid id, CancellationToken ct) =>

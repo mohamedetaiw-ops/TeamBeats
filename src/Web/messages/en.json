@@ -3624,7 +3624,11 @@
       "halfDayFor": "Holiday {number} is a half day",
       "remove": "Remove holiday {number}",
       "add": "Add holiday",
-      "save": "Save holidays"
+      "save": "Save holidays",
+      "provisional": "Provisional",
+      "observedFor": "Observed for",
+      "provisionalFor": "Holiday {number} is provisional",
+      "observedForFor": "Date holiday {number} is observed for"
     },
     "assign": {
       "title": "Where each calendar applies",
@@ -13753,7 +13757,8 @@
       "important": "Important dates",
       "holiday": "Holidays",
       "my_leave": "My leave",
-      "team_leave": "Team leave"
+      "team_leave": "Team leave",
+      "my_shifts": "My shifts"
     },
     "sources": {
       "outlook": "Outlook",
@@ -13761,20 +13766,23 @@
       "events": "TeamBeats events",
       "holidays": "Holidays",
       "leave": "Leave",
-      "other": "Calendar"
+      "other": "Calendar",
+      "shifts": "Shifts"
     },
     "status": {
       "pending": "Pending approval",
       "cancelled": "Cancelled",
       "tentative": "Tentative",
-      "free": "Free"
+      "free": "Free",
+      "provisional": "Provisional"
     },
     "actions": {
       "join": "Join",
       "openOutlook": "Open in Outlook",
       "openGoogle": "Open in Google Calendar",
       "openLeave": "Open the request",
-      "viewTeam": "See team availability"
+      "viewTeam": "See team availability",
+      "calendarFile": "Add to my calendar app"
     },
     "fresh": {
       "stale": "{source} could not be updated. Showing what was last synchronized at {time}.",
@@ -13784,7 +13792,8 @@
     },
     "alerts": {
       "holiday": "{title} on {date}",
-      "team": "{count, plural, one {# team member on leave today} other {# team members on leave today}}"
+      "team": "{count, plural, one {# team member on leave today} other {# team members on leave today}}",
+      "holidayProvisional": "{title} on {date} (provisional)"
     },
     "rsvp": {
       "question": "Are you going?",
@@ -13850,7 +13859,6 @@
       "location": "Place",
       "onlineUrl": "Online meeting link",
       "onlineUrlHint": "Must start with https://",
-      "rsvp": "Ask people if they are going",
       "save": "Save event",
       "saving": "Saving",
       "close": "Close",
@@ -13867,7 +13875,26 @@
         "published": "Published",
         "cancelled": "Cancelled"
       },
-      "keep": "Keep it"
+      "keep": "Keep it",
+      "answers": "Answers",
+      "answerModes": {
+        "none": "No answers",
+        "rsvp": "Ask people if they are going",
+        "registration": "Registration with seats"
+      },
+      "reminder": "Reminder",
+      "reminders": {
+        "none": "No reminder",
+        "15m": "15 minutes before",
+        "1h": "1 hour before",
+        "1d": "1 day before"
+      },
+      "reminderHint": "Sent to people who registered or said they are going.",
+      "capacity": "Seats",
+      "closesDate": "Registration closes on",
+      "closesTime": "at",
+      "closesHint": "Leave empty to keep it open until the start.",
+      "waitlist": "Keep a waiting list when it is full"
     },
     "settings": {
       "title": "Team availability settings",
@@ -13897,6 +13924,32 @@
         "conditional_access": "Your organization's sign-in rules block this. Answer in Outlook instead.",
         "failed": "Your answer was not sent. Try again."
       }
+    },
+    "dayOff": "Day off",
+    "observedFor": "Observed for {date}",
+    "provisionalNote": "The date is not confirmed yet and may change.",
+    "registration": {
+      "registered": "You are registered.",
+      "waiting": "You are number {position} on the waiting list.",
+      "closed": "Registration is closed.",
+      "seatsLeft": "{count, plural, one {# seat left} other {# seats left}}",
+      "full": "This event is full. You can join the waiting list.",
+      "fullNoList": "This event is full.",
+      "register": "Register",
+      "registerFor": "Register for {title}",
+      "joinList": "Join the waiting list",
+      "joinListFor": "Join the waiting list for {title}",
+      "cancel": "Cancel my registration",
+      "leaveList": "Leave the waiting list",
+      "cancelFor": "Give up my place at {title}",
+      "counts": "{taken} registered, {left} seats left, {waiting} waiting",
+      "failed": "Your registration could not be changed. Try again."
+    },
+    "attachments": {
+      "title": "Attachments",
+      "add": "Attach files",
+      "hint": "PDF, Word, Excel, PowerPoint, PNG or JPEG, up to 20 MB each and 5 files in all.",
+      "failed": "The file could not be attached. Try again."
     }
   },
   "letters": {

@@ -276,3 +276,20 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - US7: `BookingFloorPlanTests`, `booking-floor-plans.spec.ts`.
 - US8: `BookingVisitTests` (limits, emails, codes on the day only, changes, leavers, purge, cross-tenant and permission denial), `booking-visitors.spec.ts`.
 - US9: `BookingSensorTests` (mapping validation, five minute reads, sensor check-in on and off, sensed hours, cross-tenant and entitlement denial).
+
+## Spec 037 R3 slice 1: registration, reminders and attachments (T018 to T020)
+- An event takes either RSVP or registration, not both. Registration has seats (1 to 10000), an optional waiting list and an optional closing time; the closing time applies to every occurrence of a series, as the spec is silent on per occurrence closing. Places are taken under a lock on the event row, so two people never get the last seat. When someone gives up a seat or the seats grow, the first person waiting is promoted and told (`calendar.registration_promoted`); when seats shrink below the people registered the edit is refused.
+- The calendar file is an iCalendar file for one occurrence at `/api/v1/calendar/events/{id}/calendar-file?occurrence=`, with UID `{event}@teambeats`, so importing it twice updates the same entry.
+- Reminders (none, 15 minutes, 1 hour, 1 day) and cancellation notices go through spec 015 in the new `events` category, emailed by default. The calendar maintenance job runs every minute per tenant in the Workers host; each notice is recorded in `calendar.reminder_sent` before it is sent, so a retry never repeats one, and a place taken after the reminder time gets no reminder.
+- Up to 5 attachments per event of at most 20 MB: PDF, PNG and JPEG by signature, Word, Excel and PowerPoint as a zip with the matching extension. Each is scanned and kept under `calendar/events/{event}/{file}` in tenant object storage, uploaded as the raw body with `?name=`, read only by the event's audience and its managers, and removed with the event.
+
+## Spec 037 R3 slice 2: shifts and holiday status (T021, T022)
+- The My shifts layer shows published roster entries (shifts and days off) from Hr through `IHrCalendarFeed.ShiftsAsync`, for the viewer and their reports only, looking back 28 days. Drafts are never shown. The layer is offered only with `hr.rosters` and only to someone with a published roster, and it is on by default only for someone with no saved layer preferences.
+- Team availability takes working days from the published roster where there is one, and from the work calendar otherwise.
+- Hr holidays gain `provisional` (shown as tentative until confirmed) and `observedFor` (the date the holiday falls on when it is moved, which must differ and be within 7 days). Both still count as holidays for working days.
+- Pages: registration, the calendar file and attachments in the event details; answers, seats, waiting list, closing time, reminder and files on the manage page; the provisional and observed columns on the holiday calendar page.
+- CAL-032 is not built in this slice.
+
+### Evidence
+- US8 to US10: `CalendarRegistrationTests` (seats under concurrency, waiting list promotion, closing, calendar file, reminders once and not for late places, cancellation notices, attachment type, size, malware, limit and audience checks, cross-tenant denial), `calendar-registration.spec.ts`.
+- US11: `CalendarShiftTests` (published only, entitlement and roster gating, reports only, roster working days, provisional and observed holidays).

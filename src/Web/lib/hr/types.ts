@@ -1,5 +1,5 @@
 /** Shapes of the spec 022 calendar API, as the browser reads them. Week days are ISO numbers, 1 for Monday to 7 for Sunday. */
-export type Holiday = { date: string; name: Record<string, string>; halfDay: boolean };
+export type Holiday = { date: string; name: Record<string, string>; halfDay: boolean; provisional?: boolean; observedFor?: string | null };
 
 /** A reduced hours period such as Ramadan: working days from start to end have this many working hours. */
 export type Period = { id: string; name: Record<string, string>; start: string; end: string; hours: number };

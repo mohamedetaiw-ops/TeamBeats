@@ -19,8 +19,27 @@ public sealed class LeaveCalendarFeed(
     IReportingLine reporting,
     WorkingCalendar calendars,
     LeaveConfig config,
-    LeaveLedger ledger) : IHrCalendarFeed
+    LeaveLedger ledger,
+    TeamBeats.Modules.Hr.Rosters.ShiftRoster roster) : IHrCalendarFeed
 {
+    public async Task<IReadOnlyList<ShiftEntry>> ShiftsAsync(IReadOnlyCollection<Guid> userIds, DateOnly from, DateOnly to, CancellationToken ct = default)
+    {
+        if (userIds.Count == 0 || userIds.Count > MaxPeople || to < from || to.DayNumber - from.DayNumber >= MaxDays)
+        {
+            return [];
+        }
+        var me = context.RequireUser();
+        var allowed = new List<Guid>();
+        foreach (var user in userIds.Distinct())
+        {
+            if (user == me || await reporting.IsManagerOfAsync(me, user, ct))
+            {
+                allowed.Add(user);
+            }
+        }
+        return await roster.EntriesAsync(allowed, from, to, ct);
+    }
+
     public const int MaxDays = 366;
     public const int MaxPeople = 1000;
 
@@ -36,9 +55,10 @@ public sealed class LeaveCalendarFeed(
             return [];
         }
         return await session.QueryAsync(
-            "select date, name::text, half_day from hr.calendar_holiday where calendar_id = @calendarId and date between @from and @to order by date",
+            "select date, name::text, half_day, provisional, observed_for from hr.calendar_holiday where calendar_id = @calendarId and date between @from and @to order by date",
             new { calendarId, from, to },
-            r => new HolidayEntry(DateOnly.FromDateTime(r.GetDateTime(0)), System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(r.GetString(1)) ?? [], r.GetBoolean(2)), ct);
+            r => new HolidayEntry(DateOnly.FromDateTime(r.GetDateTime(0)), System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(r.GetString(1)) ?? [], r.GetBoolean(2),
+                r.GetBoolean(3), r.IsDBNull(4) ? null : DateOnly.FromDateTime(r.GetDateTime(4))), ct);
     }
 
     public async Task<IReadOnlyList<LeaveRange>> LeaveAsync(IReadOnlyCollection<Guid> userIds, DateOnly from, DateOnly to, CancellationToken ct = default)

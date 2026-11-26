@@ -2,7 +2,7 @@ import type { IconName } from "@/components/ui/Icon";
 import { addDays, fromIso, weekdayOf } from "@/components/ui/dates";
 
 /** The layers of the unified calendar (spec 037 section 2), in their display order. The API says which apply. */
-export const LAYERS = ["meeting", "company", "department", "important", "holiday", "my_leave", "team_leave"] as const;
+export const LAYERS = ["meeting", "company", "department", "important", "holiday", "my_leave", "team_leave", "my_shifts"] as const;
 export type Layer = (typeof LAYERS)[number];
 
 /** Each layer's icon and chart colour step (spec 036 DLS-070). Presentation only: the API decides what each viewer gets. */
@@ -14,13 +14,26 @@ export const LAYER_LOOK: Record<Layer, { icon: IconName; swatch: number }> = {
   holiday: { icon: "sun", swatch: 5 },
   my_leave: { icon: "leave", swatch: 6 },
   team_leave: { icon: "people", swatch: 7 },
+  my_shifts: { icon: "clock", swatch: 8 },
 };
 
 export const VIEWS = ["agenda", "week", "month", "team"] as const;
 export type CalendarView = (typeof VIEWS)[number];
 
-export type ItemAction = "join" | "open_source" | "rsvp" | "open_leave" | "request_leave" | "view_team" | "answer";
+export type ItemAction = "join" | "open_source" | "rsvp" | "register" | "calendar_file" | "open_leave" | "request_leave" | "view_team" | "answer";
 export type ItemStatus = "confirmed" | "tentative" | "pending" | "cancelled";
+/** The viewer's place at an event with seats (spec 037 R3, FR-028 to FR-030). Taken and waiting come only for the event's managers. */
+export type Registration = {
+  state: "registered" | "waiting" | null;
+  position: number | null;
+  seatsLeft: number;
+  open: boolean;
+  waitlist: boolean;
+  taken: number | null;
+  waiting: number | null;
+};
+export type Attachment = { id: string; name: string; contentType: string; size: number; createdAt: string };
+export type Reminder = "none" | "15m" | "1h" | "1d";
 export type Rsvp = { answer: "going" | "maybe" | "declined" | null; open: boolean; going: number | null; maybe: number | null; declined: number | null };
 
 /** The canonical item of spec 037 FR-001: timed items have UTC instants, all-day items dates with an exclusive end. */
@@ -49,11 +62,18 @@ export type CalendarItem = {
   halfEnd: boolean;
   count: number | null;
   rsvp: Rsvp | null;
+  registration?: Registration | null;
+  attachments?: Attachment[] | null;
   occurrenceKey: string | null;
   recurring: boolean;
   leaveRequestId: string | null;
   /** The employee's answer to an Outlook invitation they can still answer from TeamBeats (spec 018 R3, FR-015). */
   invitation?: "not_responded" | "tentative" | "accepted" | null;
+  /** "shift" or "day_off" for the My shifts layer; the leave type for leave. */
+  typeKey?: string | null;
+  /** A holiday HR has not confirmed yet, and the date an observed holiday marks (spec 022 FR-007). */
+  provisional?: boolean;
+  observedFor?: string | null;
 };
 
 export type SourceStatus = { source: string; state: string; asOf: string | null };
@@ -72,7 +92,7 @@ export type SummaryAnswer = {
   view: CalendarView;
   isManager: boolean;
   days: DaySummary[];
-  alerts: { holidays: { date: string; title: string; halfDay: boolean }[]; teamAwayToday: number };
+  alerts: { holidays: { date: string; title: string; halfDay: boolean; provisional?: boolean; observedFor?: string | null }[]; teamAwayToday: number };
   sources: SourceStatus[];
 };
 
@@ -115,6 +135,12 @@ export type AdminEvent = {
   onlineUrl: string | null;
   recurrence: Recurrence | null;
   rsvp: boolean;
+  registration: boolean;
+  capacity: number | null;
+  waitlist: boolean;
+  registrationClosesAt: string | null;
+  reminder: Reminder;
+  attachments: Attachment[] | null;
   status: "published" | "cancelled";
   cancelledAt: string | null;
   version: number;
