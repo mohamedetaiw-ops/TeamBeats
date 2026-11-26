@@ -1031,7 +1031,9 @@
         "ai_assistant_teams": "Assistant in Microsoft Teams",
         "people_skills": "Skills and Find an expert",
         "learning_classroom": "Classroom sessions with attendance",
-        "policy_regulator_feeds": "Regulator change feeds"
+        "policy_regulator_feeds": "Regulator change feeds",
+        "content_guest_sites": "Sites shared with guest spaces",
+        "content_campaign_automation": "Campaign follow-ups and goals"
       },
       "searchLabel": "Search capabilities",
       "searchPlaceholder": "Search by name",
@@ -5818,6 +5820,25 @@
         "removeQuestion": "Remove {name}? Its address stops working.",
         "removeConfirm": "Remove",
         "cancel": "Cancel"
+      },
+      "guests": {
+        "title": "Guests",
+        "intro": "Share this site read-only with a guest space you own. The space's guests read the site's published Public and Internal items in the space until the share ends.",
+        "none": "This site is not shared with any guest space.",
+        "until": "Until {date}",
+        "ended": "Ended",
+        "revoke": "Stop sharing with {name}",
+        "revokeQuestion": "Stop sharing this site with {name}? Its guests can no longer read it.",
+        "revokeConfirm": "Stop sharing",
+        "cancel": "Cancel",
+        "space": "Guest space",
+        "days": "Days",
+        "daysHint": "1 to 365 days.",
+        "share": "Share with the space",
+        "working": "Saving…",
+        "failed": "That did not work. Try again.",
+        "archived": "An archived site cannot be shared.",
+        "noSpaces": "You do not own an active space to share with."
       }
     },
     "topics": {
@@ -16364,6 +16385,17 @@
       "noEstimate": "No estimate",
       "ofEstimate": "{duration} of {estimate}",
       "duration": "{hours} h {minutes} min"
+    },
+    "sharedSites": {
+      "title": "Shared intranet sites",
+      "intro": "Sites shared with this space. You can read their published news and pages.",
+      "until": "Shared until {date}",
+      "spaces": "Spaces",
+      "siteIntro": "Published items of this site, shared with the space.",
+      "items": "Items",
+      "empty": "Nothing is published on this site yet",
+      "published": "Published {date}",
+      "embed": "Embedded content"
     }
   },
   "booking": {

@@ -286,3 +286,35 @@ export const campaignHref = (id: string) => `/content/campaigns/${encodeURICompo
 export type ChannelReport = { channel: string; delivered: number; read: number | null; pending: number; failed: number; bounced: number | null; dropped: number };
 
 export type DeliveryReport = { recipients: number; notifications: number; channels: ChannelReport[] };
+
+/** Sites shared read-only with guest spaces (spec 009 R3 US10). */
+export type SiteGuestShare = {
+  id: string;
+  siteId: string;
+  spaceId: string;
+  spaceName: string;
+  expiresAt: string;
+  createdAt: string;
+  createdBy: { id: string; displayName: string };
+  revokedAt: string | null;
+  live: boolean;
+};
+
+export type SharedSite = { shareId: string; siteId: string; names: Record<string, string>; expiresAt: string };
+
+export type GuestItemSummary = { id: string; type: string; locale: string; title: string; summary: string | null; publishedAt: string };
+
+export type GuestItemView = {
+  id: string;
+  siteId: string;
+  siteNames: Record<string, string>;
+  type: string;
+  locale: string;
+  title: string;
+  summary: string | null;
+  body: BodyDocument;
+  publishedAt: string;
+};
+
+export const sharedSiteHref = (spaceId: string, siteId: string) => `/spaces/${encodeURIComponent(spaceId)}/sites/${encodeURIComponent(siteId)}`;
+export const sharedItemHref = (spaceId: string, siteId: string, itemId: string) => `${sharedSiteHref(spaceId, siteId)}/items/${encodeURIComponent(itemId)}`;

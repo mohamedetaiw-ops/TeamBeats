@@ -8,6 +8,8 @@ import { StateView } from "@/components/ui/StateView";
 import { Overview } from "@/features/spaces/Overview";
 import { SpaceNav } from "@/features/spaces/parts";
 import { SharedProjects } from "@/features/compliance/SharedProjects";
+import { SharedSites } from "@/features/spaces/SharedSites";
+import type { SharedSite } from "@/lib/content/types";
 import type { ProjectSummary } from "@/lib/compliance";
 
 /** A space's overview (spec 029 US3). A private space the viewer is not in shows what the directory shows, and nothing more. */
@@ -29,6 +31,8 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
   const settings = space.data.rights.owns || space.data.rights.manages;
   // Compliance projects shared to the space (spec 026 FR-024); a plan without them answers with a refusal and nothing shows.
   const shared = space.data.rights.reads ? await apiGet<ProjectSummary[]>(`/api/v1/compliance/projects?spaceId=${id}`) : null;
+  // Intranet sites shared with the space (spec 009 R3 US10); a plan without them answers with a refusal and nothing shows.
+  const sites = space.data.rights.reads ? await apiGet<SharedSite[]>(`/api/v1/content/shared-with-space/${id}`) : null;
   return (
     <>
       <Header
@@ -46,6 +50,7 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
           <StateView kind="denied" title={t("privateTitle")} message={t("private")} />
         )}
         {shared?.ok ? <SharedProjects projects={shared.data} /> : null}
+        {sites?.ok ? <SharedSites spaceId={id} sites={sites.data} /> : null}
       </main>
     </>
   );
