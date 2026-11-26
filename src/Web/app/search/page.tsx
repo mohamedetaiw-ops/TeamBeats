@@ -24,7 +24,7 @@ function href(q: string, kind?: string, page?: number): string {
  * recommended, the degraded note when meaning based search is unavailable, and services or people to try when nothing
  * matched. Every number comes from the API, which counts only what the person may open. Federated sources (US5) follow
  * on the first page of all results and the AI summary (US6) sits above them; both are loaded after the results. The
- * search can be saved with a daily alert (US7).
+ * search can be saved with a daily alert (US7). Results ranked up from the person's own use say so (US9, R3).
  */
 export default async function SearchResultsPage({ searchParams }: { searchParams: Promise<Params> }) {
   const me = await apiGet<Me>("/api/v1/me");
@@ -50,6 +50,7 @@ export default async function SearchResultsPage({ searchParams }: { searchParams
       <div className="search-result-meta">
         <span className="search-kind">{t(`kinds.${r.kind}`)}</span>
         {r.recommended ? <span className="search-recommended">{t("recommended")}</span> : null}
+        {r.personalized ? <span className="search-personalized">{t("personalized")}</span> : null}
         {r.updatedAt ? <time dateTime={r.updatedAt}>{format.dateTime(new Date(r.updatedAt), { dateStyle: "medium" })}</time> : null}
       </div>
       <h2 className="search-result-title">

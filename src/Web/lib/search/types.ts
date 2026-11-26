@@ -12,6 +12,8 @@ export type SearchResult = {
   locale: string;
   updatedAt: string | null;
   recommended: boolean;
+  /** Ranked up from the person's own use (spec 012 R3, FR-023). */
+  personalized: boolean;
 };
 
 export type SearchPage = {

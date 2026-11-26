@@ -20,3 +20,10 @@ The spec stays Approved, not Implemented. R1 still lacks the performance budgets
 | FR-014 keyword search with a degraded flag when embeddings fail | Met | `SearchTests.Search_falls_back_to_keyword_only_when_embeddings_fail` |
 | Section 7 cross-tenant cases | Met | `SearchTests` (another tenant finds nothing), `SearchTuningTests` |
 | Pages (T009) | Met | `search.spec.ts` (en and ar, axe) |
+
+## R3
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| FR-023 personalized ranking only while it applies, same items and totals, best bets first, marked | Met | `SearchPersonalizationTests` (off, opt-in consent, another person, declining, best bet, package without it) |
+| US9 results page mark | Met | `search-personalization.spec.ts` (en and ar, axe) |

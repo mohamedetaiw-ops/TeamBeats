@@ -11,7 +11,7 @@
 | Target release | R1 (one search across people, content, documents, knowledge articles, policies and services; type-ahead; keyword and semantic hybrid ranking; permission filtering at query time; best bets; the retrieval contract used by the assistant; the 5 minute synchronization objective), R2 (R2 sources: communities, courses and project spaces; federated results from SharePoint and other connected systems; AI summary of top results; saved searches with alerts; search analytics dashboards in 021; judged query sets), R3 (personalized ranking) |
 | Last updated | 2026-11-07 |
 | Approved | 2026-11-07 by Mohamed (standing approval to proceed) |
-| Requirement IDs | KNO-002 to KNO-006, SRC-001 to SRC-022 (new) |
+| Requirement IDs | KNO-002 to KNO-006, SRC-001 to SRC-023 (new) |
 | Use cases | UC-05, UC-06 |
 | Depends on | 004 (authorization), 005, 006, 007, 009, 010, 011, 013 (embeddings), 016, 025, 034 (gate on retrieval changes) |
 | Used by | 014 (assistant retrieval), 020 and 027 (knowledge tools), 021 (search analytics, R2) |
@@ -116,6 +116,14 @@ Omar types "travel policy" and sees the Travel policy clause, the travel request
 1. **Given** a judged query set (queries with the results that should rank high), **When** ranking or retrieval configuration changes, **Then** the 034 gate reports precision at 5 and NDCG at 10 against the set and blocks a regression beyond the threshold.
 2. **Given** search events, **Then** spec 021 shows top queries, zero result queries and click-through, with query text hidden for tenants that turned it off.
 
+### User Story 9: Results ranked by what I use (Priority: P3, R3)
+
+**Acceptance scenarios:**
+1. **Given** the tenant turned on behavioral personalization (spec 008 US6) and Laila agreed, or did not decline under opt-out, **When** she searches, **Then** results she opened most in the last 90 days move up and each says it was ranked from her use.
+2. **Given** personalization does not apply to her, **Then** results rank exactly as for anyone else and nothing is marked.
+3. **Given** personalized ranking, **Then** the same items, total and filter counts come back as without it, and best bets stay first.
+4. **Given** another person's use, or a call through the public API or an agent tool, **Then** it never changes the order Laila sees.
+
 ### Edge cases
 - An item in several languages: each variant is a separate unit with its language, grouped in results.
 - Very large documents: indexed in passages with a per-document limit; the rest is searchable by keyword only.
@@ -145,6 +153,7 @@ Omar types "travel policy" and sees the Travel policy clause, the travel request
 - **SRC-020 / FR-020**: Judged query sets MUST be usable by the 034 gate with precision at 5 and NDCG at 10.
 - **SRC-021 / FR-021**: Payslips (019), anonymous engagement items (023) and other items their owning spec excludes MUST never be indexed.
 - **SRC-022 / FR-022**: Guests (026) MUST search only within spaces they were invited to.
+- **SRC-023 / FR-023** (R3): The results page MAY rank by the person's own use only through the spec 008 behavioral signals, and only while personalization applies to them. It MUST NOT add or remove an item, change totals or facets, or move a best bet, MUST mark each result it ranked from use, and MUST NOT apply to the public API, agent tools, saved search alerts or judged query sets.
 
 ## 6. Business and validation rules
 - Default results per page 20; maximum query length 200 characters.
@@ -172,6 +181,8 @@ Omar types "travel policy" and sees the Travel policy clause, the travel request
 | `search.federated` (R2) | off | on | on |
 | `search.ai_summary` (R2) | off | on | on |
 | `search.saved_alerts` (R2) | on | on | on |
+
+Personalized ranking (R3) has no key of its own: it follows `experience.behavioral_personalization` (spec 008) and the tenant's policy and the person's consent there.
 
 ## 10. UX, localization and accessibility
 - One search box in the shell (spec 008) with type-ahead; a results page with filters.
@@ -218,3 +229,4 @@ Consumes (R2 additions: `PostPublished`, `PostRemoved`, `CourseVersionPublished`
 | KNO-006 | SRC-006, US2 |
 | KNO-007, AI-005 | SRC-007, US3 |
 | R2 additions | SRC-015 to SRC-022, US5 to US8 |
+| R3 additions | SRC-023, US9 |

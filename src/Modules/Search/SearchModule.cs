@@ -71,7 +71,7 @@ public static class SearchModule
         root.MapGet("", async (string? q, string? kind, DateTimeOffset? from, DateTimeOffset? to, int? page, SearchService search, SearchQueryLog log,
             IDbSession session, CancellationToken ct) =>
         {
-            var results = await search.SearchAsync(q, kind, from, to, page, ct);
+            var results = await search.SearchAsync(q, kind, from, to, page, ct, personalize: true);
             // The first page of a search is one event of the query log (FR-013), so the page can report the first click.
             if (results.Page == 1)
             {

@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Modules.AiGateway.Contracts;
 using TeamBeats.Modules.Analytics.Contracts;
+using TeamBeats.Modules.Experience.Contracts;
 using TeamBeats.Modules.Search.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
@@ -10,7 +11,7 @@ using TeamBeats.TenantContext;
 namespace TeamBeats.Modules.Search;
 
 public sealed record SearchResult(Guid ItemId, string Source, string Kind, string Title, string Snippet, string Link, string Locale, DateTimeOffset? UpdatedAt,
-    bool Recommended = false, string Classification = "internal");
+    bool Recommended = false, string Classification = "internal", bool Personalized = false);
 
 /// <summary>
 /// One page of results (spec 012 US1). <see cref="Total"/> and <see cref="Facets"/> count only items the person may read;
@@ -34,7 +35,8 @@ internal sealed record Candidate(string Source, Guid ItemId, string Kind, DateTi
 /// any number (two-stage permission filtering of the plan).
 /// </summary>
 public sealed class SearchService(IDbSession session, ITenantContext context, IEntitlementService entitlements, IEnumerable<ISearchSource> sources,
-    IAiGateway gateway, SearchTuning tuning, IAnalyticsEvents analytics, RetrievalStore store, ILogger<SearchService> logger)
+    IAiGateway gateway, SearchTuning tuning, IAnalyticsEvents analytics, RetrievalStore store, ILogger<SearchService> logger,
+    IBehaviorSignals behavior)
 {
     public const int PageSize = 20;
     public const int MaxPages = 50;
@@ -70,7 +72,14 @@ public sealed class SearchService(IDbSession session, ITenantContext context, IE
         return query;
     }
 
-    public async Task<SearchPage> SearchAsync(string? q, string? kind, DateTimeOffset? from, DateTimeOffset? to, int? page, CancellationToken ct)
+    /// <summary>
+    /// One page of results. <paramref name="personalize"/> is true only for the in-app results page: there, when spec 008
+    /// behavioral personalization applies to the person, the pages they opened most in the last 90 days are fused in as a
+    /// third ranked list (spec 012 R3, FR-023). It never adds or removes an item, so totals and facets stay the same, and
+    /// best bets stay first.
+    /// </summary>
+    public async Task<SearchPage> SearchAsync(string? q, string? kind, DateTimeOffset? from, DateTimeOffset? to, int? page, CancellationToken ct,
+        bool personalize = false)
     {
         var query = Validate(q, kind, page);
         await entitlements.DemandAsync(Capabilities.SearchCore, ct);
@@ -83,6 +92,15 @@ public sealed class SearchService(IDbSession session, ITenantContext context, IE
         var keyword = terms.Count == 0 ? [] : await KeywordAsync(SearchText.TsQuery(groups, all: true), from, to, MaxCandidates, ct);
         var (semantic, degraded) = await SemanticAsync(query, from, to, ct);
         var candidates = Fuse(keyword, semantic);
+        var personalized = new HashSet<(string Source, Guid ItemId)>();
+        if (personalize && candidates.Count > 0)
+        {
+            var usage = await behavior.UsageAsync("page", ct);
+            if (usage.Count > 0)
+            {
+                (candidates, personalized) = Personalize(candidates, await LinksAsync(candidates, ct), usage);
+            }
+        }
         var more = keyword.Count >= MaxCandidates;
 
         // Best bets go first, marked as recommended, when the person may read them (US4 scenario 1). They are counted
@@ -97,7 +115,8 @@ public sealed class SearchService(IDbSession session, ITenantContext context, IE
         var filtered = kind is null ? permitted : [.. permitted.Where(c => c.Kind == kind)];
         var pageItems = filtered.Skip((number - 1) * PageSize).Take(PageSize).ToList();
         var results = (await ResultsAsync(pageItems, terms, ct))
-            .Select(r => recommended.Contains((r.Source, r.ItemId)) ? r with { Recommended = true } : r).ToList();
+            .Select(r => recommended.Contains((r.Source, r.ItemId)) ? r with { Recommended = true }
+                : personalized.Contains((r.Source, r.ItemId)) ? r with { Personalized = true } : r).ToList();
 
         IReadOnlyList<SearchResult> alternatives = [];
         if (filtered.Count == 0 && terms.Count > 0)
@@ -220,6 +239,35 @@ public sealed class SearchService(IDbSession session, ITenantContext context, IE
         var byKey = keyword.Concat(semantic).GroupBy(c => (c.Source, c.ItemId)).ToDictionary(g => g.Key, g => g.First());
         var scores = SearchText.Fuse([[.. keyword.Select(c => (c.Source, c.ItemId))], [.. semantic.Select(c => (c.Source, c.ItemId))]]);
         return [.. scores.OrderByDescending(s => s.Value).ThenBy(s => s.Key.ItemId).Select(s => byKey[s.Key] with { Score = s.Value })];
+    }
+
+    /// <summary>The link of each candidate, from its index units.</summary>
+    internal async Task<Dictionary<(string Source, Guid ItemId), string>> LinksAsync(IReadOnlyList<Candidate> candidates, CancellationToken ct)
+    {
+        var rows = await session.QueryAsync(
+            "select distinct on (source, item_id) source, item_id, link from search.unit where item_id = any(@ids) order by source, item_id, link",
+            new { ids = candidates.Select(c => c.ItemId).Distinct().ToArray() }, r => (Source: r.GetString(0), Item: r.GetGuid(1), Link: r.GetString(2)), ct);
+        return rows.ToDictionary(r => (r.Source, r.Item), r => r.Link);
+    }
+
+    /// <summary>
+    /// Fuses the person's use as a third reciprocal rank list (FR-023): candidates whose link they opened, most used first.
+    /// Returns the same candidates in the new order, and the ones their use moved.
+    /// </summary>
+    internal static (List<Candidate> Ranked, HashSet<(string Source, Guid ItemId)> Used) Personalize(IReadOnlyList<Candidate> candidates,
+        IReadOnlyDictionary<(string Source, Guid ItemId), string> links, IReadOnlyDictionary<string, int> usage)
+    {
+        var used = candidates
+            .Select((c, i) => (c, i, n: links.TryGetValue((c.Source, c.ItemId), out var link) ? usage.GetValueOrDefault(link) : 0))
+            .Where(x => x.n > 0).OrderByDescending(x => x.n).ThenBy(x => x.i).Select(x => x.c).ToList();
+        if (used.Count == 0)
+        {
+            return ([.. candidates], []);
+        }
+        var bonus = SearchText.Fuse([[.. used.Select(c => (c.Source, c.ItemId))]]);
+        var ranked = candidates.Select(c => c with { Score = c.Score + bonus.GetValueOrDefault((c.Source, c.ItemId)) })
+            .OrderByDescending(c => c.Score).ThenBy(c => c.ItemId).ToList();
+        return (ranked, [.. used.Select(c => (c.Source, c.ItemId))]);
     }
 
     /// <summary>The candidates each owner says the person may read now, in order.</summary>

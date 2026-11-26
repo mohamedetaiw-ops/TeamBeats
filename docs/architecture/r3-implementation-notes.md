@@ -333,3 +333,9 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - Quick navigation orders matches by the person's own use in the last 90 days and marks those moved up as ranked from their use. Contract `IBehaviorSignals` (Experience.Contracts: `ActiveAsync`, `UsageAsync(kind)`) is for specs 012, 014 and 021.
 - Defaults recorded: one signal kind (pages); no model; a policy change applies at once; turning the policy off keeps signals until they age out but nothing reads them.
 - Pages: "Personalization from use" on the shell settings page where the package has the feature; the choice on the preferences page only when the tenant turned it on. Tests: `BehaviorPersonalizationTests` (3), `behavior-personalization.spec.ts` (en and ar, axe).
+
+## Spec 012 R3: personalized ranking (T017, T018)
+
+- `SearchService.SearchAsync` takes `personalize`, set only by the in-app `GET /api/v1/search`. It reads the person's page use from `IBehaviorSignals` (spec 008), which is empty unless personalization applies to them, looks up each candidate's link in `search.unit`, and fuses the candidates they opened, most used first, as a third reciprocal rank list. Best bets go first after that and the permission check runs on the same candidates, so items, totals and facets do not change.
+- Results ranked from use carry `personalized: true` and the results page marks them "Ranked from your use". The public API, agent tools and saved search alerts call without personalization; judged query sets run as the system and never have signals.
+- Defaults recorded: no capability key of its own (follows `experience.behavioral_personalization`); one signal kind (pages opened); every candidate the person opened is marked, not only those that moved. Tests: `SearchPersonalizationTests` (2), `search-personalization.spec.ts` (en and ar, axe).

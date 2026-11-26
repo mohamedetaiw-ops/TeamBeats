@@ -25,5 +25,8 @@ Hybrid with reciprocal rank fusion of keyword and vector lists, then best bets o
 - Saved searches: a daily job runs each saved query as the user and sends one grouped notification.
 - Judged sets: stored in `Evaluation` (034) as a dataset type, scored by a search scorer.
 
+## R3
+- Personalized ranking: `SearchService` reads `IBehaviorSignals.UsageAsync("page")` from `Experience.Contracts` (spec 008), which is empty unless personalization applies to the signed-in person. Candidates whose link the person opened become a third reciprocal rank list fused with keyword and semantic before best bets and the permission check, so the permitted set, totals and facets do not change. Only the in-app `/api/v1/search` route asks for it; the public API, agent tools and saved search alerts call without it. Results ranked from use carry `personalized`, shown as a mark on the results page.
+
 ## Tests
 Permission fixtures across tenants, units and broken inheritance (SC-001 on every build); Arabic normalization; lag and deletion within the objective; degraded keyword-only mode; rebuild; performance at 1 million units. Acceptance (e2e): search box, results and filters in English and Arabic with axe.

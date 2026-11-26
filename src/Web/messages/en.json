@@ -7700,6 +7700,7 @@
     "filters": "Filter by source",
     "allKinds": "All",
     "recommended": "Recommended",
+    "personalized": "Ranked from your use",
     "none": "Nothing matches {q}.",
     "alternatives": "You might be looking for",
     "pages": "Result pages",

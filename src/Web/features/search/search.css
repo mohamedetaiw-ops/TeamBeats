@@ -88,7 +88,8 @@
 }
 
 .search-kind,
-.search-recommended {
+.search-recommended,
+.search-personalized {
   padding-inline: var(--tb-space-xs);
   border-radius: var(--tb-radius-sm);
   background: var(--tb-color-surface-sunken);

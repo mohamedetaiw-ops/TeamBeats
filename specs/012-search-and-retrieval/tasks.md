@@ -20,3 +20,7 @@ Depends on 004, 009, 010, 011, 013, 016, 025, 034. R1: US1 to US4. R2: US5 to US
 - [x] T014 [US6] AI summary with citations, off by default
 - [x] T015 [US7] Saved searches and daily alerts
 - [x] T016 [US8] Judged query sets and search scorer in 034; analytics feed for 021
+
+## R3
+- [x] T017 [US9] Personalized ranking from spec 008 signals, fused as a third list, marked; tests for off, consent, another person, best bets and a package without it
+- [x] T018 [US9] Results page mark, e2e in English and Arabic with axe; plan, notes and evidence
