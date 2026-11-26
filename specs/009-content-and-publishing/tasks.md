@@ -77,7 +77,7 @@ Depends on 003 (groups, `UserDeprovisioned`), 004, 005, 006, 007, 008 (shell slo
 
 ### Phase 14: User Story 11, campaign automation (P3)
 - [x] T040 [P] [US11] Tests: follow-up step due after the delay goes only to recipients of the earlier step who have not acted; skipped when the earlier step is skipped; goal reached skips pending steps, completes and notifies; follows and goal refused without the capability
-- [ ] T041 [US11] Step follows and delay, campaign goal, scheduler, editor and dashboard, English and Arabic, e2e with axe
+- [x] T041 [US11] Step follows and delay, campaign goal, scheduler, editor and dashboard, English and Arabic, e2e with axe
 
 ### Phase 15: event items (FR-018 R3)
 - [ ] T042 Event content type linked to a Calendar event through a Calendar contract, reading view with the event card; tests and e2e

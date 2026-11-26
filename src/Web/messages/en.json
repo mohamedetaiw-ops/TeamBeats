@@ -5872,7 +5872,7 @@
       "stepStatus": {
         "pending": "Waiting",
         "sent": "Sent",
-        "skipped": "Skipped, the item was not live",
+        "skipped": "Skipped",
         "cancelled": "Cancelled"
       },
       "stepCount": "{count, plural, one {# step} other {# steps}}",
@@ -5915,7 +5915,21 @@
       "byUnit": "By part of the organization",
       "byLocation": "By location",
       "group": "Group",
-      "other": "Other"
+      "other": "Other",
+      "when": "When",
+      "whenAt": "At a set time",
+      "whenAfter": "After step {step}",
+      "delayDays": "Days after",
+      "delayHint": "Sent this many days, 1 to 60, after step {step} went, only to the people it reached who have not acted on it.",
+      "followsLabel": "{days, plural, one {# day} other {# days}} after step {step}",
+      "goal": "Goal",
+      "goalOn": "Stop when a goal is reached",
+      "goalHint": "When enough of the audience has acted on the chosen item, steps not sent yet are skipped and the campaign completes.",
+      "goalItem": "Item to act on",
+      "goalPercent": "Share of the audience, in percent",
+      "goalSummary": "Goal: {percent}% of the audience act on",
+      "goalProgress": "Goal: {percent}% of the audience. So far: {acted}.",
+      "goalReached": "Goal reached on {date}. Steps not sent were skipped."
     },
     "signage": {
       "items": "News",

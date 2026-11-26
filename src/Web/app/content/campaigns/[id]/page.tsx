@@ -70,6 +70,13 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
         {d ? (
           <Widget title={t("dashboard")}>
             <p className="field-hint">{t("privacy", { size: d.minimumGroupSize })}</p>
+            {d.goal ? (
+              <p className="content-meta" data-testid="campaign-goal-progress">
+                {d.goal.reachedAt
+                  ? t("goalReached", { date: new Date(d.goal.reachedAt).toLocaleDateString(locale) })
+                  : t("goalProgress", { percent: d.goal.percent, acted: d.goal.actedPercent === null ? t("notEnough") : `${d.goal.actedPercent}%` })}
+              </p>
+            ) : null}
             <table className="content-table">
               <caption>{t("reach")}</caption>
               <thead>

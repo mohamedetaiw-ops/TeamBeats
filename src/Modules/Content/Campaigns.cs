@@ -51,7 +51,7 @@ public sealed record CampaignStepView(Guid Id, int Position, Guid ItemId, IReadO
 public sealed record CampaignGoalView(Guid ItemId, int Percent, DateTimeOffset? ReachedAt);
 
 public sealed record CampaignView(Guid Id, Guid SiteId, string Name, ContentAudience Audience, string Status, IReadOnlyList<CampaignStepView> Steps,
-    ContentPerson CreatedBy, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt, int Version, CampaignGoalView? Goal = null);
+    ContentPerson CreatedBy, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt, int Version, CampaignGoalView? Goal = null, bool Automation = false);
 
 /// <summary>How far the goal is: the share of the audience that acted on its item, null below the minimum group size.</summary>
 public sealed record CampaignGoalProgress(Guid ItemId, int Percent, int? ActedPercent, DateTimeOffset? ReachedAt);
@@ -168,7 +168,8 @@ public sealed class ContentCampaigns(
                 s.FollowsStepId is { } f && positions.TryGetValue(f, out var p) ? p : null, s.DelayDays));
         }
         return new CampaignView(row.Id, row.SiteId, row.Name, row.Audience, row.Status, steps, await items.PersonAsync(row.CreatedBy, ct), row.CreatedAt,
-            row.UpdatedAt, row.Version, row.GoalItemId is { } g ? new CampaignGoalView(g, row.GoalPercent ?? 100, row.GoalReachedAt) : null);
+            row.UpdatedAt, row.Version, row.GoalItemId is { } g ? new CampaignGoalView(g, row.GoalPercent ?? 100, row.GoalReachedAt) : null,
+            await entitlements.IsEnabledAsync(Capabilities.ContentCampaignAutomation, ct));
     }
 
     private async Task<ContentAudience> ValidateAsync(CampaignRequest request, SiteRow site, ValidationErrors errors, CancellationToken ct)

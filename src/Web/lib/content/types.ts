@@ -253,7 +253,12 @@ export type CampaignStepView = {
   status: "pending" | "sent" | "skipped" | "cancelled";
   sentAt: string | null;
   recipients: number | null;
+  /** The position of the step this one follows (spec 009 US11), and the days after it. */
+  follows?: number | null;
+  delayDays?: number | null;
 };
+
+export type CampaignGoalView = { itemId: string; percent: number; reachedAt: string | null };
 
 export type CampaignView = {
   id: string;
@@ -266,6 +271,9 @@ export type CampaignView = {
   createdAt: string;
   updatedAt: string;
   version: number;
+  goal?: CampaignGoalView | null;
+  /** Whether follow-ups and goals are available on the tenant's plan; the API refuses them otherwise. */
+  automation?: boolean;
 };
 
 /** What people did is null below the minimum group size. */
@@ -278,6 +286,7 @@ export type CampaignDashboard = {
   steps: { stepId: string; position: number; status: string; counts: CampaignCounts }[];
   byUnit: CampaignBreakdownRow[];
   byLocation: CampaignBreakdownRow[];
+  goal?: { itemId: string; percent: number; actedPercent: number | null; reachedAt: string | null } | null;
 };
 
 export const campaignHref = (id: string) => `/content/campaigns/${encodeURIComponent(id)}`;
