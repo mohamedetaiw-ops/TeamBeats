@@ -40,6 +40,7 @@ public sealed class UnifiedCalendar(
 {
     public const int MaxDays = 62;
     public const int MaxHolidayDays = 366;
+    public const int ShiftLookbackDays = 28;
     public const int PageSize = 500;
     public const int MaxTeamListed = 200;
     public const int MaxTeam = 1000;
@@ -92,6 +93,15 @@ public sealed class UnifiedCalendar(
             if ((await TeamAsync(ct)).Count > 0)
             {
                 list.Add(CalendarLayers.TeamLeave);
+            }
+        }
+        if (await entitlements.IsEnabledAsync(Capabilities.HrRosters, ct))
+        {
+            // Offered to people with a published roster in the coming two months or the last four weeks (FR-034).
+            var today = await TodayAsync(ct);
+            if ((await hr.ShiftsAsync([context.RequireUser()], today.AddDays(-ShiftLookbackDays), today.AddDays(62), ct)).Count > 0)
+            {
+                list.Add(CalendarLayers.MyShifts);
             }
         }
         return list;
@@ -308,6 +318,18 @@ public sealed class UnifiedCalendar(
             }, ct);
         }
 
+        if (wanted.Contains(CalendarLayers.MyShifts))
+        {
+            await SourceAsync(ItemSources.Shifts, sources, async () =>
+            {
+                foreach (var shift in await hr.ShiftsAsync([me], from, lastDay, ct))
+                {
+                    items.Add(ShiftItem(shift, zone));
+                }
+                return now;
+            }, ct);
+        }
+
         if (wanted.Contains(CalendarLayers.MyLeave) || wanted.Contains(CalendarLayers.TeamLeave))
         {
             await SourceAsync(ItemSources.Leave, sources, async () =>
@@ -431,15 +453,37 @@ public sealed class UnifiedCalendar(
             var start = list[i];
             var title = Pick(start.Names);
             var j = i + 1;
-            while (j < list.Count && list[j].Date == list[j - 1].Date.AddDays(1) && Pick(list[j].Names) == title && !list[j].HalfDay && !list[j - 1].HalfDay)
+            while (j < list.Count && list[j].Date == list[j - 1].Date.AddDays(1) && Pick(list[j].Names) == title && !list[j].HalfDay && !list[j - 1].HalfDay
+                && list[j].Provisional == start.Provisional && list[j].ObservedFor is null && start.ObservedFor is null)
             {
                 j++;
             }
             var end = list[j - 1].Date.AddDays(1);
             yield return Item(zone, $"holiday:{start.Date:yyyy-MM-dd}", CalendarLayers.Holiday, ItemSources.Holidays, start.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                title, null, null, start.Date, end, ItemStatuses.Confirmed, "tenant", []) with { HalfStart = start.HalfDay && j == i + 1 };
+                title, null, null, start.Date, end, start.Provisional ? ItemStatuses.Tentative : ItemStatuses.Confirmed, "tenant", []) with
+            {
+                HalfStart = start.HalfDay && j == i + 1,
+                Provisional = start.Provisional,
+                ObservedFor = start.ObservedFor,
+            };
             i = j;
         }
+    }
+
+    /// <summary>A published shift as a timed item in the person's zone (ending the next day when it crosses midnight), a day off as an all-day item.</summary>
+    private CalendarItemView ShiftItem(ShiftEntry shift, TimeZoneInfo zone)
+    {
+        var id = $"shift:{shift.Date:yyyy-MM-dd}";
+        var sourceId = shift.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        if (shift.DayOff || shift.Start is not { } start || shift.End is not { } end)
+        {
+            return Item(zone, id, CalendarLayers.MyShifts, ItemSources.Shifts, sourceId, null, null, null, shift.Date, shift.Date.AddDays(1), ItemStatuses.Confirmed,
+                "private", []) with { TypeKey = "day_off" };
+        }
+        var startAt = CompanyEvents.ToInstant(shift.Date.ToDateTime(start), zone);
+        var endAt = CompanyEvents.ToInstant((end <= start ? shift.Date.AddDays(1) : shift.Date).ToDateTime(end), zone);
+        return Item(zone, id, CalendarLayers.MyShifts, ItemSources.Shifts, sourceId, shift.Names is null ? null : Pick(shift.Names), startAt, endAt, null, null,
+            ItemStatuses.Confirmed, "private", []) with { TypeKey = "shift" };
     }
 
     private static CalendarItemView Item(TimeZoneInfo zone, string id, string layer, string source, string sourceId, string? title, DateTimeOffset? start,
@@ -509,7 +553,7 @@ public sealed class UnifiedCalendar(
             try
             {
                 holidays.AddRange((await hr.HolidaysAsync(context.RequireUser(), today, today.AddDays(AlertDays - 1), ct))
-                    .Select(h => new HolidayAlert(h.Date, Pick(h.Names), h.HalfDay)).Take(3));
+                    .Select(h => new HolidayAlert(h.Date, Pick(h.Names), h.HalfDay, h.Provisional, h.ObservedFor)).Take(3));
             }
             catch (Exception ex) when (ex is not OperationCanceledException && ex is not AppException)
             {
@@ -548,7 +592,7 @@ public sealed class UnifiedCalendar(
         ValidateRange(from, to, MaxHolidayDays);
         var zone = await ZoneAsync(ct);
         return HolidayItems(await hr.HolidaysAsync(context.RequireUser(), from, to.AddDays(-1), ct), zone)
-            .Select(i => new HolidayView(i.StartDate!.Value, i.EndDate!.Value, i.Title ?? string.Empty, i.HalfStart)).ToList();
+            .Select(i => new HolidayView(i.StartDate!.Value, i.EndDate!.Value, i.Title ?? string.Empty, i.HalfStart, i.Provisional, i.ObservedFor)).ToList();
     }
 
     public async Task<IReadOnlyList<SourceStatus>> SourcesAsync(CancellationToken ct)
@@ -587,6 +631,9 @@ public sealed class UnifiedCalendar(
         {
             calendars[id] = await working.ForUserAsync(id, ct);
         }
+        // A published roster decides the working days it plans (FR-035); other days follow the working calendar.
+        var rostered = (await hr.ShiftsAsync(members, from, lastDay, ct)).ToDictionary(s => (s.UserId, s.Date), s => !s.DayOff);
+        bool Works(Guid user, DateOnly d) => rostered.TryGetValue((user, d), out var works) ? works : calendars[user].IsWorkingDay(d);
 
         decimal AwayOn(Guid user, DateOnly d)
         {
@@ -602,7 +649,7 @@ public sealed class UnifiedCalendar(
         var days = new List<TeamDay>();
         for (var d = from; d < to; d = d.AddDays(1))
         {
-            var workingPeople = members.Where(m => calendars[m].IsWorkingDay(d)).ToList();
+            var workingPeople = members.Where(m => Works(m, d)).ToList();
             if (workingPeople.Count == 0)
             {
                 days.Add(new TeamDay(d, false, 0, 0, 0, null, false));

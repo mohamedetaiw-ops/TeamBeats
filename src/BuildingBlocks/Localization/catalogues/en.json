@@ -3272,5 +3272,6 @@
   "notifications.template.calendar.event_reminder.title": "{event} starts soon",
   "notifications.template.calendar.event_reminder.body": "{when}. {place}",
   "notifications.template.calendar.event_cancelled.title": "{event} is cancelled",
-  "notifications.template.calendar.event_cancelled.body": "The event on {when} will not take place."
+  "notifications.template.calendar.event_cancelled.body": "The event on {when} will not take place.",
+  "validation.calendar.holiday_observed": "An observed holiday must name another date, at most 7 days away."
 }

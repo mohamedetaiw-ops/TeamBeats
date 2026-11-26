@@ -13,7 +13,10 @@ public static class CalendarLayers
     public const string MyLeave = "my_leave";
     public const string TeamLeave = "team_leave";
 
-    public static readonly string[] All = [Meeting, Company, Department, Important, Holiday, MyLeave, TeamLeave];
+    /// <summary>Published shifts and roster days off (spec 037 R3, FR-034).</summary>
+    public const string MyShifts = "my_shifts";
+
+    public static readonly string[] All = [Meeting, Company, Department, Important, Holiday, MyLeave, TeamLeave, MyShifts];
 
     public static string ForKind(string kind) => kind switch
     {
@@ -61,6 +64,7 @@ public static class ItemSources
     public const string Events = "events";
     public const string Holidays = "holidays";
     public const string Leave = "leave";
+    public const string Shifts = "shifts";
 }
 
 /// <summary>What the employee may do with an item; the page offers only these (FR-008).</summary>
@@ -137,7 +141,9 @@ public sealed record CalendarItemView(
     bool Recurring = false,
     Guid? LeaveRequestId = null,
     string? TypeKey = null,
-    string? Invitation = null)
+    string? Invitation = null,
+    bool Provisional = false,
+    DateOnly? ObservedFor = null)
 {
     /// <summary>The first local date the item touches, for ordering and grouping.</summary>
     [JsonIgnore]
@@ -158,7 +164,7 @@ public sealed record CalendarEventsResponse(
 
 public sealed record DaySummary(DateOnly Date, IReadOnlyDictionary<string, int> Layers, int TeamAway);
 
-public sealed record HolidayAlert(DateOnly Date, string Title, bool HalfDay);
+public sealed record HolidayAlert(DateOnly Date, string Title, bool HalfDay, bool Provisional = false, DateOnly? ObservedFor = null);
 
 public sealed record CalendarAlerts(IReadOnlyList<HolidayAlert> Holidays, int TeamAwayToday);
 
@@ -175,7 +181,7 @@ public sealed record CalendarSummaryResponse(
     CalendarAlerts Alerts,
     IReadOnlyList<SourceStatus> Sources);
 
-public sealed record HolidayView(DateOnly Date, DateOnly EndDate, string Title, bool HalfDay);
+public sealed record HolidayView(DateOnly Date, DateOnly EndDate, string Title, bool HalfDay, bool Provisional = false, DateOnly? ObservedFor = null);
 
 public sealed record PreferencesView(IReadOnlyList<string> Available, IReadOnlyList<string> Layers, string View);
 
