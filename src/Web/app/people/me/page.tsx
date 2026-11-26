@@ -2,8 +2,9 @@ import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
 import type { OwnProfile } from "@/lib/people/types";
-import type { OwnSkillsView } from "@/lib/people/skills";
+import type { OwnSkillsView, SkillSuggestionsView } from "@/lib/people/skills";
 import { OwnSkillsEditor } from "@/features/people/Skills";
+import { SkillSuggestions } from "@/features/people/SkillSuggestions";
 import { CompletenessPrompt } from "@/features/people/Completeness";
 import { localName } from "@/lib/people/types";
 import { getLocale } from "next-intl/server";
@@ -18,7 +19,11 @@ export default async function OwnProfilePage() {
   if (!me.ok) {
     redirect("/signin");
   }
-  const [own, skills] = await Promise.all([apiGet<OwnProfile>("/api/v1/me/profile"), apiGet<OwnSkillsView>("/api/v1/me/skills")]);
+  const [own, skills, suggestions] = await Promise.all([
+    apiGet<OwnProfile>("/api/v1/me/profile"),
+    apiGet<OwnSkillsView>("/api/v1/me/skills"),
+    apiGet<SkillSuggestionsView>("/api/v1/me/skills/suggestions"),
+  ]);
   if (!own.ok) {
     notFound();
   }
@@ -43,6 +48,7 @@ export default async function OwnProfilePage() {
         ) : null}
         <OwnProfileForm initial={own.data} />
         {skills.ok ? <OwnSkillsEditor initial={skills.data} /> : null}
+        {suggestions.ok ? <SkillSuggestions initial={suggestions.data} /> : null}
       </main>
     </>
   );

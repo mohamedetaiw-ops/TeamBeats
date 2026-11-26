@@ -20,6 +20,7 @@
     <ProjectReference Include="../Notifications.Contracts/TeamBeats.Modules.Notifications.Contracts.csproj" />
     <ProjectReference Include="../Workflow.Contracts/TeamBeats.Modules.Workflow.Contracts.csproj" />
     <ProjectReference Include="../PublicApi.Contracts/TeamBeats.Modules.PublicApi.Contracts.csproj" />
+    <ProjectReference Include="../AiGateway.Contracts/TeamBeats.Modules.AiGateway.Contracts.csproj" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Migrations/*.sql" />

@@ -40,3 +40,25 @@ export type ExpertView = { person: PersonCard; skillId: string; skillNames: Reco
 export type ExpertsView = { enabled: boolean; matches: SkillView[]; items: ExpertView[] };
 
 export const expertsHref = (q?: string) => (q ? `/people/experts?q=${encodeURIComponent(q)}` : "/people/experts");
+
+/** Skill suggestions from what the person published (spec 010 R3 US9), shown only to the person. */
+export type SuggestionSource = { source: "content" | "community_post"; id: string; title: string; link: string };
+
+export type SkillSuggestionView = { skillId: string; names: Record<string, string>; from: SuggestionSource[] };
+
+export type SkillSuggestionsView = { available: boolean; on: boolean; items: SkillSuggestionView[]; runsLeft: number };
+
+export type SkillSuggestionRun = {
+  outcome: "suggested" | "nothing_found" | "nothing_to_read" | "policy_blocked" | "unavailable";
+  denial: string | null;
+  read: number;
+  aiGenerated: boolean;
+  suggestions: SkillSuggestionsView;
+};
+
+/** The one event between the skills parts of the own profile: a suggestion was added, so the editor reads skills again. */
+export const ownSkillsChangedEvent = "tb:people-own-skills-changed";
+
+export function announceOwnSkillsChanged(): void {
+  window.dispatchEvent(new CustomEvent(ownSkillsChangedEvent));
+}

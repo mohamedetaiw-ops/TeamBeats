@@ -195,7 +195,8 @@ public sealed partial class FakeOpenRouter(string apiKey, string basePath, IRead
             // A policy change summary (spec 025 section 11) names how many clauses change and lists each one.
             // A quiz draft (spec 028 US8) writes the number of questions asked for, in every language asked for, cycling through
             // the three kinds; a lesson text with [fake:badquestion] puts first one single choice question with two correct options.
-            reply = properties?["questions"] is not null ? QuizDraft(last) : properties?["points"] is not null ? ChangeSummary(last) : properties?["sentiments"] is not null ? Sentiments(last) : properties?["figures"] is not null ? Summary(last)
+            // Skill suggestions (spec 010 R3 FR-034) suggest each listed skill one of whose names appears in a quoted item, citing those items.
+            reply = properties?["expertise"] is not null ? Expertise(last) : properties?["questions"] is not null ? QuizDraft(last) : properties?["points"] is not null ? ChangeSummary(last) : properties?["sentiments"] is not null ? Sentiments(last) : properties?["figures"] is not null ? Summary(last)
                 : properties?["texts"] is not null ? Translation(last) : properties?["safe"] is not null ? JsonSerializer.Serialize(new { safe = !Attached(messages).Any(t => t.Contains("[fake:unsafe]", StringComparison.Ordinal)) })
                 : properties?["merchant"] is not null ? Receipt(messages) : judging
                 ? JsonSerializer.Serialize(last.Contains("[fake:judge:fail]", StringComparison.Ordinal)
@@ -301,6 +302,26 @@ public sealed partial class FakeOpenRouter(string apiKey, string basePath, IRead
         }
         return JsonSerializer.Serialize(new { questions });
     }
+
+    /// <summary>Each skill of the prompt's list whose name (any locale) appears in an item, with the numbers of those items.</summary>
+    private static string Expertise(string prompt)
+    {
+        var items = ExpertiseItem().Matches(prompt).Select(m => (N: int.Parse(m.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture), Text: m.Groups[2].Value)).ToList();
+        var expertise = ExpertiseSkill().Matches(prompt)
+            .Select(m => new
+            {
+                skillId = m.Groups[1].Value,
+                items = items.Where(i => m.Groups[2].Value.Split(" / ").Any(name => name.Length > 0 && i.Text.Contains(name, StringComparison.OrdinalIgnoreCase))).Select(i => i.N).ToArray(),
+            })
+            .Where(e => e.items.Length > 0);
+        return JsonSerializer.Serialize(new { expertise });
+    }
+
+    [System.Text.RegularExpressions.GeneratedRegex("<skill id=\"([0-9a-f-]+)\">(.*?)</skill>")]
+    private static partial System.Text.RegularExpressions.Regex ExpertiseSkill();
+
+    [System.Text.RegularExpressions.GeneratedRegex("<item n=\"(\\d+)\">(.*?)</item>", System.Text.RegularExpressions.RegexOptions.Singleline)]
+    private static partial System.Text.RegularExpressions.Regex ExpertiseItem();
 
     /// <summary>A stable, recognisable answer: tests can assert on it and testers can see it is not a real model.</summary>
     private static string Sentiments(string prompt)

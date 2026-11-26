@@ -293,3 +293,14 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 ### Evidence
 - US8 to US10: `CalendarRegistrationTests` (seats under concurrency, waiting list promotion, closing, calendar file, reminders once and not for late places, cancellation notices, attachment type, size, malware, limit and audience checks, cross-tenant denial), `calendar-registration.spec.ts`.
 - US11: `CalendarShiftTests` (published only, entitlement and roster gating, reports only, roster working days, provisional and observed holidays).
+
+## Spec 010 R3: skill suggestions and Teams presence (T017 to T020)
+- Teams presence on the profile was delivered with spec 018 R3: `GET /api/v1/people/{id}/presence` uses the free and busy visibility rule (FR-014) and the profile shows it in words.
+- Skill suggestions are off for each person until they turn them on at `/people/me`, and a run happens only when they press Suggest skills, at most three times a day. Turning them off deletes open suggestions; dismissed ones are kept so they are not offered again.
+- A run reads the person's newest 50 items of the last 12 months through `IAuthoredWorkSource` in People.Contracts, implemented by Content (published items whose published version the person wrote, not Confidential or Restricted, title and summary or the opening of the body) and Engagement (the person's published, named posts in active communities that are not Confidential). Documents and knowledge articles are not read yet.
+- The items and the tenant's active skill list go to the AI Gateway as quoted data with the `expertise` JSON schema. Only ids from the list that the person has not declared or dismissed are kept, at most five, each with the items it came from (source, id, title, link). The text read is never stored.
+- Requires `people.skills` with skills on and `ai.assistant`. Audit: `people.skill_suggestions_changed` and `people.skills_suggested` (outcome, items read, skill ids).
+
+### Evidence
+- US9: `SkillSuggestionTests` (consent off reads nothing, own named non-Confidential items only, citations, accept and dismiss, day limit, other person and other tenant not found, off deletes open ones, Workplace has none), `people-suggestions.spec.ts`.
+- US10: spec 018 R3 presence evidence.

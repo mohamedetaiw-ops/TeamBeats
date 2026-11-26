@@ -32944,6 +32944,106 @@
         }
       }
     },
+    "/api/v1/me/skills/suggestions": {
+      "get": {
+        "tags": [
+          "People"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "People"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SkillSuggestionsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/skills/suggestions:run": {
+      "post": {
+        "tags": [
+          "People"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/skills/suggestions/{skillId}:accept": {
+      "post": {
+        "tags": [
+          "People"
+        ],
+        "parameters": [
+          {
+            "name": "skillId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptSuggestionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/skills/suggestions/{skillId}:dismiss": {
+      "post": {
+        "tags": [
+          "People"
+        ],
+        "parameters": [
+          {
+            "name": "skillId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/security/policy": {
       "get": {
         "tags": [
@@ -36485,6 +36585,20 @@
   },
   "components": {
     "schemas": {
+      "AcceptSuggestionRequest": {
+        "required": [
+          "proficiency"
+        ],
+        "type": "object",
+        "properties": {
+          "proficiency": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "AccessConfirmRequest": {
         "required": [
           "status",
@@ -51363,6 +51477,20 @@
             "items": {
               "$ref": "#/components/schemas/SkillInput"
             }
+          }
+        }
+      },
+      "SkillSuggestionsRequest": {
+        "required": [
+          "on"
+        ],
+        "type": "object",
+        "properties": {
+          "on": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },

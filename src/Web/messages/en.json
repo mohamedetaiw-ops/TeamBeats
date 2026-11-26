@@ -3956,6 +3956,32 @@
       "skills": "Your skills",
       "dismiss": "Not now",
       "working": "Hiding…"
+    },
+    "suggestions": {
+      "title": "Suggested skills",
+      "intro": "Skills from your organization's list can be suggested from the news and community posts you published. Only you see the suggestions until you add one.",
+      "consent": "Suggest skills from what I publish",
+      "consentHint": "Your own published items are read only when you ask. Turning this off deletes open suggestions.",
+      "run": "Suggest skills",
+      "running": "Reading your items…",
+      "runsLeft": "{count, plural, =0 {No more suggestions today} one {# more time today} other {# more times today}}",
+      "noneTitle": "No suggestions yet",
+      "none": "Ask for suggestions to see skills your published items show.",
+      "aiGenerated": "AI suggested",
+      "fromFor": "Items that show {skill}",
+      "levelFor": "Level for {skill}",
+      "add": "Add to my skills",
+      "addFor": "Add {skill} to my skills",
+      "dismiss": "Not for me",
+      "dismissFor": "Do not suggest {skill} again",
+      "failed": "The suggestions could not be changed. Try again.",
+      "outcome": {
+        "nothing_found": "No new skills were found in your published items.",
+        "nothing_to_read": "There is nothing to read yet: publish news or community posts, or check that the skill list has skills you have not added.",
+        "policy_blocked": "Your organization's AI policy does not allow this.",
+        "unavailable": "Suggestions are not available right now. Try again later.",
+        "suggested": "Here are skills your published items show."
+      }
     }
   },
   "security": {

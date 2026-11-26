@@ -20,3 +20,9 @@ Depends on 002, 003, 004, 006, 007, 008, 032. All R1 user stories.
 - [x] T014 [US6] Skills on the profile, own skills editor, skill list in people settings, Find an expert page; e2e
 - [x] T015 [US8] Profile completeness, assistants, active delegation from spec 016 on the profile; tests and pages
 - [x] T016 OpenAPI; R2 implementation notes; spec evidence
+
+## R3
+- [x] T017 [US10] Teams presence on the profile (delivered by spec 018 R3: presence endpoint and `PresenceStatus`)
+- [x] T018 [US9] Skill suggestions: migration, `IAuthoredWorkSource` in Content and Engagement, consent, run through the AI Gateway, accept and dismiss; integration tests
+- [x] T019 [US9] Suggestions on the own profile skills editor; e2e
+- [x] T020 OpenAPI; R3 implementation notes; spec evidence

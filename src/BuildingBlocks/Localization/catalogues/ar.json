@@ -3273,5 +3273,8 @@
   "notifications.template.calendar.event_reminder.body": "{when}. {place}",
   "notifications.template.calendar.event_cancelled.title": "أُلغيت {event}",
   "notifications.template.calendar.event_cancelled.body": "لن تُقام الفعالية في {when}.",
-  "validation.calendar.holiday_observed": "يجب أن تحدد العطلة المنقولة تاريخاً آخر لا يبعد أكثر من 7 أيام."
+  "validation.calendar.holiday_observed": "يجب أن تحدد العطلة المنقولة تاريخاً آخر لا يبعد أكثر من 7 أيام.",
+  "validation.people.suggestions_on": "حدد ما إذا كانت اقتراحات المهارات مفعلة أم لا.",
+  "conflict.people.suggestions_off": "فعّل اقتراحات المهارات أولا.",
+  "conflict.people.suggestion_limit": "طلبت الاقتراحات ثلاث مرات اليوم. حاول مرة أخرى غدا."
 }

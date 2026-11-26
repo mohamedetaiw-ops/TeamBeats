@@ -332,3 +332,14 @@ ol.people-chart {
   inline-size: 100%;
   accent-color: var(--tb-color-accent-base);
 }
+
+/* Skill suggestions (spec 010 R3 US9): the items a suggestion came from, on their own line under the skill. */
+.people-suggestion-from {
+  display: flex;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
