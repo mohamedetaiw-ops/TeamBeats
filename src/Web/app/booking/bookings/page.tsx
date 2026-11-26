@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
-import { bookingApi, bookingHref, myBookingsHref, type BookingView } from "@/lib/booking";
+import { bookingApi, bookingHref, myBookingsHref, visitsHref, type BookingRights, type BookingView } from "@/lib/booking";
 import { Header } from "@/components/shell/Header";
+import { ButtonLink } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StateView } from "@/components/ui/StateView";
 import { MyBookings } from "@/features/booking/MyBookings";
@@ -14,7 +15,7 @@ export default async function MyBookingsPage() {
     redirect("/signin");
   }
   const t = await getTranslations("booking");
-  const bookings = await apiGet<BookingView[]>(`${bookingApi}/bookings/mine`);
+  const [bookings, rights] = await Promise.all([apiGet<BookingView[]>(`${bookingApi}/bookings/mine`), apiGet<BookingRights>(`${bookingApi}/rights`)]);
   return (
     <>
       <Header
@@ -25,7 +26,18 @@ export default async function MyBookingsPage() {
         ]}
       />
       <main id="main" className="page">
-        <PageHeader title={t("mine.pageTitle")} description={t("mine.pageIntro")} icon="calendar" />
+        <PageHeader
+          title={t("mine.pageTitle")}
+          description={t("mine.pageIntro")}
+          icon="calendar"
+          actions={
+            rights.ok && rights.data.visitors && rights.data.book ? (
+              <ButtonLink href={visitsHref} icon="user">
+                {t("visits.pageTitle")}
+              </ButtonLink>
+            ) : undefined
+          }
+        />
         {bookings.ok ? (
           <MyBookings initial={bookings.data} />
         ) : (

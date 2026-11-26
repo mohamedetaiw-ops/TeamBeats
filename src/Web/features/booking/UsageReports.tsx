@@ -76,6 +76,8 @@ export function UsageReports({ sites }: { sites: ReportSite[] }) {
                 {t("noShowRateOf", { value: percent(report.total.noShowRate) })}
               </Badge>
               <Badge>{t("bookingsOf", { count: report.total.bookings })}</Badge>
+              {report.total.sensedHours != null ? <Badge>{t("sensedOf", { value: hours(report.total.sensedHours) })}</Badge> : null}
+              {report.visits ? <Badge>{t("visitsOf", { count: report.visits.expected, arrived: report.visits.arrived })}</Badge> : null}
             </div>
             <p className="booking-meta">{t("explain")}</p>
           </section>
@@ -100,6 +102,7 @@ export function UsageReports({ sites }: { sites: ReportSite[] }) {
                       <th scope="col">{t("column.availableHours")}</th>
                       <th scope="col">{t("column.utilization")}</th>
                       <th scope="col">{t("column.noShowRate")}</th>
+                      {report.total.sensedHours != null ? <th scope="col">{t("column.sensedHours")}</th> : null}
                     </tr>
                   </thead>
                   <tbody>
@@ -117,6 +120,7 @@ export function UsageReports({ sites }: { sites: ReportSite[] }) {
                         <td data-number>{hours(row.availableHours)}</td>
                         <td data-number>{percent(row.utilization)}</td>
                         <td data-number>{percent(row.noShowRate)}</td>
+                        {report.total.sensedHours != null ? <td data-number>{hours(row.sensedHours ?? 0)}</td> : null}
                       </tr>
                     ))}
                   </tbody>

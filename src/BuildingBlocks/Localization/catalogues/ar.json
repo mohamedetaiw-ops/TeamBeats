@@ -3246,5 +3246,10 @@
   "notifications.template.booking.visit.cancelled.title": "أُلغيت زيارتك إلى {site}",
   "notifications.template.booking.visit.cancelled.body": "أُلغيت الزيارة يوم {date} من {start} إلى {end} ({timeZone}). لم يعد رمزك صالحًا.",
   "notifications.template.booking.visitor_arrived.title": "وصل {visitor}",
-  "notifications.template.booking.visitor_arrived.body": "سجّل الاستقبال في {site} حضور زائرك."
+  "notifications.template.booking.visitor_arrived.body": "سجّل الاستقبال في {site} حضور زائرك.",
+  "validation.booking.sensor_connection": "اختر اتصال إشغال مفعّلًا.",
+  "validation.booking.sensor_count": "يمكن للموقع ربط 2000 حساس كحد أقصى من اتصال واحد.",
+  "validation.booking.sensor_id": "معرّف كل حساس حتى 128 حرفًا أو رقمًا أو . _ : / - ويُربط مرة واحدة.",
+  "validation.booking.sensor_resource": "اربط الحساسات بموارد هذا الموقع.",
+  "conflict.booking.sensor_taken": "أحد هذه الحساسات مربوط بالفعل في موقع آخر."
 }

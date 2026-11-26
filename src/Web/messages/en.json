@@ -10692,7 +10692,8 @@
       "microsoft365": "Microsoft 365",
       "lms_rest": "Learning management system (LMS)",
       "hr_oracle_hcm": "Oracle HCM Cloud",
-      "hr_sap_successfactors": "SAP SuccessFactors"
+      "hr_sap_successfactors": "SAP SuccessFactors",
+      "occupancy_rest": "Occupancy sensors (REST)"
     },
     "status": {
       "healthy": "Healthy",
@@ -10733,7 +10734,8 @@
       "mcp_server": "Agents use the tools of an external MCP server after an integration administrator approves each one.",
       "lms_rest": "Brings your LMS courses into the catalogue, sends assignments of them to the LMS and reads completions back.",
       "hr_oracle_hcm": "Reads Oracle HCM workers, their assignments and managers every night, with the mapping already filled.",
-      "hr_sap_successfactors": "Reads SAP SuccessFactors users and their managers every night, leavers included, with the mapping already filled."
+      "hr_sap_successfactors": "Reads SAP SuccessFactors users and their managers every night, leavers included, with the mapping already filled.",
+      "occupancy_rest": "Facilities map desk and room sensors to resources, for sensed occupancy and optional sensor check-in."
     },
     "add": {
       "title": "Add a custom REST connection",
@@ -10764,6 +10766,10 @@
       "mcp_server": {
         "addTitle": "Add an MCP server connection",
         "addIntro": "Enter the server's MCP endpoint, such as https://tools.example.com/mcp, and how TeamBeats signs in. The host must be on the allowlist. Each tool the server lists waits for your approval before any agent can use it."
+      },
+      "occupancy_rest": {
+        "addTitle": "Add an occupancy sensor connection",
+        "addIntro": "Enter the https address of the sensor service. TeamBeats reads the address followed by /sensors every 5 minutes and keeps only each sensor's ID, whether it is occupied and when."
       }
     },
     "slack": {
@@ -16449,8 +16455,11 @@
         "usedHours": "Used hours",
         "availableHours": "Available hours",
         "utilization": "Utilization",
-        "noShowRate": "No-show rate"
-      }
+        "noShowRate": "No-show rate",
+        "sensedHours": "Sensed occupied hours"
+      },
+      "sensedOf": "Sensed occupied: {value} hours",
+      "visitsOf": "{count, plural, =0 {No visitors} one {# visitor} other {# visitors}}, {arrived} arrived"
     },
     "closures": {
       "title": "Closed days",
@@ -16536,6 +16545,111 @@
       "save": "Save places",
       "noPlanTitle": "No plan yet",
       "noPlan": "Upload a plan image to place resources on it."
+    },
+    "visits": {
+      "pageTitle": "Visitors",
+      "pageIntro": "Expect a visitor at a site. They get an email with a code to show at reception, and you are told when they arrive.",
+      "unavailableTitle": "Visitors are not available",
+      "unavailable": "Visitor booking is not part of your plan, or it could not be loaded.",
+      "failed": "That did not work",
+      "working": "Working",
+      "formTitle": "Expect a visitor",
+      "editTitle": "Change the visit",
+      "noSitesTitle": "No sites yet",
+      "noSites": "A facilities administrator adds sites before visitors can be expected.",
+      "site": "Site",
+      "date": "Date",
+      "start": "From",
+      "end": "To",
+      "name": "Visitor's name",
+      "email": "Visitor's email",
+      "company": "Company",
+      "optional": "Optional",
+      "booking": "With your booking",
+      "noBooking": "No booking",
+      "bookingOption": "{name}, {start} to {end}",
+      "privacy": "The visitor's name, email and company are deleted 30 days after the visit.",
+      "register": "Expect visitor",
+      "save": "Save changes",
+      "stopEditing": "Stop changing",
+      "registered": "{name} is expected. The code is on its way by email.",
+      "changed": "The visit of {name} is changed and they were told.",
+      "listTitle": "Your visitors",
+      "emptyTitle": "No visitors expected",
+      "empty": "Visitors you expect appear here with their code.",
+      "removedName": "Visitor details deleted",
+      "when": "{date}, {start} to {end}",
+      "zone": "({zone} time)",
+      "status": {
+        "expected": "Expected",
+        "arrived": "Arrived",
+        "left": "Left",
+        "cancelled": "Cancelled"
+      },
+      "hostLeft": "Cancelled because the host left",
+      "code": "Code",
+      "change": "Change the visit of {name}",
+      "cancel": "Cancel the visit of {name}",
+      "cancelQuestion": "Cancel this visit? The visitor is told by email and the code stops working.",
+      "cancelConfirm": "Cancel visit",
+      "keep": "Keep it",
+      "emailState": {
+        "none": "No email yet",
+        "pending": "Email waiting to send",
+        "sent": "Email sent",
+        "bounced": "Email refused, give the code another way",
+        "failed": "Email not sent, give the code another way"
+      }
+    },
+    "reception": {
+      "pageTitle": "Reception",
+      "pageIntro": "Today's visitors at the site, checked in by the code they bring or from the list.",
+      "deniedTitle": "You do not work reception",
+      "denied": "Reception is for people a facilities administrator gave it to, and visitor booking must be part of your plan.",
+      "noSitesTitle": "No sites to receive at",
+      "noSites": "There is no active site in your reception scope.",
+      "failed": "That did not work",
+      "unavailable": "The visitors could not be loaded.",
+      "working": "Working",
+      "site": "Site",
+      "date": "Date",
+      "show": "Show",
+      "codeTitle": "Check in by code",
+      "code": "Visit code",
+      "codeHint": "8 letters and digits from the visitor's email",
+      "checkIn": "Check in",
+      "arrived": "{name} is checked in and their host was told.",
+      "left": "{name} has left.",
+      "todayTitle": "Today at {site}",
+      "dayTitle": "Visitors at {site}",
+      "counts": "{total, plural, =0 {No visitors} one {# visitor} other {# visitors}}: {waiting} expected, {inside} inside",
+      "emptyTitle": "No visitors",
+      "empty": "Nobody is expected on this day.",
+      "listLabel": "Visitors",
+      "host": "Host: {name}",
+      "arrivedAt": "Arrived {time}",
+      "leftAt": "Left {time}",
+      "checkInName": "Check in {name}",
+      "checkOutName": "Check out {name}"
+    },
+    "sensors": {
+      "title": "Occupancy sensors",
+      "checkInOn": "Sensor check-in is on: a sensor that sees a booked resource occupied in its check-in window checks the booking in.",
+      "checkInOff": "Sensor check-in is off: sensors only count sensed occupancy for reports.",
+      "failed": "That did not work",
+      "saved": "Sensors saved.",
+      "noConnectionsTitle": "No sensor connection",
+      "noConnections": "An integration administrator adds and turns on an occupancy sensor connection under Connections first.",
+      "noResourcesTitle": "No resources",
+      "noResources": "Add resources to this site first.",
+      "connection": "Connection",
+      "listLabel": "Sensors by resource",
+      "sensorId": "Sensor ID for {name}",
+      "occupied": "Occupied at {at}",
+      "vacant": "Vacant at {at}",
+      "notRead": "Not read yet",
+      "save": "Save sensors",
+      "working": "Working"
     }
   },
   "kiosk": {

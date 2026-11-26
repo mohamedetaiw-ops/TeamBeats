@@ -70,7 +70,7 @@ public sealed record RuleRequest(
     int? SeriesDays);
 
 public sealed record SettingsRequest(int? SlotMinutes, int? CheckInBeforeMinutes, int? CheckInGraceMinutes, int? ApprovalHoldHours, int? NoShowLimit,
-    int? NoShowWindowDays, bool? NoShowRestrict, int? NoShowRestrictDays, int? NoShowAdvanceDays, bool? ShowNames, int? Version);
+    int? NoShowWindowDays, bool? NoShowRestrict, int? NoShowRestrictDays, int? NoShowAdvanceDays, bool? ShowNames, int? Version, bool? SensorCheckIn = null);
 
 /// <summary>A repeat of a booking (FR-006): daily or weekly, up to and including <paramref name="Until"/>.</summary>
 public sealed record RepeatRequest(string? Pattern, DateOnly? Until);
@@ -97,13 +97,16 @@ public static class CheckInMethods
     public const string Booking = "booking";
     public const string Kiosk = "kiosk";
 
-    public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal) { Qr, Booking, Kiosk };
+    /// <summary>An occupancy sensor saw the resource occupied in the check-in window (spec 031 R3 FR-027).</summary>
+    public const string Sensor = "sensor";
+
+    public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal) { Qr, Booking, Kiosk, Sensor };
 }
 
 // ---- Views ----
 
 /// <summary>What the viewer may do in booking. FloorPlans and Visitors say whether those R3 parts are in the plan; Reception that the viewer works reception somewhere.</summary>
-public sealed record BookingRights(bool Book, bool Manage, bool Report, IReadOnlyList<string> Kinds, bool FloorPlans = false, bool Visitors = false, bool Reception = false);
+public sealed record BookingRights(bool Book, bool Manage, bool Report, IReadOnlyList<string> Kinds, bool FloorPlans = false, bool Visitors = false, bool Reception = false, bool Sensors = false);
 
 public sealed record SiteView(Guid Id, IReadOnlyDictionary<string, string> Names, string? LocationKey, Guid? OrgUnitId, string TimeZone, TimeOnly OpensAt, TimeOnly ClosesAt,
     string Status, bool Manages, int Version);
@@ -138,7 +141,7 @@ public sealed record RuleView(string Source, IReadOnlyList<Guid> UnitIds, int Ad
     bool Overnight, int SeriesDays, int Version);
 
 public sealed record SettingsView(int SlotMinutes, int CheckInBeforeMinutes, int CheckInGraceMinutes, int ApprovalHoldHours, int NoShowLimit, int NoShowWindowDays,
-    bool NoShowRestrict, int NoShowRestrictDays, int NoShowAdvanceDays, bool ShowNames, int Version);
+    bool NoShowRestrict, int NoShowRestrictDays, int NoShowAdvanceDays, bool ShowNames, int Version, bool SensorCheckIn = false);
 
 /// <summary>One printed label: the resource and the opaque code its QR image carries (US1 scenario 1).</summary>
 public sealed record QrLabel(Guid ResourceId, string Kind, IReadOnlyDictionary<string, string> Names, IReadOnlyDictionary<string, string>? Floor,

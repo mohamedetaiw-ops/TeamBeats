@@ -24002,6 +24002,60 @@
         }
       }
     },
+    "/api/v1/booking/manage/sites/{id}/sensors": {
+      "get": {
+        "tags": [
+          "Booking"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Booking"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SensorsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/booking/manage/floors/{id}/positions": {
       "put": {
         "tags": [
@@ -49992,6 +50046,47 @@
           }
         }
       },
+      "SensorMappingRequest": {
+        "required": [
+          "sensorId",
+          "resourceId"
+        ],
+        "type": "object",
+        "properties": {
+          "sensorId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "resourceId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "SensorsRequest": {
+        "required": [
+          "connectionId",
+          "mappings"
+        ],
+        "type": "object",
+        "properties": {
+          "connectionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mappings": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/SensorMappingRequest"
+            }
+          }
+        }
+      },
       "ServiceAudience": {
         "type": "object",
         "properties": {
@@ -50465,6 +50560,12 @@
               "string"
             ],
             "format": "int32"
+          },
+          "sensorCheckIn": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },

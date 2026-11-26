@@ -254,3 +254,25 @@ What was built for R3, slice by slice, and where it differs from the specs and p
 - **Defaults.** Planner gives no modified time, so a Planner change is dated when it is seen and wins a conflict against an earlier space edit. Assignees outside the space are left out and named in the history by work email. Jira has one assignee: the first space assignee Jira knows is sent.
 - **Pages.** The task page has its plan and time widgets, the space has Timeline and, for owners, Time and Sync. Connections offer Microsoft Planner and Jira Software in the wizard.
 - **Not built.** Planner task details (description and checklist), Jira custom fields, and Asana.
+
+## Spec 031 R3 slice 1: floor plans (T011, T012)
+- A floor plan is one PNG, JPEG or WebP image per floor, up to 5 MB and 8000 pixels a side, checked by its signature, scanned for malware and kept in tenant object storage. SVG is refused because it can carry script. Each resource is placed as a point in percent of the image, so the plan scales with the screen and works RTL without mirroring the image.
+- The floor map shows each placed resource as free, busy or unavailable for the chosen time; the list beside it is the full alternative with the same actions, and resources not yet placed show only there.
+- Administrators place resources in the plan editor at `/booking/manage/floors/{id}`; employees open the map from Find a space at `/booking/floors/{id}`.
+
+## Spec 031 R3 slice 2: visitors and reception (T013, T014)
+- A visit belongs to its host and site. Its code is eight characters from `A-Z` and `2-9`, unique per tenant while the visit is open, and works at reception only on the visit day in the site's time zone. Recorded defaults: at most 20 visits per host per day, 15 minutes to 12 hours long, at most 90 days ahead.
+- The visitor is emailed through the external email port with templates `booking.visit.registered`, `changed` and `cancelled`, retried up to 5 times, then shown to the host as not sent so they pass the code on. The email links to the tenant home (`/`), since visitors have no account.
+- Reception is the `booking.reception` permission, held by the facilities administrator role. Checking in tells the host (`booking.visitor_arrived`). A leaver's open visits are cancelled with reason `left_company`. Visitor names, addresses and companies are removed 30 days after the visit; the visit counts stay for reports.
+- Pages: Visitors at `/booking/visits` (from My bookings) and Reception at `/booking/reception` (from Booking).
+
+## Spec 031 R3 slice 3: occupancy sensors (T015)
+- Sensors come through the `occupancy_rest` connector pack (capability `booking.sensors`) with one action, `list_sensors`, a `GET /sensors` answering an array, or an object with `sensors` or `items`, of entries with `id` or `sensor_id`, `occupied` or `state`, and an optional `observed_at`. Only the sensor id, occupied flag and time leave the adapter, up to 5000 sensors.
+- Administrators map a connection's sensors to the site's resources on the site page. Each connection is read at most every 5 minutes by the booking maintenance job. Only hourly counts per resource (`booking.occupancy_hour`: reads and occupied reads) are kept, never raw readings, so no person can be traced from them.
+- Sensor check-in is a booking setting, off by default: when on, an occupied reading inside a booking's check-in window checks it in with method `sensor`. Booking settings have no page yet, so it is set through the settings API.
+- Usage reports show sensed hours beside booked hours and the site's visit counts.
+
+### Evidence
+- US7: `BookingFloorPlanTests`, `booking-floor-plans.spec.ts`.
+- US8: `BookingVisitTests` (limits, emails, codes on the day only, changes, leavers, purge, cross-tenant and permission denial), `booking-visitors.spec.ts`.
+- US9: `BookingSensorTests` (mapping validation, five minute reads, sensor check-in on and off, sensed hours, cross-tenant and entitlement denial).

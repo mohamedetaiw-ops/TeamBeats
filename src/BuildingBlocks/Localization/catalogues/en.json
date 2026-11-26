@@ -3246,5 +3246,10 @@
   "notifications.template.booking.visit.cancelled.title": "Your visit to {site} is cancelled",
   "notifications.template.booking.visit.cancelled.body": "The visit on {date} from {start} to {end} ({timeZone}) is cancelled. Your code no longer works.",
   "notifications.template.booking.visitor_arrived.title": "{visitor} has arrived",
-  "notifications.template.booking.visitor_arrived.body": "Reception at {site} checked your visitor in."
+  "notifications.template.booking.visitor_arrived.body": "Reception at {site} checked your visitor in.",
+  "validation.booking.sensor_connection": "Choose an occupancy connection that is turned on.",
+  "validation.booking.sensor_count": "A site can map up to 2,000 sensors from one connection.",
+  "validation.booking.sensor_id": "Each sensor ID is up to 128 letters, digits or . _ : / - and is mapped once.",
+  "validation.booking.sensor_resource": "Map sensors to resources of this site.",
+  "conflict.booking.sensor_taken": "One of these sensors is already mapped at another site."
 }

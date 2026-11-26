@@ -157,6 +157,8 @@ export const routes: readonly Route[] = [
   { path: "/booking/floors/[id]", tier: "detail", reason: "needs a floor with an uploaded plan; opened by the floor plan suite" },
   { path: "/booking/kiosk/[site]", tier: "detail", reason: "a shared kiosk device with an enrolment code; opened by the kiosk suite" },
   { path: "/booking/manage", tier: "other" },
+  { path: "/booking/reception", tier: "other" },
+  { path: "/booking/visits", tier: "other" },
   { path: "/booking/manage/sites/[id]", tier: "detail" },
   { path: "/booking/manage/sites/[id]/labels", tier: "detail" },
   { path: "/booking/manage/floors/[id]", tier: "detail", reason: "needs a floor with an uploaded plan; opened by the floor plan suite" },

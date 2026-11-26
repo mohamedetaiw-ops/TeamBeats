@@ -32,6 +32,7 @@ public static class BookingModule
         services.AddScoped<BookingActivity>();
         services.AddScoped<FloorPlans>();
         services.AddScoped<Visits>();
+        services.AddScoped<Sensors>();
         services.AddMessageHandler<TenantMembershipDisabled, BookingLeavers>("booking.leaver");
         services.AddScoped<BookingHolidayHandler>();
         services.AddMessageHandler<Hr.Contracts.WorkingCalendarChanged, BookingHolidayHandler>("booking.holiday");
@@ -217,6 +218,11 @@ public static class BookingModule
             await session.CommitAsync(ct);
             return Results.NoContent();
         });
+        manage.MapGet("/sites/{id:guid}/sensors", async (Guid id, Sensors sensors, CancellationToken ct) => Results.Ok(await sensors.GetAsync(id, ct)));
+
+        manage.MapPut("/sites/{id:guid}/sensors", async (Guid id, SensorsRequest request, Sensors sensors, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await sensors.MapAsync(id, request, ct), ct));
+
         manage.MapPut("/floors/{id:guid}/positions", async (Guid id, PositionsRequest request, FloorPlans plans, IDbSession session, CancellationToken ct) =>
             await CommitAsync(session, await plans.PlaceAsync(id, request, ct), ct));
 

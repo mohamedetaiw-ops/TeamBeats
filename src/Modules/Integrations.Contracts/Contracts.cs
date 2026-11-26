@@ -1678,3 +1678,32 @@ public interface ITaskTrackers
 
     Task<TrackerWrite> UpdateAsync(Guid connectionId, string containerId, string externalId, TrackerTaskInput task, string idempotencyKey, CancellationToken ct = default);
 }
+
+/// <summary>The occupancy sensor packs (spec 031 R3 US9, through spec 017).</summary>
+public static class OccupancyKinds
+{
+    /// <summary>A REST endpoint that lists sensors and whether each is occupied now.</summary>
+    public const string Rest = "occupancy_rest";
+
+    public static readonly IReadOnlyList<string> All = [Rest];
+}
+
+/// <summary>An enabled occupancy connection a facilities administrator may map sensors from.</summary>
+public sealed record OccupancyConnection(Guid Id, string Kind, string Name);
+
+/// <summary>One sensor's state as the system last saw it. No personal data crosses this contract: an ID, a state and a time.</summary>
+public sealed record SensorReading(string SensorId, bool Occupied, DateTimeOffset ObservedAt);
+
+/// <summary>A read's result (one of <see cref="TrackerResults"/>) and the sensors, up to 5,000.</summary>
+public sealed record OccupancyRead(string Result, IReadOnlyList<SensorReading> Sensors);
+
+/// <summary>
+/// Occupancy readings through spec 017 (spec 031 FR-026). Every read goes through the connector runtime inline and is
+/// kept in the connection's run history. Tenant comes from context.
+/// </summary>
+public interface IOccupancyReadings
+{
+    Task<IReadOnlyList<OccupancyConnection>> ConnectionsAsync(CancellationToken ct = default);
+
+    Task<OccupancyRead> ReadAsync(Guid connectionId, CancellationToken ct = default);
+}

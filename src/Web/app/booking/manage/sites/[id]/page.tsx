@@ -2,10 +2,11 @@ import { notFound, redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
 import { isGuid } from "@/lib/spaces";
-import { bookingApi, bookingHref, manageBookingHref, manageSiteHref, pick, type BookingRights, type ClosureView, type SiteDetail } from "@/lib/booking";
+import { bookingApi, bookingHref, manageBookingHref, manageSiteHref, pick, type BookingRights, type ClosureView, type SiteDetail, type SiteSensors as SiteSensorsView } from "@/lib/booking";
 import { Header } from "@/components/shell/Header";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SiteAdmin } from "@/features/booking/ManageBooking";
+import { SiteSensors } from "@/features/booking/SiteSensors";
 import { SiteClosures } from "@/features/booking/SiteClosures";
 
 /** Today's date in the site's time zone, as an ISO date. */
@@ -35,6 +36,7 @@ export default async function ManageSitePage({ params }: { params: Promise<{ id:
   if (!detail.ok) {
     notFound();
   }
+  const sensors = rights.ok && rights.data.sensors ? await apiGet<SiteSensorsView>(`${bookingApi}/manage/sites/${id}/sensors`) : null;
   const t = await getTranslations("booking");
   const name = pick(detail.data.site.names, await getLocale());
   return (
@@ -50,6 +52,9 @@ export default async function ManageSitePage({ params }: { params: Promise<{ id:
       <main id="main" className="page">
         <PageHeader title={name} description={t("manage.siteIntro", { zone: detail.data.site.timeZone })} icon="building" />
         <SiteAdmin initial={detail.data} inPlan={rights.ok ? rights.data.kinds : []} floorPlans={rights.ok && rights.data.floorPlans} />
+        {sensors?.ok && detail.data.site.status === "active" ? (
+          <SiteSensors siteId={id} resources={detail.data.resources.filter((r) => r.status === "active")} initial={sensors.data} />
+        ) : null}
         {detail.data.site.status === "active" ? (
           <SiteClosures siteId={id} initial={closures.ok ? closures.data : []} today={siteToday(detail.data.site.timeZone)} />
         ) : null}

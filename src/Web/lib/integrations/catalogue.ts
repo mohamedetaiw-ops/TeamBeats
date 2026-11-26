@@ -24,6 +24,7 @@ const LOOKS: Record<ConnectionType, Look> = {
   jira_service_management: { group: "service_desk", mark: "/connectors/atlassian.svg", icon: "inbox" },
   tasks_planner: { group: "workplace", mark: "/connectors/microsoft.svg", icon: "tasks" },
   tasks_jira: { group: "workplace", mark: "/connectors/atlassian.svg", icon: "tasks" },
+  occupancy_rest: { group: "workplace", icon: "building" },
   camunda8: { group: "service_desk", icon: "tasks" },
   hr_rest: { group: "people_time", icon: "people" },
   hr_sftp: { group: "people_time", icon: "folder" },

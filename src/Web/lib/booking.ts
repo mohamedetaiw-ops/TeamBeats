@@ -17,6 +17,8 @@ export const floorMapHref = (floorId: string, query?: { date?: string; start?: s
   return `/booking/floors/${floorId}${q ? `?${q}` : ""}`;
 };
 export const floorPlanEditorHref = (floorId: string) => `/booking/manage/floors/${floorId}`;
+export const visitsHref = "/booking/visits";
+export const receptionHref = (siteId?: string) => (siteId ? `/booking/reception?site=${siteId}` : "/booking/reception");
 export const qrImageHref = (resourceId: string) => `${bookingApi}/manage/resources/${resourceId}/qr.svg`;
 
 export type ResourceKind = "room" | "desk" | "parking" | "equipment";
@@ -26,7 +28,7 @@ export type Names = Record<string, string>;
 /** The name in the viewer's language, else English, else any. */
 export const pick = (names: Names | null | undefined, locale: string) => (names ? (names[locale] ?? names.en ?? Object.values(names)[0] ?? "") : "");
 
-export type BookingRights = { book: boolean; manage: boolean; report: boolean; kinds: ResourceKind[]; floorPlans: boolean; visitors: boolean };
+export type BookingRights = { book: boolean; manage: boolean; report: boolean; kinds: ResourceKind[]; floorPlans: boolean; visitors: boolean; reception: boolean; sensors: boolean };
 
 export type SiteView = {
   id: string;
@@ -194,6 +196,8 @@ export type UsageRow = {
   availableHours: number;
   utilization: number | null;
   noShowRate: number | null;
+  /** Spec 031 R3 FR-027: hours sensors saw it occupied; null when sensors are not in the plan. */
+  sensedHours?: number | null;
 };
 export type UsageReport = {
   siteId: string;
@@ -204,6 +208,8 @@ export type UsageReport = {
   groupBy: ReportGroup;
   total: UsageRow;
   rows: UsageRow[];
+  /** Spec 031 R3 FR-025: visit counts for the range; null when visitors are not in the plan. */
+  visits?: { expected: number; arrived: number; cancelled: number } | null;
 };
 
 /** The last four whole weeks up to today, as ISO dates. */
@@ -242,3 +248,42 @@ export type PlacedResource = {
   needsApproval: boolean; state: PlaceState;
 };
 export type FloorMapView = { floorId: string; siteId: string; names: Names; timeZone: string; startsAt: string; endsAt: string; plan: FloorPlanImage | null; resources: PlacedResource[]; manages: boolean };
+
+/** Spec 031 R3 US8: a visit as its host or reception sees it. Name, email and company are null 30 days after the visit. */
+export type VisitStatus = "expected" | "arrived" | "left" | "cancelled";
+export type VisitView = {
+  id: string;
+  siteId: string;
+  siteNames: Names;
+  timeZone: string;
+  date: string;
+  startsAt: string;
+  endsAt: string;
+  name: string | null;
+  email: string | null;
+  company: string | null;
+  bookingId: string | null;
+  status: VisitStatus;
+  endReason: "host" | "left_company" | null;
+  emailState: "none" | "pending" | "sent" | "bounced" | "failed";
+  arrivedAt: string | null;
+  leftAt: string | null;
+  code: string | null;
+  hostId: string;
+  hostName: string | null;
+  version: number;
+};
+export type ReceptionSite = { id: string; names: Names; timeZone: string };
+export type ReceptionDay = { siteId: string; siteNames: Names; timeZone: string; date: string; today: boolean; visits: VisitView[] };
+
+/** A time of an instant in a site's time zone, as HH:mm for a time field. */
+export const localTime = (iso: string, timeZone: string) =>
+  new Intl.DateTimeFormat("en-GB", { timeZone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(iso));
+
+/** Today in a time zone, as YYYY-MM-DD. */
+export const todayIn = (timeZone: string, now: number = Date.now()) =>
+  new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(now));
+
+/** Spec 031 R3 US9: a site's sensor mappings and the occupancy connections they may come from. */
+export type SensorView = { id: string; connectionId: string; sensorId: string; resourceId: string; lastOccupied: boolean | null; lastObservedAt: string | null; lastReadAt: string | null };
+export type SiteSensors = { siteId: string; connections: { id: string; kind: string; name: string }[]; sensors: SensorView[]; sensorCheckIn: boolean };
