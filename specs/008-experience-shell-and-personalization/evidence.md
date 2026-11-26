@@ -49,3 +49,17 @@ The spec stays Approved, not Implemented. R1 builds the shell, the shared states
 | SC-002 personal reorder leaves coworkers unchanged | Met | `PersonalizationTests.Personal_placements_go_only_into_delegated_regions_with_eligible_components_and_coworkers_are_unaffected` |
 | SC-003 locked regions cannot be removed | Met | `PersonalizationTests.Protected_placements_cannot_be_hidden_removed_or_moved_through_the_api` |
 | SC-004 find a service page within 60 seconds | Pilot | Measured in pilot usability tests |
+
+## R3 evidence
+
+Spec 008 R3 is built: behavioral personalization behind the package feature, a tenant policy and each person's consent. Defaults are in `docs/architecture/r3-implementation-notes.md`.
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| US6 scenario 1, FR-033 nothing ranked or counted until the tenant enables it | Met | `BehaviorPersonalizationTests.Nothing_is_counted_or_ranked_until_the_tenant_turns_it_on_and_the_person_agrees` |
+| US6 scenario 2 opt-out stops ranking and keeps other settings | Met | same test (signals deleted, recents kept), `BehaviorPersonalizationTests.Opt_out_counts_until_the_person_declines_...` |
+| US6 scenario 3 a ranking says why | Met | quick navigation `ranked` mark, `BehaviorPersonalizationTests` |
+| Behavioral signals kept 90 days (section 13) | Met | `BehaviorPersonalizationTests.Opt_out_counts_until_the_person_declines_and_signals_go_after_90_days` |
+| Tenant decision audited (section 9) | Met | `experience.behavioral_personalization_changed` asserted in `BehaviorPersonalizationTests` |
+| Package and tenant boundaries | Met | `BehaviorPersonalizationTests.Without_the_package_feature_it_cannot_be_turned_on_and_other_tenants_never_see_signals` |
+| Pages in English and Arabic | Met | `behavior-personalization.spec.ts` (axe) |

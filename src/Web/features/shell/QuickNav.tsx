@@ -103,7 +103,13 @@ export function QuickNav() {
     groups.push({
       key: "pages",
       label: t("palette.pages"),
-      commands: current.pages.map((item) => ({ key: `page:${item.href}`, label: item.label, hint: item.owner ?? undefined, icon: "arrow-forward", href: item.href })),
+      commands: current.pages.map((item) => ({
+        key: `page:${item.href}`,
+        label: item.label,
+        hint: item.ranked ? t("ranked") : (item.owner ?? undefined),
+        icon: "arrow-forward",
+        href: item.href,
+      })),
     });
   }
   if (palette && current && current.suggestions.length > 0) {
@@ -180,6 +186,7 @@ export function QuickNav() {
                 <a href={item.href}>
                   <bdi>{item.label}</bdi>
                   {item.owner ? <span className="shell-owner">{item.owner}</span> : null}
+                  {item.ranked ? <span className="shell-owner">{t("ranked")}</span> : null}
                 </a>
               </li>
             ))}

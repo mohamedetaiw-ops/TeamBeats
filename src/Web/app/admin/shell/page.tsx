@@ -4,6 +4,8 @@ import { apiGet, type NavigationSection } from "@/lib/api";
 import { listPages } from "@/lib/experience/client";
 import { getShell } from "@/lib/shell/client";
 import { ShellSettings, type AudienceOption, type ShellAdmin } from "@/features/shell-settings/ShellSettings";
+import { BehaviorPolicyForm } from "@/features/shell-settings/BehaviorPolicyForm";
+import type { BehaviorPolicy } from "@/lib/shell/types";
 import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /**
@@ -16,11 +18,12 @@ export default async function ShellSettingsPage() {
   if (!nav.ok || !nav.data.some((s) => s.key === "shell")) {
     notFound();
   }
-  const [shell, pages, rules, live] = await Promise.all([
+  const [shell, pages, rules, live, behavior] = await Promise.all([
     apiGet<ShellAdmin>("/api/v1/experience/shell/definition"),
     listPages(),
     apiGet<AudienceOption[]>("/api/v1/experience/audience-rules"),
     getShell(),
+    apiGet<BehaviorPolicy>("/api/v1/experience/behavior-policy"),
   ]);
   if (!shell.ok) {
     notFound();
@@ -35,6 +38,7 @@ export default async function ShellSettingsPage() {
         audiences={rules.ok ? rules.data : null}
         entries={live.ok ? live.data.globalMenu.map((l) => ({ nodeId: l.nodeId, label: l.label })) : []}
       />
+      {behavior.ok && behavior.data.available ? <BehaviorPolicyForm initial={behavior.data} /> : null}
     </>
   );
 }

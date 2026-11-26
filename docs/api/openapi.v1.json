@@ -7426,6 +7426,38 @@
         }
       }
     },
+    "/api/v1/me/personalization/behavior": {
+      "get": {
+        "tags": [
+          "Me: favorites and recents"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Me: favorites and recents"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BehaviorChoiceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/me/recents": {
       "get": {
         "tags": [
@@ -7461,6 +7493,38 @@
         "tags": [
           "Me: favorites and recents"
         ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/experience/behavior-policy": {
+      "get": {
+        "tags": [
+          "Experience: personalization"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Experience: personalization"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BehaviorPolicyRequest"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "description": "OK"
@@ -38638,6 +38702,41 @@
           }
         }
       },
+      "BehaviorChoiceRequest": {
+        "required": [
+          "consented"
+        ],
+        "type": "object",
+        "properties": {
+          "consented": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          }
+        }
+      },
+      "BehaviorPolicyRequest": {
+        "required": [
+          "enabled",
+          "consentMode"
+        ],
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "consentMode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "BestBetRequest": {
         "required": [
           "query",
@@ -54763,13 +54862,13 @@
       "name": "Me: favorites and recents"
     },
     {
+      "name": "Experience: personalization"
+    },
+    {
       "name": "Experience: help and tours"
     },
     {
       "name": "Me: help and tours"
-    },
-    {
-      "name": "Experience: personalization"
     },
     {
       "name": "Experience: sharing"

@@ -2513,7 +2513,8 @@
         "request_leave": "Request leave",
         "my_tasks": "Open my tasks",
         "open_analytics": "Open analytics"
-      }
+      },
+      "ranked": "Ranked from your use"
     },
     "recovery": {
       "title": "This page is not available",
@@ -2671,6 +2672,19 @@
       "intro": "Choose up to {max} entries of the global menu for the bar at the bottom of phone screens. More holds the rest.",
       "noEntries": "Publish the global menu first; its entries can then go in the bottom navigation.",
       "default": "Nothing chosen: phones show the first four entries of the global menu."
+    },
+    "behavior": {
+      "title": "Personalization from use",
+      "intro": "When on, quick navigation puts the pages each person opens most first. Counts are kept 90 days and read for no one else.",
+      "enabled": "Turn on personalization from use",
+      "enabledHint": "Off by default. Every change is recorded in the audit log.",
+      "consent": "Consent",
+      "optIn": "Only people who agree (opt-in)",
+      "optOut": "Everyone unless they decline (opt-out)",
+      "save": "Save",
+      "saving": "Saving",
+      "saved": "Saved.",
+      "failed": "That did not work. Try again."
     }
   },
   "personalization": {
@@ -12927,6 +12941,14 @@
       "hint": "Your organization scores a share of live AI agent runs to check their quality.",
       "optOut": "Keep my runs out of quality checks",
       "optOutHint": "When this is on, your conversations with AI agents are never sampled for evaluation.",
+      "failed": "That did not work. Try again."
+    },
+    "behavior": {
+      "title": "Personalization from your use",
+      "hint": "Quick navigation puts the pages you open most first. No one else sees it.",
+      "use": "Use what I open to order results",
+      "useHintIn": "Nothing is counted until you agree. Turning it off deletes what was counted; your other settings stay.",
+      "useHintOut": "It is on unless you decline. Turning it off deletes what was counted; your other settings stay.",
       "failed": "That did not work. Try again."
     }
   },
